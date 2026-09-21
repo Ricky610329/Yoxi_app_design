@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 C · 收藏不放地圖 — yoxi 城事</title>
+<!--
+  變體 C：地圖只歸探索，收藏完全不放地圖
+
+  最保守的解法：把獨立的「城市足跡」整頁拿掉，
+  覆蓋率與城市顏色改成收藏首頁裡的一塊數據磚。
+  探索那邊維持現況（卡片／地圖切換）。
+
+  代價很明確：失去「你的城市慢慢長出顏色」那個滿版的情緒畫面 ——
+  而那正是長期動機最強的視覺。這裡用一條細長的覆蓋率條代替，
+  資訊還在，感覺弱很多。
+
+  好處：資訊架構最乾淨，每個 tab 的職責一句話講得完，
+  而且改動最小、最不可能做壞。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 覆蓋率條：用一排小方格代替滿版地圖。
+     資訊密度接近，情緒張力差很多 —— 這正是這個變體的取捨。 */
+  .covergrid {
+    display: grid; grid-template-columns: repeat(20, 1fr); gap: 2px;
+  }
+  .covergrid i { aspect-ratio: 1; border-radius: 1.5px; background: var(--map-fog); }
+  .covergrid i.on   { background: var(--yoxi-cream); }
+  .covergrid i.fade { background: var(--yoxi-cream); opacity: .45; }
+</style>
+</head>
+
+<body data-tab="album" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="elder.html">
+            做一張圖
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n">12</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n">3</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 取代整頁霧地圖的數據磚 -->
+        <div style="padding:0 16px 16px">
+          <div class="card card--pad">
+            <div class="u-row" style="justify-content:space-between; align-items:flex-end">
+              <span>
+                <span style="display:block; font-size:26px; font-weight:800;
+                             font-style:italic; line-height:1">14%</span>
+                <span style="display:block; font-size:12px; color:var(--yoxi-slate);
+                             margin-top:3px">的新竹被你點亮了</span>
+              </span>
+              <a class="u-row u-gap2" href="map.html"
+                 style="font-size:12px; font-weight:700; color:var(--yoxi-slate)">
+                在地圖上看 <span class="arrow"></span>
+              </a>
+            </div>
+
+            <div class="covergrid" id="cover" style="margin-top:14px"></div>
+
+            <div class="citycolor" style="height:20px; margin-top:14px" id="colors"></div>
+            <p style="margin-top:8px; font-size:12px; color:var(--yoxi-slate); line-height:1.6">
+              偏暖，偏舊。你去的地方多半是老房子、市場與河岸。
+            </p>
+          </div>
+        </div>
+
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color:#fff">
+            <span class="tile-icon" style="width:44px;height:44px;border-radius:16px;
+                  background:rgba(255,255,255,.14)">
+              <span data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite">
+            <button class="pill is-active" data-seg="cards">明信片</button>
+            <button class="pill" data-seg="badges">獎章</button>
+            <button class="pill" data-seg="log">日誌</button>
+          </div>
+        </div>
+
+        <section id="segCards" style="padding:0 16px 24px">
+          <div class="postcard-wall" id="wall"></div>
+        </section>
+
+        <section id="segBadges" class="u-hidden" style="padding:0 16px 24px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <section id="segLog" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* 覆蓋率格：把霧地圖壓成一條 */
+  const flat = MOCK.FOG.flat();
+  document.getElementById('cover').innerHTML = flat.map(function (s) {
+    return '<i class="' + (s === 'seen' ? 'on' : s === 'fade' ? 'fade' : '') + '"></i>';
+  }).join('');
+
+  document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
+    .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
+    .join('');
+
+  document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
+    const locked = p.state === 'locked';
+    return '<a class="postcard ' + (locked ? 'postcard--locked ' : '') +
+      (p.by === 'ride' ? 'postcard--gold' : '') + '" href="place.html">' +
+      '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+      (p.by === 'ride' ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
+      '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span>' +
+      (p.date ? '<span class="postcard__date">' + p.date + '</span>' : '') +
+      '</span></a>';
+  }).join('');
+
+  document.getElementById('badgeGrid').innerHTML = MOCK.BADGES.map(function (b) {
+    return '<div class="badge ' + (b.got ? '' : 'badge--locked') + '" style="width:auto">' +
+      '<span class="badge__disc"><span data-icon="' + b.icon + '"></span></span>' +
+      '<span class="badge__name">' + b.name + '</span>' +
+      '<span class="badge__prog">' + (b.got ? '已收集' : b.prog) + '</span></div>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  const map = { cards: 'segCards', badges: 'segBadges', log: 'segLog' };
+  document.querySelectorAll('[data-seg]').forEach(function (btn) {
+    btn.onclick = function () {
+      document.querySelectorAll('[data-seg]').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      Object.values(map).forEach(function (id) {
+        document.getElementById(id).classList.add('u-hidden');
+      });
+      document.getElementById(map[btn.dataset.seg]).classList.remove('u-hidden');
+    };
+  });
+})();
+</script>
+</body>
+</html>

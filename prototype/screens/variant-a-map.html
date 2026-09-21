@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 A · 單一地圖雙模式 — yoxi 城事</title>
+<!--
+  變體 A：一張地圖，兩個模式
+
+  問題：地圖在兩個地方出現（探索的「附近有什麼」、收藏的「城市足跡」），
+  兩張互不相干的地圖是功能堆疊的典型症狀。
+
+  這個變體的解法：全 app 只有一張地圖，用「想去／去過」切換模式。
+    想去 ── 沒去過的景點高亮，去過的淡化，今天的地方最顯眼
+    去過 ── 足跡上色高亮，只留去過的景點，底部換成覆蓋率與城市顏色
+
+  收藏 tab 的「城市足跡」改為深連結到這裡的「去過」模式，
+  所以它仍然到得了，但不再是另一張地圖。
+
+  取捨：多了一個模式切換要學；「去過」模式藏在探索 tab 裡，
+  跟收藏 tab 的心理歸屬有點衝突。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 模式切換：浮在地圖上方，不佔頁首空間 */
+  .modes {
+    position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+    z-index: 12; display: flex; padding: 3px; border-radius: var(--r-pill);
+    background: rgba(255,255,255,.94); box-shadow: var(--sh-fab);
+  }
+  .modes button {
+    height: 34px; padding: 0 18px; border-radius: var(--r-pill);
+    font-size: var(--fs-cap); font-weight: 800; color: var(--yoxi-slate);
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  }
+  .modes button.is-on { background: var(--yoxi-navy); color: #fff; }
+
+  /* 「想去」模式：去過的景點退到背景，別跟未探索的搶注意力 */
+  .m-go   .spot--seen  { opacity: .42; }
+  /* 「去過」模式：沒去過的整個收起來，畫面只剩你的足跡 */
+  .m-been .spot--new   { display: none; }
+  .m-been .spot--today { display: none; }
+  .m-been .fogmap__cell--seen { fill: var(--yoxi-cream-deep); }
+</style>
+</head>
+
+<body data-tab="explore" data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <nav class="viewtoggle">
+            <a href="explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a class="is-on" href="variant-a-map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <div class="map u-fill m-go" id="mapArea" style="background:var(--map-fog)">
+
+        <svg class="map__svg" id="fogLayer" viewBox="0 0 390 560"
+             preserveAspectRatio="xMidYMid slice"></svg>
+
+        <div class="pin" style="left:46%; top:56%; z-index:7">
+          <span class="pin__drop" style="width:38px; height:38px">
+            <span data-icon="hail" style="width:20px;height:20px;display:block"></span>
+          </span>
+        </div>
+
+        <div id="spots"></div>
+
+        <!-- 一張地圖，兩個模式 -->
+        <nav class="modes">
+          <button class="is-on" data-mode="go">想去</button>
+          <button data-mode="been">去過</button>
+        </nav>
+
+        <button class="fab" style="top:62px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 想去：點圖釘浮出的小卡 -->
+        <a class="peek" id="peek" href="place.html">
+          <span class="peek__img" id="peekImg"></span>
+          <span class="u-fill" style="min-width:0">
+            <span id="peekName" style="display:block; font-weight:800; line-height:1.3"></span>
+            <span id="peekMeta" style="display:block; font-size:12px;
+                  color:var(--yoxi-slate); margin-top:2px"></span>
+            <span id="peekHook" style="display:block; font-size:13px; margin-top:5px;
+                  line-height:1.5"></span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <!-- 去過：底部換成覆蓋率與城市顏色 -->
+        <div class="peek u-hidden" id="stats" style="display:block; padding:16px">
+          <div class="u-row" style="justify-content:space-between; align-items:flex-end">
+            <span>
+              <span style="display:block; font-size:28px; font-weight:800;
+                           font-style:italic; line-height:1">14%</span>
+              <span style="display:block; font-size:12px; color:var(--yoxi-slate);
+                           margin-top:2px">的新竹被你點亮了</span>
+            </span>
+            <span style="font-size:12px; color:var(--yoxi-slate); text-align:right">
+              去過 <b class="num" style="color:var(--yoxi-navy)">12</b> 個地方<br>
+              走了 <b class="num" style="color:var(--yoxi-navy)">48</b> 公里
+            </span>
+          </div>
+          <div class="citycolor" id="colors" style="height:26px; margin-top:12px"></div>
+          <p style="margin-top:8px; font-size:12px; color:var(--yoxi-slate); line-height:1.6">
+            偏暖，偏舊。超過 90 天沒回去的地方顏色會變淡，但明信片不會消失。
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* ---- 底圖 ---- */
+  const rows = MOCK.FOG, cols = rows[0].length;
+  const w = 390 / cols, h = 560 / rows.length;
+  const cells = rows.map(function (row, y) {
+    return row.map(function (st, x) {
+      const cls = st === 'seen' ? 'fogmap__cell--seen'
+                : st === 'fade' ? 'fogmap__cell--fade' : 'fogmap__cell--fog';
+      return '<rect class="fogmap__cell ' + cls + '" x="' + (x * w) + '" y="' + (y * h) +
+             '" width="' + (w + .5) + '" height="' + (h + .5) + '"/>';
+    }).join('');
+  }).join('');
+  const roads =
+    '<g stroke="#FFF" stroke-width="8" fill="none" opacity=".92">' +
+      '<path d="M-10 210 L400 196"/><path d="M-10 340 L400 328"/>' +
+      '<path d="M112 -10 L132 570"/><path d="M256 -10 L246 570"/></g>' +
+    '<g stroke="#FFF" stroke-width="4" fill="none" opacity=".7">' +
+      '<path d="M-10 276 L400 266"/><path d="M188 -10 L200 570"/></g>' +
+    '<g stroke="#C9D8EC" stroke-width="10" fill="none" opacity=".85">' +
+      '<path d="M-20 120 Q90 148 180 120 T420 140"/></g>';
+  document.getElementById('fogLayer').innerHTML = cells + roads;
+
+  /* ---- 景點 ---- */
+  const spots = MOCK.SPOTS;
+  document.getElementById('spots').innerHTML = spots.map(function (s, i) {
+    const cls = s.state === 'today' ? 'spot--today'
+              : (s.state === 'seen' ? 'spot--seen' : 'spot--new');
+    return '<button class="spot ' + cls + '" data-i="' + i + '"' +
+      ' style="left:' + s.x + '%; top:' + s.y + '%">' +
+      (s.state === 'today' ? '<span class="spot__halo"></span>' : '') +
+      '<span class="spot__img" data-art="' + s.art + '" data-seed="' + i + '"></span>' +
+      (s.state === 'seen' ? '<span class="spot__tick"><span data-icon="check"></span></span>' : '') +
+      '</button>';
+  }).join('');
+  SHELL.injectArt(document.getElementById('spots'));
+  SHELL.injectIcons();
+
+  document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
+    .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
+    .join('');
+
+  /* ---- 圖釘 → 小卡 ---- */
+  const peek = document.getElementById('peek');
+  let open = -1;
+  function showPeek(i) {
+    const s = spots[i];
+    document.getElementById('peekImg').innerHTML = SHELL.postcardArt(s.art, { seed: i });
+    document.getElementById('peekImg').style.filter =
+      s.state === 'new' ? 'grayscale(1) contrast(.72) brightness(1.16)' : '';
+    document.getElementById('peekName').textContent = s.name;
+    document.getElementById('peekMeta').textContent = s.type + ' · ' +
+      (s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + ' km' : s.dist + ' m');
+    document.getElementById('peekHook').textContent = s.hook;
+    peek.classList.add('is-on');
+    open = i;
+  }
+  document.querySelectorAll('.spot').forEach(function (b) {
+    b.onclick = function () {
+      const i = Number(b.dataset.i);
+      if (open === i) { peek.classList.remove('is-on'); open = -1; } else showPeek(i);
+    };
+  });
+
+  /* ---- 模式切換 ---- */
+  const area  = document.getElementById('mapArea');
+  const stats = document.getElementById('stats');
+
+  function setMode(m) {
+    area.classList.toggle('m-go',   m === 'go');
+    area.classList.toggle('m-been', m === 'been');
+    document.querySelectorAll('.modes button').forEach(function (b) {
+      b.classList.toggle('is-on', b.dataset.mode === m);
+    });
+    if (m === 'been') {
+      peek.classList.remove('is-on'); open = -1;
+      stats.classList.remove('u-hidden');
+      requestAnimationFrame(function () { stats.classList.add('is-on'); });
+    } else {
+      stats.classList.remove('is-on');
+      setTimeout(function () { stats.classList.add('u-hidden'); }, 240);
+      const t = spots.findIndex(function (s) { return s.state === 'today'; });
+      if (t >= 0) showPeek(t);
+    }
+  }
+
+  document.querySelectorAll('.modes button').forEach(function (b) {
+    b.onclick = function () { setMode(b.dataset.mode); };
+  });
+
+  setMode(new URLSearchParams(location.search).get('mode') === 'been' ? 'been' : 'go');
+})();
+</script>
+</body>
+</html>

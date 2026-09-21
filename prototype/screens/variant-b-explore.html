@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 B · 地圖即探索 — yoxi 城事</title>
+<!--
+  變體 B：地圖就是探索，沒有「卡片／地圖」切換
+
+  這個變體直接沿用 yoxi 自己首頁的版型 ── 地圖 + 底部拉把 sheet。
+  所以探索頁看起來像 yoxi 原生的畫面，而不是外掛上去的新功能。
+  對「尊重他們原本的設計」這個立場，這是最徹底的一種實踐。
+
+  · 地圖在上，景點就是明信片縮圖
+  · sheet 收合態＝今天的地方（一個明確答案，沒有被地圖稀釋）
+  · 往上拉＝這個月的路線、還沒去的地方
+  · 足跡是地圖的一個圖層，不是另一張地圖
+
+  收藏 tab 因此完全沒有地圖，只有明信片牆、獎章、回顧。
+  全 app 只有一張地圖，而且歸探索 tab 所有。
+
+  取捨：今天的地方從「滿版主卡」降成「sheet 裡的一列」，
+  視覺份量變小；地圖本身也讓畫面比卡片版吵一些。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 足跡圖層開啟時，去過的區塊加深、沒去過的景點淡出 */
+  .layer-on .fogmap__cell--seen { fill: var(--yoxi-cream-deep); }
+  .layer-on .spot--new { opacity: .32; }
+
+  .layerbtn {
+    position: absolute; left: 16px; top: calc(var(--statusbar-h) + 6px); z-index: 12;
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 36px; padding: 0 14px; border-radius: var(--r-pill);
+    background: rgba(255,255,255,.94); box-shadow: var(--sh-fab);
+    font-size: var(--fs-cap); font-weight: 800; color: var(--yoxi-slate);
+  }
+  .layerbtn.is-on { background: var(--yoxi-navy); color: #fff; }
+  .layerbtn svg { width: 15px; height: 15px; }
+</style>
+</head>
+
+<body data-tab="explore" data-status="dark" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 地圖（滿版，沿用 yoxi 首頁的做法：沒有頁首） ===== -->
+      <div class="map" id="mapArea">
+        <svg class="map__svg" id="fogLayer" viewBox="0 0 390 480"
+             preserveAspectRatio="xMidYMid slice"></svg>
+
+        <div class="pin" style="left:46%; top:62%; z-index:7">
+          <span class="pin__drop" style="width:38px; height:38px">
+            <span data-icon="hail" style="width:20px;height:20px;display:block"></span>
+          </span>
+        </div>
+
+        <div id="spots"></div>
+
+        <!-- 足跡是圖層，不是另一張地圖 -->
+        <button class="layerbtn" id="layerBtn">
+          <span data-icon="steps" style="width:15px;height:15px;display:block"></span>
+          我的足跡
+        </button>
+
+        <button class="fab" style="top:calc(var(--statusbar-h) + 4px); right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 足跡開啟時浮出的覆蓋率 -->
+        <div class="u-hidden" id="cover"
+             style="position:absolute; left:16px; top:calc(var(--statusbar-h) + 50px); z-index:12;
+                    padding:10px 14px; border-radius:var(--r-card);
+                    background:rgba(255,255,255,.96); box-shadow:var(--sh-card)">
+          <div style="font-size:22px; font-weight:800; font-style:italic; line-height:1">14%</div>
+          <div style="font-size:11px; color:var(--yoxi-slate); margin-top:2px">
+            的新竹被你點亮了
+          </div>
+          <div class="citycolor" style="height:14px; margin-top:8px; width:120px" id="colors"></div>
+        </div>
+      </div>
+
+      <!-- ===== 底部 sheet ===== -->
+      <div class="sheet" style="max-height:54%; overflow-y:auto; scrollbar-width:none">
+        <div class="sheet__handle"></div>
+
+        <!-- 收合態就看得到的：今天的地方 -->
+        <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                    color:var(--yoxi-red); margin-bottom:8px">今天的地方</div>
+
+        <a class="u-row u-gap4" href="place.html" style="padding-bottom:14px">
+          <span style="width:64px; height:82px; border-radius:6px; overflow:hidden;
+                       position:relative; flex:none" data-art="glass" data-seed="1"></span>
+          <span class="u-fill" style="min-width:0">
+            <span style="display:block; font-size:19px; font-weight:800; line-height:1.3">
+              水利路的老玻璃窯
+            </span>
+            <span style="display:block; font-size:14px; color:var(--yoxi-slate);
+                         margin-top:4px; line-height:1.5">
+              這條巷子 1970 年代是全街最亮的地方。
+            </span>
+            <span style="display:block; font-size:13px; font-weight:700; margin-top:6px">
+              離你 <span class="num">900</span> m · 走路 <span class="num">12</span> 分鐘
+            </span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <div style="display:grid; grid-template-columns:1fr auto; gap:8px">
+          <a class="btn-primary" href="going.html" style="min-height:50px">走路前往</a>
+          <a class="btn-ghost" href="home.html"
+             style="width:auto; padding:0 18px; min-height:50px">用 yoxi</a>
+        </div>
+
+        <!-- 往上拉才看得到的 -->
+        <div class="divider" style="margin:20px 0"></div>
+
+        <div class="sec" style="margin-bottom:10px">
+          <h2 class="sec__t" style="font-size:16px">這個月的路線</h2>
+          <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+        </div>
+        <a class="card u-row u-gap3" href="route.html" style="padding:10px 12px">
+          <span style="width:44px; height:44px; border-radius:6px; overflow:hidden;
+                       position:relative; flex:none" data-art="rail" data-seed="3" data-wide></span>
+          <span class="u-fill" style="min-width:0">
+            <span style="display:block; font-weight:800; font-size:15px">沿著鐵道走</span>
+            <span class="track-mini" style="margin-top:6px">
+              <i class="track-mini__node is-done"></i><i class="track-mini__link is-done"></i>
+              <i class="track-mini__node is-done"></i><i class="track-mini__link"></i>
+              <i class="track-mini__node"></i><i class="track-mini__link"></i>
+              <i class="track-mini__node"></i><i class="track-mini__link"></i>
+              <i class="track-mini__node"></i><i class="track-mini__link"></i>
+              <i class="track-mini__node"></i>
+              <span style="margin-left:8px; font-size:11px; color:var(--yoxi-slate)">
+                <span class="num">2</span>/6
+              </span>
+            </span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <div class="sec" style="margin:20px 0 10px">
+          <h2 class="sec__t" style="font-size:16px">還沒去的地方</h2>
+          <span class="sec__m">不會過期</span>
+        </div>
+        <div class="card" id="pendingList"></div>
+
+        <div style="height:16px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* ---- 底圖 ---- */
+  const rows = MOCK.FOG, cols = rows[0].length;
+  const w = 390 / cols, h = 480 / rows.length;
+  const cells = rows.map(function (row, y) {
+    return row.map(function (st, x) {
+      const cls = st === 'seen' ? 'fogmap__cell--seen'
+                : st === 'fade' ? 'fogmap__cell--fade' : 'fogmap__cell--fog';
+      return '<rect class="fogmap__cell ' + cls + '" x="' + (x * w) + '" y="' + (y * h) +
+             '" width="' + (w + .5) + '" height="' + (h + .5) + '"/>';
+    }).join('');
+  }).join('');
+  const roads =
+    '<g stroke="#FFF" stroke-width="8" fill="none" opacity=".92">' +
+      '<path d="M-10 180 L400 168"/><path d="M-10 300 L400 290"/>' +
+      '<path d="M112 -10 L132 490"/><path d="M256 -10 L246 490"/></g>' +
+    '<g stroke="#FFF" stroke-width="4" fill="none" opacity=".7">' +
+      '<path d="M-10 238 L400 228"/><path d="M188 -10 L200 490"/></g>' +
+    '<g stroke="#C9D8EC" stroke-width="10" fill="none" opacity=".85">' +
+      '<path d="M-20 104 Q90 130 180 104 T420 124"/></g>';
+  document.getElementById('fogLayer').innerHTML = cells + roads;
+
+  /* ---- 景點 ---- */
+  document.getElementById('spots').innerHTML = MOCK.SPOTS.map(function (s, i) {
+    const cls = s.state === 'today' ? 'spot--today'
+              : (s.state === 'seen' ? 'spot--seen' : 'spot--new');
+    return '<a class="spot ' + cls + '" href="place.html"' +
+      ' style="left:' + s.x + '%; top:' + (16 + s.y * 0.74) + '%">' +
+      (s.state === 'today' ? '<span class="spot__halo"></span>' : '') +
+      '<span class="spot__img" data-art="' + s.art + '" data-seed="' + i + '"></span>' +
+      (s.state === 'seen' ? '<span class="spot__tick"><span data-icon="check"></span></span>' : '') +
+      '</a>';
+  }).join('');
+
+  /* ---- 還沒去的地方 ---- */
+  document.getElementById('pendingList').innerHTML = MOCK.PENDING.map(function (p, i) {
+    return '<a class="row-nav" href="place.html" style="padding:10px 14px">' +
+      '<span style="width:40px;height:52px;border-radius:4px;overflow:hidden;' +
+      'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 5) + '"></span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:15px">' + p.name + '</span>' +
+        '<span class="row-nav__sub">' + (p.distance / 1000).toFixed(1) + ' km · ' + p.ago + '</span>' +
+      '</span><span class="arrow"></span></a>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
+    .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
+    .join('');
+
+  /* ---- 足跡圖層 ---- */
+  const btn = document.getElementById('layerBtn');
+  const area = document.getElementById('mapArea');
+  const cover = document.getElementById('cover');
+  btn.onclick = function () {
+    const on = btn.classList.toggle('is-on');
+    area.classList.toggle('layer-on', on);
+    cover.classList.toggle('u-hidden', !on);
+  };
+})();
+</script>
+</body>
+</html>

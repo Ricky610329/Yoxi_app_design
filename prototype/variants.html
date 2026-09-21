@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體比較 — yoxi 城事</title>
+<!--
+  地圖該歸誰？四個變體的並排比較。
+
+  每一列是一個變體的完整 tab 組合（叫車／探索／收藏），
+  所以看得到的是「整個 app 組合起來的感覺」，不是單張畫面。
+-->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/chengshi.css">
+<style>
+  body { background: var(--yoxi-mist); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  .top { display: flex; align-items: flex-end; justify-content: space-between;
+         gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+  .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
+  .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+
+  .problem {
+    background: #fff; border-left: 4px solid var(--yoxi-red);
+    border-radius: var(--r-card); padding: 20px 24px; margin-bottom: 36px;
+    line-height: 1.85;
+  }
+  .problem b { color: var(--yoxi-red); }
+
+  .v {
+    background: #fff; border-radius: var(--r-card);
+    border: 1px solid var(--yoxi-line); padding: 24px; margin-bottom: 20px;
+  }
+  .v--pick { border-color: var(--yoxi-navy); border-width: 2px; }
+
+  .v__head { display: flex; align-items: flex-start; justify-content: space-between;
+             gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+  .v__tag { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
+  .v__n { font-size: 22px; font-weight: 800; margin-top: 3px; }
+  .v__one { color: var(--yoxi-slate); margin-top: 6px; line-height: 1.65; max-width: 54em; }
+  .v__pickmark {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+    border-radius: 999px; background: var(--yoxi-navy); color: #fff;
+    font-size: 12px; font-weight: 800; white-space: nowrap;
+  }
+
+  .tabs { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+  .tabcol { width: 186px; }
+  .tabcol__l {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+    font-size: 12px; font-weight: 800; color: var(--yoxi-slate);
+  }
+  .tabcol__l i { width: 8px; height: 8px; border-radius: 50%; background: var(--yoxi-slate-lite); }
+  .tabcol__l.is-map i { background: var(--yoxi-red); }
+  .tabcol__l.is-map { color: var(--yoxi-red); }
+
+  .fr {
+    position: relative; width: 186px; height: 394px;
+    border-radius: 13px; overflow: hidden; background: #fff;
+    box-shadow: 0 2px 10px rgba(6,32,64,.14);
+    transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
+  }
+  .fr:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24); }
+  .fr iframe {
+    width: 430px; height: 912px; border: 0;
+    transform: scale(.4325); transform-origin: top left; pointer-events: none;
+  }
+  .fr a { position: absolute; inset: 0; }
+  .fr__cap { margin-top: 8px; font-size: 12px; color: var(--yoxi-slate); line-height: 1.5; }
+
+  .tradeoff { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+  @media (max-width: 720px) { .tradeoff { grid-template-columns: 1fr; } }
+  .to { padding: 14px 16px; border-radius: var(--r-card); line-height: 1.75; font-size: 14px; }
+  .to--good { background: #F1F7F2; }
+  .to--bad  { background: var(--yoxi-cream); }
+  .to b { display: block; margin-bottom: 4px; font-size: 12px; letter-spacing: .04em; }
+  .to--good b { color: #2F6B3D; }
+  .to--bad  b { color: #8A5A1E; }
+
+  .where {
+    margin-top: 16px; padding: 12px 16px; border-radius: var(--r-card);
+    background: var(--yoxi-mist); font-size: 14px; line-height: 1.7;
+  }
+  .where b { color: var(--yoxi-navy); }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>地圖該歸誰？</h1>
+      <p style="color:var(--yoxi-slate); margin-top:8px; line-height:1.7; max-width:56em">
+        四個變體的並排比較。每一列是一個變體的完整 tab 組合，<br>
+        所以你看到的是整個 app 組合起來的感覺，不是單張畫面。縮圖是活的，點擊開新分頁。
+      </p>
+    </div>
+    <div style="display:grid; gap:10px; justify-items:end">
+      <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
+      <a class="backlink" href="overview.html"><span class="arrow arrow--left"></span> 全景圖</a>
+    </div>
+  </header>
+
+  <div class="problem">
+    <b>問題</b>：地圖同時出現在兩個地方 —— 探索的「附近有什麼」和收藏的「城市足跡」。
+    兩張互不相干的地圖是功能堆疊的典型症狀，正是 Pikmin Bloom 五年從三個功能長成
+    五分頁六區塊的那條路。<br><br>
+    但這個重複是<b>結構性的</b>，不是隨手擺錯：地圖在回答兩個不同時態的問題 ——
+    「附近有什麼可以去」（未來）與「我去過哪裡」（過去），而 tab bar 正是照時態切的。
+    所以解法必須決定：<b>地圖到底屬於哪一個時態</b>。
+  </div>
+
+  <div id="list"></div>
+
+</div>
+
+<script>
+const V = [
+  {
+    tag: '變體 0', name: '現況 —— 兩張地圖', pick: false,
+    one: '探索有「卡片／地圖」切換，收藏另有一整頁「城市足跡」。兩張地圖各自獨立，彼此不知道對方存在。',
+    where: '地圖出現在 <b>探索</b> 與 <b>收藏</b> 兩處，共 <b>2 張</b>。',
+    tabs: [
+      ['叫車', 'screens/home.html', '沒動', false],
+      ['探索', 'screens/map.html', '卡片／地圖切換', true],
+      ['收藏', 'screens/album.html', '右上進城市足跡', false],
+      ['城市足跡', 'screens/fogmap.html', '第二張地圖', true],
+    ],
+    good: '兩個場景各自最佳化：探索的地圖專心找地方，足跡頁專心給你滿版的情緒。',
+    bad: '使用者會問「這兩張地圖有什麼不一樣」。而且維護成本雙倍，未來每加一個圖層都要做兩次。',
+  },
+  {
+    tag: '變體 A', name: '一張地圖，兩個模式', pick: false,
+    one: '全 app 只有一張地圖，用「想去／去過」切換。想去＝未探索的景點高亮；去過＝足跡上色、只留去過的地方、底部換成覆蓋率。收藏 tab 的入口深連結到「去過」模式。',
+    where: '地圖只有 <b>1 張</b>，住在 <b>探索</b>，用模式切換兼顧兩種時態。',
+    tabs: [
+      ['叫車', 'screens/home.html', '沒動', false],
+      ['探索 · 想去', 'screens/variant-a-map.html', '未探索的高亮', true],
+      ['探索 · 去過', 'screens/variant-a-map.html?mode=been', '同一張圖，換模式', true],
+      ['收藏', 'screens/album.html', '入口深連結到「去過」', false],
+    ],
+    good: '真的只有一張地圖，而且兩種時態都保住了滿版的視覺。改動最小，現有畫面幾乎照用。',
+    bad: '多一個模式要學。而且「去過」模式住在探索 tab 裡，跟「過去屬於收藏」的心理歸屬打架 —— 使用者可能在收藏裡找不到它。',
+  },
+  {
+    tag: '變體 B', name: '地圖就是探索', pick: true,
+    one: '沿用 yoxi 自己首頁的版型：地圖滿版在上、底部拉把 sheet 在下。收合態就是「今天的地方」，往上拉是路線與還沒去的地方。足跡是地圖的一個圖層，不是另一張地圖。收藏 tab 完全沒有地圖。',
+    where: '地圖只有 <b>1 張</b>，就是 <b>探索</b> 本身。足跡是它的圖層。',
+    tabs: [
+      ['叫車', 'screens/home.html', '地圖 + sheet', false],
+      ['探索', 'screens/variant-b-explore.html', '同一個版型', true],
+      ['收藏', 'screens/album.html', '純收藏，無地圖', false],
+    ],
+    good: '最像 yoxi 原生的：探索頁跟叫車頁是同一個版型，看起來本來就該長這樣，不像外掛功能。地圖歸屬乾淨，沒有模式要學，足跡是圖層很直覺。',
+    bad: '「今天的地方」從滿版主卡降成 sheet 裡的一列，視覺份量變小 —— 而那是「一天一個明確答案」的反焦慮設計。地圖也讓畫面比純卡片吵一些。',
+  },
+  {
+    tag: '變體 C', name: '收藏不放地圖', pick: false,
+    one: '最保守：把整頁「城市足跡」拿掉，覆蓋率與城市顏色壓成收藏首頁裡的一塊數據磚。探索維持現況的卡片／地圖切換。',
+    where: '地圖只有 <b>1 張</b>，住在 <b>探索</b>。收藏用數據磚代替地圖。',
+    tabs: [
+      ['叫車', 'screens/home.html', '沒動', false],
+      ['探索', 'screens/explore.html', '卡片為主', false],
+      ['探索 · 地圖', 'screens/map.html', '唯一的地圖', true],
+      ['收藏', 'screens/variant-c-album.html', '數據磚，無地圖', false],
+    ],
+    good: '資訊架構最乾淨，每個 tab 的職責一句話講得完。改動最小，最不可能做壞。',
+    bad: '失去「你的城市慢慢長出顏色」那個滿版畫面 —— 那是長期動機最強的視覺。壓成一條格子後資訊還在，情緒張力差很多。',
+  },
+];
+
+document.getElementById('list').innerHTML = V.map(v => `
+  <section class="v ${v.pick ? 'v--pick' : ''}">
+    <div class="v__head">
+      <div>
+        <div class="v__tag">${v.tag}</div>
+        <div class="v__n">${v.name}</div>
+        <p class="v__one">${v.one}</p>
+      </div>
+      ${v.pick ? '<span class="v__pickmark">我推薦這個</span>' : ''}
+    </div>
+
+    <div class="tabs">
+      ${v.tabs.map(([label, href, cap, isMap]) => `
+        <div class="tabcol">
+          <div class="tabcol__l ${isMap ? 'is-map' : ''}"><i></i>${label}</div>
+          <div class="fr">
+            <iframe src="${href}" loading="lazy" scrolling="no" tabindex="-1" title="${label}"></iframe>
+            <a href="${href}" target="_blank" aria-label="${label}"></a>
+          </div>
+          <div class="fr__cap">${cap}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="where">${v.where}</div>
+
+    <div class="tradeoff">
+      <div class="to to--good"><b>好處</b>${v.good}</div>
+      <div class="to to--bad"><b>代價</b>${v.bad}</div>
+    </div>
+  </section>`).join('');
+</script>
+</body>
+</html>
