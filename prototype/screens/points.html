@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>和泰 Points — yoxi 城事</title>
+<!--
+  R9 和泰 Points【改造】
+
+  唯一的改動：點數明細新增來源標記「城事解鎖回饋」。
+
+  這是整個提案裡「商業轉換價值」的唯一可視證據 ——
+  讓評審看到探索行為真的回流到和泰集團的點數體系。
+
+  和泰 Points 可跨 yoxi／iRent／HOTAI 購／汽車保養折抵，
+  其他叫車平台的點數是封閉的。這是別家抄不走的護城河。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="14:03">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">和泰 Points</h1>
+        <p class="hdr-red__sub" style="font-size:16px; margin-top:6px">
+          累積總點數 <span class="num" style="font-size:26px">50</span> 點
+        </p>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <div style="padding:16px">
+          <div class="card" id="rows"></div>
+        </div>
+
+        <div style="padding:0 16px 32px">
+          <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+            <div style="font-size:13px; line-height:1.75">
+              和泰 Points 可以折抵 yoxi 車資、iRent 租車、HOTAI 購商城與汽車保養費用。
+              <b>1 點 = 1 元。</b>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const ROWS = [
+    ['內灣老街 · 抵達解鎖',  '城事解鎖回饋', '+50', '09/21', true],
+    ['南寮漁港 · 抵達解鎖',  '城事解鎖回饋', '+50', '09/12', true],
+    ['行程 · 新竹市 → 內灣', '搭乘回饋',     '+34', '09/21', false],
+    ['行程 · 東區 → 竹北',   '搭乘回饋',     '+12', '09/18', false],
+  ];
+
+  document.getElementById('rows').innerHTML = ROWS.map(function (r) {
+    const name = r[0], src = r[1], n = r[2], date = r[3], isNew = r[4];
+    return '<div class="row-nav">' +
+      '<span class="tile-icon" style="width:44px;height:44px;border-radius:16px' +
+        (isNew ? ';background:var(--yoxi-navy)' : '') + '">' +
+        '<span data-icon="' + (isNew ? 'postcard' : 'tabRide') + '"' +
+        ' style="width:24px;height:24px;display:block' +
+        (isNew ? ';filter:brightness(0) invert(1)' : '') + '"></span>' +
+      '</span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:16px">' + name + '</span>' +
+        '<span class="row-nav__sub">' +
+          '<span style="' + (isNew ? 'color:var(--yoxi-red);font-weight:800' : '') + '">' +
+          src + '</span> · ' + date +
+        '</span>' +
+      '</span>' +
+      '<span class="num" style="font-size:18px">' + n + '</span>' +
+    '</div>';
+  }).join('');
+
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

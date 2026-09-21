@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>這個月的路線 — yoxi 城事</title>
+<!--
+  N5 路線列表【新增】
+
+  中期目標的貨架。
+
+  每個月由 AI 從官方活動與熱點資料重新生成 —— 內容的新鮮度掛鉤真實
+  世界的變化，而不是系統自己造新東西。只要城市還在辦活動，供給就不會斷。
+  這是「明信片一個月後就無聊」這個風險的主要解法（見 plan §8 風險 2）。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="explore" data-status="light" data-time="8:13">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="explore.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">這個月的路線</h1>
+        </div>
+      </header>
+
+      <div class="scroll scroll--tabbed" style="background:var(--yoxi-mist)">
+        <div style="padding:16px; display:grid; gap:12px" id="list"></div>
+        <p style="padding:0 16px 28px; text-align:center; font-size:13px;
+                  color:var(--yoxi-slate); line-height:1.8">
+          每個月會長出新的路線。<br>沒走完的不會消失，也不用趕。
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const html = MOCK.ROUTES.map(function (r, i) {
+    let track = '';
+    for (let n = 0; n < r.total; n++) {
+      if (n) track += '<i class="track-mini__link' + (n < r.done ? ' is-done' : '') + '"></i>';
+      track += '<i class="track-mini__node' + (n < r.done ? ' is-done' : '') + '"></i>';
+    }
+    return '<a class="card" href="route.html">' +
+      '<span style="display:block;height:130px;position:relative;overflow:hidden"' +
+      ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
+      '<span style="display:block;padding:14px 16px">' +
+        '<span style="display:block;font-size:18px;font-weight:800">' + r.name + '</span>' +
+        '<span style="display:block;font-size:13px;color:var(--yoxi-slate);margin-top:3px">' +
+          r.sub + '</span>' +
+        '<span class="track-mini" style="margin-top:12px">' + track +
+          '<span style="margin-left:10px;font-size:12px;color:var(--yoxi-slate)">' +
+          '<span class="num">' + r.done + '</span>/' + r.total + '</span>' +
+        '</span>' +
+      '</span>' +
+    '</a>';
+  }).join('');
+
+  document.getElementById('list').innerHTML = html;
+  SHELL.injectArt();
+})();
+</script>
+</body>
+</html>

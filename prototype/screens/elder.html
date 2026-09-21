@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>做一張長輩圖 — yoxi 城事</title>
+<!--
+  N14 長輩圖生成【新增】★差異化
+
+  來自團隊 brainstorm 的三代分眾：
+    長輩  ── 出行累積長輩圖，成為社交資本
+    父母輩 ── 透過好友、親友觀察家庭成員動向
+    年輕人 ── 滿足被動記錄生活的需求
+
+  長輩圖是台灣文化特有的社交貨幣。它不是 meme，是長輩真實在用的問候方式。
+  把「我今天去了哪裡」自動變成一張可以傳到家族群組的圖，
+  是一個 60 歲使用者會每天打開 app 的理由。
+
+  而且它直接接上 yoxi 已有的資產：敬老愛心車隊（7 縣市）、好孕專車（5 縣市）、
+  公益接駁 53,000+ 趟、700+ 無障礙上下車點 —— 創意表現與 ESG 敘事同時得分。
+
+  同一張明信片、同一組 AI 生成資產，換一種排版就換一個世代。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 長輩圖的排版語言跟 app 其它地方完全相反：
+     大字、高飽和、置中、描邊。這是刻意的 —— 它要在 LINE 裡被看見。 */
+  .elder {
+    position: relative; aspect-ratio: 4 / 3; border-radius: var(--r-img);
+    overflow: hidden; background: var(--yoxi-cream);
+  }
+  .elder__cap {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    padding: 16px; text-align: center;
+  }
+  .elder__big {
+    font-size: 30px; font-weight: 800; line-height: 1.25; color: #FFE94A;
+    text-shadow: 2px 2px 0 #B3261E, -2px 2px 0 #B3261E,
+                 2px -2px 0 #B3261E, -2px -2px 0 #B3261E;
+  }
+  .elder__small {
+    font-size: 15px; font-weight: 800; color: #fff;
+    text-shadow: 1.5px 1.5px 0 rgba(0,0,0,.55);
+  }
+  .elder__sig {
+    position: absolute; right: 10px; bottom: 8px;
+    font-size: 11px; color: #fff; opacity: .8; font-weight: 700;
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="18:40">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="album.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">做一張圖傳給家人</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <div style="padding:16px">
+          <div class="elder" id="preview">
+            <div data-art="temple" data-seed="2" data-wide style="position:absolute; inset:0"></div>
+            <div style="position:absolute; inset:0; background:rgba(0,0,0,.18)"></div>
+            <div class="elder__cap">
+              <div class="elder__big" id="big">早安 平安喜樂</div>
+              <div class="elder__small" id="small">2026.09.21 · 新竹城隍廟</div>
+            </div>
+            <span class="elder__sig">yoxi 城事</span>
+          </div>
+
+          <p style="margin-top:10px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            用你昨天去過的地方做的。圖是 AI 畫的，不是照片。
+          </p>
+        </div>
+
+        <!-- 換一句話 -->
+        <div style="padding:0 16px 16px">
+          <div class="sec"><h2 class="sec__t" style="font-size:16px">換一句話</h2></div>
+          <div class="card">
+            <button class="row-text is-on" data-cap="早安 平安喜樂">早安 平安喜樂</button>
+            <button class="row-text" data-cap="身體健康 萬事如意">身體健康 萬事如意</button>
+            <button class="row-text" data-cap="我今天去走走了">我今天去走走了</button>
+            <button class="row-text" data-cap="有空一起來">有空一起來</button>
+          </div>
+        </div>
+
+        <!-- 換一個地方 -->
+        <div style="padding:0 16px 16px">
+          <div class="sec"><h2 class="sec__t" style="font-size:16px">換一個地方</h2></div>
+          <div class="hscroll" id="places"></div>
+        </div>
+
+        <div style="padding:0 16px 32px">
+          <a class="btn-primary" href="#">
+            <span data-icon="share" style="width:20px; height:20px; display:block;
+                  filter:brightness(0) invert(1)"></span>
+            傳到家族群組
+          </a>
+          <p style="margin-top:12px; text-align:center; font-size:12px; color:var(--yoxi-slate);
+                    line-height:1.7">
+            只有你按下傳送才會送出。你的日誌不會給任何人看。
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* 換一句話 */
+  document.querySelectorAll('[data-cap]').forEach(b => b.onclick = () => {
+    document.getElementById('big').textContent = b.dataset.cap;
+  });
+
+  /* 換一個地方：用同一批已收集的明信片資產 */
+  const done = MOCK.POSTCARDS.filter(p => p.state === 'done');
+  document.getElementById('places').innerHTML = done.map((p, i) => `
+    <button data-place="${p.art}" data-name="${p.name}" data-seed="${i}"
+            style="width:86px; flex:none; text-align:center">
+      <span style="display:block; width:86px; height:64px; border-radius:4px;
+                   overflow:hidden; position:relative"
+            data-art="${p.art}" data-seed="${i}" data-wide></span>
+      <span style="display:block; font-size:11px; font-weight:700; margin-top:5px;
+                   line-height:1.3">${p.name}</span>
+    </button>`).join('');
+  SHELL.injectArt(document.getElementById('places'));
+
+  document.querySelectorAll('[data-place]').forEach(b => b.onclick = () => {
+    const art = document.querySelector('#preview [data-art]');
+    art.innerHTML = SHELL.postcardArt(b.dataset.place, { seed: Number(b.dataset.seed), wide: true });
+    document.getElementById('small').textContent = '2026.09.21 · ' + b.dataset.name;
+  });
+})();
+</script>
+</body>
+</html>

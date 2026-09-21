@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>選單 — yoxi 城事</title>
+<!--
+  R2 側邊抽屜【改造】
+
+  唯一的改動：在「乘車設定」之後插入一項「城事設定」。
+  位置選在這裡，是因為它跟乘車設定同屬個人偏好群組。
+  其他項目的順序、文案、樣式完全沒動。
+
+  抽屜保留原本的角色：裝設定類的次級功能。
+  它不再是主導覽 —— 主導覽現在是底部 tab bar。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen" style="background:var(--map-land)">
+
+      <!-- 底下透出的地圖 -->
+      <div class="map" style="position:absolute; inset:0">
+        <svg class="map__svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="844" fill="var(--map-land)"/>
+          <g stroke="var(--map-road)" stroke-width="9" fill="none">
+            <path d="M-10 300 L400 288"/><path d="M-10 460 L400 450"/>
+            <path d="M300 -10 L288 854"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- 紅色抽屜 -->
+      <div class="drawer" style="padding-top:calc(var(--statusbar-h) + 8px)">
+        <div class="u-row" style="justify-content:flex-end">
+          <a href="home.html" style="color:#fff; padding:6px">
+            <span data-icon="close" style="width:22px; height:22px; display:block"></span>
+          </a>
+        </div>
+
+        <div class="u-row u-gap4" style="margin:8px 0 20px">
+          <span style="width:74px; height:74px; border-radius:20px; flex:none;
+                       background:rgba(255,255,255,.82); display:grid; place-items:center">
+            <span data-icon="moodGood"
+                  style="width:44px; height:44px; color:var(--yoxi-slate-lite); display:block"></span>
+          </span>
+          <span class="u-fill" style="font-size:26px; font-weight:800">Rick</span>
+          <span class="arrow arrow--onred"></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:14px; padding:14px;
+                    border-radius:6px; background:rgba(0,0,0,.12); margin-bottom:16px">
+          <span data-icon="bell" style="width:26px; height:26px; flex:none"></span>
+          <span style="flex:1; font-size:14px; line-height:1.5">綁定信用卡即可開始累積會員趟次</span>
+          <span class="arrow arrow--onred"></span>
+        </div>
+
+        <nav>
+          <a class="drawer__item" href="#">行程紀錄</a>
+          <a class="drawer__item" href="#">行程匯出</a>
+          <a class="drawer__item" href="#">付款設定</a>
+          <a class="drawer__item" href="#">乘車設定</a>
+
+          <!-- 【新增】唯一插入的一項 -->
+          <a class="drawer__item" href="settings.html" style="display:flex; align-items:center; gap:10px">
+            城事設定
+            <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:3px;
+                         background:rgba(255,255,255,.22)">新</span>
+          </a>
+
+          <a class="drawer__item" href="#">優惠券</a>
+          <a class="drawer__item" href="#">好康任務</a>
+          <a class="drawer__item" href="#">客服中心</a>
+          <a class="drawer__item" href="#">點數商城</a>
+        </nav>
+
+        <div style="padding:8px 0 20px">
+          <div style="font-size:23px; font-weight:800">和泰 Points</div>
+          <a href="points.html"
+             style="display:inline-flex; align-items:center; gap:8px; margin-top:10px;
+                    padding:6px 16px; border-radius:999px; border:1.5px solid rgba(255,255,255,.7);
+                    color:#fff; font-weight:700">
+            <span data-icon="point" style="width:18px; height:18px; display:block"></span>
+            <span class="num">50</span> 點
+          </a>
+        </div>
+
+        <div class="drawer__foot">邀請好友賺搭車金 🎁</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+</body>
+</html>

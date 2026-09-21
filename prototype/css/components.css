@@ -514,9 +514,9 @@
 .drawer__item {
   display: block;
   width: 100%;
-  padding: var(--sp-4) 0;
+  padding: 11px 0;
   text-align: left;
-  font-size: 23px;
+  font-size: 21px;
   font-weight: var(--fw-heavy);
   color: var(--yoxi-white);
 }

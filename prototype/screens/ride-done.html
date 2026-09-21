@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行程完成 — yoxi 城事</title>
+<!--
+  R6 行程完成／評分【改造】
+
+  唯一的改動：在評分「之後」加一條金色橫幅「你抵達了內灣 · 解鎖 yoxi 限定明信片」。
+
+  放在評分之後而不是之前，是刻意的 —— 不干擾核心的結算流程。
+  評分與付款是 yoxi 的既有職責，城事只在它結束之後才出現。
+
+  金色橫幅是「搭車 vs 不搭車」差異的視覺高點。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .star { width: 38px; height: 38px; }
+  .star path { fill: var(--yoxi-slate-lite); transition: fill var(--t-fast) var(--ease); }
+  .star.is-on path { fill: var(--yoxi-red); }
+</style>
+</head>
+
+<body data-status="light" data-time="14:02">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">行程完成</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 行程摘要（既有） ===== -->
+        <div style="padding:16px">
+          <div class="card">
+            <div style="height:120px; position:relative; overflow:hidden; background:var(--map-land)">
+              <svg viewBox="0 0 358 120" style="position:absolute; inset:0; width:100%; height:100%">
+                <rect width="358" height="120" fill="var(--map-land)"/>
+                <g stroke="var(--map-road)" stroke-width="7" fill="none">
+                  <path d="M-10 46 L368 38"/><path d="M-10 92 L368 86"/>
+                  <path d="M110 -10 L124 130"/><path d="M248 -10 L240 130"/>
+                </g>
+                <path d="M60 24 L130 48 L196 42 L300 96" fill="none"
+                      stroke="var(--yoxi-navy)" stroke-width="4"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="300" cy="96" r="6" fill="var(--yoxi-navy)"/>
+                <circle cx="60" cy="24" r="6" fill="var(--yoxi-red)"/>
+              </svg>
+            </div>
+
+            <div style="padding:16px">
+              <div class="u-row" style="justify-content:space-between">
+                <span style="font-weight:800">新竹市 → 內灣老街</span>
+                <span class="num" style="font-size:20px">$680</span>
+              </div>
+              <div style="margin-top:6px; font-size:13px; color:var(--yoxi-slate)">
+                13:18 – 14:00 · 28.4 公里 · 和泰 Pay 信用卡
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 評分（既有） ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="card card--pad u-center">
+            <div style="font-weight:800">這趟搭得還好嗎？</div>
+            <div style="font-size:13px; color:var(--yoxi-slate); margin-top:4px">陳先生</div>
+            <div class="u-row u-gap2" id="stars"
+                 style="justify-content:center; margin-top:14px"></div>
+          </div>
+        </div>
+
+        <!-- ===== 【新增】解鎖橫幅。在評分之後，不干擾結算。 ===== -->
+        <div style="padding:0 16px 24px">
+          <a href="unlock.html?ride=1" style="display:block; position:relative; overflow:hidden;
+             border-radius:var(--r-card); background:linear-gradient(120deg,#1B2E4A,#0A1A30);
+             box-shadow:inset 0 0 0 2px var(--gold)">
+            <span style="position:absolute; inset:0; background:linear-gradient(105deg,
+                  transparent 42%, rgba(201,162,39,.22) 50%, transparent 58%)"></span>
+            <span style="position:relative; display:flex; align-items:center; gap:14px; padding:16px">
+              <span style="width:54px; height:72px; border-radius:4px; overflow:hidden;
+                           position:relative; flex:none; box-shadow:0 0 0 2px var(--gold)"
+                    data-art="oldst" data-seed="7"></span>
+              <span style="flex:1; min-width:0; color:#fff">
+                <span style="display:block; font-size:11px; font-weight:800; letter-spacing:.08em;
+                             color:var(--gold-lite)">yoxi 限定版</span>
+                <span style="display:block; font-size:16px; font-weight:800; margin-top:3px;
+                             line-height:1.35">你抵達了內灣</span>
+                <span style="display:block; font-size:13px; opacity:.78; margin-top:2px">
+                  解鎖這個地方的明信片
+                </span>
+              </span>
+              <span class="arrow arrow--onred"></span>
+            </span>
+          </a>
+        </div>
+
+        <div style="padding:0 16px 32px">
+          <a class="btn-primary" href="home.html">完成</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const wrap = document.getElementById('stars');
+  wrap.innerHTML = Array.from({ length: 5 }, (_, i) => `
+    <button class="star ${i < 5 ? 'is-on' : ''}" data-i="${i}">
+      <svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9Z"/></svg>
+    </button>`).join('');
+
+  wrap.querySelectorAll('.star').forEach(s => s.onclick = () => {
+    const n = Number(s.dataset.i);
+    wrap.querySelectorAll('.star').forEach((x, i) => x.classList.toggle('is-on', i <= n));
+  });
+})();
+</script>
+</body>
+</html>

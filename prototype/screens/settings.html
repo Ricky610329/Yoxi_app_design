@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>城事設定 — yoxi 城事</title>
+<!--
+  N15 城事設定【新增】
+
+  把資料應用與隱私講清楚 —— 簡報裡的隱私敘事在這裡實體化。
+
+  三件事必須看得見：
+  1. 推播一天最多兩則，而且說出上限（反任務化的推播節流）
+  2. 每一項資料的用途逐條列出，各自可關
+  3. 隱私分軌：日誌完全私密，只有週回顧與明信片可分享
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .sw-toggle {
+    width: 50px; height: 30px; border-radius: 999px; flex: none;
+    background: var(--yoxi-slate-lite); position: relative;
+    transition: background var(--t-fast) var(--ease);
+  }
+  .sw-toggle::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 24px; height: 24px; border-radius: 50%; background: #fff;
+    transition: transform var(--t-fast) var(--ease);
+  }
+  .sw-toggle.is-on { background: var(--yoxi-navy); }
+  .sw-toggle.is-on::after { transform: translateX(20px); }
+</style>
+</head>
+
+<body data-status="light" data-time="21:40">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">城事設定</h1>
+        <p class="hdr-red__sub">決定我們用你的哪些資料，以及什麼時候找你</p>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 推播 ===== -->
+        <div style="padding:16px">
+          <div class="sec"><h2 class="sec__t" style="font-size:16px">什麼時候找你</h2></div>
+          <div class="card">
+            <div class="row-nav">
+              <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
+                <span data-icon="sun" style="width:24px; height:24px; display:block"></span>
+              </span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">早上的地方</span>
+                <span class="row-nav__sub">08:00</span>
+              </span>
+              <button class="sw-toggle is-on" data-toggle></button>
+            </div>
+            <div class="row-nav">
+              <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
+                <span data-icon="steps" style="width:24px; height:24px; display:block"></span>
+              </span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">晚上的回顧</span>
+                <span class="row-nav__sub">21:30</span>
+              </span>
+              <button class="sw-toggle is-on" data-toggle></button>
+            </div>
+          </div>
+
+          <div class="card card--pad" style="margin-top:8px; background:var(--yoxi-cream); border:0">
+            <div style="font-size:13px; line-height:1.75">
+              <b>一天最多兩則。</b>
+              我們不會為了讓你多打開 app 而多傳訊息給你。
+              兩則都可以各自關掉，關掉之後城事還是照常運作。
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 資料 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="sec">
+            <h2 class="sec__t" style="font-size:16px">我們用你的哪些資料</h2>
+            <span class="sec__m">都可以單獨關掉</span>
+          </div>
+          <div class="card" id="dataList"></div>
+        </div>
+
+        <!-- ===== 隱私分軌 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="card card--pad">
+            <div class="u-row u-gap3" style="margin-bottom:12px">
+              <span data-icon="lock" style="width:22px; height:22px; flex:none;
+                    color:var(--yoxi-navy)"></span>
+              <span style="font-weight:800">誰看得到什麼</span>
+            </div>
+            <div style="display:grid; gap:10px; font-size:14px; line-height:1.6">
+              <div class="u-row u-gap3">
+                <span style="flex:none; width:64px; font-weight:800; color:var(--yoxi-red)">只有你</span>
+                <span>日誌、心情、照片、走過的路線</span>
+              </div>
+              <div style="height:1px; background:var(--yoxi-line)"></div>
+              <div class="u-row u-gap3">
+                <span style="flex:none; width:64px; font-weight:800">你可分享</span>
+                <span>明信片、獎章、週回顧、長輩圖</span>
+              </div>
+            </div>
+            <p style="margin-top:12px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+              日誌沒有分享鍵，這是刻意的。要分享的東西跟要保護的東西，
+              從一開始就分開放。
+            </p>
+          </div>
+        </div>
+
+        <div style="padding:0 16px 32px">
+          <button class="btn-ghost" style="border-color:var(--yoxi-red); color:var(--yoxi-red)">
+            清除我的足跡
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const DATA = [
+    ['place',  '常用地點',  '用來判斷哪些地方你每天經過卻沒進去過', true],
+    ['sun',    '常用時段',  '用來決定什麼時候推薦比較不打擾', true],
+    ['steps',  '步數',      '用來畫今天的回顧的路徑，資料留在手機上', true],
+    ['camera', '相簿',      '只在今天的回顧才讀取當天照片，不會上傳', true],
+    ['route',  '行程紀錄',  '用來知道你搭車去過哪裡', false],
+  ];
+
+  document.getElementById('dataList').innerHTML = DATA.map(([icon, name, why, on]) => `
+    <div class="row-nav">
+      <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
+        <span data-icon="${icon}" style="width:24px; height:24px; display:block"></span>
+      </span>
+      <span class="row-nav__body">
+        <span class="row-nav__title" style="font-size:16px">${name}</span>
+        <span class="row-nav__sub">${why}</span>
+      </span>
+      <button class="sw-toggle ${on ? 'is-on' : ''}" data-toggle></button>
+    </div>`).join('');
+
+  SHELL.injectIcons();
+  document.querySelectorAll('[data-toggle]').forEach(b =>
+    b.onclick = () => b.classList.toggle('is-on'));
+})();
+</script>
+</body>
+</html>

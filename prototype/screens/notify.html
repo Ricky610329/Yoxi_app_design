@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通知中心 — yoxi 城事</title>
+<!--
+  R7 通知中心【改造】
+
+  新增「今天的地方」與「回顧完成」兩類通知。
+
+  刻意用地點釘與明信片圖示，不用禮物圖示 ——
+  避免城事的內容被視覺歸類進促銷／任務。
+  促銷類的通知仍然保留紅色圖示磚，兩者一眼分得出來。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:38">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="home.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">通知中心</h1>
+        <div class="hdr-red__pills">
+          <div class="pill-group">
+            <button class="pill is-active">最新消息</button>
+            <button class="pill">個人通知</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll sheet-top" style="margin-top:-16px">
+
+        <a class="row-nav" href="explore.html">
+          <span class="tile-icon"><span data-icon="place"></span></span>
+          <span class="row-nav__body">
+            <span class="row-nav__title" style="font-size:16px">今天的地方</span>
+            <span class="row-nav__sub">水利路的老玻璃窯 · 離你 900 公尺</span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <a class="row-nav" href="lookback.html">
+          <span class="tile-icon"><span data-icon="postcard"></span></span>
+          <span class="row-nav__body">
+            <span class="row-nav__title" style="font-size:16px">今天的回顧準備好了</span>
+            <span class="row-nav__sub">走了 6,240 步，經過 3 個地方</span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <a class="row-nav" href="points.html">
+          <span class="tile-icon"><span data-icon="point"></span></span>
+          <span class="row-nav__body">
+            <span class="row-nav__title" style="font-size:16px">和泰 Points +50</span>
+            <span class="row-nav__sub">城事解鎖回饋 · 內灣老街</span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <div style="height:8px; background:var(--yoxi-mist)"></div>
+
+        <a class="row-nav" href="#">
+          <span class="tile-icon tile-icon--red">
+            <span data-icon="bell" style="filter:brightness(0) invert(1)"></span>
+          </span>
+          <span class="row-nav__body">
+            <span class="row-nav__title" style="font-size:16px">點從天降</span>
+            <span class="row-nav__sub">趟趟送最高 99 點</span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <a class="row-nav" href="#">
+          <span class="tile-icon tile-icon--red">
+            <span data-icon="bell" style="filter:brightness(0) invert(1)"></span>
+          </span>
+          <span class="row-nav__body">
+            <span class="row-nav__title" style="font-size:16px">月來月好運</span>
+            <span class="row-nav__sub">搭 1 趟贈次月 88 折券 1 張</span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+</body>
+</html>

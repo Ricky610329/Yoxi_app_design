@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>城市足跡 — yoxi 城事</title>
+<!--
+  N7 霧地圖（城市足跡）【新增】
+
+  讓「去過」變成一張會長大的畫。
+
+  不是進度條百分比，是你的地圖慢慢長出顏色 —— 時間越久越有價值，
+  這是長期動機的載體。
+
+  已探索的顏色用奶油色（#FBEBDF），不另創第四個品牌色。Pikmin Bloom
+  用綠色，但 yoxi 只有紅、墨藍、奶油三個品牌色，再加一個綠會讓整個
+  app 看起來像兩個團隊做的。
+
+  褪色規則：90 天未回訪的區塊顏色轉淡，但明信片永遠不會消失。
+  地圖是活的，收藏是永久的 —— 痕跡會褪色，資產不會。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="album.html">
+            <span data-icon="close"></span>
+          </a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">城市足跡</h1>
+        </div>
+        <div class="hdr-red__pills" style="margin-top:12px">
+          <div class="pill-group">
+            <button class="pill is-active">全部</button>
+            <button class="pill">這個月</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===== 霧地圖 ===== -->
+      <div class="fogmap u-fill" style="position:relative; min-height:0; overflow:hidden">
+        <svg id="fog" viewBox="0 0 390 420" preserveAspectRatio="xMidYMid slice"
+             style="position:absolute; inset:0; width:100%; height:100%"></svg>
+
+        <!-- 地名 -->
+        <svg viewBox="0 0 390 420" preserveAspectRatio="xMidYMid slice"
+             style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none">
+          <g font-family="var(--font-sans)" font-weight="800" fill="#062040" opacity=".55">
+            <text x="150" y="150" font-size="13">北區</text>
+            <text x="196" y="230" font-size="13">東區</text>
+            <text x="110" y="300" font-size="13">香山區</text>
+            <text x="262" y="120" font-size="12" opacity=".5">竹北</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- ===== 底部 sheet ===== -->
+      <div class="sheet" style="max-height:44%; overflow-y:auto">
+        <div class="sheet__handle"></div>
+
+        <div class="u-row" style="justify-content:space-between; align-items:flex-end">
+          <span>
+            <span style="display:block; font-size:32px; font-weight:800; font-style:italic;
+                         line-height:1">14%</span>
+            <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+              的新竹被你點亮了
+            </span>
+          </span>
+          <span class="fogmap__legend">
+            <span class="fogmap__key">
+              <i class="fogmap__swatch" style="background:var(--map-explored)"></i>去過
+            </span>
+            <span class="fogmap__key">
+              <i class="fogmap__swatch" style="background:var(--map-fog)"></i>還沒
+            </span>
+          </span>
+        </div>
+
+        <!-- 你的城市顏色：AI 依去過的地點類型配出的色票 -->
+        <div style="margin-top:18px">
+          <div class="sec" style="margin-bottom:8px">
+            <h2 class="sec__t" style="font-size:16px">你的城市顏色</h2>
+            <span class="sec__m">由你去過的地方決定</span>
+          </div>
+          <div class="citycolor" id="colors"></div>
+          <p style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            偏暖，偏舊。你去的地方多半是老房子、市場與河岸。
+          </p>
+        </div>
+
+        <!-- 褪色規則的說明 -->
+        <div class="card card--pad" style="margin-top:18px; background:var(--yoxi-cream); border:0">
+          <div class="u-row u-gap3">
+            <span data-icon="postcard" style="width:22px; height:22px; flex:none"></span>
+            <span style="font-size:13px; line-height:1.7">
+              超過 90 天沒回去的地方，顏色會慢慢變淡。
+              但明信片不會消失 —— 地圖是活的，收藏是永久的。
+            </span>
+          </div>
+        </div>
+
+        <div style="height:24px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* 網格：8 欄 × 10 列 */
+  const rows = MOCK.FOG;
+  const cols = rows[0].length;
+  const w = 390 / cols;
+  const h = 420 / rows.length;
+
+  const cells = rows.flatMap((row, y) => row.map((state, x) => {
+    const cls = { seen: 'fogmap__cell--seen', fade: 'fogmap__cell--fade', fog: 'fogmap__cell--fog' }[state];
+    return `<rect class="fogmap__cell ${cls}"
+              x="${x * w}" y="${y * h}" width="${w + .5}" height="${h + .5}"/>`;
+  })).join('');
+
+  /* 道路疊在色塊之上，讓它還是一張「地圖」而不是棋盤 */
+  const roads = `
+    <g stroke="#FFF" stroke-width="7" fill="none" opacity=".9">
+      <path d="M-10 168 L400 156"/><path d="M-10 262 L400 252"/>
+      <path d="M118 -10 L136 430"/><path d="M262 -10 L254 430"/>
+    </g>
+    <g stroke="#C9D8EC" stroke-width="9" fill="none" opacity=".85">
+      <path d="M-20 96 Q80 122 170 96 T420 112"/>
+    </g>`;
+
+  document.getElementById('fog').innerHTML = cells + roads;
+
+  document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
+    .map(c => `<span class="citycolor__band" style="background:${c}"></span>`).join('');
+})();
+</script>
+</body>
+</html>

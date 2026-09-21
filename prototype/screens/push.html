@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>推播 — yoxi 城事</title>
+<!--
+  N16 模擬推播浮層【新增 · demo 工具】
+
+  非產品畫面。用來在 demo 時觸發流程 A 與流程 C 的起點。
+
+  推播深連結直接進探索首頁或回顧，不經過叫車首頁 ——
+  預設落點是叫車，被召喚的落點才是城事。
+  這是「提高開啟頻率」指標的實際機制。
+
+  推播一天最多兩則（早上的地方、晚上的回顧），各自可獨立關閉，
+  設定頁明講上限。見 plan §8 風險 1 的推播節流。
+
+  ?when=morning（預設）｜?when=night
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <div class="pushmock" style="position:absolute; inset:0">
+        <div class="pushmock__clock">
+          <div class="pushmock__time" id="clock">8:10</div>
+          <div class="pushmock__date">9月21日 星期日</div>
+        </div>
+
+        <a class="pushmock__card" id="card" href="explore.html">
+          <span class="pushmock__app">y</span>
+          <span style="flex:1; min-width:0">
+            <span class="pushmock__t">yoxi 城事</span>
+            <span class="pushmock__b" id="body"></span>
+          </span>
+        </a>
+
+        <p style="margin-top:auto; margin-bottom:48px; text-align:center;
+                  color:#fff; opacity:.45; font-size:12px">
+          demo 用的鎖定畫面。點通知進入 app。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const night = new URLSearchParams(location.search).get('when') === 'night';
+
+  document.getElementById('clock').textContent = night ? '21:30' : '8:10';
+  document.getElementById('card').href = night ? 'lookback.html' : 'explore.html';
+  document.getElementById('body').textContent = night
+    ? '今天走了 6,240 步，經過 3 個地方。來看看今天。'
+    : '今天的地方離你 900 公尺 —— 這條巷子 1970 年是全街最亮的地方。';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>沿著鐵道走 — yoxi 城事</title>
+<!--
+  N6 路線詳情【新增】★核心
+
+  回答「這個月為什麼還在玩」。
+
+  每日一則解決短期動機（今天為什麼打開），主題路線解決長期動機
+  （這個月為什麼還在玩）—— 直接對應題目原文的「動機持久：必須設計
+  長期使用動機，避免淪為一次性或短期嚐鮮功能」。
+
+  底部那句「沒有期限，也不用照順序」是反任務化的宣告：
+  沒有倒數、沒有限量、沒有先後強制。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="explore" data-status="light" data-time="8:12">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll scroll--tabbed">
+
+        <!-- ===== 封面 ===== -->
+        <div style="position:relative; height:240px; overflow:hidden">
+          <div data-art="rail" data-seed="3" data-wide style="position:absolute; inset:0"></div>
+          <span class="ai-mark" style="top:calc(var(--statusbar-h) + 8px); right:16px;
+                left:auto; bottom:auto">AI 生成示意</span>
+          <span style="position:absolute; inset:0; background:linear-gradient(to top,
+                rgba(6,32,64,.94), rgba(6,32,64,.3) 55%, transparent 80%)"></span>
+
+          <a class="fab" href="explore.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; padding:20px 16px; color:#fff">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.85">
+              這個月的路線
+            </div>
+            <h1 style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px">
+              沿著鐵道走
+            </h1>
+            <div style="font-size:15px; opacity:.9; margin-top:4px">內灣線的六個站</div>
+          </div>
+        </div>
+
+        <!-- ===== 進度 ===== -->
+        <div style="padding:16px">
+          <div class="card card--pad u-row u-gap4">
+            <span style="position:relative; width:52px; height:52px; flex:none">
+              <svg class="ring" width="52" height="52" viewBox="0 0 52 52">
+                <circle class="ring__track" cx="26" cy="26" r="22"/>
+                <circle class="ring__bar" cx="26" cy="26" r="22"
+                        stroke-dasharray="138.2" stroke-dashoffset="92.1"/>
+              </svg>
+              <span style="position:absolute; inset:0; display:grid; place-items:center;
+                           font-size:13px; font-weight:800">
+                <span><span class="num">2</span>/6</span>
+              </span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">已經走過兩站</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                慢慢走，沒有期限
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 站點列表 ===== -->
+        <div style="padding:0 16px">
+          <div class="route-track" id="track"></div>
+        </div>
+
+        <!-- ===== 下一站 ===== -->
+        <div style="padding:8px 16px 0">
+          <div class="card" style="border-color:var(--yoxi-navy); border-width:1.5px">
+            <div style="padding:14px 16px 0; font-size:12px; font-weight:800;
+                        letter-spacing:.08em; color:var(--yoxi-red)">下一站</div>
+            <a class="row-nav" href="place.html?id=neiwan" style="padding:10px 16px 14px">
+              <span style="width:52px; height:68px; border-radius:4px; overflow:hidden;
+                           position:relative; flex:none;
+                           filter:grayscale(1) contrast(.72) brightness(1.16)"
+                    data-art="oldst" data-seed="7"></span>
+              <span class="row-nav__body">
+                <span class="row-nav__title">內灣老街</span>
+                <span class="row-nav__sub">28 公里 · 走路到不了，這一段要搭車</span>
+              </span>
+              <span class="arrow"></span>
+            </a>
+            <div style="padding:0 16px 16px">
+              <a class="btn-primary" href="place.html?id=neiwan">用 yoxi 前往</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 集滿可得 ===== -->
+        <div style="padding:20px 16px 0">
+          <div class="sec"><h2 class="sec__t">六站都走過會得到</h2></div>
+          <div class="card card--pad u-row u-gap4">
+            <span class="badge badge--locked" style="width:auto">
+              <span class="badge__disc"><span data-icon="route"></span></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">〈內灣線全線〉</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate);
+                           margin-top:4px; line-height:1.6">
+                你走完了內灣線的每一個站。
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 反任務化的宣告 ===== -->
+        <p style="padding:20px 16px 28px; text-align:center;
+                  font-size:13px; color:var(--yoxi-slate)">
+          沒有期限，也不用照順序。
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const R = MOCK.ROUTES[0];
+
+  document.getElementById('track').innerHTML = R.stops.map((s, i) => {
+    const done = s.state === 'done';
+    const next = s.state === 'next';
+    return `
+      <div class="route-track__stop ${done ? 'is-done' : ''} ${next ? 'is-next' : ''}">
+        <span class="route-track__rail"><span class="route-track__node"></span></span>
+        <a class="route-track__body" href="${next ? 'place.html?id=neiwan' : '#'}">
+          <span class="route-track__thumb ${done ? '' : 'is-locked'}"
+                style="position:relative; ${done ? '' : 'filter:grayscale(1) contrast(.72) brightness(1.16)'}"
+                data-art="${s.art}" data-seed="${i + 2}"></span>
+          <span style="flex:1; min-width:0">
+            <span style="display:block; font-weight:800; line-height:1.35">${s.name}</span>
+            <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+              ${done ? '已收集' : (s.dist / 1000).toFixed(0) + ' km'}${s.note ? ' · ' + s.note : ''}
+            </span>
+          </span>
+          ${next ? '<span class="arrow"></span>' : ''}
+        </a>
+      </div>`;
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

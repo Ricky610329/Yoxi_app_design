@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>yoxi 城事 — UI 原型</title>
+<!--
+  原型總覽。決賽 demo 的入口。
+
+  直接用瀏覽器開啟即可，不需要起伺服器。
+-->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/chengshi.css">
+<style>
+  body { background: var(--yoxi-mist); }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 48px 20px 80px; }
+
+  .masthead { margin-bottom: 40px; }
+  .masthead__kicker {
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    background: var(--yoxi-red); color: #fff;
+    font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  }
+  .masthead__title {
+    font-size: 40px; font-weight: 800; line-height: 1.15; margin-top: 16px;
+  }
+  .masthead__sub {
+    margin-top: 12px; font-size: 17px; color: var(--yoxi-slate);
+    line-height: 1.7; max-width: 46em;
+  }
+
+  .flow {
+    background: #fff; border-radius: var(--r-card);
+    border: 1px solid var(--yoxi-line); overflow: hidden; margin-bottom: 16px;
+  }
+  .flow__head { padding: 18px 20px 14px; }
+  .flow__tag {
+    font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red);
+  }
+  .flow__name { font-size: 20px; font-weight: 800; margin-top: 4px; }
+  .flow__why { font-size: 14px; color: var(--yoxi-slate); margin-top: 6px; line-height: 1.65; }
+  .flow__steps {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 0 20px 18px;
+  }
+  .step {
+    display: inline-flex; align-items: center; height: 36px; padding: 0 14px;
+    border-radius: 999px; background: var(--yoxi-mist);
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+  }
+  .step:hover { background: var(--yoxi-navy); color: #fff; }
+  .step--go { background: var(--yoxi-navy); color: #fff; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;
+  }
+  .tile {
+    display: block; padding: 14px 16px; border-radius: var(--r-card);
+    background: #fff; border: 1px solid var(--yoxi-line);
+  }
+  .tile:hover { border-color: var(--yoxi-navy); }
+  .tile__id { font-size: 11px; font-weight: 800; color: var(--yoxi-slate); font-style: italic; }
+  .tile__n { font-weight: 800; margin-top: 2px; }
+  .tile__k {
+    display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 800;
+  }
+  .k-keep { background: var(--yoxi-mist);  color: var(--yoxi-slate); }
+  .k-mod  { background: var(--yoxi-cream); color: #8A5A1E; }
+  .k-new  { background: var(--yoxi-red);   color: #fff; }
+
+  .sec-h { font-size: 22px; font-weight: 800; margin: 40px 0 6px; }
+  .sec-p { color: var(--yoxi-slate); margin-bottom: 18px; line-height: 1.7; }
+
+  .note {
+    margin-top: 40px; padding: 20px; border-radius: var(--r-card);
+    background: #fff; border: 1px solid var(--yoxi-line);
+    font-size: 14px; line-height: 1.85;
+  }
+  .note b { display: block; margin-bottom: 6px; }
+  .swatches { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+  .sw { width: 52px; text-align: center; font-size: 10px; color: var(--yoxi-slate); }
+  .sw i { display: block; height: 40px; border-radius: 4px; border: 1px solid rgba(0,0,0,.08); }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="masthead__kicker">2026 和泰 AI 黑客松 · yoxi</span>
+    <h1 class="masthead__title">yoxi 城事</h1>
+    <p class="masthead__sub">
+      把散落的在地資訊與活動，經 AI 整理成有敘事的地方內容，再轉成探索的動機。
+      使用者不是在 app 上「看資訊」，而是被動機推著去現場。走過的地方沉澱成明信片與獎章。
+      <br><br>
+      <b>不搭車，也打開 yoxi。</b>
+    </p>
+  </header>
+
+  <h2 class="sec-h">三條 demo 流程</h2>
+  <p class="sec-p">每一條都可以完整點完，中途不會斷。</p>
+
+  <div class="flow">
+    <div class="flow__head">
+      <div class="flow__tag">流程 A</div>
+      <div class="flow__name">不搭車的日常</div>
+      <p class="flow__why">
+        要證明的：不搭車也玩得下去、AI 推薦有個人化依據、動機來自內容而不是獎勵。
+      </p>
+    </div>
+    <div class="flow__steps">
+      <a class="step step--go" href="screens/push.html">▶ 從早上的推播開始</a>
+      <a class="step" href="screens/explore.html">探索首頁</a>
+      <a class="step" href="screens/place.html">地方詳情</a>
+      <a class="step" href="screens/going.html">前往中</a>
+      <a class="step" href="screens/unlock.html">抵達解鎖</a>
+      <a class="step" href="screens/album.html">收藏</a>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="flow__head">
+      <div class="flow__tag">流程 B</div>
+      <div class="flow__name">搭車的轉換</div>
+      <p class="flow__why">
+        要證明的：探索會直接產生訂單、獨佔內容讓搭車比走路多拿到東西、點數回流和泰生態系。
+      </p>
+    </div>
+    <div class="flow__steps">
+      <a class="step step--go" href="screens/route.html">▶ 從路線詳情開始</a>
+      <a class="step" href="screens/place.html?id=neiwan">內灣（28km，走不到）</a>
+      <a class="step" href="screens/ride.html">行程中</a>
+      <a class="step" href="screens/ride-done.html">行程完成</a>
+      <a class="step" href="screens/unlock.html?ride=1">限定版解鎖</a>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="flow__head">
+      <div class="flow__tag">流程 C</div>
+      <div class="flow__name">晚上的回顧</div>
+      <p class="flow__why">
+        要證明的：90% 自動 + 10% 人工的低負擔儀式、隱私分軌、移動自動沉澱成資產。
+      </p>
+    </div>
+    <div class="flow__steps">
+      <a class="step step--go" href="screens/push.html?when=night">▶ 從晚上的推播開始</a>
+      <a class="step" href="screens/lookback.html">每日回顧四幕</a>
+      <a class="step" href="screens/album.html">收藏</a>
+    </div>
+  </div>
+
+  <h2 class="sec-h">全部畫面</h2>
+  <p class="sec-p">
+    <span class="tile__k k-keep">沿用</span> 原封不動 ·
+    <span class="tile__k k-mod">改造</span> 既有畫面的小幅修改 ·
+    <span class="tile__k k-new">新增</span> 全新畫面
+  </p>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="note">
+    <b>設計立場</b>
+    尊重 yoxi 原有設計，在上面疊加，只在他們的設計確實有問題時才改動。
+    叫車主畫面的收合態 sheet 一個像素都沒動，叫車關鍵路徑的 tap 數與現況相同。
+    唯一的結構性改動是新增底部 tab bar —— yoxi 是少數還在用漢堡抽屜當主導覽的大型叫車 App
+    （Uber、55688、LINE GO 都已是 bottom tab），這也是「找不到優惠券」等抱怨的來源。
+
+    <div class="swatches" style="margin-top:16px">
+      <span class="sw"><i style="background:#FF2E1A"></i>主紅</span>
+      <span class="sw"><i style="background:#F14A42"></i>logo 紅</span>
+      <span class="sw"><i style="background:#062040"></i>墨藍</span>
+      <span class="sw"><i style="background:#FBEBDF"></i>奶油</span>
+      <span class="sw"><i style="background:#EAF1F5"></i>霧</span>
+      <span class="sw"><i style="background:#778AA4"></i>次要</span>
+      <span class="sw"><i style="background:#C9A227"></i>限定金</span>
+    </div>
+    色值取自 yoxi 官方 logo SVG 原始碼、App icon 與官方截圖的像素分析。
+    <b style="margin-top:12px">顏色紀律</b>
+    紅色只負責品牌情緒（頁首、抽屜、地圖 pin），海軍藍只負責「你要按的東西」。
+    這是 yoxi 現有設計的核心分工，新畫面不得破壞。
+  </div>
+
+</div>
+
+<script>
+const SCREENS = [
+  ['R1', '叫車首頁',      'mod',  'screens/home.html'],
+  ['R5', '行程中',        'mod',  'screens/ride.html'],
+  ['R6', '行程完成',      'mod',  'screens/ride-done.html'],
+  ['N1', '探索首頁',      'new',  'screens/explore.html'],
+  ['N2', '地方詳情',      'new',  'screens/place.html'],
+  ['N2', '地方詳情（遠）', 'new',  'screens/place.html?id=neiwan'],
+  ['N4', '前往中',        'new',  'screens/going.html'],
+  ['N6', '路線詳情',      'new',  'screens/route.html'],
+  ['N8', '收藏首頁',      'new',  'screens/album.html'],
+  ['N9', '抵達解鎖',      'new',  'screens/unlock.html'],
+  ['N9', '解鎖（限定版）', 'new',  'screens/unlock.html?ride=1'],
+  ['N12','每日回顧',      'new',  'screens/lookback.html'],
+  ['N16','模擬推播',      'new',  'screens/push.html'],
+  ['N7', '霧地圖',        'new',  'screens/fogmap.html'],
+  ['N14','長輩圖',        'new',  'screens/elder.html'],
+  ['N5', '路線列表',      'new',  'screens/routes.html'],
+  ['N15','城事設定',      'new',  'screens/settings.html'],
+  ['R2', '側邊抽屜',      'mod',  'screens/drawer.html'],
+  ['R7', '通知中心',      'mod',  'screens/notify.html'],
+  ['R9', '和泰 Points',   'mod',  'screens/points.html'],
+  ['R3', '設定上車地點',  'keep', 'screens/pickup.html'],
+];
+
+const LABEL = { keep: '沿用', mod: '改造', new: '新增' };
+
+document.getElementById('grid').innerHTML = SCREENS.map(([id, name, kind, href]) => `
+  <a class="tile" href="${href}">
+    <div class="tile__id">${id}</div>
+    <div class="tile__n">${name}</div>
+    <span class="tile__k k-${kind}">${LABEL[kind]}</span>
+  </a>`).join('');
+</script>
+</body>
+</html>

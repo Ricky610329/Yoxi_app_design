@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行程中 — yoxi 城事</title>
+<!--
+  R5 媒合中／行程中【改造】
+
+  唯一的改動：司機資訊卡下方多一張「可收合」的車程內容卡。
+  預設收合，位階明確低於司機資訊，不與叫車主流程爭搶。
+
+  為什麼放這裡：車程中是整段體驗裡唯一「使用者被困住而且無聊」的時段，
+  是 yoxi 獨佔內容最自然的落點，也是「搭車才有」的具體證據。
+
+  tab bar 在此隱藏（body 未標 data-tab）——  進入叫車流程後全螢幕，
+  杜絕行程中誤觸跳走。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="dark" data-time="13:18">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="map">
+        <svg class="map__svg" viewBox="0 0 390 480" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="480" fill="var(--map-land)"/>
+          <path d="M-20 150 Q90 176 180 148 T420 168" stroke="var(--map-water)"
+                stroke-width="11" fill="none" opacity=".8"/>
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-10 236 L400 224" stroke-width="10"/>
+            <path d="M-10 356 L400 346" stroke-width="9"/>
+            <path d="M104 -10 L126 490" stroke-width="10"/>
+            <path d="M270 -10 L258 490" stroke-width="9"/>
+          </g>
+          <g stroke="var(--map-road-minor)" stroke-width="5" fill="none">
+            <path d="M-10 296 L400 286"/><path d="M-10 420 L400 412"/>
+            <path d="M192 -10 L206 490"/>
+          </g>
+
+          <!-- 行程路線：新竹市區 → 內灣（台三線） -->
+          <path d="M200 400 L188 300 L150 236 L96 150 L60 70" fill="none"
+                stroke="var(--yoxi-navy)" stroke-width="6"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+
+        <!-- 車輛 -->
+        <div class="pin" style="left:38%; top:52%">
+          <span class="pin__drop" style="background:var(--yoxi-navy)">
+            <span data-icon="tabRide" style="width:26px;height:26px;color:#fff;display:block"></span>
+          </span>
+        </div>
+
+        <!-- 目的地 -->
+        <div class="pin pin--red" style="left:16%; top:18%">
+          <span class="pin__label">內灣老街</span>
+          <span class="pin__drop"><span data-icon="place"></span></span>
+        </div>
+      </div>
+
+      <div class="sheet">
+        <div class="sheet__handle"></div>
+
+        <!-- ===== 媒合中 ===== -->
+        <div id="matching">
+          <div class="u-row u-gap4" style="padding:8px 0 20px">
+            <span class="tile-icon" style="width:48px; height:48px; border-radius:18px">
+              <span data-icon="tabRide" style="width:26px;height:26px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-size:20px; font-weight:800">正在為你找車…</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                週日下午往內灣方向回程車較多
+              </span>
+            </span>
+          </div>
+          <button class="btn-ghost">取消叫車</button>
+        </div>
+
+        <!-- ===== 行程中 ===== -->
+        <div id="onTrip" class="u-hidden">
+          <!-- 司機資訊：位階最高，完全沒動 -->
+          <div class="u-row u-gap4" style="padding-bottom:14px">
+            <span class="tile-icon" style="width:52px; height:52px; border-radius:20px">
+              <span data-icon="hail" style="width:28px;height:28px;display:block;
+                    filter:invert(9%) sepia(24%) saturate(3000%) hue-rotate(190deg)"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-size:18px; font-weight:800">陳先生 · AHB-2836</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                TOYOTA Corolla Cross · 白色
+              </span>
+            </span>
+            <span style="text-align:right">
+              <span style="display:block; font-size:22px; font-weight:800; font-style:italic;
+                           line-height:1">42</span>
+              <span style="display:block; font-size:11px; color:var(--yoxi-slate)">分鐘後抵達</span>
+            </span>
+          </div>
+
+          <!-- 【新增】車程中的內容卡。預設收合，位階低於司機資訊。 -->
+          <div class="card" style="background:var(--yoxi-cream); border:0">
+            <button class="why__head" id="storyToggle" style="padding:14px 16px">
+              <span class="u-row u-gap3">
+                <span data-icon="postcard" style="width:22px; height:22px; flex:none"></span>
+                <span style="text-align:left">
+                  <span style="display:block; font-size:12px; color:var(--yoxi-slate);
+                               font-weight:700">這趟路上的 12 分鐘</span>
+                  <span style="display:block; margin-top:1px">
+                    為什麼內灣線是台灣最後一條「為了木材」蓋的鐵路
+                  </span>
+                </span>
+              </span>
+              <span class="arrow" id="storyArrow"></span>
+            </button>
+            <div class="u-hidden" id="storyBody" style="padding:0 16px 16px">
+              <p class="story__text" style="font-size:15px">
+                你現在正在走的這條台三線，幾乎跟內灣線平行。1950 年代，
+                這條路上每天有上百輛卡車，載著從尖石砍下來的檜木往下走。
+                鐵路蓋好之後卡車少了一半，內灣車站的月台堆滿木頭，
+                站務員說整個夏天都聞得到樹脂的味道。
+              </p>
+              <p class="story__note">
+                只有搭 yoxi 前往才看得到這一段。
+              </p>
+            </div>
+          </div>
+
+          <div class="u-row u-gap3" style="margin-top:14px">
+            <button class="btn-ghost">聯絡司機</button>
+            <!-- demo 專用：正式版由抵達自動觸發 -->
+            <a class="demo-btn" href="ride-done.html" style="width:auto; padding:0 16px">
+              demo：抵達
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* 媒合 → 行程中 */
+  setTimeout(() => {
+    document.getElementById('matching').classList.add('u-hidden');
+    document.getElementById('onTrip').classList.remove('u-hidden');
+  }, 1800);
+
+  const head = document.getElementById('storyToggle');
+  const body = document.getElementById('storyBody');
+  const arw  = document.getElementById('storyArrow');
+  head.onclick = () => {
+    const open = !body.classList.contains('u-hidden');
+    body.classList.toggle('u-hidden', open);
+    arw.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+})();
+</script>
+</body>
+</html>

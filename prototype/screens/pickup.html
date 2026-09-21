@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>設定上車地點 — yoxi 城事</title>
+<!--
+  R3 設定上車地點【沿用】
+
+  完全沒有改動。照 IMG_9571 還原，作為設計系統的校準基準之一 ——
+  這一頁的元件密度高（搜尋框、地址建議列、斜向紅尾箭頭、分隔線），
+  還原度可以直接驗收。
+
+  tab bar 在此隱藏（body 未標 data-tab）：進入叫車流程後全螢幕，
+  這是「叫車沒有變難用」四條承諾中的第三條。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="dark" data-time="21:37">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen" style="background:var(--yoxi-mist)">
+
+      <header class="hdr-plain" style="padding-bottom:12px">
+        <a href="home.html" style="display:block; padding:4px">
+          <span class="arrow arrow--left"></span>
+        </a>
+        <span class="hdr-plain__title">設定上車地點</span>
+      </header>
+
+      <!-- 搜尋框 -->
+      <div style="flex:none; background:var(--yoxi-white); padding:12px 16px 16px">
+        <div class="u-row u-gap4">
+          <span class="route-input__dot"></span>
+          <label class="u-row u-gap3 u-fill"
+                 style="background:var(--yoxi-mist); border-radius:4px; padding:12px 14px">
+            <input value="民雄鄉豐收村山子腳 51-2 號"
+                   style="flex:1; min-width:0; border:0; background:none; outline:none;
+                          font-size:17px; font-weight:700">
+            <span data-icon="camera" style="width:24px; height:24px; flex:none"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="scroll" style="background:var(--yoxi-white)">
+        <a class="row-nav" href="home.html">
+          <span class="tile-icon tile-icon--red" style="width:48px; height:48px; border-radius:50%">
+            <span data-icon="place"
+                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+          </span>
+          <span class="row-nav__body">
+            <span class="row-nav__title">豐收村山子腳 51-2 號</span>
+            <span class="row-nav__sub">嘉義縣民雄鄉</span>
+          </span>
+          <span class="arrow arrow--ne"></span>
+        </a>
+
+        <a class="row-nav" href="home.html">
+          <span class="tile-icon tile-icon--red" style="width:48px; height:48px; border-radius:50%">
+            <span data-icon="place"
+                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+          </span>
+          <span class="row-nav__body">
+            <span class="row-nav__title">豐收村山子腳 2 號</span>
+            <span class="row-nav__sub">嘉義縣民雄鄉</span>
+          </span>
+          <span class="arrow arrow--ne"></span>
+        </a>
+
+        <a class="row-nav" href="home.html">
+          <span class="tile-icon tile-icon--red" style="width:48px; height:48px; border-radius:50%">
+            <span data-icon="place"
+                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+          </span>
+          <span class="row-nav__body">
+            <span class="row-nav__title">豐收村山子腳 2-1 號</span>
+            <span class="row-nav__sub">嘉義縣民雄鄉</span>
+          </span>
+          <span class="arrow arrow--ne"></span>
+        </a>
+
+        <div style="padding:16px; text-align:center; border-top:1px solid var(--yoxi-line)">
+          <a href="#" style="font-size:18px; font-weight:800; color:#1F5C96">搜尋更多</a>
+        </div>
+
+        <div style="height:8px; background:var(--yoxi-mist)"></div>
+
+        <a class="row-nav" href="home.html">
+          <span class="tile-icon" style="width:48px; height:48px; border-radius:50%;
+                background:var(--yoxi-navy)">
+            <span data-icon="place"
+                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+          </span>
+          <span class="row-nav__body">
+            <span class="row-nav__title">在地圖上設定地點</span>
+          </span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+</body>
+</html>
