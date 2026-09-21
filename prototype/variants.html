@@ -64,9 +64,8 @@
     transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
   }
   .fr:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24); }
-  .fr iframe {
-    width: 430px; height: 912px; border: 0;
-    transform: scale(.4325); transform-origin: top left; pointer-events: none;
+  .fr img {
+    display: block; width: 100%; height: 100%; object-fit: cover; object-position: top;
   }
   .fr a { position: absolute; inset: 0; }
   .fr__cap { margin-top: 8px; font-size: 12px; color: var(--yoxi-slate); line-height: 1.5; }
@@ -96,7 +95,7 @@
       <h1>地圖該歸誰？</h1>
       <p style="color:var(--yoxi-slate); margin-top:8px; line-height:1.7; max-width:56em">
         四個變體的並排比較。每一列是一個變體的完整 tab 組合，<br>
-        所以你看到的是整個 app 組合起來的感覺，不是單張畫面。縮圖是活的，點擊開新分頁。
+        所以你看到的是整個 app 組合起來的感覺，不是單張畫面。點任一張開新分頁看實際畫面。
       </p>
     </div>
     <div style="display:grid; gap:10px; justify-items:end">
@@ -119,6 +118,23 @@
 </div>
 
 <script>
+
+/* href → 預先產生的縮圖檔名。
+   縮圖用 prototype/tools/shoot.sh 產生；改了畫面就重跑一次。
+   不用 iframe 的原因：這頁有數十格，iframe 會變成數百個子資源請求，
+   載入慢而且常常有幾格還沒畫完就被看到空白 —— 在比賽現場的筆電上更不可靠。 */
+const THUMB_ALIAS = {
+  'screens/place.html?id=neiwan':            'place-far',
+  'screens/unlock.html?ride=1':              'unlock-ride',
+  'screens/push.html?when=night':            'push-night',
+  'screens/variant-a-map.html?mode=been':    'variant-a-map-been',
+};
+function thumbSrc(href) {
+  const key = THUMB_ALIAS[href] ||
+    href.replace('screens/', '').replace(/\.html.*$/, '');
+  return 'assets/thumbs/' + key + '.png';
+}
+
 const V = [
   {
     tag: '變體 0', name: '現況 —— 兩張地圖', pick: false,
@@ -189,7 +205,7 @@ document.getElementById('list').innerHTML = V.map(v => `
         <div class="tabcol">
           <div class="tabcol__l ${isMap ? 'is-map' : ''}"><i></i>${label}</div>
           <div class="fr">
-            <iframe src="${href}" loading="lazy" scrolling="no" tabindex="-1" title="${label}"></iframe>
+            <img src="${thumbSrc(href)}" alt="${label}" loading="lazy">
             <a href="${href}" target="_blank" aria-label="${label}"></a>
           </div>
           <div class="fr__cap">${cap}</div>

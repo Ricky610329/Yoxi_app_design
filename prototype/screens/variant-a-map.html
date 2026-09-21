@@ -211,9 +211,11 @@
     });
     if (m === 'been') {
       peek.classList.remove('is-on'); open = -1;
+      peek.classList.add('u-hidden');
       stats.classList.remove('u-hidden');
       requestAnimationFrame(function () { stats.classList.add('is-on'); });
     } else {
+      peek.classList.remove('u-hidden');
       stats.classList.remove('is-on');
       setTimeout(function () { stats.classList.add('u-hidden'); }, 240);
       const t = spots.findIndex(function (s) { return s.state === 'today'; });

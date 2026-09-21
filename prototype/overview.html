@@ -42,9 +42,8 @@
   .thumb:hover .thumb__frame {
     transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24);
   }
-  .thumb__frame iframe {
-    width: 430px; height: 912px; border: 0;
-    transform: scale(.4605); transform-origin: top left; pointer-events: none;
+  .thumb__frame img {
+    display: block; width: 100%; height: 100%; object-fit: cover; object-position: top;
   }
   .thumb__hit { position: absolute; inset: 0; }
   .thumb__cap { margin-top: 10px; }
@@ -90,7 +89,7 @@
       <h1>全景圖</h1>
       <p>
         全部 36 張畫面，以及三條 demo 流程各自走過哪些畫面。<br>
-        縮圖是活的 —— 直接縮放真實畫面，不是截圖，所以不會過期。點任一張開新分頁。
+        點任一張開新分頁看實際畫面。<br>縮圖由 <code>tools/shoot.sh</code> 產生，改了畫面重跑一次即可。
       </p>
     </div>
     <div style="display:grid; gap:10px; justify-items:end">
@@ -152,6 +151,23 @@ const S = {
   week:     ['N13', '週回顧',         'new',  'screens/week.html'],
 };
 
+
+/* href → 預先產生的縮圖檔名。
+   縮圖用 prototype/tools/shoot.sh 產生；改了畫面就重跑一次。
+   不用 iframe 的原因：這頁有數十格，iframe 會變成數百個子資源請求，
+   載入慢而且常常有幾格還沒畫完就被看到空白 —— 在比賽現場的筆電上更不可靠。 */
+const THUMB_ALIAS = {
+  'screens/place.html?id=neiwan':            'place-far',
+  'screens/unlock.html?ride=1':              'unlock-ride',
+  'screens/push.html?when=night':            'push-night',
+  'screens/variant-a-map.html?mode=been':    'variant-a-map-been',
+};
+function thumbSrc(href) {
+  const key = THUMB_ALIAS[href] ||
+    href.replace('screens/', '').replace(/\.html.*$/, '');
+  return 'assets/thumbs/' + key + '.png';
+}
+
 const LABEL = { keep: '沿用', mod: '改造', new: '新增' };
 
 function thumb(key) {
@@ -159,7 +175,7 @@ function thumb(key) {
   return `
     <div class="thumb">
       <div class="thumb__frame">
-        <iframe src="${href}" loading="lazy" scrolling="no" tabindex="-1" title="${name}"></iframe>
+        <img src="${thumbSrc(href)}" alt="${name}" loading="lazy">
         <a class="thumb__hit" href="${href}" target="_blank" aria-label="${name}"></a>
       </div>
       <div class="thumb__cap">

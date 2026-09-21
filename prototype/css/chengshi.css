@@ -185,9 +185,12 @@
   background: var(--yoxi-white);
   box-shadow: var(--sh-lift);
   transform: translateY(140%);
-  transition: transform var(--t-base) var(--ease-out);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform var(--t-base) var(--ease-out),
+              opacity var(--t-fast) var(--ease);
 }
-.peek.is-on { transform: none; }
+.peek.is-on { transform: none; opacity: 1; pointer-events: auto; }
 
 .peek__img {
   width: 56px;
