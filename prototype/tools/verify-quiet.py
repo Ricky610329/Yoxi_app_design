@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-「叫車畫面會不會變吵」—— 六條防護承諾的驗收。
+原型的自動驗收。一個指令跑完。
 
     python prototype/tools/verify-quiet.py
 
@@ -15,6 +15,9 @@
                   文字與目的地。一樣，叫車的 tap 數就一樣。
   互動            跑 tools/smoke-variants.html，真的去 click 每個變體最關鍵的
                   那一段，看狀態有沒有跟著變 —— 點了沒反應是不會報錯的。
+  全站            跑 tools/audit-app.html，掃 49 個畫面的「看起來可按但沒有
+                  行為」的元素，以及同一個數字在不同畫面一不一致。
+                  這兩類都不會讓 console 變紅，只會在評審手上安靜地出錯。
 
 需要 Chrome 或 Edge。不依賴 tools/shoot.py 的成品。
 """
@@ -301,7 +304,7 @@ def main():
                 bad[0] += 1
 
     print('═' * 64)
-    print('「叫車畫面變吵」防護驗收')
+    print('原型驗收：防護承諾 + 互動 + 全站一致性')
     print('═' * 64)
     print('\n── 幾何：③ 收合態外洩 ④ 景點數量 ⑤ 覆蓋 ⑥ 視覺語言 ' + '─' * 8)
     show(run_page('audit-quiet.html'))
@@ -311,12 +314,14 @@ def main():
     show(structure())
     print('\n── 互動：點下去真的有反應嗎 ' + '─' * 28)
     show(run_page('smoke-variants.html', 15000))
+    print('\n── 全站：死按鈕與數字矛盾 ' + '─' * 30)
+    show(run_page('audit-app.html', 90000))
     print()
     print('═' * 64)
     if bad[0]:
         print('未通過 %d 條。' % bad[0])
     else:
-        print('六條承諾與互動測試全部通過。')
+        print('六條防護承諾、互動測試與全站一致性全部通過。')
     print('═' * 64)
     print()
     return 1 if bad[0] else 0
