@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>收藏 — yoxi 城事</title>
+<!--
+  N8 收藏首頁 —— 變體 D 版本
+
+  與預設版的唯一差別：右上角的入口。城市足跡不再是獨立的一頁，
+  而是那唯一一張地圖的圖層，所以這裡深連結回叫車首頁並自動開啟圖層。
+
+  情感高點，也是「你這一個月真的出門了」的證據。
+
+  兩個刻意的決定：
+  1. 統計條沒有「連續天數」。Pikmin Bloom 也刻意沒有 streak，
+     這是它溫和的關鍵 —— 漏一天不會讓人放棄整個 app。
+  2. 未解鎖的明信片以灰階剪影佔位，牆從第一天就有形狀，不是空白。
+
+  獎章文案一律用「收集 4/8」，絕不用「任務 4/8」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="album" data-tabs="d" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="variant-d-home.html?layer=on">
+            在地圖上看足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nPlaces">12</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nBadges">3</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nKm">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color:#fff">
+            <span class="tile-icon" style="width:44px;height:44px;border-radius:16px;
+                  background:rgba(255,255,255,.14)">
+              <span data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 分段 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="cards">明信片</button>
+            <button class="pill" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
+          </div>
+        </div>
+
+        <!-- ===== 明信片牆 ===== -->
+        <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
+          <div class="postcard-wall" id="wall"></div>
+          <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            灰色的是還沒去過的地方。到了就會上色。
+          </p>
+
+          <!-- 三代分眾：同一批明信片，換一種排版就換一個世代 -->
+          <a class="card u-row u-gap4" href="elder.html"
+             style="margin-top:16px; padding:14px 16px">
+            <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
+              <span data-icon="elder" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">做一張圖傳給家人</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                把去過的地方變成可以傳的問候圖
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+        <!-- ===== 獎章 ===== -->
+        <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 週回顧入口 ===== -->
+        <div style="padding:0 16px 16px" id="weekEntry">
+          <a class="card u-row u-gap4" href="week.html" style="padding:14px 16px">
+            <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <!-- ===== 日誌 ===== -->
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span id="logMood" data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+              <div style="margin-top:10px; font-size:14px; color:var(--yoxi-slate)">
+                水利路 · 東門市場 · 護城河
+              </div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 統計：完全由狀態決定 ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  /* ---- 今天的回顧：做過就換成結果 ---- */
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  /* ---- 明信片牆 ---- */
+  const STORY = {
+    p11: '新竹曾經是全世界最會做玻璃的地方之一。1970 年代這條巷子裡有七座窯，日夜不熄。',
+    p9:  '內灣線 1951 年通車，原本是為了把尖石山上的木材運下山。',
+  };
+
+  document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
+    const got   = STATE.card(p.id);
+    const fresh = A.lastCard === p.id;
+    const ride  = got && got.by === 'ride';
+
+    if (!got) {
+      return '<a class="postcard postcard--locked" href="place.html?id=' + p.id + '">' +
+        '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+        '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span></span></a>';
+    }
+
+    return '<button class="postcard ' + (ride ? 'postcard--gold ' : '') +
+      (fresh ? 'postcard--fresh ' : '') + '" data-flip>' +
+      '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+      (fresh ? '<span class="postcard__new">新</span>' : '') +
+      (ride ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
+      '<span class="postcard__foot">' +
+        '<span class="postcard__name">' + p.name + '</span>' +
+        '<span class="postcard__date">' + got.date + '</span>' +
+      '</span>' +
+      '<span class="postcard__back">' +
+        '<b>' + p.name + '</b>' +
+        '<small>2026.' + got.date + ' · ' + (ride ? '搭 yoxi 抵達' : '走路抵達') + '</small>' +
+        '<p>' + (got.note ? '「' + got.note + '」' : (STORY[p.id] || '在這裡停了一下。')) + '</p>' +
+        '<span class="postcard__stamp">yoxi</span>' +
+      '</span></button>';
+  }).join('');
+
+  /* ---- 獎章：進度一律由 STATE.badge() 算，每一枚都連得到自己的詳情 ---- */
+  document.getElementById('badgeGrid').innerHTML = MOCK.BADGES.map(function (b) {
+    const r = STATE.badge(b.id);
+    return '<a href="badge.html?id=' + b.id + '" class="badge ' +
+      (r.got ? '' : 'badge--locked') + '" style="width:auto">' +
+      '<span class="badge__disc"><span data-icon="' + r.icon + '"></span></span>' +
+      '<span class="badge__name">' + r.name + '</span>' +
+      '<span class="badge__prog">' +
+      (r.got ? '已收集' : '收集 ' + r.done + '/' + r.total) + '</span></a>';
+  }).join('');
+
+  /* ---- 日誌 ---- */
+  const moodIcon = { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[A.today.mood] || 'moodGood';
+  document.getElementById('logMood').setAttribute('data-icon', moodIcon);
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  STATE.clearLast();   /* 「新」只標示一次 */
+})();
+</script>
+</body>
+</html>

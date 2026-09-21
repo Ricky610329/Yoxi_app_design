@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>叫車畫面變吵 — 防護稽核</title>
+<!--
+  plan §6 的六條防護承諾裡，跟「幾何」有關的那幾條的自動驗收。
+
+  用法（會等頁面跑完再把結果印出來）：
+    chrome --headless=new --allow-file-access-from-files \
+           --virtual-time-budget=9000 --dump-dom tools/audit-quiet.html
+
+  為什麼用 iframe 而不是截圖比對：要驗的是「景點有沒有壓到上車點 pin、
+  它上方的地址標籤、四顆浮動鈕」，這是元素的幾何關係，不是顏色。
+  截圖比對會被霧圖層改掉的底色淹沒，量不到真正想量的東西。
+  iframe 在 --allow-file-access-from-files 下同源，拿得到 getBoundingClientRect。
+-->
+<style>
+  body { font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
+  iframe { width: 390px; height: 844px; border: 0; position: absolute; left: -9999px; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<pre id="out">跑中…</pre>
+<div id="frames"></div>
+
+<script>
+const CASES = [
+  ['變體 D（圖層開）', '../screens/variant-d-home.html?layer=on'],
+  ['變體 E',          '../screens/variant-e-home.html'],
+  ['變體 F（今天）',   '../screens/variant-f-home.html?mode=today'],
+];
+
+/* 兩個矩形有沒有重疊，回傳重疊面積（px²）。0 = 沒碰到。 */
+function overlap(a, b) {
+  const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+  const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+  return (w > 0 && h > 0) ? Math.round(w * h) : 0;
+}
+
+function audit(name, doc) {
+  const L = [];
+  const q = function (s) { return Array.from(doc.querySelectorAll(s)); };
+  const r = function (el) { return el.getBoundingClientRect(); };
+
+  const spots = q('.spot');
+  const pass = [];
+  const fail = [];
+
+  /* ④ 同時最多 4 個景點 */
+  (spots.length <= 4 ? pass : fail)
+    .push('④ 景點數量 ' + spots.length + ' 個（上限 4）');
+
+  /* ⑤ 不遮住上車點 pin、它上方的地址標籤、四顆浮動鈕 */
+  const guarded = [];
+  const pin = doc.querySelector('.pin');
+  if (pin) {
+    guarded.push(['上車點 pin', r(pin)]);
+    const lab = pin.querySelector('.pin__label');
+    if (lab) guarded.push(['地址標籤', r(lab)]);
+  }
+  q('.fab').forEach(function (f, i) {
+    guarded.push(['浮動鈕 ' + (i + 1) + '（' + (f.className.split(' ')[1] || 'fab') + '）', r(f)]);
+  });
+
+  let hits = 0;
+  guarded.forEach(function (g) {
+    spots.forEach(function (s) {
+      const px = overlap(r(s), g[1]);
+      if (px > 0) {
+        hits++;
+        fail.push('⑤ ' + g[0] + ' 被景點「' + (s.dataset.name || s.dataset.i) + '」壓住 ' + px + ' px²');
+      }
+    });
+  });
+  if (!hits) pass.push('⑤ ' + guarded.length + ' 個受保護元素全部沒有被景點覆蓋');
+
+  /* ⑥ 兩種標記不共用元件：class 集合必須完全不相交 */
+  const cls = function (els) {
+    const set = new Set();
+    els.forEach(function (e) {
+      e.classList.forEach(function (c) { set.add(c); });
+      e.querySelectorAll('*').forEach(function (k) {
+        k.classList.forEach(function (c) { set.add(c); });
+      });
+    });
+    return set;
+  };
+  const a = cls(q('.pin')), b = cls(spots);
+  const shared = Array.from(a).filter(function (c) { return b.has(c); });
+  (shared.length === 0 ? pass : fail)
+    .push('⑥ 共用的 class：' + (shared.length ? shared.join(' ') : '無'));
+
+  /* ③ 收合態 sheet 不動：新增內容一律標 data-expand-only */
+  const sheet = doc.getElementById('sheet');
+  if (sheet) {
+    const leaked = q('#sheet [data-expand-only]').filter(function (e) {
+      return e.getBoundingClientRect().height > 0 &&
+             sheet.classList.contains('is-collapsed');
+    });
+    (leaked.length === 0 ? pass : fail)
+      .push('③ 收合態外洩的展開態元素：' + leaked.length + ' 個');
+  }
+
+  L.push('── ' + name + ' ' + '─'.repeat(Math.max(2, 46 - name.length * 2)));
+  pass.forEach(function (t) { L.push('  PASS  ' + t); });
+  fail.forEach(function (t) { L.push('  FAIL  ' + t); });
+  L.push('');
+  return { lines: L, bad: fail.length };
+}
+
+let done = 0, bad = 0, out = [];
+CASES.forEach(function (c, i) {
+  const fr = document.createElement('iframe');
+  fr.src = c[1];
+  fr.onload = function () {
+    /* 頁內腳本有些排在 DOMContentLoaded 之後（SHELL.ready），等一拍再量 */
+    setTimeout(function () {
+      let res;
+      try { res = audit(c[0], fr.contentDocument); }
+      catch (e) { res = { lines: ['── ' + c[0] + ' 讀不到：' + e.message, ''], bad: 1 }; }
+      out[i] = res.lines.join('\n');
+      bad += res.bad;
+      if (++done === CASES.length) {
+        document.getElementById('out').textContent =
+          out.join('\n') + (bad ? '\n共 ' + bad + ' 條未通過。' : '\n全部通過。');
+      }
+    }, 600);
+  };
+  document.getElementById('frames').appendChild(fr);
+});
+</script>
+</body>
+</html>

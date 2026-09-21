@@ -42,6 +42,11 @@ explore map place going routes route fogmap
 album postcard badge week elder
 settings push
 variant-a-map variant-b-explore variant-c-album variant-a-album variant-b-album
+variant-d-home variant-e-home variant-f-home variant-d-explore
+variant-d-album variant-e-album variant-f-album
+variant-d-home.html?layer=on:variant-d-home-on
+variant-e-home.html?peek=1:variant-e-home-peek
+variant-f-home.html?mode=today:variant-f-home-today
 place.html?id=neiwan:place-far
 unlock.html?still=1:unlock
 unlock.html?ride=1&still=1:unlock-ride

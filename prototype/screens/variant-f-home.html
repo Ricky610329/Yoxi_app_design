@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 F · 一個畫面兩種模式 — yoxi 城事</title>
+<!--
+  變體 F · 一個畫面兩種模式（激進）
+
+  tab bar 砍成兩個：地圖、收藏。叫車與探索共用同一個畫面，
+  靠 sheet 頂端的模式切換分流：
+
+  · 叫車模式 = 原本的 sheet（問候語、上下車點卡、機場接送），地圖乾淨
+  · 今天模式 = 今天的地方、這個月的路線、還沒去的地方，地圖長出景點
+
+  這是最徹底的整合 —— 一個畫面把「現在要去哪」與「接下來去哪」兩個時態
+  收在一起，而且完全沿用 yoxi 自己的版型。
+
+  代價誠實寫在這裡：它動到了已經定案的 tab bar 架構，而且探索沒有獨立入口，
+  評審可能會覺得功能被藏起來了 —— 而「不搭車也打開 yoxi」正是這題要證明的事。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="ride" data-tabs="f" data-status="dark" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 地圖 ===== -->
+      <div class="map" data-pan>
+        <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="440" fill="var(--map-land)"/>
+
+          <!-- 城事圖層：霧格子墊在道路之下，道路與地名照常疊在上面，
+               所以它還是一張地圖，不是棋盤。 -->
+          <g id="fogLayer"></g>
+
+          <!-- 水系：頭前溪與客雅溪 -->
+          <path d="M-20 96 Q70 118 140 92 T300 108 T420 78" stroke="var(--map-water)"
+                stroke-width="13" fill="none" opacity=".85"/>
+          <path d="M-20 300 Q90 322 170 296 T410 318" stroke="var(--map-water)"
+                stroke-width="9" fill="none" opacity=".7"/>
+
+          <!-- 主要道路 -->
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-10 168 L400 150" stroke-width="11"/>
+            <path d="M-10 238 L400 226" stroke-width="9"/>
+            <path d="M52 -10 L74 450"   stroke-width="10"/>
+            <path d="M196 -10 L212 450" stroke-width="11"/>
+            <path d="M320 -10 L308 450" stroke-width="9"/>
+            <path d="M-10 390 Q150 360 400 386" stroke-width="8"/>
+          </g>
+
+          <!-- 次要道路 -->
+          <g stroke="var(--map-road-minor)" stroke-width="5" fill="none">
+            <path d="M-10 128 L400 116"/><path d="M-10 200 L400 190"/>
+            <path d="M-10 272 L400 262"/><path d="M-10 334 L400 326"/>
+            <path d="M120 -10 L136 450"/><path d="M258 -10 L262 450"/>
+            <path d="M360 -10 L352 450"/>
+          </g>
+
+          <!-- 六家支線鐵路 -->
+          <g stroke="#B9BDC4" stroke-width="2.4" fill="none">
+            <path d="M344 -10 Q300 140 286 450"/>
+          </g>
+          <g stroke="#B9BDC4" stroke-width="1" fill="none" stroke-dasharray="2 7">
+            <path d="M344 -10 Q300 140 286 450" stroke-width="7"/>
+          </g>
+
+          <!-- 地名 -->
+          <g font-family="var(--font-sans)" fill="#9AA3AE" font-weight="700">
+            <text x="110" y="70"  font-size="15">竹北市</text>
+            <text x="214" y="156" font-size="18">新竹縣</text>
+            <text x="26"  y="206" font-size="14">北區</text>
+            <text x="24"  y="232" font-size="17">新竹市</text>
+            <text x="120" y="400" font-size="14">寶山鄉</text>
+            <text x="300" y="250" font-size="12"
+                  transform="rotate(84 300 250)">六家支線鐵路</text>
+          </g>
+        </svg>
+
+        <!-- 浮動圓鈕 -->
+        <a class="fab fab--navy" href="drawer.html"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
+          <span data-icon="menu"></span>
+        </a>
+        <button class="fab" style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+          <span data-icon="scan"></span>
+        </button>
+        <a class="fab" href="notify.html"
+           style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
+          <span data-icon="bell"></span>
+        </a>
+        <button class="fab" style="bottom:20px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+
+        <!-- ===== 城事圖層疊上來的東西 ===== -->
+        <div id="spots"></div>
+
+        <!-- 點景點浮出的小卡。bottom 要貼齊地圖下緣（廣告條上方），
+             不能沿用探索地圖的 88px —— 那是為了避開 tab bar 算的。 -->
+        <!-- 小卡用單行版。F 的地圖因為多了一排模式 pill 只剩 344px，
+             換成 E 那種兩顆按鈕的堆疊卡會直接蓋掉整片景點。
+             「設為下車點」是變體 E 的主張，F 的主張是模式切換，各留一個就好。 -->
+        <a class="peek" id="peek" href="place.html" style="bottom:var(--sp-3)">
+          <span class="peek__img"></span>
+          <span class="u-fill" style="min-width:0">
+            <span data-peek-name style="display:block; font-weight:800; line-height:1.3"></span>
+            <span data-peek-meta style="display:block; font-size:12px;
+                  color:var(--yoxi-slate); margin-top:2px"></span>
+            <span data-peek-hook style="display:block; font-size:13px; margin-top:4px;
+                  line-height:1.45; overflow:hidden; text-overflow:ellipsis;
+                  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical"></span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <!-- 上車點 pin -->
+        <div class="pin" style="left:50%; top:62%">
+          <span class="pin__label">
+            東區水利路 46 巷 58 號
+            <svg width="14" height="14" viewBox="0 0 24 24">
+              <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                    fill="var(--yoxi-red)"/>
+            </svg>
+          </span>
+          <span class="pin__drop"><span data-icon="hail"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+      </div>
+
+      <!-- ===== 廣告輪播條 =====
+           第 1 格改為「今天的地方」。這個位置原本就是促銷位，
+           不與叫車主路徑爭搶，但讓不搭車的人有一個被動觸點。 -->
+      <div class="banner">
+        <a class="banner__item" href="place.html" style="background:var(--yoxi-navy)">
+          <span style="width:52px;height:52px;border-radius:4px;overflow:hidden;position:relative;flex:none"
+                data-art="glass" data-seed="1" data-wide></span>
+          <span style="flex:1;min-width:0;color:#fff">
+            <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.8">
+              今天的地方 · 離你 900m
+            </span>
+            <span style="display:block;font-size:14px;font-weight:800;margin-top:2px">
+              這條巷子 1970 年是全街最亮的地方
+            </span>
+          </span>
+          <span class="arrow arrow--onred"></span>
+        </a>
+
+        <div class="banner__item">
+          <span style="flex:1;font-size:15px;font-weight:800;color:var(--yoxi-navy)">
+            <span style="color:var(--yoxi-red)">點</span>從天降 ·
+            趟趟送最高 <span class="num" style="color:var(--yoxi-red);font-size:19px">99</span> 點
+          </span>
+        </div>
+      </div>
+
+      <!-- ===== 底部 sheet =====
+           收合態內容與順序完全保留，一個像素都沒動。 -->
+      <div class="sheet" data-drag id="sheet" style="--sheet-min:420px">
+        <div class="sheet__handle"></div>
+
+        <!-- 模式切換：叫車與探索在同一個畫面裡分流 -->
+        <div class="pill-group pill-group--onwhite" id="mode" data-pills
+             style="margin-bottom:16px">
+          <button class="pill is-active" data-tab="ride">叫車</button>
+          <button class="pill" data-tab="today">今天</button>
+        </div>
+
+        <div data-panel="ride">
+        <h1 class="sheet__greet">晚安，Rick 今天要去哪?</h1>
+
+        <div class="card">
+          <div class="route-input">
+            <div class="route-input__rail">
+              <span class="route-input__dot"></span>
+              <span class="route-input__line"></span>
+              <span class="route-input__dot route-input__dot--to"></span>
+            </div>
+            <div class="route-input__fields">
+              <a class="route-input__field" href="pickup.html">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">上車點</span>
+                  <span class="route-input__value" style="display:block">東區水利路 46 巷 58 號</span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none">
+                  <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                        fill="var(--yoxi-navy)"/>
+                </svg>
+              </a>
+              <a class="route-input__field" href="pickup.html">
+                <span class="route-input__value route-input__value--ph">請輸入下車點可預估車資</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- 【新增】展開態才出現的一列。收合態看不到。 -->
+          <div class="divider" data-expand-only></div>
+          <a class="row-nav" data-expand-only href="place.html" style="padding:12px 16px">
+            <span class="tile-icon" style="width:40px;height:40px;border-radius:14px">
+              <span data-icon="place" style="width:22px;height:22px;display:block"></span>
+            </span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:15px">今天的地方 · 900m</span>
+              <span class="row-nav__sub">水利路的老玻璃窯</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <div class="u-row" style="justify-content:space-between; margin-top:16px">
+          <a class="btn-pill" href="#">
+            <span data-icon="plane" style="width:18px;height:18px;display:block"></span>
+            機場接送
+          </a>
+          <a class="btn-link" href="pickup.html">
+            略過下車地點，繼續叫車
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <!-- 展開態才出現：設好下車點之後的叫車按鈕 -->
+        </div>
+
+        <!-- ===== 今天模式 ===== -->
+        <div data-panel="today" class="u-hidden">
+          <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                      color:var(--yoxi-slate); margin-bottom:8px">今天的地方</div>
+
+          <a class="u-row u-gap4" href="place.html" style="padding-bottom:14px">
+            <span style="width:64px; height:82px; border-radius:6px; overflow:hidden;
+                         position:relative; flex:none" data-art="glass" data-seed="1"></span>
+            <span class="u-fill" style="min-width:0">
+              <span style="display:block; font-size:19px; font-weight:800; line-height:1.3">
+                水利路的老玻璃窯
+              </span>
+              <span style="display:block; font-size:14px; color:var(--yoxi-slate);
+                           margin-top:4px; line-height:1.5">
+                這條巷子 1970 年代是全街最亮的地方。
+              </span>
+              <span style="display:block; font-size:13px; font-weight:700; margin-top:6px">
+                離你 <span class="num">900</span> m · 走路 <span class="num">12</span> 分鐘
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+
+          <div style="display:grid; grid-template-columns:1fr auto; gap:8px">
+            <a class="btn-primary" href="going.html" style="min-height:50px">走路前往</a>
+            <a class="btn-ghost" href="place.html"
+               style="width:auto; padding:0 18px; min-height:50px">看看</a>
+          </div>
+
+          <div class="divider" style="margin:20px 0"></div>
+
+          <div class="sec" style="margin-bottom:10px">
+            <h2 class="sec__t" style="font-size:16px">這個月的路線</h2>
+            <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+          </div>
+          <div class="hscroll" id="fRoutes"></div>
+
+          <div class="sec" style="margin:20px 0 10px">
+            <h2 class="sec__t" style="font-size:16px">還沒去的地方</h2>
+            <span class="sec__m">不會過期</span>
+          </div>
+          <div class="card" id="fPending"></div>
+          <div style="height:12px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+
+  /* 疊在叫車地圖上的景點要重新配位。要避開的東西有四組：
+     ① 上車點 pin（50%, 62%）
+     ② 它上方那條橫跨 x28–72%、y44–55% 的地址標籤
+     ③ 左上漢堡、右上掃碼／鈴鐺、右下定位四顆浮動鈕
+     ④ 底部浮出的小卡（約佔地圖下緣 40%）
+     剩下的淨空區就是上半部與左側邊緣。 */
+  /* 座標是「底邊中心」，單位是地圖框的百分比（地圖實高 390x404）。
+     這四個位置不是挑好看的，是從稽核量到的受保護矩形反推出來的空隙：
+       漢堡鈕 x4.1–19.5 y16.3–31.2 ／ 掃碼鈕 x67.2–80.5 y17.3–30.2
+       鈴鐺鈕 x82.6–95.9 y17.3–30.2 ／ 定位鈕 x82.6–95.9 y82.2–95.0
+       地址標籤 x27.5–72.5 y34.1–43.4 ／ 上車點 pin x44.1–55.9 y44.9–62.0
+       小卡展開後 y52.9 以下
+     這裡的數字跟變體 D／E 不一樣，因為 sheet 頂端多了一排模式 pill，
+     地圖實高從 404px 變成 344px，同樣的百分比會落在不同的地方。
+     改任何一個數字都要重跑 tools/audit-quiet.html。 */
+  const POS = { glass: [68, 58], market: [18, 52], moat: [88, 62], hill: [34, 76] };
+  const NEAR = MOCK.SPOTS
+    .filter(function (s) { return POS[s.id]; })
+    .map(function (s) {
+      const c = Object.assign({}, s);
+      c.x = POS[s.id][0];
+      c.y = POS[s.id][1];
+      return c;
+    });
+
+  const mapEl = document.querySelector('.map');
+  document.getElementById('fogLayer').innerHTML = SHELL.fogCells(390, 440);
+
+  const spots = SHELL.renderSpots(document.getElementById('spots'),
+    { spots: NEAR, compact: true });
+
+  const peek = document.getElementById('peek');
+
+  const pk2 = SHELL.bindPeek(peek, spots, {
+    onOpen: function (s) { peek.href = 'place.html?id=' + s.id; },
+  });
+
+  const modes = document.getElementById('mode');
+  const sheetEl = document.getElementById('sheet');
+
+  /* 收合態的高度要鎖住。
+     .sheet--drag.is-collapsed 的 max-height 是 --sheet-min（首頁設 420px），
+     而那是上限不是實高 —— 叫車模式的內容只有 ~349px，所以沒吃到上限。
+     今天模式的內容遠比 420 高，一切過去就會撐到上限，地圖從 344px 掉到 272px，
+     「竹北市」「寶山鄉」跟一半的景點會直接消失。
+     所以開場先量一次叫車模式的實高，切到今天模式時把它釘回去：
+     **切換模式時地圖高度完全不變。** */
+  SHELL.ready(function () {
+    /* 要等 interact.js 把 sheet 收起來才量得到「收合後的實高」——
+       它是在 DOMContentLoaded 才加上 .sheet--drag.is-collapsed 的。 */
+    sheetEl.style.setProperty('--sheet-min', sheetEl.offsetHeight + 'px');
+  });
+
+  function setMode(key) {
+    const today = key === 'today';
+    mapEl.classList.toggle('layer-on', today);
+    if (!today) pk2.close();
+    /* 今天模式刻意不展開 sheet：地圖才是這個模式要給人看的東西。
+       要看完整清單就自己往上拉，跟叫車模式的手勢一模一樣。 */
+  }
+  modes.querySelectorAll('.pill').forEach(function (b) {
+    b.addEventListener('click', function () { setMode(b.dataset.tab); });
+  });
+  setMode('ride');                             /* 預設是叫車模式 */
+
+  /* ?mode=today 讓變體比較頁截得到今天模式。
+     直接點那顆 pill，切 panel 的邏輯就不用在這裡重寫一次 ——
+     但要等 interact.js 綁好 pill 才點得動，它是在 DOMContentLoaded 才 boot 的。 */
+  if (new URLSearchParams(location.search).get('mode') === 'today') {
+    SHELL.ready(function () {
+      modes.querySelector('.pill[data-tab="today"]').click();
+    });
+  }
+
+  /* 今天模式的內容 */
+  document.getElementById('fRoutes').innerHTML = MOCK.ROUTES.map(function (r, i) {
+  const done = STATE.routeDone(r.id);
+  return '<a class="card" href="route.html?id=' + r.id + '" style="width:180px; flex:none">' +
+    '<span style="display:block;height:84px;position:relative;overflow:hidden"' +
+    ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
+    '<span style="display:block;padding:10px 12px">' +
+    '<span style="display:block;font-weight:800;font-size:14px">' + r.name.split('：')[0] + '</span>' +
+    '<span style="display:block;font-size:12px;color:var(--yoxi-slate);margin-top:3px">' +
+    '<span class="num">' + done + '</span>/' + r.total + ' 站</span></span></a>';
+}).join('');
+
+document.getElementById('fPending').innerHTML = MOCK.PENDING.map(function (p, i) {
+  return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:10px 14px">' +
+    '<span style="width:40px;height:52px;border-radius:4px;overflow:hidden;' +
+    'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 5) + '"></span>' +
+    '<span class="row-nav__body">' +
+    '<span class="row-nav__title" style="font-size:15px">' + p.name + '</span>' +
+    '<span class="row-nav__sub">' + (p.distance / 1000).toFixed(1) + ' km · ' + p.ago + '</span>' +
+    '</span><span class="arrow"></span></a>';
+}).join('');
+SHELL.injectArt();
+})();
+</script>
+</body>
+</html>

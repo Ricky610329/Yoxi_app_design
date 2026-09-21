@@ -151,6 +151,47 @@
   100% { transform: scale(2.3); opacity: 0; }
 }
 
+/* 疊在叫車地圖上時要更小一號 —— 那是 yoxi 的核心業務畫面，
+   景點只能是背景裡的一點東西，不能跟上下車點搶。 */
+.spot--compact { width: 38px; }
+.spot--compact .spot__img {
+  width: 38px; height: 38px; border-radius: 10px; border-width: 2px;
+}
+.spot--compact.spot--today { width: 50px; }
+.spot--compact.spot--today .spot__img {
+  width: 50px; height: 50px; border-radius: 13px; border-width: 2.5px;
+}
+.spot--compact .spot__tick { width: 15px; height: 15px; right: -3px; top: -3px; }
+.spot--compact .spot__tick svg { width: 8px; height: 8px; }
+.spot--compact .spot__halo { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+
+/* 城事圖層開關。左上與右上都被既有的浮動鈕佔滿了，所以放左下 ——
+   跟右下的定位鈕對稱。 */
+.citylayer {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 20px;
+  z-index: 22;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .95);
+  box-shadow: var(--sh-fab);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-slate);
+}
+.citylayer.is-on { background: var(--yoxi-navy); color: #fff; }
+.citylayer svg { width: 16px; height: 16px; }
+
+/* 圖層關閉時，霧格子與景點完全不存在於畫面上 —— 這是「關掉就是原本的
+   yoxi」這條承諾的實作。 */
+.map:not(.layer-on) .fogmap__cell,
+.map:not(.layer-on) #spots { display: none; }
+
 /* 已收集的角標 */
 .spot__tick {
   position: absolute;
@@ -191,6 +232,21 @@
               opacity var(--t-fast) var(--ease);
 }
 .peek.is-on { transform: none; opacity: 1; pointer-events: auto; }
+
+/* 變體 E 的小卡：上半是內容、下半是兩顆動作。
+   「設為下車點」是海軍藍實心 —— 顏色紀律裡它就是「你要按的東西」。 */
+.peek--stack { display: block; }
+.peek__acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.peek__acts .btn-ghost,
+.peek__acts .btn-primary { min-height: 42px; font-size: var(--fs-sm); }
+
+/* 設好下車點之後，叫車按鈕才是可按的樣子 */
+.btn-primary:not(.is-ready)#goBtn { background: var(--yoxi-line); color: var(--yoxi-slate); }
 
 .peek__img {
   width: 56px;

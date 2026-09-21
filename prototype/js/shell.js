@@ -61,13 +61,33 @@ function statusbar(tone, time) {
    提示用單一小圓點，刻意不顯示數字 —— 數字＝未讀壓力＝任務感。
    -------------------------------------------------------------------------- */
 
-const TABS = [
-  { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
-  { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
-  { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
-];
+/* 每個變體有自己的一組分頁，因為它們的叫車／探索／收藏是不同的檔案。
+   <body data-tabs="變體名"> 指定要用哪一組，沒寫就用預設。 */
+const TABSETS = {
+  default: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  d: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'variant-d-home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-d-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-d-album.html' },
+  ],
+  e: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'variant-e-home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-d-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-e-album.html' },
+  ],
+  /* 變體 F 只有兩個分頁：叫車與探索合在同一個畫面裡 */
+  f: [
+    { id: 'ride',   label: '地圖', icon: 'tabExplore', href: 'variant-f-home.html', dot: true },
+    { id: 'album',  label: '收藏', icon: 'tabAlbum',   href: 'variant-f-album.html' },
+  ],
+};
 
-function tabbar(active) {
+function tabbar(active, set) {
+  const TABS = TABSETS[set] || TABSETS.default;
   return `
     <nav class="tabbar" id="tabbar">
       ${TABS.map(t => `
@@ -308,6 +328,17 @@ function renderSpots(el, opt) {
  * @param {Array}   list    renderSpots 回傳的清單
  * @param {object}  opt     onOpen(spot) 讓畫面自己決定小卡內容與連結
  */
+/* 排在所有 DOMContentLoaded 綁定之後才跑。
+   頁內腳本在 body 裡，執行時 interact.js 還沒 boot（它等 DOMContentLoaded），
+   所以想「程式化地點一顆 pill」就得排到它後面去。 */
+function ready(fn) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(fn, 0); });
+  } else {
+    setTimeout(fn, 0);
+  }
+}
+
 function bindPeek(peekEl, list, opt) {
   opt = opt || {};
   let open = -1;
@@ -399,7 +430,7 @@ function mount() {
 
   const device = document.querySelector('.device');
   if (tab) {
-    device.insertAdjacentHTML('beforeend', tabbar(tab));
+    device.insertAdjacentHTML('beforeend', tabbar(tab, document.body.dataset.tabs));
     screen.classList.add('has-tabbar');
   }
   device.insertAdjacentHTML('beforeend',
@@ -416,6 +447,7 @@ if (document.readyState === 'loading') {
 }
 
 window.SHELL = {
+    ready: ready,
   injectIcons, injectArt, postcardArt, showPush, yieldTabbar,
   fogCells, fogCoverage, renderSpots, bindPeek,
 };

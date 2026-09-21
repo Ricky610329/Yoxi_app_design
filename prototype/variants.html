@@ -97,7 +97,7 @@
     <div>
       <h1>地圖該歸誰？</h1>
       <p style="color:var(--yoxi-slate); margin-top:8px; line-height:1.7; max-width:56em">
-        四個變體的並排比較。每一列是一個變體的完整 tab 組合，<br>
+        兩個問題、七個變體的並排比較。每一列是一個變體的完整 tab 組合，<br>
         所以你看到的是整個 app 組合起來的感覺，不是單張畫面。點任一張開新分頁看實際畫面。
       </p>
     </div>
@@ -116,14 +116,67 @@
     所以解法必須決定：<b>地圖到底屬於哪一個時態</b>。
   </div>
 
+  <h2 style="font-size:24px; font-weight:800; margin:8px 0 6px">問題一：探索內部，地圖該放哪？</h2>
+  <p style="color:var(--yoxi-slate); margin-bottom:20px; line-height:1.7">
+    在「探索有自己的地圖」這個前提下，地圖與城市足跡怎麼分配。
+  </p>
   <div id="list"></div>
+
+  <div class="problem" style="margin:48px 0 20px; border-left-color:var(--yoxi-navy)">
+    <b style="color:var(--yoxi-navy)">問題二：那為什麼不直接用叫車的那張？</b><br><br>
+    yoxi 的叫車首頁<b style="color:var(--yoxi-navy)">本來就是一張地圖 + 底部拉把 sheet</b>。
+    探索的地圖也是地圖 + 底部小卡 —— 兩者在結構上是同一種東西，只是內容不同。
+    上面四個變體都只在探索與收藏之間搬動地圖，沒有質問這件事。<br><br>
+    如果合併成立，好處不只是少一張地圖：使用者<b style="color:var(--yoxi-navy)">打開 app
+    第一眼就看到附近有什麼</b>，「不搭車也打開 yoxi」變成字面意義的真實；
+    而且從「發現一個地方」到「叫車去那裡」可以壓到<b style="color:var(--yoxi-navy)">一步</b>。<br><br>
+    風險也很明確：<b style="color:var(--yoxi-navy)">叫車主畫面會不會變吵。</b>
+    這是這份提案最可能被評審否決的地方，所以三個變體都帶可驗收的防護承諾，見下方。
+  </div>
+
+  <div id="list2"></div>
+
+  <div class="v" style="border-color:var(--yoxi-navy); border-width:2px; margin-top:28px">
+    <div class="v__tag">防護與驗收</div>
+    <div class="v__n" style="margin-bottom:14px">「叫車畫面變吵」怎麼防、怎麼驗</div>
+    <table style="width:100%; border-collapse:collapse; font-size:14px; line-height:1.7">
+      <tr style="background:var(--yoxi-mist)">
+        <th style="text-align:left; padding:10px 14px; width:44%">承諾</th>
+        <th style="text-align:left; padding:10px 14px">怎麼驗</th>
+      </tr>
+      <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        圖層關閉時，畫面與現況<b>完全相同</b></td>
+        <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        已驗：變體 D 與 home.html 的 DOM 逐行比對，<b style="color:#2F6B3D">差異為零</b></td></tr>
+      <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        叫車關鍵路徑的 tap 數<b>不變</b></td>
+        <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        上下車點卡、機場接送、繼續叫車的位置與連結完全沒動</td></tr>
+      <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        收合態 sheet <b>一個像素不動</b></td>
+        <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        新內容一律標 <code>data-expand-only</code>，收合態 CSS 直接 display:none</td></tr>
+      <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        同時最多 <b>4 個</b>景點</td>
+        <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        renderSpots 的 max 限制，探索地圖是 10 個、叫車地圖只給 4 個</td></tr>
+      <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        景點<b>不遮住上車點 pin</b> 與四顆浮動鈕</td>
+        <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        座標避開 pin、它上方橫跨 x28–72% 的地址標籤、四顆鈕的熱區與底部小卡</td></tr>
+      <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        兩種標記的<b>視覺語言完全分開</b></td>
+        <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
+        上下車點＝海軍藍水滴 pin；景點＝圓角方形明信片縮圖。不共用任何元件</td></tr>
+    </table>
+  </div>
 
 </div>
 
 <script>
 
 /* href → 預先產生的縮圖檔名。
-   縮圖用 prototype/tools/shoot.sh 產生；改了畫面就重跑一次。
+   縮圖用 prototype/tools/shoot.py 產生；改了畫面就重跑一次。
    不用 iframe 的原因：這頁有數十格，iframe 會變成數百個子資源請求，
    載入慢而且常常有幾格還沒畫完就被看到空白 —— 在比賽現場的筆電上更不可靠。 */
 const THUMB_ALIAS = {
@@ -131,6 +184,9 @@ const THUMB_ALIAS = {
   'screens/unlock.html?ride=1':              'unlock-ride',
   'screens/push.html?when=night':            'push-night',
   'screens/variant-a-map.html?mode=been':    'variant-a-map-been',
+  'screens/variant-d-home.html?layer=on':    'variant-d-home-on',
+  'screens/variant-e-home.html?peek=1':      'variant-e-home-peek',
+  'screens/variant-f-home.html?mode=today':  'variant-f-home-today',
 };
 function thumbSrc(href) {
   const key = THUMB_ALIAS[href] ||
@@ -192,7 +248,48 @@ const V = [
   },
 ];
 
-document.getElementById('list').innerHTML = V.map(v => `
+const V2 = [
+  {
+    tag: '變體 D', name: '城事圖層（保守）', pick: false,
+    one: '叫車地圖左下角加一顆「城事」圖層鈕，預設關閉 —— 關閉時畫面與現在的 yoxi 一模一樣。按一下才長出景點與足跡上色。探索 tab 變成純內容，沒有地圖。',
+    where: '全 app 只有 <b>1 張</b>地圖，就是叫車首頁那張。城市足跡是它的圖層。',
+    tabs: [
+      ['叫車 · 圖層關', 'screens/variant-d-home.html', '與 home.html 完全相同', false],
+      ['叫車 · 圖層開', 'screens/variant-d-home.html?layer=on', '景點與足跡長出來', true],
+      ['探索', 'screens/variant-d-explore.html', '純內容，沒有地圖', false],
+      ['收藏', 'screens/variant-d-album.html', '足跡入口指回地圖', false],
+    ],
+    good: '叫車體驗零風險 —— 關掉就是原本的 yoxi，而且這一點已經用 DOM 逐行比對驗證過。改動最小。',
+    bad: '景點預設看不到，發現性最低。「不搭車也打開 yoxi」的證據因此變弱 —— 而那正是這題要證明的事。',
+  },
+  {
+    tag: '變體 E', name: '景點常駐 + 一鍵設為下車點', pick: true,
+    one: '景點一直在叫車地圖上，但極輕：同時最多 4 個、比探索地圖小一號、沒去過的是灰階。點景點浮出小卡，上面有「設為下車點」—— 一下就填好下車點、展開 sheet、叫車按鈕就緒。',
+    where: '全 app 只有 <b>1 張</b>地圖。從發現到叫車<b>只有一步</b>。',
+    tabs: [
+      ['叫車', 'screens/variant-e-home.html', '景點常駐，極輕', true],
+      ['點景點', 'screens/variant-e-home.html?peek=1', '看看這個地方 / 設為下車點', true],
+      ['探索', 'screens/variant-d-explore.html', '純內容，沒有地圖', false],
+      ['收藏', 'screens/variant-e-album.html', '足跡入口指回地圖', false],
+    ],
+    good: '打開 app 第一眼就有內容，而且它把「探索會直接產生訂單」從論述變成可以當場點給評審看的動作 —— 這是商業轉換價值那 20% 最直接的證據。',
+    bad: '三個變體裡對叫車主畫面干擾最大的一個。防護是「最多 4 個景點、避開 pin 與浮動鈕、收合態 sheet 不動」。',
+  },
+  {
+    tag: '變體 F', name: '一個畫面兩種模式（激進）', pick: false,
+    one: 'tab bar 砍成兩個：地圖、收藏。叫車與探索共用同一個畫面，靠 sheet 頂端的「叫車／今天」切換分流。叫車模式地圖乾淨，今天模式才長出景點。',
+    where: '全 app 只有 <b>1 張</b>地圖，而且只有 <b>2 個</b> tab。',
+    tabs: [
+      ['地圖 · 叫車模式', 'screens/variant-f-home.html', '地圖乾淨，等同原本的 yoxi', false],
+      ['地圖 · 今天模式', 'screens/variant-f-home.html?mode=today', '景點長出來、sheet 換內容', true],
+      ['收藏', 'screens/variant-f-album.html', '只剩兩個 tab', false],
+    ],
+    good: '最徹底的整合。一個畫面把「現在要去哪」與「接下來去哪」兩個時態收在一起，而且完全沿用 yoxi 自己的版型。',
+    bad: '動到已經定案的 tab bar 架構，而且探索沒有獨立入口 —— 評審可能會覺得功能被藏起來了，而「不搭車也打開 yoxi」正是這題要證明的事。',
+  },
+];
+
+const render = (list, el) => document.getElementById(el).innerHTML = list.map(v => `
   <section class="v ${v.pick ? 'v--pick' : ''}">
     <div class="v__head">
       <div>
@@ -222,6 +319,9 @@ document.getElementById('list').innerHTML = V.map(v => `
       <div class="to to--bad"><b>代價</b>${v.bad}</div>
     </div>
   </section>`).join('');
+
+render(V, 'list');
+render(V2, 'list2');
 </script>
 </body>
 </html>
