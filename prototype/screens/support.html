@@ -31,7 +31,7 @@
       <header class="hdr-red">
         <div class="hdr-red__bar">
           <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
-          <a class="hdr-red__action" href="#">紀錄</a>
+          <a class="hdr-red__action" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它">紀錄</a>
         </div>
         <h1 class="hdr-red__title">客服中心</h1>
         <p class="hdr-red__sub">有任何問題嗎？可以在這裡找到答案或回報客服</p>
@@ -48,7 +48,7 @@
             歡迎回報問題，客服人員將會回覆你
           </span>
         </span>
-        <a class="btn-primary" href="#" style="width:auto; padding:0 22px; min-height:52px">
+        <a class="btn-primary" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它" style="width:auto; padding:0 22px; min-height:52px">
           回報問題
         </a>
       </div>
@@ -67,7 +67,7 @@
   const Q = ['系統操作', '行程問題', '帳務問題', '其他問題', '營運範圍',
              '寵物搭乘', '帳戶問題', '刪除帳戶'];
   document.getElementById('list').innerHTML = Q.map(function (q) {
-    return '<a class="row-text" href="#">' + q + '<span class="arrow"></span></a>';
+    return '<a class="row-text" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它">' + q + '<span class="arrow"></span></a>';
   }).join('');
 })();
 </script>

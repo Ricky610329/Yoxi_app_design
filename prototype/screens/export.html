@@ -23,7 +23,7 @@
       <header class="hdr-red">
         <div class="hdr-red__bar">
           <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
-          <a class="hdr-red__action" href="#">篩選</a>
+          <a class="hdr-red__action" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它">篩選</a>
         </div>
         <h1 class="hdr-red__title">匯出行程</h1>
         <p class="hdr-red__sub">請點選要匯出成 PDF 檔的行程</p>
@@ -75,6 +75,12 @@
     const first = document.querySelector('.row-nav[data-i="0"]');
     if (first) first.click();
   }, 0);
+
+  /* 主要動作要有結果。以前這顆會亮起來、會換字，但按下去什麼都不會發生。 */
+  btn.onclick = function () {
+    if (btn.disabled) return;
+    SHELL.toast('已寄出 ' + sel.size + ' 筆行程明細到 rick@example.com');
+  };
 
   document.querySelectorAll('.row-nav[data-i]').forEach(function (row) {
     row.onclick = function () {

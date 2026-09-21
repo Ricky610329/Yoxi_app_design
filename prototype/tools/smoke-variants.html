@@ -35,13 +35,27 @@ const CASES = [
       ['一載入是關的', d => d.querySelectorAll('#spots .spot:not([hidden])').length &&
                             !d.querySelector('.map').classList.contains('layer-on'),
        d => '地圖 layer-on=' + d.querySelector('.map').classList.contains('layer-on')],
-      ['按下城事鈕 → 圖層開、今天的地方自動浮出', d => {
+      ['按下城事鈕 → 圖層開、四顆景點長出來、但不自動彈卡', d => {
         d.getElementById('layerBtn').click();
         return d.querySelector('.map').classList.contains('layer-on') &&
-               d.getElementById('peek').classList.contains('is-on');
+               d.querySelectorAll('.spot').length === 4 &&
+               !d.getElementById('peek').classList.contains('is-on');
       }, d => 'layer-on=' + d.querySelector('.map').classList.contains('layer-on') +
+              ' 景點=' + d.querySelectorAll('.spot').length +
               ' peek=' + d.getElementById('peek').classList.contains('is-on')],
-      ['再按一次 → 圖層關、小卡收起', d => {
+      /* 綁對了哪一顆，要用名字驗。只看 is-on 的話，綁到別顆也會過。 */
+      ['點今天的地方 → 小卡浮出，而且是它的名字', d => {
+        const spots = [...d.querySelectorAll('.spot')];
+        const i = spots.findIndex(s => s.className.includes('spot--today'));
+        if (i < 0) return false;
+        spots[i].click();
+        const want = d.defaultView.MOCK.SPOTS.filter(s => s.state === 'today')[0].name;
+        return d.getElementById('peek').classList.contains('is-on') &&
+               d.querySelector('[data-peek-name]').textContent.trim() === want &&
+               d.getElementById('peek').getAttribute('href').indexOf('?id=') > 0;
+      }, d => '小卡名字「' + (d.querySelector('[data-peek-name]') || {}).textContent +
+              '」 href=' + d.getElementById('peek').getAttribute('href')],
+      ['再按一次城事鈕 → 圖層關、小卡收起', d => {
         d.getElementById('layerBtn').click();
         return !d.querySelector('.map').classList.contains('layer-on') &&
                !d.getElementById('peek').classList.contains('is-on');
@@ -71,10 +85,16 @@ const CASES = [
        d => '.spot ' + d.querySelectorAll('.spot').length + ' 個'],
       ['一載入不彈小卡', d => !d.getElementById('peek').classList.contains('is-on'),
        () => '小卡自己開了'],
-      ['點景點 → 小卡浮出、名字填進去', d => {
-        d.querySelectorAll('.spot')[0].click();
-        const n = d.querySelector('[data-peek-name]').textContent.trim();
-        return d.getElementById('peek').classList.contains('is-on') && n.length > 0;
+      /* 要驗「綁到的是哪一顆」，不能只驗 is-on ——
+         小卡被綁錯顆的話，只看 class 一樣會全綠。 */
+      ['點第一顆景點 → 小卡浮出，而且是那一顆的名字', d => {
+        const s0 = d.querySelectorAll('.spot')[0];
+        s0.click();
+        const want = s0.querySelector('.spot__img').dataset.art;
+        const name = d.querySelector('[data-peek-name]').textContent.trim();
+        return d.getElementById('peek').classList.contains('is-on') &&
+               name.length > 0 &&
+               d.defaultView.MOCK.SPOTS.some(s => s.name === name && s.art === want);
       }, d => '名字「' + d.querySelector('[data-peek-name]').textContent.trim() + '」'],
       ['按設為下車點 → 欄位填好、sheet 展開、叫車鈕就緒', d => {
         const name = d.querySelector('[data-peek-name]').textContent.trim();
@@ -116,10 +136,14 @@ const CASES = [
         const h3 = Math.round(d.querySelector('.map').getBoundingClientRect().height);
         return h1 === h2 && h2 === h3;
       }, d => '地圖高 ' + Math.round(d.querySelector('.map').getBoundingClientRect().height) + 'px'],
-      ['今天模式點景點 → 小卡浮出', d => {
-        d.querySelectorAll('.spot')[1].click();
-        return d.getElementById('peek').classList.contains('is-on');
-      }, () => '小卡沒開'],
+      ['今天模式點景點 → 小卡浮出，而且是那一顆的名字', d => {
+        const s1 = d.querySelectorAll('.spot')[1];
+        s1.click();
+        const want = s1.querySelector('.spot__img').dataset.art;
+        const name = d.querySelector('[data-peek-name]').textContent.trim();
+        return d.getElementById('peek').classList.contains('is-on') &&
+               d.defaultView.MOCK.SPOTS.some(s => s.name === name && s.art === want);
+      }, d => '名字「' + (d.querySelector('[data-peek-name]') || {}).textContent + '」'],
       ['切回叫車模式 → 小卡收起、地圖乾淨', d => {
         d.querySelector('#mode .pill[data-tab="ride"]').click();
         return !d.getElementById('peek').classList.contains('is-on') &&

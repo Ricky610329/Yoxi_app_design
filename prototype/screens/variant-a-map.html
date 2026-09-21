@@ -87,7 +87,7 @@
           <button data-mode="been">去過</button>
         </nav>
 
-        <button class="fab" style="top:62px; right:16px" aria-label="定位">
+        <button class="fab" data-recenter style="top:62px; right:16px" aria-label="定位">
           <span data-icon="locate"></span>
         </button>
 
@@ -109,13 +109,13 @@
           <div class="u-row" style="justify-content:space-between; align-items:flex-end">
             <span>
               <span id="cov" style="display:block; font-size:28px; font-weight:800;
-                           font-style:italic; line-height:1">14%</span>
+                           font-style:italic; line-height:1">28%</span>
               <span style="display:block; font-size:12px; color:var(--yoxi-slate);
                            margin-top:2px">的新竹被你點亮了</span>
             </span>
             <span style="font-size:12px; color:var(--yoxi-slate); text-align:right">
-              去過 <b class="num" style="color:var(--yoxi-navy)">12</b> 個地方<br>
-              走了 <b class="num" style="color:var(--yoxi-navy)">48</b> 公里
+              去過 <b class="num" id="nPlaces" style="color:var(--yoxi-navy)">8</b> 個地方<br>
+              走了 <b class="num" id="nKm" style="color:var(--yoxi-navy)">48</b> 公里
             </span>
           </div>
           <div class="citycolor" id="colors" style="height:26px; margin-top:12px"></div>
@@ -153,6 +153,11 @@
   const spots = SHELL.renderSpots(document.getElementById('spots'));
 
   document.getElementById('cov').textContent = SHELL.fogCoverage() + '%';
+  /* 這兩個數字以前是寫死的 12 / 48，跟所有收藏頁算出來的 8 對不起來，
+     而且這正是變體 A 的招牌畫面。 */
+  document.getElementById('nPlaces').textContent =
+    MOCK.POSTCARDS.filter(function (p) { return STATE.has(p.id); }).length;
+  document.getElementById('nKm').textContent = STATE.all.km;
 
   document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
     .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
@@ -170,6 +175,9 @@
     document.getElementById('peekMeta').textContent = s.type + ' · ' +
       (s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + ' km' : s.dist + ' m');
     document.getElementById('peekHook').textContent = s.hook;
+    /* 這一行以前漏了：小卡上寫著護城河，點下去卻跳到今天的地方。
+       其他地圖都是用 SHELL.bindPeek 的 onOpen 更新，只有這一頁自己重寫了一份。 */
+    peek.href = 'place.html?id=' + s.id;
     peek.classList.add('is-on');
     open = i;
   }

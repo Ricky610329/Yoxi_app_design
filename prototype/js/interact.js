@@ -109,6 +109,41 @@
       layer.style.transition = '';
       map.style.cursor = '';
     });
+
+    /* 定位鈕真的要做事：把地圖推回原位。
+       它是叫車首頁右下角最顯眼的一顆，按下去毫無反應很難解釋。 */
+    const loc = map.querySelector('[data-recenter]');
+    if (loc) {
+      loc.addEventListener('click', function (e) {
+        e.preventDefault();
+        dx = 0; dy = 0;
+        layer.style.transform = '';
+        if (window.SHELL) SHELL.toast('已回到你的位置');
+      });
+    }
+  }
+
+  /* 按下去只給一句話的元素。
+     用在「正式版會做事、這份原型沒有做那一段」的地方 —— 寧可講清楚，
+     也不要讓人按了完全沒反應。 */
+  function initShare() {
+    document.querySelectorAll('[data-share]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (!window.SHELL) return;
+        SHELL.shareSheet({ title: el.dataset.share || '分享這張',
+                           elder: el.dataset.shareElder !== 'no' });
+      });
+    });
+  }
+
+  function initToasts() {
+    document.querySelectorAll('[data-toast]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (window.SHELL) SHELL.toast(el.dataset.toast);
+      });
+    });
   }
 
   /* ------------------------------------------------------------------ */
@@ -183,6 +218,8 @@
     document.querySelectorAll('.sheet[data-drag]').forEach(initSheet);
     document.querySelectorAll('.map[data-pan]').forEach(initPan);
     document.querySelectorAll('[data-pills]').forEach(initPills);
+    initToasts();
+    initShare();
     initSwitches();
     initFlip();
     initReset();
@@ -199,5 +236,6 @@
     initPan: initPan,
     initSwitches: initSwitches,
     initPills: initPills,
+    initToasts: initToasts,
   };
 })();

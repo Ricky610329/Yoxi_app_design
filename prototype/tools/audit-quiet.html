@@ -48,9 +48,23 @@ function audit(name, doc) {
   const pass = [];
   const fail = [];
 
-  /* ④ 同時最多 4 個景點 */
-  (spots.length <= 4 ? pass : fail)
-    .push('④ 景點數量 ' + spots.length + ' 個（上限 4）');
+  /* ④ 景點數量。
+     只有上界是不夠的 —— 0 顆也會過。這份原型真的因此吃過一次虧：
+     mock.js 改了一個 id，三個變體同時少掉「今天的地方」那一顆，
+     這一條照樣印 PASS。所以下界、可見性、主角在不在，三件事都要驗。 */
+  const vis = spots.filter(function (s) {
+    const r = s.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  });
+  (spots.length >= 1 && spots.length <= 4 ? pass : fail)
+    .push('④ 景點數量 ' + spots.length + ' 個（要 1–4）');
+  (vis.length === spots.length ? pass : fail)
+    .push('④ 其中畫得出來的 ' + vis.length + ' 個');
+  const today = spots.filter(function (s) {
+    return s.className.indexOf('spot--today') >= 0;
+  });
+  (today.length === 1 ? pass : fail)
+    .push('④ 今天的地方 ' + today.length + ' 顆（要剛好 1）');
 
   /* ⑤ 不遮住上車點 pin、它上方的地址標籤、四顆浮動鈕 */
   const guarded = [];
@@ -64,17 +78,29 @@ function audit(name, doc) {
     guarded.push(['浮動鈕 ' + (i + 1) + '（' + (f.className.split(' ')[1] || 'fab') + '）', r(f)]);
   });
 
+  if (guarded.length === 0) {
+    fail.push('⑤ 一個受保護元素都沒找到 —— 這條沒有驗到，不是通過');
+  }
+
+  /* 小卡也要算。它是圖層打開後自動浮出、面積最大的那一塊，
+     只量圖釘不量小卡，等於避開了這條承諾真正要防的東西。 */
+  const covers = spots.concat(Array.from(doc.querySelectorAll('.peek.is-on')));
+
   let hits = 0;
   guarded.forEach(function (g) {
-    spots.forEach(function (s) {
+    covers.forEach(function (s) {
       const px = overlap(r(s), g[1]);
       if (px > 0) {
         hits++;
-        fail.push('⑤ ' + g[0] + ' 被景點「' + (s.dataset.name || s.dataset.i) + '」壓住 ' + px + ' px²');
+        const who = s.className.indexOf('peek') >= 0
+          ? '小卡' : ('景點 #' + (s.dataset.i != null ? s.dataset.i : '?'));
+        fail.push('⑤ ' + g[0] + ' 被' + who + '壓住 ' + px + ' px²');
       }
     });
   });
-  if (!hits) pass.push('⑤ ' + guarded.length + ' 個受保護元素全部沒有被景點覆蓋');
+  if (!hits && guarded.length) {
+    pass.push('⑤ ' + guarded.length + ' 個受保護元素沒有被景點或小卡覆蓋');
+  }
 
   /* ⑥ 兩種標記不共用元件：class 集合必須完全不相交 */
   const cls = function (els) {
@@ -87,17 +113,27 @@ function audit(name, doc) {
     });
     return set;
   };
-  const a = cls(q('.pin')), b = cls(spots);
-  const shared = Array.from(a).filter(function (c) { return b.has(c); });
-  (shared.length === 0 ? pass : fail)
-    .push('⑥ 共用的 class：' + (shared.length ? shared.join(' ') : '無'));
+  const pins = q('.pin');
+  if (!pins.length || !spots.length) {
+    fail.push('⑥ 找不到上下車點 pin 或景點 —— 這條沒有驗到，不是通過');
+  } else {
+    const a = cls(pins), b = cls(spots);
+    const shared = Array.from(a).filter(function (c) { return b.has(c); });
+    (shared.length === 0 ? pass : fail)
+      .push('⑥ 共用的 class：' + (shared.length ? shared.join(' ') : '無'));
+  }
 
   /* ③ 收合態 sheet 不動：新增內容一律標 data-expand-only */
   const sheet = doc.getElementById('sheet');
-  if (sheet) {
+  if (!sheet) {
+    fail.push('③ 找不到 #sheet —— 這條沒有驗到，不是通過');
+  } else if (!sheet.classList.contains('is-collapsed')) {
+    /* 以前這個條件寫在每個元素的 filter 裡，所以 sheet 只要不是收合態，
+       整條檢查就靜靜回 0 個、照印 PASS。它必須是前置守衛。 */
+    fail.push('③ 量測時 sheet 不是收合態 —— 這條沒有驗到，不是通過');
+  } else {
     const leaked = q('#sheet [data-expand-only]').filter(function (e) {
-      return e.getBoundingClientRect().height > 0 &&
-             sheet.classList.contains('is-collapsed');
+      return e.getBoundingClientRect().height > 0;
     });
     (leaked.length === 0 ? pass : fail)
       .push('③ 收合態外洩的展開態元素：' + leaked.length + ' 個');

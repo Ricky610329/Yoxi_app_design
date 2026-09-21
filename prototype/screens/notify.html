@@ -30,15 +30,18 @@
         </div>
         <h1 class="hdr-red__title">通知中心</h1>
         <div class="hdr-red__pills">
-          <div class="pill-group">
-            <button class="pill is-active">最新消息</button>
-            <button class="pill">個人通知</button>
+          <div class="pill-group" data-pills>
+            <button class="pill is-active" data-tab="news">最新消息</button>
+            <button class="pill" data-tab="mine">個人通知</button>
           </div>
         </div>
       </header>
 
       <div class="scroll sheet-top" style="margin-top:-16px">
 
+        <!-- 城事的通知都是「你的」，所以歸在個人通知；
+             yoxi 原本的活動推播留在最新消息。兩顆 pill 以前沒有接任何東西。 -->
+        <div data-panel="mine" class="u-hidden">
         <a class="row-nav" href="explore.html">
           <span class="tile-icon"><span data-icon="place"></span></span>
           <span class="row-nav__body">
@@ -66,9 +69,10 @@
           <span class="arrow"></span>
         </a>
 
-        <div style="height:8px; background:var(--yoxi-mist)"></div>
+        </div>
 
-        <a class="row-nav" href="#">
+        <div data-panel="news">
+        <a class="row-nav" href="#" data-toast="這是 yoxi 現有的活動推播，原型沒有做這一段">
           <span class="tile-icon tile-icon--red">
             <span data-icon="bell" style="filter:brightness(0) invert(1)"></span>
           </span>
@@ -79,7 +83,7 @@
           <span class="arrow"></span>
         </a>
 
-        <a class="row-nav" href="#">
+        <a class="row-nav" href="#" data-toast="這是 yoxi 現有的活動推播，原型沒有做這一段">
           <span class="tile-icon tile-icon--red">
             <span data-icon="bell" style="filter:brightness(0) invert(1)"></span>
           </span>
@@ -89,6 +93,7 @@
           </span>
           <span class="arrow"></span>
         </a>
+        </div>
 
       </div>
     </div>

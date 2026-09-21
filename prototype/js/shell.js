@@ -111,10 +111,14 @@ const TABSETS = {
 
 function tabbar(active, set) {
   const TABS = TABSETS[set] || TABSETS.default;
+  /* 變體 A／B／C 的叫車頁是共用的 home.html，連過去時要把變體帶著 */
+  const carry = (set === 'a' || set === 'b' || set === 'c')
+    ? function (h) { return h === 'home.html' ? 'home.html?v=' + set : h; }
+    : function (h) { return h; };
   return `
     <nav class="tabbar" id="tabbar">
       ${TABS.map(t => `
-        <a class="tabbar__item ${t.id === active ? 'is-active' : ''}" href="${t.href}">
+        <a class="tabbar__item ${t.id === active ? 'is-active' : ''}" href="${carry(t.href)}">
           <span class="tabbar__icon">
             <span data-icon="${t.icon}" style="display:block;width:26px;height:26px"></span>
             ${t.dot && t.id !== active ? '<i class="tabbar__dot"></i>' : ''}
@@ -354,12 +358,96 @@ function renderSpots(el, opt) {
 /* 排在所有 DOMContentLoaded 綁定之後才跑。
    頁內腳本在 body 裡，執行時 interact.js 還沒 boot（它等 DOMContentLoaded），
    所以想「程式化地點一顆 pill」就得排到它後面去。 */
+/* 短暫的提示條。
+   用在「這顆按鈕在正式版會做事，但這份原型沒有做那一段」的地方 ——
+   按下去完全沒反應是最難自我發現、現場也最尷尬的一種缺陷。 */
+function toast(msg, opt) {
+  opt = opt || {};
+  const host = document.querySelector('.device') || document.body;
+  host.querySelectorAll('.toast').forEach(function (t) { t.remove(); });
+  const t = document.createElement('div');
+  t.className = 'toast';
+  if (opt.bottom) t.style.bottom = opt.bottom;
+  t.textContent = msg;
+  host.appendChild(t);
+  setTimeout(function () { t.remove(); }, opt.ms || 2400);
+}
+
+/* 分享面板。elder=true 時把長輩圖放在第一個選項 ——
+   那是這個提案最難被複製的一格，不該只埋在收藏頁第三層。 */
+function shareSheet(opt) {
+  opt = opt || {};
+  const host = document.querySelector('.device') || document.body;
+  if (host.querySelector('.sharesheet')) return;
+
+  const scrim = document.createElement('div');
+  scrim.className = 'scrim';
+  scrim.style.cssText = 'place-items:end stretch; padding:0';
+
+  const rows = [];
+  if (opt.elder !== false) {
+    rows.push(['<a class="row-nav" href="elder.html">',
+               '傳給家人', '自動排成長輩圖：大字、吉祥話、你昨天去過的地方']);
+  }
+  rows.push(['<button class="row-nav" data-act="save">', '存成圖片', '存到相簿，原圖不含任何位置資訊']);
+  rows.push(['<button class="row-nav" data-act="link">', '複製連結', '對方點開只看得到這一張，看不到你的其他紀錄']);
+
+  scrim.innerHTML =
+    '<div class="sharesheet">' +
+      '<div class="sharesheet__handle"></div>' +
+      '<div class="sharesheet__t">' + (opt.title || '分享這張') + '</div>' +
+      rows.map(function (r) {
+        return r[0] +
+          '<span class="row-nav__body">' +
+            '<span class="row-nav__title">' + r[1] + '</span>' +
+            '<span class="row-nav__sub">' + r[2] + '</span>' +
+          '</span><span class="arrow"></span></' + (r[0].indexOf('<a') === 0 ? 'a' : 'button') + '>';
+      }).join('') +
+      '<div class="sharesheet__note">日誌與心情不會被分享。只有明信片與週回顧可以拿出去。</div>' +
+    '</div>';
+
+  const close = function () { scrim.remove(); };
+  scrim.addEventListener('click', function (e) { if (e.target === scrim) close(); });
+  scrim.querySelectorAll('[data-act]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      close();
+      toast(b.dataset.act === 'save' ? '已存到相簿' : '連結已複製');
+    });
+  });
+  host.appendChild(scrim);
+}
+
 function ready(fn) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { setTimeout(fn, 0); });
   } else {
     setTimeout(fn, 0);
   }
+}
+
+/* 叫車地圖上要疊哪幾個景點、疊在哪。
+   pos 是 { 景點id: [x%, y%] }，座標是底邊中心。
+
+   為什麼要抽出來：這段本來在變體 D／E／F 各複製一份，
+   結果 mock.js 把 SPOTS[0].id 從 'glass' 改成 'glass-kiln' 時只改了一處，
+   三個變體同時少掉「今天的地方」那一顆 —— 而四份稽核工具全部報全過，
+   因為它們只檢查「景點數量不超過 4」，沒有下界。
+   所以這裡自己把對不上的 key 叫出來，別再安靜地少一顆。 */
+function nearSpots(pos) {
+  const byId = {};
+  MOCK.SPOTS.forEach(function (s) { byId[s.id] = s; });
+
+  const miss = Object.keys(pos).filter(function (k) { return !byId[k]; });
+  if (miss.length) {
+    throw new Error('nearSpots：MOCK.SPOTS 裡沒有 ' + miss.join('、') +
+                    '。改過 SPOTS 的 id 就要同步改各變體的 POS。');
+  }
+  return Object.keys(pos).map(function (k) {
+    const c = Object.assign({}, byId[k]);
+    c.x = pos[k][0];
+    c.y = pos[k][1];
+    return c;
+  });
 }
 
 function bindPeek(peekEl, list, opt) {
@@ -453,7 +541,13 @@ function mount() {
 
   const device = document.querySelector('.device');
   if (tab) {
-    device.insertAdjacentHTML('beforeend', tabbar(tab, document.body.dataset.tabs));
+    /* 變體 A／B／C 沒有自己的叫車頁，共用 home.html。
+       共用的那一頁如果不知道自己是從哪個變體來的，分頁列就會用預設組 ——
+       按一下「叫車」再按一下「探索」，人就掉回現況，變體等於沒做。
+       所以讓它靠 ?v= 把變體帶著走。 */
+    const vParam = new URLSearchParams(location.search).get('v');
+    device.insertAdjacentHTML('beforeend',
+      tabbar(tab, document.body.dataset.tabs || vParam));
     screen.classList.add('has-tabbar');
   }
   device.insertAdjacentHTML('beforeend',
@@ -470,7 +564,10 @@ if (document.readyState === 'loading') {
 }
 
 window.SHELL = {
+    nearSpots: nearSpots,
     ready: ready,
+    toast: toast,
+    shareSheet: shareSheet,
   injectIcons, injectArt, postcardArt, showPush, yieldTabbar,
   fogCells, fogCoverage, renderSpots, bindPeek,
 };

@@ -163,9 +163,16 @@
   document.getElementById('name').textContent    = P.name;
 
   /* 距離決定主次動作 */
-  const km  = (P.distance / 1000).toFixed(1);
-  const mins = far ? Math.round(P.distance / 670) : Math.round(P.distance / 75);
-  document.getElementById('meta').innerHTML = far
+  /* 沒有距離就別編一個。以前 expand() 會回一個假的 2000，
+     現在會回 null —— 那就要真的有地方顯示「距離待確認」，
+     不然畫面上會印出「離你 null m · 走路 0 分鐘」。 */
+  const hasDist = P.distance != null;
+  const km  = hasDist ? (P.distance / 1000).toFixed(1) : null;
+  const mins = !hasDist ? null
+             : far ? Math.round(P.distance / 670) : Math.round(P.distance / 75);
+  document.getElementById('meta').innerHTML = !hasDist
+    ? '<span>距離待確認</span>'
+    : far
     ? '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + km + '</span> km</span>' +
       '<span>·</span><span>搭車 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>'
     : '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + P.distance + '</span> m</span>' +
@@ -208,7 +215,12 @@
   if (far) document.getElementById('backBtn').href = 'route.html';
 
   /* 頁尾：28 km 走不到，主要動作自動變成叫車 */
-  document.getElementById('foot').innerHTML = far
+  document.getElementById('foot').innerHTML = !hasDist
+    ? `<div style="display:grid; grid-template-columns:1fr auto; gap:8px">
+         <a class="btn-primary" href="going.html">走路前往</a>
+         <a class="btn-ghost" href="home.html" style="width:auto; padding:0 20px">用 yoxi</a>
+       </div>`
+    : far
     ? `<a class="btn-primary" href="ride.html">用 yoxi 前往</a>
        <div style="margin-top:10px; display:flex; align-items:center; justify-content:center;
                    gap:8px; font-size:12px">

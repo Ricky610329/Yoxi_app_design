@@ -92,11 +92,14 @@ const TODAY = {
    這條清單本身就是「反限時」的展示品。
    -------------------------------------------------------------------------- */
 
+/* 「還沒去的地方」必須跟地圖上 state:'new' 的那幾顆是同一組。
+   兩邊對不起來的話，點「在地圖上看」會找不到剛剛看到的那個地方。
+   id 也不能跟 SPOTS 撞 —— findPlace 先查這裡，撞到就會把人帶去另一個地方。 */
 const PENDING = [
-  { id: 'moat',    name: '護城河的舊碼頭階梯', type: '水岸', art: 'moat',    distance: 1800, ago: '3 天前推薦' },
-  { id: 'temple',  name: '長和宮的媽祖船',     type: '廟宇', art: 'temple',  distance: 2400, ago: '5 天前推薦' },
-  { id: 'hill',    name: '十八尖山的防空洞',   type: '山徑', art: 'hill',    distance: 3100, ago: '上週推薦' },
-  { id: 'lake',    name: '青草湖的舊戲院地基', type: '遺構', art: 'lake',    distance: 6400, ago: '上週推薦' },
+  { id: 'moat',    name: '護城河的舊碼頭階梯', type: '水岸', art: 'moat',  distance: 1800, ago: '3 天前推薦' },
+  { id: 'brick',   name: '新竹州廳',          type: '官署', art: 'brick', distance: 2400, ago: '5 天前推薦' },
+  { id: 'hill',    name: '十八尖山的防空洞',   type: '山徑', art: 'hill',  distance: 3100, ago: '上週推薦' },
+  { id: 'lake',    name: '青草湖的舊戲院地基', type: '遺構', art: 'lake',  distance: 6400, ago: '上週推薦' },
 ];
 
 /* --------------------------------------------------------------------------

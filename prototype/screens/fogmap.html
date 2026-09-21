@@ -42,9 +42,11 @@
           </a>
         </div>
         <div class="hdr-red__pills" style="margin-top:12px">
-          <div class="pill-group">
-            <button class="pill is-active">全部</button>
-            <button class="pill">這個月</button>
+          <!-- 這兩顆以前沒接任何東西。現在切的是「痕跡會褪色，資產不會」那條分軌：
+               全部＝含九十天前開始褪色的格子；這個月＝只算還亮著的。 -->
+          <div class="pill-group" id="span">
+            <button class="pill is-active" data-span="all">全部</button>
+            <button class="pill" data-span="month">這個月</button>
           </div>
         </div>
       </header>
@@ -73,9 +75,9 @@
         <div class="u-row" style="justify-content:space-between; align-items:flex-end">
           <span>
             <span id="cov" style="display:block; font-size:32px; font-weight:800;
-                         font-style:italic; line-height:1">14%</span>
+                         font-style:italic; line-height:1">28%</span>
             <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
-              的新竹被你點亮了
+              <span id="covNote">的新竹被你點亮了</span>
             </span>
           </span>
           <span class="fogmap__legend">
@@ -140,7 +142,28 @@
   document.getElementById('fog').innerHTML = cells + roads;
 
   /* 覆蓋率由格子算，不要寫死 */
-  document.getElementById('cov').textContent = SHELL.fogCoverage() + '%';
+  /* 覆蓋率跟著上面那兩顆 pill 走。'fade' 是九十天前走過、已經在褪色的格子。 */
+  const flat = MOCK.FOG.flat();
+  const cov = function (withFade) {
+    const lit = flat.filter(function (c) { return withFade ? c !== 'fog' : c === 'seen'; }).length;
+    return Math.round(lit / flat.length * 100);
+  };
+  const mapEl  = document.querySelector('.fogmap');
+  const covEl  = document.getElementById('cov');
+  const covNote = document.getElementById('covNote');
+
+  function setSpan(key) {
+    const all = key === 'all';
+    mapEl.classList.toggle('fade-off', !all);
+    covEl.textContent = cov(all) + '%';
+    if (covNote) covNote.textContent = all
+      ? '的新竹被你點亮了'
+      : '是這個月點亮的';
+  }
+  document.querySelectorAll('#span .pill').forEach(function (b) {
+    b.addEventListener('click', function () { setSpan(b.dataset.span); });
+  });
+  setSpan('all');
 
   document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
     .map(c => `<span class="citycolor__band" style="background:${c}"></span>`).join('');

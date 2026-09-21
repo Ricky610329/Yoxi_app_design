@@ -193,6 +193,10 @@
    一定要限定 .map--layered：只有叫車首頁那張「有城事圖層開關」的地圖
    受這條規則管。寫成 .map:not(.layer-on) 會把探索地圖、城市足跡、
    變體 A／B 的景點與霧格子一起關掉 —— 那些地圖本來就沒有開關。 */
+/* 「這個月」模式：九十天前走過、正在褪色的格子先不算。
+   選擇器不綁 .map —— 整頁的城市足跡用的是 .fogmap，不是 .map。 */
+.fade-off .fogmap__cell--fade { opacity: 0; }
+
 .map--layered:not(.layer-on) .fogmap__cell,
 .map--layered:not(.layer-on) #spots { display: none; }
 
@@ -1138,4 +1142,46 @@
   color: var(--yoxi-white);
   font-size: 9px;
   font-weight: 800;
+}
+
+
+/* ==========================================================================
+   .sharesheet —— 分享面板【新增】
+
+   為什麼要做：明信片剛生成出來那一秒，「分享」是人的直覺反射。
+   原本五個分享鍵全部是 href="#"，按下去完全沒反應 ——
+   而那正好是整份原型情緒最高的一幕。
+
+   它同時是長輩圖的入口。長輩圖是這個提案最難被別隊想到的一格，
+   原本埋在收藏頁的第三層，沒有任何一條流程會經過它。
+   ========================================================================== */
+
+.sharesheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 80;
+  background: var(--yoxi-white);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding: var(--sp-3) var(--gutter) var(--sp-5);
+  box-shadow: var(--sh-sheet);
+  animation: sheetUp var(--t-base) var(--ease) backwards;
+}
+@keyframes sheetUp { from { transform: translateY(100%); } }
+
+.sharesheet__handle {
+  width: 52px; height: 4px;
+  margin: 0 auto var(--sp-4);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-slate-lite);
+}
+.sharesheet__t {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-heavy);
+  margin-bottom: var(--sp-3);
+}
+.sharesheet__note {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-cap);
+  color: var(--yoxi-slate);
+  line-height: 1.7;
 }

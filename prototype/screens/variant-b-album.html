@@ -187,7 +187,7 @@
 
   document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
     const got   = STATE.card(p.id);
-    const fresh = A.lastCard === p.id;
+    const fresh = STATE.lastIsNew && A.lastCard === p.id;
     const ride  = got && got.by === 'ride';
 
     if (!got) {
@@ -231,7 +231,11 @@
   SHELL.injectArt();
   SHELL.injectIcons();
 
-  STATE.clearLast();   /* 「新」只標示一次 */
+  /* 「新」只標示一次，但不能把 lastCard 清掉 ——
+     每日回顧的第二幕（今天多了哪一張）完全靠它。
+     以前一走到收藏頁就清掉，所以流程 C 的慶祝幕永遠顯示降級文案
+     「今天沒有新的地方」，即使一分鐘前才收下一張。 */
+  STATE.markLastSeen();
 })();
 </script>
 </body>

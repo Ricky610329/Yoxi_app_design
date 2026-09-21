@@ -39,12 +39,18 @@
       settings: { pushAm: true, pushPm: true, place: true, time: true, steps: true, photos: true, trips: false },
       /* 最近一次解鎖，用來在收藏頁標示「新」 */
       lastCard: null,
+      lastSeen: null,
     };
   }
 
   let s;
   try {
-    s = JSON.parse(localStorage.getItem(KEY)) || fresh();
+    /* 跟預設合併，不要直接用讀到的物件。
+       舊版存進去的結構如果少了 settings 或 today，
+       interact.js 讀 STATE.all.settings[k] 就會丟例外，boot() 整個中斷 ——
+       sheet 拖曳、地圖平移、pill、翻面、重設全部不會綁，而且不報錯給使用者。
+       評審電腦上只要有一份舊狀態，整個原型就變成一張不能動的圖。 */
+    s = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY)) || {});
   } catch (e) {
     s = fresh();
   }
@@ -130,7 +136,10 @@
 
     setSetting(k, v) { s.settings[k] = v; save(); },
 
-    clearLast() { s.lastCard = null; save(); },
+    /* 收藏頁把「新」的角標標示過了，但 lastCard 要留著給每日回顧用。 */
+    markLastSeen() { s.lastSeen = s.lastCard; save(); },
+    get lastIsNew() { return !!s.lastCard && s.lastCard !== s.lastSeen; },
+    clearLast() { s.lastCard = null; s.lastSeen = null; save(); },
 
     reset() {
       s = fresh();

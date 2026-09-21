@@ -292,23 +292,34 @@ def structure():
 
 
 def main():
+    bad = [0]
+
+    def show(lines):
+        for l in lines:
+            print(l)
+            if 'FAIL' in l:
+                bad[0] += 1
+
     print('═' * 64)
     print('「叫車畫面變吵」防護驗收')
     print('═' * 64)
     print('\n── 幾何：③ 收合態外洩 ④ 景點數量 ⑤ 覆蓋 ⑥ 視覺語言 ' + '─' * 8)
-    for l in run_page('audit-quiet.html'):
-        print(l)
+    show(run_page('audit-quiet.html'))
     print('\n── DOM：① 圖層關掉之後，跟現況差在哪 ' + '─' * 20)
-    for l in domdiff():
-        print(l)
+    show(domdiff())
     print('\n── 結構：② 叫車關鍵路徑的 tap 數 ' + '─' * 24)
-    for l in structure():
-        print(l)
+    show(structure())
     print('\n── 互動：點下去真的有反應嗎 ' + '─' * 28)
-    for l in run_page('smoke-variants.html', 15000):
-        print(l)
+    show(run_page('smoke-variants.html', 15000))
     print()
-    return 0
+    print('═' * 64)
+    if bad[0]:
+        print('未通過 %d 條。' % bad[0])
+    else:
+        print('六條承諾與互動測試全部通過。')
+    print('═' * 64)
+    print()
+    return 1 if bad[0] else 0
 
 
 if __name__ == '__main__':

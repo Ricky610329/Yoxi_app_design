@@ -54,11 +54,11 @@
         <div style="padding:16px">
           <div class="statbar">
             <span class="statbar__cell">
-              <span class="statbar__n" id="nPlaces">12</span>
+              <span class="statbar__n" id="nPlaces">8</span>
               <span class="statbar__k">去過的地方</span>
             </span>
             <span class="statbar__cell">
-              <span class="statbar__n">3</span>
+              <span class="statbar__n" id="nBadges">2</span>
               <span class="statbar__k">獎章</span>
             </span>
             <span class="statbar__cell">
@@ -74,7 +74,7 @@
             <div class="u-row" style="justify-content:space-between; align-items:flex-end">
               <span>
                 <span id="cov" style="display:block; font-size:26px; font-weight:800;
-                             font-style:italic; line-height:1">14%</span>
+                             font-style:italic; line-height:1">28%</span>
                 <span style="display:block; font-size:12px; color:var(--yoxi-slate);
                              margin-top:3px">的新竹被你點亮了</span>
               </span>
@@ -159,10 +159,8 @@
   document.getElementById('nKm').textContent = STATE.all.km;
 
   /* 覆蓋率格：把霧地圖壓成一條 */
-  const flat = MOCK.FOG.flat();
-  document.getElementById('cov').textContent =
-    Math.round(flat.filter(function (c) { return c !== 'fog'; }).length / flat.length * 100) + '%';
-  document.getElementById('cover').innerHTML = flat.map(function (s) {
+  document.getElementById('cov').textContent = SHELL.fogCoverage() + '%';
+  document.getElementById('cover').innerHTML = MOCK.FOG.flat().map(function (s) {
     return '<i class="' + (s === 'seen' ? 'on' : s === 'fade' ? 'fade' : '') + '"></i>';
   }).join('');
 
@@ -170,15 +168,18 @@
     .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
     .join('');
 
+  /* 收藏牆一律讀 STATE，不要讀 MOCK.POSTCARDS 的靜態 by/date ——
+     不然剛解鎖的那一張在這個變體上會是「解鎖了但沒有日期、沒有金框」。 */
   document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
-    const locked = !STATE.has(p.id);
-    return '<a class="postcard ' + (locked ? 'postcard--locked ' : '') +
-      (p.by === 'ride' ? 'postcard--gold' : '') + '" href="' +
-      (locked ? 'place.html?id=' + p.id : 'postcard.html?id=' + p.id) + '">' +
+    const got  = STATE.card(p.id);
+    const ride = got && got.by === 'ride';
+    return '<a class="postcard ' + (got ? '' : 'postcard--locked ') +
+      (ride ? 'postcard--gold' : '') + '" href="' +
+      (got ? 'postcard.html?id=' + p.id : 'place.html?id=' + p.id) + '">' +
       '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
-      (p.by === 'ride' ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
+      (ride ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
       '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span>' +
-      (p.date ? '<span class="postcard__date">' + p.date + '</span>' : '') +
+      (got ? '<span class="postcard__date">' + got.date + '</span>' : '') +
       '</span></a>';
   }).join('');
 

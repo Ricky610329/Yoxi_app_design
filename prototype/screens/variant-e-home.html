@@ -87,14 +87,15 @@
            style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
           <span data-icon="menu"></span>
         </a>
-        <button class="fab" style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+        <button class="fab" data-toast="這是 yoxi 現有的掃碼叫車，原型沒有做這一段"
+                style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
           <span data-icon="scan"></span>
         </button>
         <a class="fab" href="notify.html"
            style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
           <span data-icon="bell"></span>
         </a>
-        <button class="fab" style="bottom:20px; right:16px" aria-label="定位">
+        <button class="fab" data-recenter style="bottom:20px; right:16px" aria-label="定位">
           <span data-icon="locate"></span>
         </button>
 
@@ -209,7 +210,7 @@
         </div>
 
         <div class="u-row" style="justify-content:space-between; margin-top:16px">
-          <a class="btn-pill" href="#">
+          <a class="btn-pill" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它">
             <span data-icon="plane" style="width:18px;height:18px;display:block"></span>
             機場接送
           </a>
@@ -249,15 +250,8 @@
        地址標籤 x27.5–72.5 y34.1–43.4 ／ 上車點 pin x44.1–55.9 y44.9–62.0
        小卡展開後 y60.4 以下
      改任何一個數字都要重跑 tools/audit-quiet.html。 */
-  const POS = { glass: [38, 32], market: [17, 44], moat: [84, 45], hill: [26, 57] };
-  const NEAR = MOCK.SPOTS
-    .filter(function (s) { return POS[s.id]; })
-    .map(function (s) {
-      const c = Object.assign({}, s);
-      c.x = POS[s.id][0];
-      c.y = POS[s.id][1];
-      return c;
-    });
+  const POS = { 'glass-kiln': [38, 32], market: [17, 44], moat: [84, 45], hill: [26, 57] };
+  const NEAR = SHELL.nearSpots(POS);
 
   const mapEl = document.querySelector('.map');
   document.getElementById('fogLayer').innerHTML = SHELL.fogCells(390, 440);
