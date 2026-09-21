@@ -63,19 +63,20 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
-  const ROWS = [
-    ['內灣老街 · 抵達解鎖',  '城事解鎖回饋', '+50', '09/21', true],
-    ['南寮漁港 · 抵達解鎖',  '城事解鎖回饋', '+50', '09/12', true],
-    ['行程 · 新竹市 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 內灣', '搭乘回饋', '+34', '09/21', false],
-    ['行程 · 東區 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 竹北', '搭乘回饋', '+12', '09/18', false],
-  ];
+  /* 明細由狀態產生：搭車抵達才有 +50，走路的不進點數頁。
+     這樣標題的總點數與明細加起來才會一致。 */
+  const arrow = '<i class="arrow" style="width:16px;vertical-align:-2px"></i>';
+  const ROWS = [];
+
+  MOCK.POSTCARDS.forEach(function (p) {
+    const c = STATE.card(p.id);
+    if (c && c.by === 'ride') {
+      ROWS.push([p.name + ' · 抵達解鎖', '城事解鎖回饋', '+50', c.date.replace('.', '/'), true]);
+    }
+  });
+  ROWS.sort(function (a, b) { return a[3] < b[3] ? 1 : -1; });
 
   document.getElementById('pts').textContent = STATE.all.points;
-
-  /* 已收集但清單裡沒有的，補一列 —— 這樣剛解鎖的那一筆會出現在最上面 */
-  if (STATE.has('p11')) {
-    ROWS.unshift(['水利路的老玻璃窯 · 抵達解鎖', '城事解鎖回饋', '+0', '09/21', true]);
-  }
 
   document.getElementById('rows').innerHTML = ROWS.map(function (r) {
     const name = r[0], src = r[1], n = r[2], date = r[3], isNew = r[4];

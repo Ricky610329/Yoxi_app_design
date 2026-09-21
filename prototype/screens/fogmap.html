@@ -72,8 +72,8 @@
 
         <div class="u-row" style="justify-content:space-between; align-items:flex-end">
           <span>
-            <span style="display:block; font-size:32px; font-weight:800; font-style:italic;
-                         line-height:1">14%</span>
+            <span id="cov" style="display:block; font-size:32px; font-weight:800;
+                         font-style:italic; line-height:1">14%</span>
             <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
               的新竹被你點亮了
             </span>
@@ -148,6 +148,12 @@
     </g>`;
 
   document.getElementById('fog').innerHTML = cells + roads;
+
+  /* 覆蓋率由格子算，不要寫死 —— 圖上畫 22 格、文字卻說 14% 是最容易被抓包的 */
+  const flat = MOCK.FOG.flat();
+  const lit  = flat.filter(function (c) { return c !== 'fog'; }).length;
+  document.getElementById('cov').textContent =
+    Math.round(lit / flat.length * 100) + '%';
 
   document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
     .map(c => `<span class="citycolor__band" style="background:${c}"></span>`).join('');

@@ -68,25 +68,8 @@
             <div class="lookback__unit">步 · 4.3 公里</div>
           </div>
 
-          <!-- ===== 幕 2：慶祝 ===== -->
-          <div class="lookback__act" id="a2">
-            <div style="width:170px; margin:0 auto 28px; position:relative">
-              <div class="postcard" style="aspect-ratio:3/4; animation:fade-up 700ms var(--ease-bump) both">
-                <div data-art="glass" data-seed="1" style="position:absolute;inset:0"></div>
-                <span class="postcard__foot">
-                  <span class="postcard__name">水利路的老玻璃窯</span>
-                  <span class="postcard__date">今天</span>
-                </span>
-              </div>
-            </div>
-            <h2 class="unlock__title" style="font-size:22px">今天多了一張</h2>
-            <p class="unlock__sub">〈風城玻璃〉這枚獎章，收集 2/5</p>
-            <div style="width:180px; margin:20px auto 0; height:6px; border-radius:999px;
-                        background:rgba(255,255,255,.18); overflow:hidden">
-              <div style="height:100%; width:40%; background:var(--yoxi-red);
-                          border-radius:999px; animation:grow 900ms var(--ease-out) both"></div>
-            </div>
-          </div>
+          <!-- ===== 幕 2：慶祝。今天沒解鎖就不說謊，改成走了多遠。 ===== -->
+          <div class="lookback__act" id="a2"></div>
 
           <!-- ===== 幕 3：今日照片 ===== -->
           <div class="lookback__act" id="a3">
@@ -126,22 +109,15 @@
               <div style="padding:18px 18px 0">
                 <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
                 <div class="u-row u-gap3" style="margin-top:10px">
-                  <span data-icon="moodGood" style="width:28px;height:28px;color:var(--yoxi-red)"></span>
+                  <span id="doneMood" data-icon="moodGood" style="width:28px;height:28px;color:var(--yoxi-red)"></span>
                   <span style="font-size:20px; font-weight:800; color:var(--yoxi-navy)">
                     <span class="num">6,240</span> 步
                   </span>
                 </div>
               </div>
-              <div style="display:flex; gap:8px; padding:14px 18px">
-                <span style="flex:1; aspect-ratio:1/1; border-radius:4px; overflow:hidden;
-                             position:relative" data-art="glass" data-seed="2"></span>
-                <span style="flex:1; aspect-ratio:1/1; border-radius:4px; overflow:hidden;
-                             position:relative" data-art="glass" data-seed="1"></span>
-              </div>
-              <div style="padding:0 18px 14px; font-size:14px; color:var(--yoxi-slate); line-height:1.7">
-                水利路 · 東門市場 · 護城河<br>
-                今天多了〈水利路的老玻璃窯〉
-              </div>
+              <div style="display:flex; gap:8px; padding:14px 18px" id="donePics"></div>
+              <div style="padding:0 18px 14px; font-size:14px; color:var(--yoxi-slate); line-height:1.7"
+                   id="doneText">水利路 · 東門市場 · 護城河</div>
               <div style="height:1px; background:var(--yoxi-line)"></div>
               <div class="privacy-note" style="padding:12px">
                 <span data-icon="lock" style="width:14px;height:14px"></span>
@@ -178,6 +154,39 @@
 (function () {
   const acts = ['a1', 'a2', 'a3', 'a4', 'a5'];
   let idx = 0;
+
+  /* 幕 2 依實際狀態產生。流程 C 中間沒有任何解鎖動作，
+     所以不能寫死「今天多了一張〈水利路的老玻璃窯〉」—— 那會跟收藏頁
+     對不起來，正好戳破「這不是一疊靜態畫面」的宣稱。 */
+  const lastId = STATE.all.lastCard;
+  const lastP  = lastId && MOCK.POSTCARDS.filter(function (p) { return p.id === lastId; })[0];
+
+  if (lastP) {
+    const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(lastP.id) >= 0; })[0];
+    const pr = owner ? STATE.badge(owner.id) : { done: 0, total: 1, name: '' };
+    document.getElementById('a2').innerHTML =
+      '<div style="width:170px; margin:0 auto 28px; position:relative">' +
+        '<div class="postcard" style="aspect-ratio:3/4">' +
+          '<div data-art="' + lastP.art + '" data-seed="1" style="position:absolute;inset:0"></div>' +
+          '<span class="postcard__foot"><span class="postcard__name">' + lastP.name + '</span>' +
+          '<span class="postcard__date">今天</span></span>' +
+        '</div></div>' +
+      '<h2 class="unlock__title" style="font-size:22px">今天多了一張</h2>' +
+      (owner ? '<p class="unlock__sub">〈' + pr.name + '〉這枚獎章，收集 ' +
+               pr.done + '/' + pr.total + '</p>' : '') +
+      '<div style="width:180px; margin:20px auto 0; height:6px; border-radius:999px;' +
+      ' background:rgba(255,255,255,.18); overflow:hidden">' +
+      '<div style="height:100%; width:' + (owner ? pr.done / pr.total * 100 : 0) + '%;' +
+      ' background:var(--yoxi-red); border-radius:999px;' +
+      ' animation:grow 900ms var(--ease-out) both"></div></div>';
+  } else {
+    document.getElementById('a2').innerHTML =
+      '<div class="lookback__steps" style="font-size:44px">' + STATE.all.km + '</div>' +
+      '<div class="lookback__unit">公里 · 這個月走過的</div>' +
+      '<h2 class="unlock__title" style="font-size:20px; margin-top:24px">今天沒有新的地方</h2>' +
+      '<p class="unlock__sub">沒關係，走過的路都還在。</p>';
+  }
+  SHELL.injectArt(document.getElementById('a2'));
 
   const show = i => {
     idx = i;
@@ -223,10 +232,28 @@
     document.querySelectorAll('[data-mood]').forEach(x => x.classList.remove('is-on'));
     b.classList.add('is-on');
     STATE.setToday({ mood: ['good', 'ok', 'low'][i], done: true });
-    setTimeout(() => show(4), 500);
+    setTimeout(() => { paintDone(); show(4); }, 500);
   });
 
   document.getElementById('skipBtn').onclick = () => location.href = 'album.html';
+
+  /* 完成卡依實際選擇渲染 */
+  function paintDone() {
+    const T = STATE.all.today;
+    document.getElementById('doneMood').dataset.icon =
+      { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[T.mood] || 'moodGood';
+    const arts = ['glass', 'market', 'moat'];
+    const picked = T.photo != null ? arts[T.photo] : null;
+    document.getElementById('donePics').innerHTML =
+      (picked ? '<span style="flex:1; aspect-ratio:1/1; border-radius:4px; overflow:hidden;' +
+                ' position:relative" data-art="' + picked + '" data-seed="2"></span>' : '') +
+      (lastP ? '<span style="flex:1; aspect-ratio:1/1; border-radius:4px; overflow:hidden;' +
+               ' position:relative" data-art="' + lastP.art + '" data-seed="1"></span>' : '');
+    document.getElementById('doneText').innerHTML =
+      '水利路 · 東門市場 · 護城河' + (lastP ? '<br>今天多了〈' + lastP.name + '〉' : '');
+    SHELL.injectArt(document.getElementById('donePics'));
+    SHELL.injectIcons(document.getElementById('doneMood').parentElement);
+  }
 
   show(0);
 })();

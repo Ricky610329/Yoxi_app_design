@@ -33,22 +33,30 @@
       if (tb) tb.classList.toggle('is-yield', open);
     };
 
-    let y0 = null, moved = 0;
+    let y0 = null, moved = 0, base = 0;
 
     const down = function (e) {
       y0 = (e.touches ? e.touches[0] : e).clientY;
       moved = 0;
+      base = sheet.getBoundingClientRect().height;
       sheet.style.transition = 'none';
     };
+
+    /* 拖曳要跟手：過程中即時改高度，不能只記數字、放開才一次跳完。 */
     const move = function (e) {
       if (y0 === null) return;
       const y = (e.touches ? e.touches[0] : e).clientY;
       moved = y0 - y;
       if (Math.abs(moved) > 4) e.preventDefault();
+      const max = sheet.parentElement.getBoundingClientRect().height * 0.82;
+      const h = Math.max(120, Math.min(max, base + moved));
+      sheet.style.maxHeight = h + 'px';
     };
+
     const up = function () {
       if (y0 === null) return;
       sheet.style.transition = '';
+      sheet.style.maxHeight = '';        /* 交還給 class 收尾 */
       if (Math.abs(moved) > 24) setOpen(moved > 0);
       else setOpen(sheet.classList.contains('is-collapsed'));   /* 輕點＝切換 */
       y0 = null;

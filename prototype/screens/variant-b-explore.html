@@ -76,7 +76,7 @@
              style="position:absolute; left:16px; top:calc(var(--statusbar-h) + 50px); z-index:12;
                     padding:10px 14px; border-radius:var(--r-card);
                     background:rgba(255,255,255,.96); box-shadow:var(--sh-card)">
-          <div style="font-size:22px; font-weight:800; font-style:italic; line-height:1">14%</div>
+          <div id="cov" style="font-size:22px; font-weight:800; font-style:italic; line-height:1">14%</div>
           <div style="font-size:11px; color:var(--yoxi-slate); margin-top:2px">
             的新竹被你點亮了
           </div>
@@ -209,6 +209,10 @@
 
   SHELL.injectArt();
   SHELL.injectIcons();
+
+  const flatF = MOCK.FOG.flat();
+  document.getElementById('cov').textContent =
+    Math.round(flatF.filter(function (c) { return c !== 'fog'; }).length / flatF.length * 100) + '%';
 
   document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
     .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })

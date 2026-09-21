@@ -73,7 +73,7 @@
           <div class="card card--pad">
             <div class="u-row" style="justify-content:space-between; align-items:flex-end">
               <span>
-                <span style="display:block; font-size:26px; font-weight:800;
+                <span id="cov" style="display:block; font-size:26px; font-weight:800;
                              font-style:italic; line-height:1">14%</span>
                 <span style="display:block; font-size:12px; color:var(--yoxi-slate);
                              margin-top:3px">的新竹被你點亮了</span>
@@ -160,6 +160,8 @@
 
   /* 覆蓋率格：把霧地圖壓成一條 */
   const flat = MOCK.FOG.flat();
+  document.getElementById('cov').textContent =
+    Math.round(flat.filter(function (c) { return c !== 'fog'; }).length / flat.length * 100) + '%';
   document.getElementById('cover').innerHTML = flat.map(function (s) {
     return '<i class="' + (s === 'seen' ? 'on' : s === 'fade' ? 'fade' : '') + '"></i>';
   }).join('');
