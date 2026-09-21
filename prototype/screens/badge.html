@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>獎章 — yoxi 城事</title>
+<!--
+  N11 獎章詳情【新增】
+
+  中期目標的結算。
+
+  獎章的授予詞是一句敘述，不是一個分數：「你走完了內灣線的每一個站。」
+  這跟「任務完成 6/6」是兩種完全不同的心理帳戶 —— 前者是紀念，後者是交差。
+
+  未獲得時顯示灰階與進度，但不顯示倒數、不顯示期限。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:37">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="album.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__action u-row u-gap2" href="#" id="shareBtn">
+            <span data-icon="share" style="width:18px;height:18px;display:block;
+                  filter:brightness(0) invert(1)"></span>
+            分享
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- 獎章本體 -->
+        <div class="u-center" style="background:var(--yoxi-white); padding:32px 24px 28px">
+          <div id="disc" style="width:132px; height:132px; margin:0 auto; border-radius:50%;
+               display:grid; place-items:center; background:var(--yoxi-cream);
+               box-shadow:inset 0 0 0 6px var(--yoxi-cream-deep)">
+            <span data-icon="route" style="width:66px; height:66px; display:block"></span>
+          </div>
+          <h1 id="name" style="font-size:26px; font-weight:800; margin-top:18px"></h1>
+          <p id="award" style="margin-top:10px; font-size:16px; line-height:1.8;
+             color:var(--yoxi-navy)"></p>
+          <p id="when" style="margin-top:10px; font-size:13px; color:var(--yoxi-slate)"></p>
+        </div>
+
+        <!-- 進度 -->
+        <div style="padding:16px">
+          <div class="card card--pad">
+            <div class="u-row" style="justify-content:space-between; margin-bottom:10px">
+              <span style="font-weight:800" id="progLabel"></span>
+              <span style="font-size:13px; color:var(--yoxi-slate)">沒有期限</span>
+            </div>
+            <div style="height:8px; border-radius:999px; background:var(--yoxi-line);
+                        overflow:hidden">
+              <div id="bar" style="height:100%; background:var(--yoxi-red); border-radius:999px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 構成它的明信片 -->
+        <div style="padding:0 16px 32px">
+          <div class="sec"><h2 class="sec__t" style="font-size:16px">由這幾張組成</h2></div>
+          <div class="hscroll" id="cards"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const B = {
+    rail:  { name: '內灣線全線', award: '你走完了內灣線的每一個站。',
+             icon: 'route', ids: ['p1', 'p5', 'p9', 'p10', 'p12', 'p6'] },
+    glass: { name: '風城玻璃',   award: '你看過了新竹玻璃的一生。',
+             icon: 'badge', ids: ['p11', 'p2', 'p3', 'p4', 'p8'] },
+  };
+  const key = new URLSearchParams(location.search).get('id') === 'glass' ? 'glass' : 'rail';
+  const b = B[key];
+
+  const done = b.ids.filter(function (i) { return STATE.has(i); }).length;
+  const got  = done >= b.ids.length;
+
+  document.title = b.name + ' — yoxi 城事';
+  document.getElementById('name').textContent = '〈' + b.name + '〉';
+  document.getElementById('award').textContent = got ? b.award : '集滿就會得到這句話。';
+  document.getElementById('when').textContent  = got ? '2026.09.21 獲得' : '還在路上';
+  document.getElementById('progLabel').innerHTML =
+    '收集 <span class="num">' + done + '</span>/' + b.ids.length;
+  document.getElementById('bar').style.width = (done / b.ids.length * 100) + '%';
+
+  const disc = document.getElementById('disc');
+  disc.innerHTML = '<span data-icon="' + b.icon + '" style="width:66px;height:66px;display:block"></span>';
+  if (!got) {
+    disc.style.background = 'var(--yoxi-mist)';
+    disc.style.boxShadow  = 'inset 0 0 0 6px var(--yoxi-line)';
+    disc.style.filter     = 'grayscale(1)';
+    disc.style.opacity    = '.75';
+    /* 未獲得就不給分享 —— 沒拿到的東西不該拿出去講 */
+    document.getElementById('shareBtn').classList.add('u-hidden');
+  }
+
+  document.getElementById('cards').innerHTML = b.ids.map(function (id) {
+    const P = MOCK.POSTCARDS.find(function (p) { return p.id === id; });
+    if (!P) return '';
+    const has = STATE.has(id);
+    const i = MOCK.POSTCARDS.indexOf(P);
+    return '<a class="postcard ' + (has ? '' : 'postcard--locked') + '" ' +
+      'href="' + (has ? 'postcard.html?id=' + id : 'place.html') + '" ' +
+      'style="width:92px; flex:none">' +
+      '<div data-art="' + P.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+      '<span class="postcard__foot"><span class="postcard__name" style="font-size:11px">' +
+      P.name + '</span></span></a>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>好康任務 — yoxi 城事</title>
+<!--
+  好康任務【沿用】—— 刻意完全不動
+
+  照 IMG_9565 還原。這一頁是唯一一個「我們刻意不碰」的畫面，
+  而且刻意不在裡面放任何城事的入口。
+
+  原因見 plan §8 風險 1：「今天的地方」在結構上跟每日任務同構，
+  只要兩者靠太近，使用者就會自動把地方推薦讀成任務，
+  接著是罪惡感，接著是退坑 —— 那正是 Pikmin 香菇機制在台灣社群的死法。
+
+  所以這裡是實體隔離：任務有勾選框、有條狀進度、有趟次累積、有期限；
+  城事一個都沒有。兩套系統在視覺上完全不共用元件。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .task { overflow: hidden; }
+  .task + .task { margin-top: 16px; }
+  .task__banner {
+    height: 104px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; text-align: center; line-height: 1.35;
+    padding: 0 16px; font-size: 17px;
+  }
+  .task__body { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  .task__t { font-weight: 800; line-height: 1.4; }
+  .task__d { font-size: 13px; color: var(--yoxi-slate); margin-top: 6px; }
+  .task__cnt {
+    flex: none; text-align: center; padding: 8px 14px;
+    border-radius: 4px; background: var(--yoxi-mist);
+  }
+  .task__cnt small { display: block; font-size: 11px; color: var(--yoxi-slate); }
+  .task__cnt b {
+    display: block; font-size: 26px; font-weight: 800; font-style: italic;
+    line-height: 1.1; margin-top: 2px;
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--center">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title">好康任務</h1>
+        </div>
+        <div class="hdr-red__pills">
+          <div class="pill-group" data-pills>
+            <button class="pill is-active" data-tab="on">進行中</button>
+            <button class="pill" data-tab="off">已結束</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist); padding:16px">
+
+        <div data-panel="on">
+          <div class="card task">
+            <div class="task__banner" style="background:linear-gradient(120deg,#2A2E6B,#1A1440)">
+              月來月好運<br>
+              <span style="font-size:13px; opacity:.9">搭車即拿次月 88 折優惠</span>
+            </div>
+            <div class="task__body">
+              <span class="u-fill">
+                <span class="task__t">搭 1 趟贈次月 88 折券 1 張</span>
+                <span class="task__d">2026/09/01 ~ 2026/09/30</span>
+              </span>
+              <span class="task__cnt"><small>趟次累積</small><b style="color:var(--yoxi-red)">0</b>
+                <small>/ 1</small></span>
+            </div>
+          </div>
+
+          <div class="card task">
+            <div class="task__banner" style="background:var(--yoxi-red)">
+              企業簽單選 yoxi<br>
+              <span style="font-size:13px; opacity:.9">趟趟加送 10 點回饋</span>
+            </div>
+            <div class="task__body">
+              <span class="u-fill">
+                <span class="task__t">企業簽單趟趟贈 10 點和泰 Points（無上限）</span>
+                <span class="task__d">2026/09/01 ~ 2026/09/30</span>
+              </span>
+              <span class="task__cnt"><small>趟次累積</small><b style="color:var(--yoxi-red)">0</b>
+                <small>/ 1</small></span>
+            </div>
+          </div>
+
+          <div class="card task">
+            <div class="task__banner" style="background:linear-gradient(120deg,#5FA845,#2F6B2A)">
+              綁定 iPASS MONEY 搭乘<br>
+              <span style="font-size:13px; opacity:.9">每月搭 1 趟贈 $200 搭車金禮包</span>
+            </div>
+            <div class="task__body">
+              <span class="u-fill">
+                <span class="task__t">限定優惠｜iPASS MONEY 限定 $200 禮包（9月）</span>
+                <span class="task__d">2026/09/01 ~ 2026/09/30</span>
+              </span>
+              <span class="task__cnt"><small>趟次累積</small><b style="color:var(--yoxi-red)">0</b>
+                <small>/ 1</small></span>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="off" class="u-hidden">
+          <div class="empty-state">
+            <div class="empty-state__art"></div>
+            <div class="empty-state__mark">Get Started.</div>
+            <div class="empty-state__msg">目前沒有已結束的任務</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+</body>
+</html>

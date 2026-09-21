@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>付款設定 — yoxi 城事</title>
+<!--
+  付款設定【沿用】
+  照 IMG_9562 還原：和泰 Pay 信用卡（含插畫與海軍藍實心大按鈕）、
+  企業簽單、點數管理。完全沒有為了城事而改動。
+
+  這一頁是「按鈕圓角極小（4px）+ 海軍藍實心」這個規則最清楚的樣本。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">付款設定</h1>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- 和泰 Pay 信用卡 -->
+        <section style="background:var(--yoxi-white)">
+          <h2 style="padding:18px var(--gutter) 0; font-size:17px; font-weight:800">
+            和泰 Pay 信用卡
+          </h2>
+          <div class="divider" style="margin-top:14px"></div>
+
+          <div style="padding:22px var(--gutter)">
+            <!-- 插畫：拿著手機與信用卡 -->
+            <svg viewBox="0 0 300 170" style="width:78%; margin:0 auto; display:block">
+              <g fill="none" stroke="#EDF1F5" stroke-width="7">
+                <path d="M96 22 150 74 96 126 42 74Z"/>
+              </g>
+              <rect x="96" y="14" width="86" height="126" rx="9" fill="var(--yoxi-red)"/>
+              <text x="139" y="72" text-anchor="middle" font-size="40" font-weight="800"
+                    font-style="italic" fill="#fff">y</text>
+              <text x="139" y="96" text-anchor="middle" font-size="17" font-weight="800"
+                    font-style="italic" fill="#fff">yoxi</text>
+              <rect x="176" y="80" width="104" height="66" rx="7" fill="var(--yoxi-navy)"/>
+              <rect x="176" y="94" width="104" height="13" fill="#0B2E52"/>
+              <circle cx="238" cy="128" r="11" fill="#E8543A"/>
+              <circle cx="252" cy="128" r="11" fill="#F0A33C" opacity=".9"/>
+              <path d="M74 118h34l-18 30Z" fill="var(--yoxi-navy)"/>
+              <circle cx="84" cy="128" r="3" fill="#fff"/>
+              <path d="M60 96c8-16 24-22 36-22v66c-18 0-30-10-36-22Z" fill="#F4D9C0"/>
+            </svg>
+
+            <p style="margin-top:18px; font-size:16px; line-height:1.6">
+              綁定信用卡付款即可享優惠，下車不用滿手零錢！
+            </p>
+            <a class="btn-primary" href="#" style="margin-top:16px">新增信用卡 / 簽帳金融卡</a>
+          </div>
+        </section>
+
+        <div style="height:10px"></div>
+
+        <!-- 企業簽單 -->
+        <section style="background:var(--yoxi-white)">
+          <h2 style="padding:18px var(--gutter) 0; font-size:17px; font-weight:800">企業簽單</h2>
+          <div class="divider" style="margin-top:14px"></div>
+          <a class="row-nav" href="#">
+            <span style="width:40px; height:40px; border-radius:50%; flex:none;
+                         border:2px solid var(--yoxi-navy); display:grid; place-items:center;
+                         font-size:24px; font-weight:400; line-height:1">+</span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:17px">新增企業簽單</span>
+            </span>
+          </a>
+        </section>
+
+        <div style="height:10px"></div>
+
+        <!-- 點數管理 -->
+        <section style="background:var(--yoxi-white)">
+          <h2 style="padding:18px var(--gutter) 0; font-size:17px; font-weight:800">點數管理</h2>
+          <div class="divider" style="margin-top:14px"></div>
+          <a class="row-nav" href="points.html">
+            <span style="width:34px; height:34px; border-radius:50%; flex:none;
+                         background:var(--yoxi-red); display:grid; place-items:center">
+              <span data-icon="point"
+                    style="width:22px;height:22px;display:block;filter:brightness(0) invert(1)"></span>
+            </span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:17px">和泰點數</span>
+            </span>
+            <span class="u-row u-gap3">
+              <span style="padding:6px 12px; border-radius:3px; background:var(--yoxi-navy);
+                           color:#fff; font-size:13px; font-weight:700">未使用</span>
+              <span class="arrow"></span>
+            </span>
+          </a>
+          <a class="row-nav" href="#">
+            <span style="width:34px; height:34px; border-radius:50%; flex:none;
+                         background:var(--yoxi-cream); display:grid; place-items:center">
+              <span data-icon="point" style="width:22px;height:22px;display:block"></span>
+            </span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:17px">綁定點數專區</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+        <div style="height:24px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+</body>
+</html>

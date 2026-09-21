@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>優惠券 — yoxi 城事</title>
+<!--
+  優惠券【沿用】
+
+  照 IMG_9564 還原，完全沒有為了城事而改動。
+
+  這一頁在簡報裡有特別的用處：yoxi 現行的在地合作（忠泰美術館「忠泰看展」、
+  去趣 ChicTrip「喜歡趣高雄」）就是靠一檔一檔的優惠碼在跑，而「優惠券機制
+  令人困惑」是 App Store 排名前列的抱怨 —— 要綁卡才能用、預設自動套錯券、
+  有地區限制。
+
+  我們的主張是把那件事升級成 AI 生成的內容平台，而不是再多發幾張券。
+  所以這一頁保持原樣，正好是對照組。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 優惠券卡：奶油色底 + 底部實線，右下有淡浮水印 */
+  .coupon {
+    position: relative; overflow: hidden;
+    background: var(--yoxi-cream);
+    border-bottom: 2px solid var(--yoxi-navy);
+    padding: 16px;
+  }
+  .coupon + .coupon { margin-top: 12px; }
+  .coupon__mark {
+    position: absolute; right: 10px; bottom: 2px;
+    font-size: 34px; font-weight: 800; font-style: italic;
+    color: rgba(6,32,64,.055); letter-spacing: -.02em; pointer-events: none;
+  }
+  .coupon__face { font-size: 13px; font-weight: 700; }
+  .coupon__title { font-size: 19px; font-weight: 800; margin-top: 4px; line-height: 1.3; }
+  .coupon__exp { font-size: 13px; color: var(--yoxi-slate); margin-top: 6px; }
+  .coupon__foot { display: flex; align-items: center; justify-content: space-between;
+                  margin-top: 12px; }
+  .coupon__more {
+    padding: 7px 14px; border-radius: 4px; background: var(--yoxi-mist);
+    font-size: 13px; font-weight: 700;
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">優惠券</h1>
+        <p class="hdr-red__sub">優惠券需於付款設定內綁定信用卡付款方可使用，每次限用一張</p>
+        <div class="hdr-red__pills">
+          <div class="pill-group" data-pills>
+            <button class="pill is-active" data-tab="ok">可使用 (15)</button>
+            <button class="pill" data-tab="used">已使用或失效</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll sheet-top" style="margin-top:-16px; padding:16px">
+
+        <div data-panel="ok">
+          <!-- 每日抽獎 -->
+          <button class="card u-row u-gap3" style="width:100%; padding:12px 14px">
+            <span style="width:34px; height:34px; border-radius:50%; flex:none;
+                         background:var(--yoxi-red); color:#fff; display:grid;
+                         place-items:center; font-weight:800">抽</span>
+            <span class="u-fill" style="text-align:left; font-weight:800">
+              最高拿 <span class="num" style="color:var(--yoxi-red); font-size:19px">$50</span>，立即試今日手氣
+            </span>
+            <span style="padding:5px 14px; border-radius:999px; background:var(--yoxi-red);
+                         color:#fff; font-size:13px; font-weight:800">GO</span>
+          </button>
+
+          <!-- 優惠碼 -->
+          <div class="u-row u-gap3" style="margin-top:12px; background:var(--yoxi-mist);
+               border-radius:4px; padding:10px 14px">
+            <span data-icon="scan" style="width:22px; height:22px; flex:none"></span>
+            <input placeholder="請輸入優惠碼" id="code"
+                   style="flex:1; min-width:0; border:0; background:none; outline:none;
+                          font-size:15px">
+            <button id="redeem"
+                    style="padding:9px 18px; border-radius:4px; background:var(--yoxi-slate-lite);
+                           color:#fff; font-weight:800; font-size:14px">兌換</button>
+          </div>
+          <p id="codeMsg" class="u-hidden"
+             style="margin-top:8px; font-size:13px; color:var(--yoxi-red)"></p>
+
+          <div style="margin-top:16px" id="list"></div>
+        </div>
+
+        <div data-panel="used" class="u-hidden">
+          <div class="empty-state">
+            <div class="empty-state__art"></div>
+            <div class="empty-state__mark">Get Started.</div>
+            <div class="empty-state__msg">目前沒有已使用或失效的優惠券</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const C = [
+    ['固定面額：搭車金$100', '新朋友專屬👋中台灣搭乘 $0 起', '2026/09/19~2026/11/18', '餘1張'],
+    ['固定面額：搭車金$100', '新朋友專屬👋南台灣搭乘 $0 起', '2026/09/19~2026/11/18', '餘1張'],
+    ['固定面額：搭車金$50',  '日本 yoxi 體驗優惠',            '2026/09/01~2026/12/31', '餘1張'],
+    ['折扣：88 折',          '忠泰看展 · 展區間移動',          '2026/08/12~2027/01/31', '餘2張'],
+  ];
+  document.getElementById('list').innerHTML = C.map(function (c) {
+    return '<div class="coupon">' +
+      '<span class="coupon__mark">Coupon</span>' +
+      '<div class="coupon__face">' + c[0] + '</div>' +
+      '<div class="coupon__title">' + c[1] + '</div>' +
+      '<div class="coupon__exp">使用期限 ' + c[2] + '</div>' +
+      '<div class="coupon__foot">' +
+        '<span class="coupon__more">詳細說明</span>' +
+        '<span style="font-size:13px; color:var(--yoxi-slate)">' + c[3] + '</span>' +
+      '</div></div>';
+  }).join('');
+
+  /* 兌換：輸入才亮，這是 yoxi 原本就有的行為 */
+  const code = document.getElementById('code');
+  const btn  = document.getElementById('redeem');
+  const msg  = document.getElementById('codeMsg');
+  code.addEventListener('input', function () {
+    btn.style.background = code.value.trim()
+      ? 'var(--yoxi-navy)' : 'var(--yoxi-slate-lite)';
+  });
+  btn.onclick = function () {
+    if (!code.value.trim()) return;
+    msg.textContent = '這組優惠碼查無資料，或已經被使用過了。';
+    msg.classList.remove('u-hidden');
+  };
+})();
+</script>
+</body>
+</html>

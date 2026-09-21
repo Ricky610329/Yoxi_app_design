@@ -128,24 +128,35 @@
    選中＝海軍藍實心白字；未選＝白底深藍字。
    ========================================================================== */
 
-.pill-group { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+/* 永不換行：pill 折行很醜，寧可橫向捲動。
+   原始截圖的行程紀錄是三個 pill 排成一行，這裡要對得回去。 */
+.pill-group {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+}
+.pill-group::-webkit-scrollbar { display: none; }
 
 .pill {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
   height: 44px;
-  padding: 0 var(--sp-5);
+  padding: 0 var(--sp-4);
   border-radius: var(--r-pill);
   background: var(--yoxi-white);
   color: var(--yoxi-navy);
-  font-size: var(--fs-body);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   white-space: nowrap;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .pill.is-active { background: var(--yoxi-navy); color: var(--yoxi-white); }
-.pill svg { width: 16px; height: 16px; }
+.pill svg { width: 15px; height: 15px; }
 
 /* 白底頁面上的 pill 需要邊框才看得出來 */
 .pill-group--onwhite .pill { border: 1px solid var(--yoxi-line); }

@@ -454,11 +454,12 @@
   letter-spacing: .04em;
 }
 
-/* 「AI 生成示意」標記 —— 原型階段誠實標註 */
+/* 「AI 生成示意」標記 —— 原型階段誠實標註。
+   放左上：明信片底部是地名與日期，放底部會互相壓到。 */
 .ai-mark {
   position: absolute;
   left: var(--sp-2);
-  bottom: var(--sp-2);
+  top: var(--sp-2);
   z-index: 2;
   padding: 2px 6px;
   border-radius: 3px;

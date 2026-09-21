@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>非服務範圍 — yoxi 城事</title>
+<!--
+  非服務範圍 + 系統彈窗【沿用】
+  照 IMG_9568 與 IMG_9569 還原。
+
+  這一頁對提案有額外的用處：yoxi 的服務範圍有限（車隊 1.1 萬輛，
+  是三大平台裡最小的），但城事的「今天的地方」在非服務範圍一樣能用 ——
+  走路也能收集。這正是「不搭車也打開 yoxi」的字面意義。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="ride" data-status="dark" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="map" data-pan>
+        <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="440" fill="var(--map-land)"/>
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-20 130 Q140 74 200 30" stroke-width="13"/>
+            <path d="M200 30 Q262 74 410 116" stroke-width="13"/>
+            <path d="M-20 300 L410 292" stroke-width="9"/>
+            <path d="M40 -10 L54 450" stroke-width="8"/>
+            <path d="M232 160 L240 450" stroke-width="9"/>
+          </g>
+          <g stroke="#C9CDD4" stroke-width="2.6" fill="none">
+            <path d="M74 118 L96 108M120 100 L142 88M168 74 L188 60"/>
+            <path d="M226 58 L244 72M266 84 L288 96M312 104 L334 114"/>
+          </g>
+          <g font-family="var(--font-sans)" fill="#9B8B72" font-weight="700" font-size="14">
+            <text x="42" y="120" transform="rotate(-20 42 120)">大學路二段</text>
+            <text x="270" y="106" transform="rotate(18 270 106)">大學路二段</text>
+          </g>
+        </svg>
+
+        <div class="pin" style="left:50%; top:56%">
+          <span class="pin__label">這裡非服務範圍唷</span>
+          <span class="pin__drop" style="box-shadow:0 0 0 14px rgba(110,170,235,.35)">
+            <span data-icon="hail"></span>
+          </span>
+          <span class="pin__dot"></span>
+        </div>
+
+        <a class="fab fab--navy" href="drawer.html"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
+          <span data-icon="menu"></span>
+        </a>
+        <button class="fab" style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+          <span data-icon="scan"></span>
+        </button>
+        <a class="fab" href="notify.html"
+           style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
+          <span data-icon="bell"></span>
+        </a>
+      </div>
+
+      <div class="banner">
+        <a class="banner__item" href="explore.html" style="background:var(--yoxi-navy)">
+          <span style="width:52px;height:52px;border-radius:4px;overflow:hidden;
+                       position:relative;flex:none" data-art="hill" data-seed="2" data-wide></span>
+          <span style="flex:1;min-width:0;color:#fff">
+            <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.8">
+              這裡還不能叫車，但走得到
+            </span>
+            <span style="display:block;font-size:14px;font-weight:800;margin-top:2px">
+              今天的地方 · 離你 1.2 公里
+            </span>
+          </span>
+          <span class="arrow arrow--onred"></span>
+        </a>
+      </div>
+
+      <div class="sheet" data-drag style="--sheet-min:352px">
+        <div class="sheet__handle"></div>
+
+        <div class="u-row u-gap3" style="margin-bottom:14px">
+          <span style="font-size:20px; font-weight:800">服務即將推出</span>
+          <a href="#" style="color:#1F5C96; text-decoration:underline; font-size:15px">
+            (了解服務範圍)
+          </a>
+        </div>
+
+        <!-- yoxi is coming… 插畫 -->
+        <div style="background:var(--yoxi-mist); border-radius:4px; padding:18px 0">
+          <svg viewBox="0 0 320 120" style="width:100%; display:block">
+            <path d="M0 120 130 42h60l130 78Z" fill="#DDE4EC"/>
+            <path d="M156 42h8v78h-8Z" fill="#fff"/>
+            <g fill="#CBD4DF">
+              <path d="M18 62 44 30l26 32ZM56 66 76 40l20 26Z"/>
+              <path d="M232 62 258 32l26 30ZM272 68 292 44l20 24Z"/>
+            </g>
+            <rect x="142" y="52" width="36" height="18" rx="5" fill="var(--yoxi-red)"/>
+            <rect x="148" y="46" width="24" height="9" rx="4" fill="var(--yoxi-red)"/>
+            <circle cx="150" cy="71" r="4" fill="#8E2417"/>
+            <circle cx="170" cy="71" r="4" fill="#8E2417"/>
+            <text x="160" y="106" text-anchor="middle" font-family="var(--font-sans)"
+                  font-size="27" font-weight="800" font-style="italic"
+                  fill="var(--yoxi-red)">yoxi is coming...</text>
+          </svg>
+        </div>
+
+        <div class="u-row" style="justify-content:space-between; margin-top:16px">
+          <a class="btn-pill" href="#">
+            <span data-icon="plane" style="width:18px;height:18px;display:block"></span>
+            機場接送
+          </a>
+          <a class="btn-link" href="pickup.html">
+            修改上車點
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <button class="demo-btn" id="showModal" data-expand-only style="margin-top:16px">
+          demo：顯示系統彈窗（截圖提醒）
+        </button>
+      </div>
+
+      <!-- 系統彈窗【沿用】 IMG_9569 -->
+      <div class="scrim u-hidden" id="scrim">
+        <div class="modal">
+          <p class="modal__text">提醒您，截圖內可能包含個人資訊，請務必妥善保管。</p>
+          <button class="btn-primary" id="okBtn">確定</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const scrim = document.getElementById('scrim');
+  document.getElementById('showModal').onclick = function () {
+    scrim.classList.remove('u-hidden');
+  };
+  document.getElementById('okBtn').onclick = function () {
+    scrim.classList.add('u-hidden');
+  };
+})();
+</script>
+</body>
+</html>

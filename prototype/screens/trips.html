@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行程紀錄 — yoxi 城事</title>
+<!--
+  行程紀錄【沿用】
+
+  照 IMG_9560 還原，一個像素都沒有為了城事而改動。
+  這一頁同時是設計系統的校準基準：紅色滿版頁首、pill 分頁、
+  Get Started 空狀態，三個最常用的元件都在這裡。
+
+  「企業簽單」分頁刻意留空狀態，示範 .empty-state 的樣子。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">行程紀錄</h1>
+        <div class="hdr-red__pills">
+          <div class="pill-group" data-pills>
+            <button class="pill is-active" data-tab="mine">
+              <span data-icon="moodGood" style="width:15px;height:15px;display:block"></span>
+              個人行程
+            </button>
+            <button class="pill" data-tab="biz">企業簽單</button>
+            <button class="pill" data-tab="booked">預約叫車</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll sheet-top" style="margin-top:-16px">
+
+        <!-- 個人行程 -->
+        <div data-panel="mine">
+          <a class="row-nav" href="ride-done.html">
+            <span class="tile-icon"><span data-icon="tabRide"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:16px">新竹市 → 內灣老街</span>
+              <span class="row-nav__sub">09/21 13:18 · 28.4 公里</span>
+            </span>
+            <span class="u-row u-gap3">
+              <span class="num" style="font-size:17px">$680</span>
+              <span class="arrow"></span>
+            </span>
+          </a>
+          <a class="row-nav" href="#">
+            <span class="tile-icon"><span data-icon="tabRide"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:16px">東區 → 竹北</span>
+              <span class="row-nav__sub">09/18 08:42 · 9.1 公里</span>
+            </span>
+            <span class="u-row u-gap3">
+              <span class="num" style="font-size:17px">$245</span>
+              <span class="arrow"></span>
+            </span>
+          </a>
+          <a class="row-nav" href="#">
+            <span class="tile-icon"><span data-icon="tabRide"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:16px">新竹市 → 南寮漁港</span>
+              <span class="row-nav__sub">09/12 16:05 · 11.3 公里</span>
+            </span>
+            <span class="u-row u-gap3">
+              <span class="num" style="font-size:17px">$310</span>
+              <span class="arrow"></span>
+            </span>
+          </a>
+        </div>
+
+        <!-- 企業簽單：空狀態 -->
+        <div data-panel="biz" class="u-hidden">
+          <div class="empty-state">
+            <div class="empty-state__art"></div>
+            <div class="empty-state__mark">Get Started.</div>
+            <div class="empty-state__msg">你目前沒有任何行程唷</div>
+          </div>
+        </div>
+
+        <!-- 預約叫車：空狀態 -->
+        <div data-panel="booked" class="u-hidden">
+          <div class="empty-state">
+            <div class="empty-state__art"></div>
+            <div class="empty-state__mark">Get Started.</div>
+            <div class="empty-state__msg">你目前沒有預約中的行程唷</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+</body>
+</html>

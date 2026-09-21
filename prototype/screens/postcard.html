@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>明信片 — yoxi 城事</title>
+<!--
+  N10 明信片詳情【新增】
+
+  單張明信片的放大與翻面。
+
+  「再去一次」不會再給一張新明信片 —— 只給一段「這裡的另一面」短文。
+  這是刻意的：重訪要有意義，但不能膨脹收藏、不能製造維護壓力。
+  收藏一旦變成需要維護的資產，就從禮物變成負擔（見 plan §8 風險 2）。
+
+  ?id=p11 指定看哪一張；預設看最近收集的那張。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:37">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="album.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__action u-row u-gap2" href="#">
+            <span data-icon="share" style="width:18px;height:18px;display:block;
+                  filter:brightness(0) invert(1)"></span>
+            分享
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <div style="padding:20px 42px 8px">
+          <div class="postcard" data-flip id="card" style="box-shadow:var(--sh-lift)"></div>
+          <p class="u-center" style="margin-top:12px; font-size:13px; color:var(--yoxi-slate)">
+            點一下翻到背面
+          </p>
+        </div>
+
+        <div style="padding:12px 16px 0">
+          <h1 id="name" style="font-size:24px; font-weight:800; line-height:1.3"></h1>
+          <div id="meta" class="u-row u-gap3"
+               style="margin-top:6px; font-size:14px; color:var(--yoxi-slate)"></div>
+        </div>
+
+        <!-- 取得資訊 -->
+        <div style="padding:20px 16px 0">
+          <div class="card" id="facts"></div>
+        </div>
+
+        <!-- 所屬獎章 -->
+        <div style="padding:20px 16px 0">
+          <div class="sec"><h2 class="sec__t" style="font-size:16px">這張屬於</h2></div>
+          <a class="card card--pad u-row u-gap4" href="badge.html">
+            <span class="badge badge--locked" style="width:auto">
+              <span class="badge__disc"><span data-icon="badge"></span></span>
+            </span>
+            <span class="u-fill">
+              <span id="badgeName" style="display:block; font-weight:800"></span>
+              <span id="badgeProg" style="display:block; font-size:13px;
+                    color:var(--yoxi-slate); margin-top:3px"></span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <!-- 再去一次 -->
+        <div style="padding:20px 16px 32px">
+          <button class="btn-ghost" id="againBtn">再去一次</button>
+          <div class="card card--pad u-hidden" id="again"
+               style="margin-top:10px; background:var(--yoxi-cream); border:0">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                        color:var(--yoxi-red); margin-bottom:6px">這裡的另一面</div>
+            <p id="againText" style="line-height:1.8; font-size:15px"></p>
+          </div>
+          <p style="margin-top:10px; font-size:12px; color:var(--yoxi-slate); line-height:1.7">
+            再去一次不會多一張明信片，只會多知道一件事。
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+  const want = new URLSearchParams(location.search).get('id');
+  const collected = MOCK.POSTCARDS.filter(function (p) { return STATE.has(p.id); });
+  const P = MOCK.POSTCARDS.find(function (p) { return p.id === want; })
+         || MOCK.POSTCARDS.find(function (p) { return p.id === A.lastCard; })
+         || collected[collected.length - 1]
+         || MOCK.POSTCARDS[0];
+
+  const got  = STATE.card(P.id) || { date: '09.21', by: 'walk', note: '' };
+  const ride = got.by === 'ride';
+  const i    = MOCK.POSTCARDS.indexOf(P);
+
+  const STORY = {
+    p11: '新竹曾經是全世界最會做玻璃的地方之一。這裡有矽砂、有天然氣，兩樣做玻璃最貴的東西都便宜。1970 年代這條巷子裡有七座窯，日夜不熄，整條街是亮的。',
+    p9:  '內灣線 1951 年通車，原本不是給人坐的 —— 它是為了把尖石山上的木材與水泥原料運下山。林業一停，人就走了。',
+    p1:  '1913 年落成，是台灣還在使用的最老車站。屋頂的老虎窗與鐘塔是巴洛克混合德式的做法。',
+  };
+  const AGAIN = {
+    p11: '窯的後面有一道更矮的舊牆，是更早一代的窯留下來的。兩道牆之間差了二十年。',
+    p9:  '戲院後面那條沒招牌的巷子走到底，有一戶人家的門牌還是日文的。',
+  };
+
+  document.title = P.name + ' — yoxi 城事';
+
+  document.getElementById('card').className =
+    'postcard' + (ride ? ' postcard--gold' : '');
+  document.getElementById('card').innerHTML =
+    '<div data-art="' + P.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+    '<span class="ai-mark">AI 生成示意</span>' +
+    (ride ? '<span class="postcard__ribbon">yoxi 限定版</span>' : '') +
+    '<span class="postcard__foot">' +
+      '<span class="postcard__name" style="font-size:16px">' + P.name + '</span>' +
+      '<span class="postcard__date">2026.' + got.date + '</span>' +
+    '</span>' +
+    '<span class="postcard__back" style="padding:18px">' +
+      '<b style="font-size:16px">' + P.name + '</b>' +
+      '<small style="font-size:12px">2026.' + got.date + ' · ' +
+        (ride ? '搭 yoxi 抵達' : '走路抵達') + ' · 新竹</small>' +
+      '<p style="font-size:12px; line-height:1.8; margin-top:8px">' +
+        (STORY[P.id] || '在這裡停了一下。') + '</p>' +
+      (got.note ? '<p style="font-size:13px; font-weight:800; margin-top:10px">「' +
+        got.note + '」</p>' : '') +
+      '<span class="postcard__stamp" style="width:40px;height:40px;font-size:10px">yoxi</span>' +
+    '</span>';
+
+  document.getElementById('name').textContent = P.name;
+  document.getElementById('meta').innerHTML =
+    '<span>2026.' + got.date + '</span><span>·</span>' +
+    '<span>' + (ride ? '搭 yoxi 抵達' : '走路抵達') + '</span>';
+
+  const FACTS = [
+    ['sun',    '天氣',   '晴 · 26°C'],
+    ['steps',  '怎麼到的', ride ? '搭 yoxi 28.4 公里 · 司機 陳先生' : '走路 2,140 步'],
+    ['place',  '地點',   '新竹市東區'],
+  ];
+  document.getElementById('facts').innerHTML = FACTS.map(function (f) {
+    return '<div class="row-nav" style="padding:12px 16px">' +
+      '<span class="tile-icon" style="width:40px;height:40px;border-radius:14px">' +
+      '<span data-icon="' + f[0] + '" style="width:22px;height:22px;display:block"></span></span>' +
+      '<span class="row-nav__body"><span class="row-nav__sub" style="margin-top:0">' + f[1] +
+      '</span><span class="row-nav__title" style="font-size:15px">' + f[2] + '</span></span></div>';
+  }).join('');
+
+  const railDone = STATE.routeDone('rail');
+  document.getElementById('badgeName').textContent =
+    P.id === 'p9' || P.id === 'p1' ? '〈內灣線全線〉' : '〈風城玻璃〉';
+  document.getElementById('badgeProg').textContent =
+    P.id === 'p9' || P.id === 'p1' ? '收集 ' + railDone + '/6' : '收集 2/5';
+
+  const btn = document.getElementById('againBtn');
+  btn.onclick = function () {
+    document.getElementById('againText').textContent =
+      AGAIN[P.id] || '再走一次，光的角度會不一樣。';
+    document.getElementById('again').classList.remove('u-hidden');
+    btn.classList.add('u-hidden');
+  };
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

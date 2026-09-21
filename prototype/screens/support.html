@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>客服中心 — yoxi 城事</title>
+<!--
+  客服中心【沿用】
+  照 IMG_9566 還原。分類清單 + 底部固定的「回報問題」。
+  完全沒有為了城事而改動。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .support-foot {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px var(--gutter) 22px;
+    background: var(--yoxi-white); border-top: 1px solid var(--yoxi-line);
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__action" href="#">紀錄</a>
+        </div>
+        <h1 class="hdr-red__title">客服中心</h1>
+        <p class="hdr-red__sub">有任何問題嗎?可以在這裡找到答案或回報客服</p>
+      </header>
+
+      <div class="scroll" style="padding-bottom:104px">
+        <div id="list"></div>
+      </div>
+
+      <div class="support-foot">
+        <span class="u-fill">
+          <span style="display:block; font-weight:800">有問題找不到解答嗎？</span>
+          <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+            歡迎回報問題，客服人員將會回覆你
+          </span>
+        </span>
+        <a class="btn-primary" href="#" style="width:auto; padding:0 22px; min-height:52px">
+          回報問題
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const Q = ['系統操作', '行程問題', '帳務問題', '其他問題', '營運範圍',
+             '寵物搭乘', '帳戶問題', '刪除帳戶'];
+  document.getElementById('list').innerHTML = Q.map(function (q) {
+    return '<a class="row-text" href="#">' + q + '<span class="arrow"></span></a>';
+  }).join('');
+})();
+</script>
+</body>
+</html>
