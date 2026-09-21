@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>叫車首頁 — yoxi 城事</title>
+<!--
+  R1 叫車首頁【改造】
+
+  改動只有三處，其餘與 IMG_9558 完全相同：
+  1. 廣告輪播條第 1 格改為動態的「今天的地方」卡（原本就是促銷位）
+  2. sheet 展開態新增一列「今天的地方 · 900m」
+  3. 底部新增 tab bar
+
+  收合態 sheet 一個像素都沒動：問候語、上車點卡、下車點卡的內容與順序完全保留。
+  叫車關鍵路徑的 tap 數與現況相同 —— 這是可以寫進簡報的硬指標。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="ride" data-status="dark" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 地圖 ===== -->
+      <div class="map">
+        <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="440" fill="var(--map-land)"/>
+
+          <!-- 水系：頭前溪與客雅溪 -->
+          <path d="M-20 96 Q70 118 140 92 T300 108 T420 78" stroke="var(--map-water)"
+                stroke-width="13" fill="none" opacity=".85"/>
+          <path d="M-20 300 Q90 322 170 296 T410 318" stroke="var(--map-water)"
+                stroke-width="9" fill="none" opacity=".7"/>
+
+          <!-- 主要道路 -->
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-10 168 L400 150" stroke-width="11"/>
+            <path d="M-10 238 L400 226" stroke-width="9"/>
+            <path d="M52 -10 L74 450"   stroke-width="10"/>
+            <path d="M196 -10 L212 450" stroke-width="11"/>
+            <path d="M320 -10 L308 450" stroke-width="9"/>
+            <path d="M-10 390 Q150 360 400 386" stroke-width="8"/>
+          </g>
+
+          <!-- 次要道路 -->
+          <g stroke="var(--map-road-minor)" stroke-width="5" fill="none">
+            <path d="M-10 128 L400 116"/><path d="M-10 200 L400 190"/>
+            <path d="M-10 272 L400 262"/><path d="M-10 334 L400 326"/>
+            <path d="M120 -10 L136 450"/><path d="M258 -10 L262 450"/>
+            <path d="M360 -10 L352 450"/>
+          </g>
+
+          <!-- 六家支線鐵路 -->
+          <g stroke="#B9BDC4" stroke-width="2.4" fill="none">
+            <path d="M344 -10 Q300 140 286 450"/>
+          </g>
+          <g stroke="#B9BDC4" stroke-width="1" fill="none" stroke-dasharray="2 7">
+            <path d="M344 -10 Q300 140 286 450" stroke-width="7"/>
+          </g>
+
+          <!-- 地名 -->
+          <g font-family="var(--font-sans)" fill="#9AA3AE" font-weight="700">
+            <text x="30"  y="92"  font-size="15">竹北市</text>
+            <text x="236" y="98"  font-size="17">新竹縣</text>
+            <text x="26"  y="206" font-size="13">北區</text>
+            <text x="24"  y="232" font-size="17">新竹市</text>
+            <text x="120" y="400" font-size="14">寶山鄉</text>
+            <text x="300" y="250" font-size="12"
+                  transform="rotate(84 300 250)">六家支線鐵路</text>
+          </g>
+        </svg>
+
+        <!-- 浮動圓鈕 -->
+        <a class="fab fab--navy" href="drawer.html"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
+          <span data-icon="menu"></span>
+        </a>
+        <button class="fab" style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+          <span data-icon="scan"></span>
+        </button>
+        <a class="fab" href="notify.html"
+           style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
+          <span data-icon="bell"></span>
+        </a>
+        <button class="fab" style="bottom:20px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 上車點 pin -->
+        <div class="pin" style="left:50%; top:62%">
+          <span class="pin__label">
+            東區水利路 46 巷 58 號
+            <svg width="14" height="14" viewBox="0 0 24 24">
+              <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                    fill="var(--yoxi-red)"/>
+            </svg>
+          </span>
+          <span class="pin__drop"><span data-icon="hail"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+      </div>
+
+      <!-- ===== 廣告輪播條 =====
+           第 1 格改為「今天的地方」。這個位置原本就是促銷位，
+           不與叫車主路徑爭搶，但讓不搭車的人有一個被動觸點。 -->
+      <div class="banner">
+        <a class="banner__item" href="place.html" style="background:var(--yoxi-navy)">
+          <span style="width:52px;height:52px;border-radius:4px;overflow:hidden;position:relative;flex:none"
+                data-art="glass" data-seed="1" data-wide></span>
+          <span style="flex:1;min-width:0;color:#fff">
+            <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.8">
+              今天的地方 · 離你 900m
+            </span>
+            <span style="display:block;font-size:14px;font-weight:800;margin-top:2px">
+              這條巷子 1970 年是全街最亮的地方
+            </span>
+          </span>
+          <span class="arrow arrow--onred"></span>
+        </a>
+
+        <div class="banner__item">
+          <span style="flex:1;font-size:15px;font-weight:800;color:var(--yoxi-navy)">
+            <span style="color:var(--yoxi-red)">點</span>從天降 ·
+            趟趟送最高 <span class="num" style="color:var(--yoxi-red);font-size:19px">99</span> 點
+          </span>
+        </div>
+      </div>
+
+      <!-- ===== 底部 sheet =====
+           收合態內容與順序完全保留，一個像素都沒動。 -->
+      <div class="sheet" id="sheet">
+        <div class="sheet__handle"></div>
+
+        <h1 class="sheet__greet">晚安，Rick 今天要去哪?</h1>
+
+        <div class="card">
+          <div class="route-input">
+            <div class="route-input__rail">
+              <span class="route-input__dot"></span>
+              <span class="route-input__line"></span>
+              <span class="route-input__dot route-input__dot--to"></span>
+            </div>
+            <div class="route-input__fields">
+              <a class="route-input__field" href="pickup.html">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">上車點</span>
+                  <span class="route-input__value" style="display:block">東區水利路 46 巷 58 號</span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none">
+                  <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                        fill="var(--yoxi-navy)"/>
+                </svg>
+              </a>
+              <a class="route-input__field" href="pickup.html">
+                <span class="route-input__value route-input__value--ph">請輸入下車點可預估車資</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- 【新增】展開態才出現的一列。收合態看不到。 -->
+          <div class="divider"></div>
+          <a class="row-nav" href="place.html" style="padding:12px 16px">
+            <span class="tile-icon" style="width:40px;height:40px;border-radius:14px">
+              <span data-icon="place" style="width:22px;height:22px;display:block"></span>
+            </span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:15px">今天的地方 · 900m</span>
+              <span class="row-nav__sub">水利路的老玻璃窯</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <div class="u-row" style="justify-content:space-between; margin-top:16px">
+          <a class="btn-pill" href="#">
+            <span data-icon="plane" style="width:18px;height:18px;display:block"></span>
+            機場接送
+          </a>
+          <a class="btn-link" href="pickup.html">
+            略過下車地點，繼續叫車
+            <span class="arrow"></span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+</body>
+</html>

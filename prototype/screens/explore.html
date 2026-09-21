@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>探索 — yoxi 城事</title>
+<!--
+  N1 探索首頁「今天的地方」【新增】★核心
+
+  回答「今天為什麼要打開 yoxi」——  一天只給一個值得為它出門的地方。
+
+  刻意沒有的東西（見 plan §8 風險 1）：
+  · 沒有「換一個」按鈕、沒有刷新、沒有倒數計時
+  · 沒有連續天數、沒有限量、沒有名額
+  · 不想去就往下滑看「還沒去的地方」，錯過的明天還在
+
+  詞彙禁用表：不用「任務／完成／達成／挑戰／每日」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="explore" data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 今天的地方 ===== -->
+        <div style="background:var(--yoxi-white); padding:16px">
+          <a class="placecard" href="place.html">
+            <div class="placecard__art" data-art="glass" data-seed="1" data-wide>
+              <span class="ai-mark" style="top:10px;left:10px;bottom:auto">AI 生成示意</span>
+              <span class="placecard__scrim"></span>
+              <span class="placecard__body">
+                <span class="placecard__eyebrow">今天的地方</span>
+                <span class="placecard__name">水利路的老玻璃窯</span>
+                <span class="placecard__hook">這條巷子在 1970 年代是全街最亮的地方。</span>
+                <span class="placecard__meta">
+                  <span>離你 <span class="num">900</span> m</span>
+                  <span style="opacity:.5">·</span>
+                  <span>走路 <span class="num">12</span> 分鐘</span>
+                  <span style="opacity:.5">·</span>
+                  <span>工業遺構</span>
+                </span>
+              </span>
+            </div>
+          </a>
+
+          <!-- 為什麼推薦給你：AI 的推薦依據 -->
+          <div class="why" style="margin-top:12px">
+            <button class="why__head" id="whyToggle">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px;height:18px;display:block"></span>
+                為什麼推薦給你
+              </span>
+              <span class="arrow" id="whyArrow" style="transform:rotate(90deg)"></span>
+            </button>
+            <div class="why__list" id="whyList">
+              <div class="why__item"><span class="why__src">常用地點</span>
+                你這個月有 9 趟行程從水利路出發，但從沒往北走過那個路口</div>
+              <div class="why__item"><span class="why__src">常用時段</span>
+                你週日下午通常在家，這是你一週裡最可能出門走走的時段</div>
+              <div class="why__item"><span class="why__src">收集缺口</span>
+                你的圖鑑裡還沒有任何一張「工業遺構」類的明信片</div>
+              <div class="why__item"><span class="why__src">天氣</span>
+                今天下午 3–6 點降雨機率 10%，西曬角度正好</div>
+            </div>
+          </div>
+
+          <!-- 雙 CTA。900m 走得到，所以「走路前往」是主要動作。
+               距離 > 3km 時主次自動對調（見 place.html 的內灣） -->
+          <div style="display:grid; gap:8px; margin-top:12px">
+            <a class="btn-primary" href="going.html">走路前往</a>
+            <a class="btn-ghost" href="place.html">先看看這是什麼地方</a>
+          </div>
+        </div>
+
+        <!-- ===== 這個月的路線 ===== -->
+        <div style="padding:20px 16px">
+          <div class="sec">
+            <h2 class="sec__t">這個月的路線</h2>
+            <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+          </div>
+
+          <div class="hscroll">
+            <a class="card" href="route.html" style="width:240px; flex:none">
+              <span style="display:block; height:110px; position:relative; overflow:hidden"
+                    data-art="rail" data-seed="3" data-wide></span>
+              <span style="display:block; padding:12px">
+                <span style="display:block; font-weight:800; line-height:1.35">沿著鐵道走</span>
+                <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                  內灣線的六個站
+                </span>
+                <span class="track-mini" style="margin-top:10px">
+                  <i class="track-mini__node is-done"></i><i class="track-mini__link is-done"></i>
+                  <i class="track-mini__node is-done"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i>
+                  <span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">
+                    <span class="num">2</span>/6
+                  </span>
+                </span>
+              </span>
+            </a>
+
+            <a class="card" href="route.html" style="width:240px; flex:none">
+              <span style="display:block; height:110px; position:relative; overflow:hidden"
+                    data-art="glass" data-seed="4" data-wide></span>
+              <span style="display:block; padding:12px">
+                <span style="display:block; font-weight:800; line-height:1.35">風城的玻璃</span>
+                <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                  從砂到光
+                </span>
+                <span class="track-mini" style="margin-top:10px">
+                  <i class="track-mini__node is-done"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
+                  <i class="track-mini__node"></i>
+                  <span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">
+                    <span class="num">1</span>/5
+                  </span>
+                </span>
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <!-- ===== 還沒去的地方 =====
+             過去推薦過但沒去的，永久保留、永不過期。
+             這條清單本身就是「反限時」的展示品。 -->
+        <div style="padding:0 16px 24px">
+          <div class="sec">
+            <h2 class="sec__t">還沒去的地方</h2>
+            <span class="sec__m">不會過期</span>
+          </div>
+
+          <div class="card" id="pendingList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* 還沒去的地方 */
+  const list = document.getElementById('pendingList');
+  list.innerHTML = MOCK.PENDING.map((p, i) => `
+    <a class="row-nav" href="place.html" style="padding:12px 16px">
+      <span style="width:46px;height:60px;border-radius:4px;overflow:hidden;position:relative;flex:none"
+            data-art="${p.art}" data-seed="${i + 5}"></span>
+      <span class="row-nav__body">
+        <span class="row-nav__title" style="font-size:16px">${p.name}</span>
+        <span class="row-nav__sub">${(p.distance / 1000).toFixed(1)} km · ${p.ago}</span>
+      </span>
+      <span class="arrow"></span>
+    </a>`).join('');
+  SHELL.injectArt(list);
+
+  /* 「為什麼推薦給你」收合 */
+  const head = document.getElementById('whyToggle');
+  const body = document.getElementById('whyList');
+  const arw  = document.getElementById('whyArrow');
+  head.onclick = () => {
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'grid';
+    arw.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+})();
+</script>
+</body>
+</html>

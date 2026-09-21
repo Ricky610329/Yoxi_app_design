@@ -35,6 +35,10 @@
    用視覺讓渡取代「出現／消失」，避免版面跳動。 */
 .tabbar.is-yield { opacity: .6; }
 
+/* 有 tab bar 的畫面：內容整體讓出底部空間，
+   sheet 的收合態高度基準因此改為「貼齊 tab bar 上緣」，內部間距不變。 */
+.device__screen.has-tabbar { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom)); }
+
 .tabbar__item {
   flex: 1;
   display: flex;
@@ -63,6 +67,12 @@
   border: 1.5px solid var(--yoxi-white);
 }
 
+/* tab 根畫面用的精簡紅色頁首：沿用 .hdr-red 的語言，但標題縮小，
+   把垂直空間讓給內容。 */
+.hdr-red--compact { padding-bottom: var(--sp-4); }
+.hdr-red--compact .hdr-red__title { font-size: var(--fs-title); }
+.hdr-red--compact .hdr-red__bar { margin-bottom: 0; }
+
 /* ==========================================================================
    .placecard —— 「今天的地方」主卡
    探索首頁的視覺主體，約佔 55% 螢幕高。
@@ -89,12 +99,14 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(to top,
-    rgba(6, 32, 64, .92) 0%,
-    rgba(6, 32, 64, .55) 38%,
-    rgba(6, 32, 64, 0) 72%);
+    rgba(6, 32, 64, .94) 0%,
+    rgba(6, 32, 64, .74) 30%,
+    rgba(6, 32, 64, .22) 56%,
+    rgba(6, 32, 64, 0) 78%);
 }
 
 .placecard__body {
+  display: block;
   position: absolute;
   left: 0;
   right: 0;
@@ -103,7 +115,7 @@
 }
 
 .placecard__eyebrow {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--sp-2);
   font-size: var(--fs-cap);
@@ -114,12 +126,14 @@
 }
 
 .placecard__name {
+  display: block;
   font-size: var(--fs-h1);
   font-weight: var(--fw-heavy);
   line-height: var(--lh-tight);
 }
 
 .placecard__hook {
+  display: block;
   margin-top: var(--sp-3);
   font-size: var(--fs-body);
   line-height: 1.6;
@@ -129,6 +143,7 @@
 .placecard__meta {
   margin-top: var(--sp-3);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
   font-size: var(--fs-sm);
@@ -249,7 +264,7 @@
 .postcard__date { font-size: var(--fs-xs); opacity: .85; font-style: italic; }
 
 /* 未解鎖：去飽和 + 壓低對比，看得出形狀但沒有生命 */
-.postcard--locked .postcard__art { filter: grayscale(1) contrast(.42) brightness(1.24); }
+.postcard--locked .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
 .postcard--locked .postcard__foot { background: none; color: var(--yoxi-slate); }
 
 .postcard__lockmark {

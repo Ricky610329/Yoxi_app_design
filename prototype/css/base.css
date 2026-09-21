@@ -93,11 +93,14 @@ input, textarea { font: inherit; color: inherit; }
    截圖實測：21:35、訊號、Wi-Fi、電量 93
    -------------------------------------------------------------------------- */
 
+/* 狀態列永遠浮在內容之上：截圖裡紅色頁首與地圖都延伸到狀態列後方。
+   需要避開它的區塊自行 padding-top: var(--statusbar-h)。 */
 .statusbar {
-  position: relative;
+  position: absolute;
+  top: 0; left: 0; right: 0;
   z-index: 60;
   height: var(--statusbar-h);
-  flex: none;
+  pointer-events: none;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
