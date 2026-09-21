@@ -87,8 +87,8 @@
           </div>
 
           <div style="display:grid; gap:10px; margin-top:20px; padding:0 var(--sp-2)">
-            <a class="btn-primary" href="album.html"
-               style="background:var(--yoxi-white); color:var(--yoxi-navy)">收進收藏</a>
+            <button class="btn-primary" id="keepBtn"
+               style="background:var(--yoxi-white); color:var(--yoxi-navy)">收進收藏</button>
             <button class="btn-link" style="justify-content:center; color:rgba(255,255,255,.7)">
               分享
             </button>
@@ -110,7 +110,9 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
   const isRide = new URLSearchParams(location.search).has('ride');
@@ -133,6 +135,16 @@
   const show = id => {
     document.querySelectorAll('.unlock__scene').forEach(s => s.classList.remove('is-on'));
     document.getElementById(id).classList.add('is-on');
+  };
+
+  /* 收進收藏：寫入狀態，收藏頁才會真的多一張 */
+  document.getElementById('keepBtn').onclick = function () {
+    STATE.collect(isRide ? 'neiwan' : 'glass-kiln', {
+      by:   isRide ? 'ride' : 'walk',
+      date: '09.21',
+      note: (document.getElementById('oneLine').value || '').slice(0, 10),
+    });
+    location.href = 'album.html';
   };
 
   setTimeout(() => show('act2'), 1600);

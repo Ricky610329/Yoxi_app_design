@@ -52,7 +52,7 @@
       </header>
 
       <!-- ===== 地圖 ===== -->
-      <div class="map u-fill" id="mapArea" style="background:var(--map-fog)">
+      <div class="map u-fill" data-pan id="mapArea" style="background:var(--map-fog)">
 
         <!-- 底層：霧地圖的上色 + 道路 -->
         <svg class="map__svg" id="fogLayer" viewBox="0 0 390 560"
@@ -113,7 +113,9 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
 

@@ -27,7 +27,7 @@
     <div class="device__screen">
 
       <!-- ===== 地圖 ===== -->
-      <div class="map">
+      <div class="map" data-pan>
         <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
           <rect width="390" height="440" fill="var(--map-land)"/>
 
@@ -133,7 +133,7 @@
 
       <!-- ===== 底部 sheet =====
            收合態內容與順序完全保留，一個像素都沒動。 -->
-      <div class="sheet" id="sheet">
+      <div class="sheet" data-drag id="sheet" style="--sheet-min:420px">
         <div class="sheet__handle"></div>
 
         <h1 class="sheet__greet">晚安，Rick 今天要去哪?</h1>
@@ -163,8 +163,8 @@
           </div>
 
           <!-- 【新增】展開態才出現的一列。收合態看不到。 -->
-          <div class="divider"></div>
-          <a class="row-nav" href="place.html" style="padding:12px 16px">
+          <div class="divider" data-expand-only></div>
+          <a class="row-nav" data-expand-only href="place.html" style="padding:12px 16px">
             <span class="tile-icon" style="width:40px;height:40px;border-radius:14px">
               <span data-icon="place" style="width:22px;height:22px;display:block"></span>
             </span>
@@ -194,6 +194,8 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 </body>
 </html>

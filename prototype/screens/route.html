@@ -65,11 +65,11 @@
               </svg>
               <span style="position:absolute; inset:0; display:grid; place-items:center;
                            font-size:13px; font-weight:800">
-                <span><span class="num">2</span>/6</span>
+                <span data-prog><span class="num">2</span>/6</span>
               </span>
             </span>
             <span class="u-fill">
-              <span style="display:block; font-weight:800">已經走過兩站</span>
+              <span style="display:block; font-weight:800" id="progText">已經走過兩站</span>
               <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
                 慢慢走，沒有期限
               </span>
@@ -134,10 +134,35 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
   const R = MOCK.ROUTES[0];
+
+  /* 內灣收集了就前進一站 */
+  const CARD_OF = { s1: 'p1', s2: 'p5', s3: 'p9', s4: 'p10', s5: 'p12', s6: null };
+  R.stops.forEach(function (st) {
+    const c = CARD_OF[st.id];
+    if (c && STATE.has(c)) st.state = 'done';
+  });
+  let nextSet = false;
+  R.stops.forEach(function (st) {
+    if (st.state !== 'done' && !nextSet) { st.state = 'next'; nextSet = true; }
+    else if (st.state !== 'done') st.state = 'todo';
+  });
+  const done = R.stops.filter(function (st) { return st.state === 'done'; }).length;
+
+  document.querySelectorAll('.ring__bar').forEach(function (b) {
+    b.setAttribute('stroke-dashoffset', 138.2 * (1 - done / R.total));
+  });
+  document.querySelectorAll('[data-prog]').forEach(function (e) {
+    e.innerHTML = '<span class="num">' + done + '</span>/' + R.total;
+  });
+  const lead = document.getElementById('progText');
+  if (lead) lead.textContent = done >= R.total ? '六站都走過了' :
+    (done === 0 ? '還沒開始' : '已經走過 ' + done + ' 站');
 
   document.getElementById('track').innerHTML = R.stops.map((s, i) => {
     const done = s.state === 'done';

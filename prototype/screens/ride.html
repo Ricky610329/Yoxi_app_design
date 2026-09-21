@@ -27,7 +27,7 @@
   <div class="device">
     <div class="device__screen">
 
-      <div class="map">
+      <div class="map" data-pan>
         <svg class="map__svg" viewBox="0 0 390 480" preserveAspectRatio="xMidYMid slice">
           <rect width="390" height="480" fill="var(--map-land)"/>
           <path d="M-20 150 Q90 176 180 148 T420 168" stroke="var(--map-water)"
@@ -63,7 +63,7 @@
         </div>
       </div>
 
-      <div class="sheet">
+      <div class="sheet" data-drag>
         <div class="sheet__handle"></div>
 
         <!-- ===== 媒合中 ===== -->
@@ -147,7 +147,9 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
   /* 媒合 → 行程中 */

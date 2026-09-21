@@ -101,6 +101,16 @@
     </p>
   </header>
 
+  <div class="note" style="margin:0 0 28px">
+    <b>這不是一疊靜態畫面</b>
+    收下一張明信片之後，收藏頁真的會多一張、統計會加一、獎章進度會動、
+    路線會前進一站、和泰 Points 會入帳 —— 狀態存在瀏覽器裡，跨畫面都在。
+    底部 sheet 可以拉、地圖可以拖、明信片可以點一下翻面看背面的敘事。
+    <div style="margin-top:14px">
+      <button class="btn-ghost" data-reset style="max-width:220px">重設 demo 狀態</button>
+    </div>
+  </div>
+
   <h2 class="sec-h">三條 demo 流程</h2>
   <p class="sec-p">每一條都可以完整點完，中途不會斷。</p>
 
@@ -199,6 +209,8 @@
 
 </div>
 
+<script src="js/state.js"></script>
+<script src="js/interact.js"></script>
 <script>
 const SCREENS = [
   ['R1', '叫車首頁',      'mod',  'screens/home.html'],

@@ -171,7 +171,9 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
   const acts = ['a1', 'a2', 'a3', 'a4', 'a5'];
@@ -203,13 +205,17 @@
   };
 
   /* 幕 3：選照片或跳過，兩者都能走完 */
-  document.querySelectorAll('[data-photo]').forEach(b => b.onclick = () => show(3));
+  document.querySelectorAll('[data-photo]').forEach((b, i) => b.onclick = () => {
+    STATE.setToday({ photo: i });
+    show(3);
+  });
   document.getElementById('skipPhoto').onclick = () => show(3);
 
   /* 幕 4：心情三選一 */
-  document.querySelectorAll('[data-mood]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-mood]').forEach((b, i) => b.onclick = () => {
     document.querySelectorAll('[data-mood]').forEach(x => x.classList.remove('is-on'));
     b.classList.add('is-on');
+    STATE.setToday({ mood: ['good', 'ok', 'low'][i], done: true });
     setTimeout(() => show(4), 500);
   });
 

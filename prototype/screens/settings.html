@@ -61,7 +61,7 @@
                 <span class="row-nav__title" style="font-size:16px">早上的地方</span>
                 <span class="row-nav__sub">08:00</span>
               </span>
-              <button class="sw-toggle is-on" data-toggle></button>
+              <button class="sw-toggle" data-switch="pushAm"></button>
             </div>
             <div class="row-nav">
               <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
@@ -71,7 +71,7 @@
                 <span class="row-nav__title" style="font-size:16px">晚上的回顧</span>
                 <span class="row-nav__sub">21:30</span>
               </span>
-              <button class="sw-toggle is-on" data-toggle></button>
+              <button class="sw-toggle" data-switch="pushPm"></button>
             </div>
           </div>
 
@@ -132,18 +132,20 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
   const DATA = [
-    ['place',  '常用地點',  '用來判斷哪些地方你每天經過卻沒進去過', true],
-    ['sun',    '常用時段',  '用來決定什麼時候推薦比較不打擾', true],
-    ['steps',  '步數',      '用來畫今天的回顧的路徑，資料留在手機上', true],
-    ['camera', '相簿',      '只在今天的回顧才讀取當天照片，不會上傳', true],
-    ['route',  '行程紀錄',  '用來知道你搭車去過哪裡', false],
+    ['place',  '常用地點',  '用來判斷哪些地方你每天經過卻沒進去過', 'place'],
+    ['sun',    '常用時段',  '用來決定什麼時候推薦比較不打擾', 'time'],
+    ['steps',  '步數',      '用來畫今天的回顧的路徑，資料留在手機上', 'steps'],
+    ['camera', '相簿',      '只在今天的回顧才讀取當天照片，不會上傳', 'photos'],
+    ['route',  '行程紀錄',  '用來知道你搭車去過哪裡', 'trips'],
   ];
 
-  document.getElementById('dataList').innerHTML = DATA.map(([icon, name, why, on]) => `
+  document.getElementById('dataList').innerHTML = DATA.map(([icon, name, why, key]) => `
     <div class="row-nav">
       <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
         <span data-icon="${icon}" style="width:24px; height:24px; display:block"></span>
@@ -152,12 +154,17 @@
         <span class="row-nav__title" style="font-size:16px">${name}</span>
         <span class="row-nav__sub">${why}</span>
       </span>
-      <button class="sw-toggle ${on ? 'is-on' : ''}" data-toggle></button>
+      <button class="sw-toggle" data-switch="${key}"></button>
     </div>`).join('');
 
   SHELL.injectIcons();
-  document.querySelectorAll('[data-toggle]').forEach(b =>
-    b.onclick = () => b.classList.toggle('is-on'));
+  /* 開關的狀態由 interact.js 從 STATE 還原並寫回 */
+  INTERACT && 0;
+  document.querySelectorAll('[data-switch]').forEach(function (el) {
+    const k = el.dataset.switch;
+    el.classList.toggle('is-on', !!STATE.all.settings[k]);
+    el.onclick = function () { STATE.setSetting(k, el.classList.toggle('is-on')); };
+  });
 })();
 </script>
 </body>

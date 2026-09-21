@@ -68,7 +68,7 @@
         </div>
       </header>
 
-      <div class="map u-fill m-go" id="mapArea" style="background:var(--map-fog)">
+      <div class="map u-fill m-go" data-pan id="mapArea" style="background:var(--map-fog)">
 
         <svg class="map__svg" id="fogLayer" viewBox="0 0 390 560"
              preserveAspectRatio="xMidYMid slice"></svg>
@@ -132,7 +132,9 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 <script>
 (function () {
   /* ---- 底圖 ---- */

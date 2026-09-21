@@ -27,7 +27,7 @@
     <div class="device__screen">
 
       <!-- 精簡地圖：只有你與目的地兩個點，沒有別的 -->
-      <div class="map">
+      <div class="map" data-pan>
         <svg class="map__svg" viewBox="0 0 390 560" preserveAspectRatio="xMidYMid slice">
           <rect width="390" height="560" fill="var(--map-land)"/>
           <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
@@ -62,7 +62,7 @@
       </div>
 
       <!-- 底部：三行字，一個取消 -->
-      <div class="sheet">
+      <div class="sheet" data-drag>
         <div class="sheet__handle"></div>
 
         <div class="u-row u-gap4" style="margin-bottom:16px">
@@ -99,6 +99,8 @@
 
 <script src="../js/icons.js"></script>
 <script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
 </body>
 </html>
