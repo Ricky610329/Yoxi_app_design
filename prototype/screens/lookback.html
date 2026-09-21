@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天的回顧 — yoxi 城事</title>
+<!--
+  N12 每日回顧（四幕）【新增】★核心
+
+  90% 自動 + 10% 人工的睡前儀式。
+  系統自動填步數、地點、路線、明信片；使用者只做兩件事：
+  選一張照片（可跳過）、點一個表情。
+
+  幕 1｜之字形步數路徑：轉折點設在 3,000 步、5,000 步，之後每 5,000 步一折。
+        路徑的形狀本身就是成就 —— 不看數字也知道今天走多少。
+  幕 2｜慶祝：今天的明信片飛入、獎章進度轉動
+  幕 3｜今日照片：自動撈當日相簿，右上常駐「跳過」
+  幕 4｜心情三選一：只有三個選項＝零思考成本
+
+  完成卡底部「只有你看得到」，無分享鍵。
+  隱私分軌：日誌私密，只有週回顧與明信片可分享。
+
+  節奏刻意慢，不能加速 —— 它要你停下來。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:30">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <div class="lookback">
+
+        <div class="lookback__top">
+          <span>9月21日 星期日</span>
+          <button id="skipBtn" style="color:#fff; opacity:.8">跳過</button>
+        </div>
+
+        <div class="lookback__body">
+
+          <!-- ===== 幕 1：之字形步數路徑 ===== -->
+          <div class="lookback__act is-on" id="a1">
+            <svg class="zigzag" viewBox="0 0 300 300">
+              <!-- 轉折點：3,000 步 → 5,000 步 → 6,240 步 -->
+              <path class="zigzag__path" d="M40 272 L252 206 L48 140 L214 82"/>
+
+              <g class="zigzag__stop">
+                <circle cx="252" cy="206" r="15" fill="#fff"/>
+                <text x="252" y="211" text-anchor="middle" font-size="11"
+                      font-weight="800" fill="#062040">市場</text>
+              </g>
+              <g class="zigzag__stop">
+                <circle cx="48" cy="140" r="15" fill="#fff"/>
+                <text x="48" y="145" text-anchor="middle" font-size="11"
+                      font-weight="800" fill="#062040">河</text>
+              </g>
+              <g class="zigzag__stop">
+                <circle cx="214" cy="82" r="17" fill="var(--yoxi-red)"/>
+                <text x="214" y="87" text-anchor="middle" font-size="11"
+                      font-weight="800" fill="#fff">窯</text>
+              </g>
+            </svg>
+
+            <div class="lookback__steps" id="stepNum">0</div>
+            <div class="lookback__unit">步 · 4.3 公里</div>
+          </div>
+
+          <!-- ===== 幕 2：慶祝 ===== -->
+          <div class="lookback__act" id="a2">
+            <div style="width:170px; margin:0 auto 28px; position:relative">
+              <div class="postcard" style="aspect-ratio:3/4; animation:fade-up 700ms var(--ease-bump) both">
+                <div data-art="glass" data-seed="1" style="position:absolute;inset:0"></div>
+                <span class="postcard__foot">
+                  <span class="postcard__name">水利路的老玻璃窯</span>
+                  <span class="postcard__date">今天</span>
+                </span>
+              </div>
+            </div>
+            <h2 class="unlock__title" style="font-size:22px">今天多了一張</h2>
+            <p class="unlock__sub">〈風城玻璃〉這枚獎章，收集 2/5</p>
+            <div style="width:180px; margin:20px auto 0; height:6px; border-radius:999px;
+                        background:rgba(255,255,255,.18); overflow:hidden">
+              <div style="height:100%; width:40%; background:var(--yoxi-red);
+                          border-radius:999px; animation:grow 900ms var(--ease-out) both"></div>
+            </div>
+          </div>
+
+          <!-- ===== 幕 3：今日照片 ===== -->
+          <div class="lookback__act" id="a3">
+            <h2 class="unlock__title" style="font-size:22px; margin-bottom:6px">今天你拍了這些</h2>
+            <p class="unlock__sub" style="margin-bottom:24px">選一張放進今天的日誌，也可以跳過</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px">
+              <button class="postcard" data-photo style="aspect-ratio:1/1">
+                <div data-art="glass" data-seed="2" style="position:absolute;inset:0"></div>
+              </button>
+              <button class="postcard" data-photo style="aspect-ratio:1/1">
+                <div data-art="market" data-seed="3" style="position:absolute;inset:0"></div>
+              </button>
+              <button class="postcard" data-photo style="aspect-ratio:1/1">
+                <div data-art="moat" data-seed="4" style="position:absolute;inset:0"></div>
+              </button>
+            </div>
+            <button class="btn-link" id="skipPhoto"
+                    style="justify-content:center; width:100%; margin-top:24px;
+                           color:rgba(255,255,255,.7)">
+              今天沒什麼想留的，跳過
+            </button>
+          </div>
+
+          <!-- ===== 幕 4：心情三選一 ===== -->
+          <div class="lookback__act" id="a4">
+            <h2 class="unlock__title" style="font-size:22px">今天的城市，感覺如何？</h2>
+            <div class="mood">
+              <button class="mood__btn" data-mood><span data-icon="moodGood"></span></button>
+              <button class="mood__btn" data-mood><span data-icon="moodOk"></span></button>
+              <button class="mood__btn" data-mood><span data-icon="moodLow"></span></button>
+            </div>
+          </div>
+
+          <!-- ===== 完成卡 ===== -->
+          <div class="lookback__act" id="a5">
+            <div class="card" style="background:var(--yoxi-white); text-align:left; border:0">
+              <div style="padding:18px 18px 0">
+                <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+                <div class="u-row u-gap3" style="margin-top:10px">
+                  <span data-icon="moodGood" style="width:28px;height:28px;color:var(--yoxi-red)"></span>
+                  <span style="font-size:20px; font-weight:800; color:var(--yoxi-navy)">
+                    <span class="num">6,240</span> 步
+                  </span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; padding:14px 18px">
+                <span style="flex:1; aspect-ratio:1/1; border-radius:4px; overflow:hidden;
+                             position:relative" data-art="glass" data-seed="2"></span>
+                <span style="flex:1; aspect-ratio:1/1; border-radius:4px; overflow:hidden;
+                             position:relative" data-art="glass" data-seed="1"></span>
+              </div>
+              <div style="padding:0 18px 14px; font-size:14px; color:var(--yoxi-slate); line-height:1.7">
+                水利路 · 東門市場 · 護城河<br>
+                今天多了〈水利路的老玻璃窯〉
+              </div>
+              <div style="height:1px; background:var(--yoxi-line)"></div>
+              <div class="privacy-note" style="padding:12px">
+                <span data-icon="lock" style="width:14px;height:14px"></span>
+                只有你看得到
+              </div>
+            </div>
+            <p class="unlock__sub" style="margin-top:16px; font-size:12px">
+              週日的週回顧才有分享鍵。日誌不會給任何人看。
+            </p>
+          </div>
+
+        </div>
+
+        <div class="lookback__foot">
+          <a class="btn-primary" id="nextBtn" href="#"
+             style="background:var(--yoxi-white); color:var(--yoxi-navy)">看收藏</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes grow { from { width: 0 } }
+</style>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const acts = ['a1', 'a2', 'a3', 'a4', 'a5'];
+  let idx = 0;
+
+  const show = i => {
+    idx = i;
+    acts.forEach((id, n) =>
+      document.getElementById(id).classList.toggle('is-on', n === i));
+    const btn = document.getElementById('nextBtn');
+    btn.textContent = i === acts.length - 1 ? '看收藏' : '繼續';
+    btn.style.visibility = (i === 2 || i === 3) ? 'hidden' : 'visible';
+  };
+
+  /* 幕 1：步數往上跳。刻意慢 —— 這是回顧不是載入條。 */
+  const target = 6240;
+  const el = document.getElementById('stepNum');
+  const t0 = performance.now();
+  const tick = now => {
+    const p = Math.min((now - t0) / 2600, 1);
+    el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString();
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+
+  document.getElementById('nextBtn').onclick = e => {
+    if (idx < acts.length - 1) { e.preventDefault(); show(idx + 1); }
+    else location.href = 'album.html';
+  };
+
+  /* 幕 3：選照片或跳過，兩者都能走完 */
+  document.querySelectorAll('[data-photo]').forEach(b => b.onclick = () => show(3));
+  document.getElementById('skipPhoto').onclick = () => show(3);
+
+  /* 幕 4：心情三選一 */
+  document.querySelectorAll('[data-mood]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-mood]').forEach(x => x.classList.remove('is-on'));
+    b.classList.add('is-on');
+    setTimeout(() => show(4), 500);
+  });
+
+  document.getElementById('skipBtn').onclick = () => location.href = 'album.html';
+
+  show(0);
+})();
+</script>
+</body>
+</html>

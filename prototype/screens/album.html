@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>收藏 — yoxi 城事</title>
+<!--
+  N8 收藏首頁【新增】★核心
+
+  情感高點，也是「你這一個月真的出門了」的證據。
+
+  兩個刻意的決定：
+  1. 統計條沒有「連續天數」。Pikmin Bloom 也刻意沒有 streak，
+     這是它溫和的關鍵 —— 漏一天不會讓人放棄整個 app。
+  2. 未解鎖的明信片以灰階剪影佔位，牆從第一天就有形狀，不是空白。
+
+  獎章文案一律用「收集 4/8」，絕不用「任務 4/8」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="album" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n">12</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n">3</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color:#fff">
+            <span class="tile-icon" style="width:44px;height:44px;border-radius:16px;
+                  background:rgba(255,255,255,.14)">
+              <span data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 分段 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite">
+            <button class="pill is-active" data-seg="cards">明信片</button>
+            <button class="pill" data-seg="badges">獎章</button>
+            <button class="pill" data-seg="log">日誌</button>
+          </div>
+        </div>
+
+        <!-- ===== 明信片牆 ===== -->
+        <section id="segCards" style="padding:0 16px 24px">
+          <div class="postcard-wall" id="wall"></div>
+          <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            灰色的是還沒去過的地方。到了就會上色。
+          </p>
+        </section>
+
+        <!-- ===== 獎章 ===== -->
+        <section id="segBadges" class="u-hidden" style="padding:0 16px 24px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 日誌 ===== -->
+        <section id="segLog" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+              <div style="margin-top:10px; font-size:14px; color:var(--yoxi-slate)">
+                水利路 · 東門市場 · 護城河
+              </div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  /* 明信片牆：已解鎖上色，未解鎖灰階剪影佔位 */
+  document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map((p, i) => {
+    const locked = p.state === 'locked';
+    return `
+      <a class="postcard ${locked ? 'postcard--locked' : ''} ${p.by === 'ride' ? 'postcard--gold' : ''}"
+         href="${locked ? 'place.html' : '#'}">
+        <div data-art="${p.art}" data-seed="${i}" style="position:absolute;inset:0"></div>
+        ${p.by === 'ride' ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : ''}
+        <span class="postcard__foot">
+          <span class="postcard__name">${p.name}</span>
+          ${p.date ? `<span class="postcard__date">${p.date}</span>` : ''}
+        </span>
+      </a>`;
+  }).join('');
+
+  /* 獎章：已獲得彩色、未獲得灰階。文案用「收集」不用「任務」。 */
+  document.getElementById('badgeGrid').innerHTML = MOCK.BADGES.map(b => `
+    <div class="badge ${b.got ? '' : 'badge--locked'}" style="width:auto">
+      <span class="badge__disc"><span data-icon="${b.icon}"></span></span>
+      <span class="badge__name">${b.name}</span>
+      <span class="badge__prog">${b.got ? '已收集' : b.prog}</span>
+    </div>`).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  /* 分段切換 */
+  const map = { cards: 'segCards', badges: 'segBadges', log: 'segLog' };
+  document.querySelectorAll('[data-seg]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-seg]').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      Object.values(map).forEach(id => document.getElementById(id).classList.add('u-hidden'));
+      document.getElementById(map[btn.dataset.seg]).classList.remove('u-hidden');
+    };
+  });
+})();
+</script>
+</body>
+</html>

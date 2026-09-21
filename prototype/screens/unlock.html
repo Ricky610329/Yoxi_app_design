@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>抵達解鎖 — yoxi 城事</title>
+<!--
+  N9 抵達解鎖 → 明信片生成 → 明信片完成【新增】★核心
+  整個產品的爽點，三幕在同一頁完成。
+
+  幕 1（0–1.6s）：地圖上的灰點爆開上色
+  幕 2（1.6–5s）：明信片筆觸逐層堆疊，右下「yoxi ✕ AI 生成中」
+  幕 3：明信片成品 + 「寫一句話」（上限 10 字）
+
+  ?ride=1 → yoxi 限定版：金框、角標、司機同行紀念、+50 和泰Points
+
+  原型的明信片為預生成資產，生成動畫是純前端。
+  決賽現場不賭即時 API（見 plan §8 風險 3）。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="8:26">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <div class="unlock" id="unlock">
+
+        <!-- ===== 幕 1：灰點爆開上色 ===== -->
+        <div class="unlock__scene is-on" id="act1">
+          <div class="burst">
+            <span class="burst__wave"></span>
+            <span class="burst__wave"></span>
+            <span class="burst__dot"></span>
+          </div>
+          <h1 class="unlock__title">你到了<br>水利路的老玻璃窯</h1>
+          <p class="unlock__sub" id="arriveBy">走了 2,140 步抵達</p>
+        </div>
+
+        <!-- ===== 幕 2：明信片生成 ===== -->
+        <div class="unlock__scene" id="act2">
+          <div class="gen">
+            <div class="gen__layer" data-art="glass" data-seed="1"></div>
+            <div class="gen__layer" style="background:
+                 linear-gradient(200deg, rgba(255,255,255,.28), transparent 60%)"></div>
+            <div class="gen__layer" style="background:
+                 radial-gradient(circle at 34% 26%, rgba(255,255,255,.4), transparent 52%)"></div>
+            <div class="gen__layer" style="box-shadow: inset 0 -40px 60px rgba(30,58,92,.45)"></div>
+            <div class="gen__sweep"></div>
+            <span class="gen__tag">yoxi ✕ AI 生成中</span>
+          </div>
+          <h2 class="unlock__title" style="font-size:22px">正在畫下今天的這裡</h2>
+          <p class="unlock__sub">依這個地方的樣子、今天的天氣與光線生成</p>
+        </div>
+
+        <!-- ===== 幕 3：明信片成品 ===== -->
+        <div class="unlock__scene" id="act3">
+          <div style="width:220px; margin:0 auto var(--sp-5); position:relative"
+               id="cardWrap">
+            <div class="postcard" id="finalCard" style="aspect-ratio:3/4">
+              <div data-art="glass" data-seed="1" style="position:absolute;inset:0"></div>
+              <span class="ai-mark">AI 生成示意</span>
+              <span class="postcard__foot">
+                <span class="postcard__name">水利路的老玻璃窯</span>
+                <span class="postcard__date">2026.09.21 · 晴 · 新竹市</span>
+              </span>
+            </div>
+          </div>
+
+          <div id="goldNote" class="u-hidden" style="margin-bottom:16px">
+            <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
+                        border-radius:999px; background:rgba(201,162,39,.22); color:var(--gold-lite);
+                        font-size:13px; font-weight:800">
+              <span data-icon="badge" style="width:16px;height:16px;display:block"></span>
+              司機 陳先生 帶你走完了這一段
+            </div>
+          </div>
+
+          <div style="padding:0 var(--sp-2)">
+            <input id="oneLine" maxlength="10" placeholder="寫一句話（最多 10 字，可以不寫）"
+                   style="width:100%; height:52px; padding:0 16px; border-radius:4px;
+                          border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.08);
+                          color:#fff; font-size:15px; text-align:center">
+          </div>
+
+          <div style="display:grid; gap:10px; margin-top:20px; padding:0 var(--sp-2)">
+            <a class="btn-primary" href="album.html"
+               style="background:var(--yoxi-white); color:var(--yoxi-navy)">收進收藏</a>
+            <button class="btn-link" style="justify-content:center; color:rgba(255,255,255,.7)">
+              分享
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 和泰 Points toast（僅限定版） -->
+      <div class="toast u-hidden" id="pointsToast" style="bottom:24px">
+        <span data-icon="point" style="width:22px;height:22px;flex:none"></span>
+        <span class="u-fill">和泰 Points <span class="num">+50</span></span>
+        <span style="font-size:12px; opacity:.7">城事解鎖回饋</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+<script>
+(function () {
+  const isRide = new URLSearchParams(location.search).has('ride');
+
+  /* yoxi 限定版：金框、角標、司機同行紀念、點數回饋 */
+  if (isRide) {
+    const card = document.getElementById('finalCard');
+    card.classList.add('postcard--gold');
+    card.insertAdjacentHTML('afterbegin',
+      '<span class="postcard__ribbon">yoxi 限定版</span>');
+    card.querySelector('.postcard__date').textContent = '2026.09.21 · 晴 · 內灣';
+    card.querySelector('.postcard__name').textContent = '內灣老街';
+    document.getElementById('goldNote').classList.remove('u-hidden');
+    document.getElementById('arriveBy').textContent = '搭 yoxi 抵達 · 28 公里';
+    document.querySelector('#act1 .unlock__title').innerHTML = '你到了<br>內灣老街';
+    document.querySelector('#act2 .unlock__title').textContent = '正在畫下今天的內灣';
+  }
+
+  /* 三幕依序播放。刻意慢 —— 這是產品的情緒高點，不該一閃而過。 */
+  const show = id => {
+    document.querySelectorAll('.unlock__scene').forEach(s => s.classList.remove('is-on'));
+    document.getElementById(id).classList.add('is-on');
+  };
+
+  setTimeout(() => show('act2'), 1600);
+  setTimeout(() => {
+    show('act3');
+    if (isRide) {
+      const t = document.getElementById('pointsToast');
+      t.classList.remove('u-hidden');
+      setTimeout(() => t.classList.add('u-hidden'), 4000);
+    }
+  }, 5000);
+})();
+</script>
+</body>
+</html>

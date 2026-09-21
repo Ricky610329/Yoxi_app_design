@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>前往中 — yoxi 城事</title>
+<!--
+  N4 前往中【新增】
+
+  這一頁刻意什麼都不做。
+
+  沒有步數即時跳動、沒有沿途收集物、沒有任何讓你盯著螢幕的理由。
+  唯一的訊息是「到了會通知你，路上不用一直看手機」。
+
+  反黏著的設計在簡報裡是加分項 —— 它證明我們不是在騙開啟次數，
+  而題目要的是「持續吸引力」，不是「持續盯著」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="dark" data-time="8:14">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- 精簡地圖：只有你與目的地兩個點，沒有別的 -->
+      <div class="map">
+        <svg class="map__svg" viewBox="0 0 390 560" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="560" fill="var(--map-land)"/>
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-10 190 L400 178" stroke-width="10"/>
+            <path d="M-10 330 L400 320" stroke-width="9"/>
+            <path d="M120 -10 L140 570" stroke-width="10"/>
+            <path d="M266 -10 L256 570" stroke-width="9"/>
+          </g>
+          <g stroke="var(--map-road-minor)" stroke-width="5" fill="none">
+            <path d="M-10 258 L400 248"/><path d="M-10 410 L400 402"/>
+            <path d="M192 -10 L204 570"/><path d="M336 -10 L328 570"/>
+          </g>
+
+          <!-- 你走的路線 -->
+          <path d="M196 392 L186 258 L262 250" fill="none"
+                stroke="var(--yoxi-red)" stroke-width="5"
+                stroke-linecap="round" stroke-linejoin="round"
+                stroke-dasharray="7 9" opacity=".85"/>
+        </svg>
+
+        <!-- 你 -->
+        <div class="pin" style="left:50%; top:70%">
+          <span class="pin__drop"><span data-icon="hail"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+
+        <!-- 目的地 -->
+        <div class="pin pin--red" style="left:67%; top:45%">
+          <span class="pin__label">水利路的老玻璃窯</span>
+          <span class="pin__drop"><span data-icon="place"></span></span>
+        </div>
+      </div>
+
+      <!-- 底部：三行字，一個取消 -->
+      <div class="sheet">
+        <div class="sheet__handle"></div>
+
+        <div class="u-row u-gap4" style="margin-bottom:16px">
+          <span class="tile-icon" style="width:48px;height:48px;border-radius:18px">
+            <span data-icon="steps" style="width:26px;height:26px;display:block"></span>
+          </span>
+          <span class="u-fill">
+            <span style="display:block; font-size:22px; font-weight:800; line-height:1.2">
+              還有 <span class="num">700</span> 公尺
+            </span>
+            <span style="display:block; font-size:14px; color:var(--yoxi-slate); margin-top:2px">
+              往水利路的老玻璃窯
+            </span>
+          </span>
+        </div>
+
+        <div class="card card--pad u-row u-gap3" style="background:var(--yoxi-cream); border:0">
+          <span data-icon="bell" style="width:22px;height:22px;flex:none"></span>
+          <span style="font-size:14px; line-height:1.6">
+            到了會通知你，路上不用一直看手機。
+          </span>
+        </div>
+
+        <div style="display:grid; gap:8px; margin-top:16px">
+          <!-- demo 專用：正式版由定位自動觸發 -->
+          <a class="demo-btn" href="unlock.html">demo：我到了（模擬抵達）</a>
+          <a class="btn-link" href="explore.html" style="justify-content:center">取消</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/shell.js"></script>
+</body>
+</html>

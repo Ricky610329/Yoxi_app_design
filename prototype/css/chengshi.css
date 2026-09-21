@@ -252,6 +252,7 @@
 .postcard__art { position: absolute; inset: 0; }
 
 .postcard__foot {
+  display: block;
   position: absolute;
   left: 0;
   right: 0;
@@ -260,8 +261,18 @@
   background: linear-gradient(to top, rgba(6, 32, 64, .9), rgba(6, 32, 64, 0));
   color: var(--yoxi-white);
 }
-.postcard__name { font-size: var(--fs-sm); font-weight: var(--fw-heavy); line-height: 1.3; }
-.postcard__date { font-size: var(--fs-xs); opacity: .85; font-style: italic; }
+.postcard__name {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  line-height: 1.3;
+}
+.postcard__date {
+  display: block;
+  font-size: var(--fs-xs);
+  opacity: .85;
+  font-style: italic;
+}
 
 /* 未解鎖：去飽和 + 壓低對比，看得出形狀但沒有生命 */
 .postcard--locked .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
@@ -527,7 +538,7 @@
   overflow: hidden;
   background: var(--yoxi-mist);
 }
-.gen__layer { position: absolute; inset: 0; opacity: 0; animation: gen-in 600ms var(--ease-out) both; }
+.gen__layer { position: absolute; inset: 0; animation: gen-in 600ms var(--ease-out) backwards; }
 .gen__layer:nth-child(1) { animation-delay: 0ms; }
 .gen__layer:nth-child(2) { animation-delay: 420ms; }
 .gen__layer:nth-child(3) { animation-delay: 840ms; }
@@ -616,13 +627,16 @@
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 1400;
-  stroke-dashoffset: 1400;
+  stroke-dasharray: 640;
+  stroke-dashoffset: 640;
   animation: draw 2.6s var(--ease-out) forwards;
 }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 
-.zigzag__stop { opacity: 0; animation: fade-up 400ms var(--ease-out) forwards; }
+/* 用 backwards 而非「opacity:0 + forwards」：
+   動畫若被停用（prefers-reduced-motion、截圖工具），元素仍停在可見的最終狀態。
+   比賽現場不能讓內容依賴動畫跑完才出現。 */
+.zigzag__stop { animation: fade-up 400ms var(--ease-out) backwards; }
 .zigzag__stop:nth-of-type(1) { animation-delay: .9s; }
 .zigzag__stop:nth-of-type(2) { animation-delay: 1.5s; }
 .zigzag__stop:nth-of-type(3) { animation-delay: 2.1s; }
