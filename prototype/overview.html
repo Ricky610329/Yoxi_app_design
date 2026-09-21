@@ -31,10 +31,17 @@
   .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; }
   .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
 
-  /* --- 縮圖 -------------------------------------------------------- */
-  .thumb { width: 198px; flex: none; }
+  /* --- 縮圖 --------------------------------------------------------
+     寬度抽成 --tw，高度由圖的長寬比（430:912）算出來，
+     不手填才不會因為差幾個像素而把手機底部裁掉。 */
+  :root { --tw: 198px; }
+  .flowrow { --tw: 168px; }                    /* 流程列一次要排 6 格，小一號 */
+  @media (max-width: 1440px) { :root { --tw: 180px; } .flowrow { --tw: 156px; } }
+  @media (max-width: 1180px) { :root { --tw: 164px; } .flowrow { --tw: 140px; } }
+
+  .thumb { width: var(--tw); flex: none; }
   .thumb__frame {
-    position: relative; width: 198px; height: 420px;
+    position: relative; width: var(--tw); height: calc(var(--tw) * 912 / 430);
     border-radius: 14px; overflow: hidden;
     background: #fff; box-shadow: 0 2px 10px rgba(6,32,64,.14);
     transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
@@ -64,10 +71,10 @@
   .flowrow__tag { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
   .flowrow__n { font-size: 20px; font-weight: 800; margin-top: 3px; }
   .flowrow__w { font-size: 14px; color: var(--yoxi-slate); margin-top: 5px; line-height: 1.6; }
-  .strip { display: flex; align-items: flex-start; gap: 4px; overflow-x: auto; padding-bottom: 6px; }
+  .strip { display: flex; align-items: flex-start; gap: 2px; overflow-x: auto; padding-bottom: 6px; }
   .strip::-webkit-scrollbar { height: 8px; }
   .strip::-webkit-scrollbar-thumb { background: var(--yoxi-slate-lite); border-radius: 999px; }
-  .hop { flex: none; align-self: center; padding: 0 6px; margin-top: -40px; }
+  .hop { flex: none; align-self: center; padding: 0 4px; margin-top: -40px; }
 
   /* --- 分組牆 ------------------------------------------------------ */
   .group { margin-top: 40px; }
@@ -89,7 +96,7 @@
       <h1>全景圖</h1>
       <p>
         全部 38 張畫面，以及三條 demo 流程各自走過哪些畫面。<br>
-        點任一張開新分頁看實際畫面。<br>縮圖由 <code>tools/shoot.sh</code> 產生，改了畫面重跑一次即可。
+        點任一張開新分頁看實際畫面。<br>縮圖由 <code>tools/shoot.py</code> 產生，改了畫面重跑一次即可。
       </p>
     </div>
     <div style="display:grid; gap:10px; justify-items:end">

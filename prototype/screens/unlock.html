@@ -62,7 +62,7 @@
                id="cardWrap">
             <div class="postcard" id="finalCard" style="aspect-ratio:3/4">
               <div data-art="glass" data-seed="1" style="position:absolute;inset:0"></div>
-              <span class="ai-mark" style="left:auto; right:8px">AI 生成示意</span>
+              <span class="ai-mark">AI 生成示意</span>
               <span class="postcard__foot">
                 <span class="postcard__name">水利路的老玻璃窯</span>
                 <span class="postcard__date">2026.09.21 · 晴 · 新竹市</span>
@@ -155,6 +155,13 @@
     /* 搭車那條線的重點是點數回流和泰生態系，終點該是點數頁 */
     location.href = isRide ? 'points.html' : 'album.html';
   };
+
+  /* ?still=1 直接跳到成品那一幕。縮圖若抓到生成動畫的中途，
+     全景圖上看到的會是「正在畫…」而不是明信片本身。 */
+  if (new URLSearchParams(location.search).has('still')) {
+    show('act3');
+    return;
+  }
 
   setTimeout(() => show('act2'), 1600);
   setTimeout(() => {
