@@ -63,6 +63,12 @@ function statusbar(tone, time) {
 
 /* 每個變體有自己的一組分頁，因為它們的叫車／探索／收藏是不同的檔案。
    <body data-tabs="變體名"> 指定要用哪一組，沒寫就用預設。 */
+/* ?still=1：定格模式，見 base.css。要在任何轉場開始之前就掛上，
+   所以寫在最前面，不等 DOMContentLoaded。 */
+if (new URLSearchParams(location.search).has('still')) {
+  document.documentElement.setAttribute('data-still', '');
+}
+
 const TABSETS = {
   default: [
     { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },

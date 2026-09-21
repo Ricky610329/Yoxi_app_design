@@ -176,3 +176,19 @@ input, textarea { font: inherit; color: inherit; }
     transition-duration: .001ms !important;
   }
 }
+
+/* ==========================================================================
+   ?still=1 —— 給縮圖用的「定格」模式
+   同一頁連拍三張會拿到三種結果，因為小卡與數字都在動。
+   把動畫與轉場壓成 1ms，畫面就停在終值，縮圖每次都一樣。
+   壓時間而不是 animation:none：有些內容的可見狀態是動畫終幀畫出來的，
+   整個關掉它們會消失。
+   ========================================================================== */
+html[data-still] *,
+html[data-still] *::before,
+html[data-still] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+}

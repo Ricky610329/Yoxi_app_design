@@ -188,9 +188,13 @@
 .citylayer svg { width: 16px; height: 16px; }
 
 /* 圖層關閉時，霧格子與景點完全不存在於畫面上 —— 這是「關掉就是原本的
-   yoxi」這條承諾的實作。 */
-.map:not(.layer-on) .fogmap__cell,
-.map:not(.layer-on) #spots { display: none; }
+   yoxi」這條承諾的實作。
+
+   一定要限定 .map--layered：只有叫車首頁那張「有城事圖層開關」的地圖
+   受這條規則管。寫成 .map:not(.layer-on) 會把探索地圖、城市足跡、
+   變體 A／B 的景點與霧格子一起關掉 —— 那些地圖本來就沒有開關。 */
+.map--layered:not(.layer-on) .fogmap__cell,
+.map--layered:not(.layer-on) #spots { display: none; }
 
 /* 已收集的角標 */
 .spot__tick {

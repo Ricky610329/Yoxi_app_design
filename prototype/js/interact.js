@@ -23,6 +23,8 @@
     const handle = sheet.querySelector('.sheet__handle');
     if (!handle) return;
 
+    /* 這兩個 class 現在直接寫在 HTML 裡：等 JS 加的話第一次繪製是展開的，
+       下一幀才收起來，使用者看得到一次跳動。這裡保留是為了保險。 */
     sheet.classList.add('sheet--drag', 'is-collapsed');
 
     const setOpen = function (open) {

@@ -31,7 +31,7 @@
     <div class="device__screen">
 
       <!-- ===== 地圖 ===== -->
-      <div class="map" data-pan>
+      <div class="map map--layered" data-pan>
         <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
           <rect width="390" height="440" fill="var(--map-land)"/>
 
@@ -163,7 +163,7 @@
 
       <!-- ===== 底部 sheet =====
            收合態內容與順序完全保留，一個像素都沒動。 -->
-      <div class="sheet" data-drag id="sheet" style="--sheet-min:420px">
+      <div class="sheet sheet--drag is-collapsed" data-drag id="sheet" style="--sheet-min:420px">
         <div class="sheet__handle"></div>
 
         <!-- 模式切換：叫車與探索在同一個畫面裡分流 -->

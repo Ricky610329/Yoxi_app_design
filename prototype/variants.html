@@ -156,11 +156,11 @@
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
         ① 圖層關閉時，畫面與現況<b>完全相同</b></td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        把變體 D 與 <code>home.html</code> 的截圖逐像素相減，
-        差異只有 <b style="color:#2F6B3D">0.71%</b>，而且全部落在
-        <code>(33,376)–(116,424)</code> —— 就是左下角那顆城事鈕本身，其餘一個像素沒動。<br>
-        變體 E 的差異 19.3% 全在地圖區（y 34–438），sheet 完全沒動；
-        變體 F 是 25.6%，因為 sheet 頂端多了一排模式 pill，地圖高度從 404px 變 344px —— 這是它的代價。</td></tr>
+        把變體 D 跑完 JS 的 DOM 與 <code>home.html</code> 的 DOM 各自<b>整棵拿掉城事圖層</b>
+        （景點、霧格子、小卡、圖層鈕），剩下的 464 個節點<b style="color:#2F6B3D">逐節點相同</b>。<br>
+        不是逐行放行，是真的把圖層刪掉再比 —— 「圖層以外一個都沒動」這句話要成立，就該這樣驗。<br>
+        變體 E 多 3 處（設好下車點之後才出現的叫車鈕）；
+        變體 F 多 39 處（鎖住的收合態高度，加上分頁列從三個變兩個）。兩者都是它們寫明的代價。</td></tr>
 
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
         ② 叫車關鍵路徑的 tap 數<b>不變</b></td>
@@ -286,7 +286,7 @@ const V2 = [
       ['探索', 'screens/variant-d-explore.html', '純內容，沒有地圖', false],
       ['收藏', 'screens/variant-d-album.html', '足跡入口指回地圖', false],
     ],
-    good: '叫車體驗零風險 —— 關掉就是原本的 yoxi。這不是說法：逐像素比對下差異只有 0.71%，而且全部落在左下角那顆城事鈕本身。改動最小。',
+    good: '叫車體驗零風險 —— 關掉就是原本的 yoxi。這不是說法：把城事圖層整棵拿掉之後，它與 home.html 的 DOM 逐節點相同，剩下的 464 個節點一個都沒動。改動最小。',
     bad: '景點預設看不到，發現性最低。「不搭車也打開 yoxi」的證據因此變弱 —— 而那正是這題要證明的事。',
   },
   {
