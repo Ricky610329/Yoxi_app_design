@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>變體比較 — yoxi 城事</title>
 <!--
-  地圖該歸誰？四個變體的並排比較。
+  地圖該歸誰？七個變體的並排比較。
 
   每一列是一個變體的完整 tab 組合（叫車／探索／收藏），
   所以看得到的是「整個 app 組合起來的感覺」，不是單張畫面。
@@ -118,7 +118,10 @@
 
   <h2 style="font-size:24px; font-weight:800; margin:8px 0 6px">問題一：探索內部，地圖該放哪？</h2>
   <p style="color:var(--yoxi-slate); margin-bottom:20px; line-height:1.7">
-    在「探索有自己的地圖」這個前提下，地圖與城市足跡怎麼分配。
+    在「<b>探索有自己的地圖</b>」這個前提下，地圖與城市足跡怎麼分配。<br>
+    下面那個「這一題我推薦」只在這個前提成立時有效 ——
+    <b style="color:var(--yoxi-navy)">問題二會把這個前提整個拿掉</b>，
+    到時候這四個變體就一起不存在了。兩題的推薦不是二選一，是先後關係。
   </p>
   <div id="list"></div>
 
@@ -183,12 +186,16 @@
         探索地圖是 10 個，叫車地圖只給 4 個。</td></tr>
 
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        ⑤ 景點<b>不遮住上車點 pin</b> 與四顆浮動鈕</td>
+        ⑤ 景點與小卡<b>不遮住上車點 pin</b> 與四顆浮動鈕</td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        在 iframe 裡量真實的 <code>getBoundingClientRect</code>，算景點與 6 個受保護元素
-        （pin、地址標籤、四顆浮動鈕）的重疊面積：<b style="color:#2F6B3D">全部為 0</b>。<br>
-        這條一開始是 <b>FAIL</b> —— 稽核抓到三個變體共 9 處覆蓋，最嚴重的壓住上車點 pin
-        1337 px²。座標因此全部依量到的空隙重配。</td></tr>
+        在 iframe 裡量真實的 <code>getBoundingClientRect</code>，算景點<b>與浮出的小卡</b>
+        跟 6 個受保護元素（pin、地址標籤、四顆浮動鈕）的重疊面積：
+        <b style="color:#2F6B3D">全部為 0</b>。<br>
+        這條被抓到兩次。第一次是景點座標，共 9 處覆蓋、最嚴重壓住上車點 pin 1337 px²，
+        座標因此全部依量到的空隙重配。第二次是稽核自己漏了 —— 它只量圖釘、不量小卡，
+        補上之後立刻抓到變體 D 的小卡壓住 pin 392 px²、定位鈕 312 px²。
+        地圖只有 404px 高，pin 底緣到定位鈕之間只剩 50px，塞不下一張卡，
+        所以不是搬位置能解決：改成<b>圖層打開不自動彈卡</b>，點景點才出現。</td></tr>
 
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
         ⑥ 兩種標記的<b>視覺語言完全分開</b></td>
@@ -316,7 +323,7 @@ const V2 = [
   },
 ];
 
-const render = (list, el) => document.getElementById(el).innerHTML = list.map(v => `
+const render = (list, el, mark) => document.getElementById(el).innerHTML = list.map(v => `
   <section class="v ${v.pick ? 'v--pick' : ''}">
     <div class="v__head">
       <div>
@@ -324,7 +331,7 @@ const render = (list, el) => document.getElementById(el).innerHTML = list.map(v 
         <div class="v__n">${v.name}</div>
         <p class="v__one">${v.one}</p>
       </div>
-      ${v.pick ? '<span class="v__pickmark">我推薦這個</span>' : ''}
+      ${v.pick ? `<span class="v__pickmark">${mark}</span>` : ''}
     </div>
 
     <div class="tabs">
@@ -347,8 +354,8 @@ const render = (list, el) => document.getElementById(el).innerHTML = list.map(v 
     </div>
   </section>`).join('');
 
-render(V, 'list');
-render(V2, 'list2');
+render(V, 'list', '這一題我推薦');
+render(V2, 'list2', '整份提案我推薦');
 </script>
 </body>
 </html>

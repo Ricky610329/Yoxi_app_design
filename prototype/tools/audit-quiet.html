@@ -146,13 +146,22 @@ function audit(name, doc) {
   return { lines: L, bad: fail.length };
 }
 
+/* 等 <html data-shell-ready>，最多 4 秒。固定等一個時間會量到半成品。 */
+function whenReady(doc, fn) {
+  const t0 = Date.now();
+  (function poll() {
+    if (doc.documentElement.hasAttribute('data-shell-ready') || Date.now() - t0 > 4000) fn();
+    else setTimeout(poll, 60);
+  })();
+}
+
 let done = 0, bad = 0, out = [];
 CASES.forEach(function (c, i) {
   const fr = document.createElement('iframe');
   fr.src = c[1];
   fr.onload = function () {
-    /* 頁內腳本有些排在 DOMContentLoaded 之後（SHELL.ready），等一拍再量 */
-    setTimeout(function () {
+    /* 等頁內排在 DOMContentLoaded 之後的程式真的跑完，不要固定等一個時間 */
+    whenReady(fr.contentDocument, function () {
       let res;
       try { res = audit(c[0], fr.contentDocument); }
       catch (e) { res = { lines: ['── ' + c[0] + ' 讀不到：' + e.message, ''], bad: 1 }; }

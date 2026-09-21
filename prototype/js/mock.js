@@ -130,7 +130,7 @@ const ROUTES = [
       { id: 's5', name: '合興車站',   type: '車站', art: 'hakka', card: 'p10',  dist: 24000, state: 'todo',
         note: '' },
       { id: 's6', name: '內灣老街',   type: '老街', art: 'oldst', card: 'p9',   dist: 28000, state: 'next',
-        note: '線的盡頭。走路到不了，這一段要搭車。' },
+        note: '線的盡頭。28 公里，這一段搭車比較合理。' },
     ],
   },
   {

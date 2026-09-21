@@ -417,13 +417,43 @@ function shareSheet(opt) {
   host.appendChild(scrim);
 }
 
+/* 排在所有 DOMContentLoaded 綁定之後才跑。
+   頁內腳本在 body 裡，執行時 interact.js 還沒 boot（它等 DOMContentLoaded），
+   所以想「程式化地點一顆 pill」就得排到它後面去。
+
+   全部跑完之後在 <html> 掛上 data-shell-ready，稽核工具才有東西可以等 ——
+   之前它們是固定等 700ms 就斷言，機器忙一點就會量到半成品，
+   變體 F 的「切模式時地圖高度不變」因此間歇性地 FAIL 過。 */
+const readyQueue = [];
+let readyDone = false;
+
+function drainReady() {
+  while (readyQueue.length) {
+    const fn = readyQueue.shift();
+    try { fn(); } catch (e) { console.error('SHELL.ready:', e); }
+  }
+  readyDone = true;
+  document.documentElement.setAttribute('data-shell-ready', '1');
+}
+
 function ready(fn) {
+  if (readyDone) { setTimeout(fn, 0); return; }
+  readyQueue.push(fn);
+  if (readyQueue.length > 1) return;          /* 已經排過了 */
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(fn, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(drainReady, 0); });
   } else {
-    setTimeout(fn, 0);
+    setTimeout(drainReady, 0);
   }
 }
+
+/* 沒有任何頁內腳本呼叫 ready() 的畫面也要掛上標記，稽核才不會空等。 */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () { setTimeout(drainReady, 0); });
+} else {
+  setTimeout(drainReady, 0);
+}
+
 
 /* 叫車地圖上要疊哪幾個景點、疊在哪。
    pos 是 { 景點id: [x%, y%] }，座標是底邊中心。

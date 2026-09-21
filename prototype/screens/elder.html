@@ -66,6 +66,8 @@
       </header>
 
       <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
 
         <div style="padding:16px">
           <div class="elder" id="preview">
@@ -79,7 +81,7 @@
           </div>
 
           <p style="margin-top:10px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
-            用你昨天去過的地方做的。圖是 AI 畫的，不是照片。
+            用你去過的地方做的。圖是 AI 畫的，不是照片。
           </p>
         </div>
 
@@ -141,7 +143,9 @@
   });
 
   /* 換一個地方：用同一批已收集的明信片資產 */
-  const done = MOCK.POSTCARDS.filter(p => p.state === 'done');
+  /* 全 app 只剩這裡還在讀 POSTCARDS 的靜態 state，
+     所以現場剛解鎖的那一張不會出現在「換一個地方」的清單裡。 */
+  const done = MOCK.POSTCARDS.filter(p => STATE.has(p.id));
   document.getElementById('places').innerHTML = done.map((p, i) => `
     <button data-place="${p.art}" data-name="${p.name}" data-seed="${i}"
             style="width:86px; flex:none; text-align:center">

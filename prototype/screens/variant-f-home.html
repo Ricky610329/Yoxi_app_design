@@ -148,7 +148,7 @@
               今天的地方 · 離你 900m
             </span>
             <span style="display:block;font-size:14px;font-weight:800;margin-top:2px">
-              這條巷子 1970 年是全街最亮的地方
+              這條巷子 1970 年代是全街最亮的地方
             </span>
           </span>
           <span class="arrow arrow--onred"></span>
@@ -327,13 +327,25 @@
      「竹北市」「寶山鄉」跟一半的景點會直接消失。
      所以開場先量一次叫車模式的實高，切到今天模式時把它釘回去：
      **切換模式時地圖高度完全不變。** */
-  SHELL.ready(function () {
-    /* 要等 interact.js 把 sheet 收起來才量得到「收合後的實高」——
-       它是在 DOMContentLoaded 才加上 .sheet--drag.is-collapsed 的。 */
+  /* 量的時機很講究。載入完就量會量到還沒排完版的高度（少了分頁列那一段，
+     實測會差 39px），所以改成「第一次切模式的當下」才量 ——
+     那時版面早就穩了，而且這個監聽器是在解析階段綁的、比 interact.js 的
+     切 panel 早一步跑，所以量到的還是叫車模式的高度。 */
+  function lockSheet() {
+    if (sheetEl.dataset.locked) return;
+    /* .sheet--drag 對 max-height 有 480ms 轉場，直接改的話這一次會用「動的」
+       方式從 420 縮到實高，切換的當下地圖高度會跑一趟。鎖的是同一個值，
+       不該有動畫，所以先關掉轉場、強制重排、再打開。 */
+    const keep = sheetEl.style.transition;
+    sheetEl.style.transition = 'none';
     sheetEl.style.setProperty('--sheet-min', sheetEl.offsetHeight + 'px');
-  });
+    void sheetEl.offsetHeight;
+    sheetEl.style.transition = keep;
+    sheetEl.dataset.locked = '1';
+  }
 
   function setMode(key) {
+    lockSheet();
     const today = key === 'today';
     mapEl.classList.toggle('layer-on', today);
     if (!today) pk2.close();

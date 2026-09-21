@@ -156,13 +156,20 @@
     (done === 0 ? '還沒開始' : '已經走過 ' + done + ' 站');
 
   /* 下一站 */
-  const nx = R.stops.filter(function (st) { return st.state === 'next'; })[0];
+  /* 「先去這一站」由路線的 feature 決定，不是陣列順序。
+     站序是照內灣線實際地理排的（內灣是終點），但這條路線沒有順序壓力 ——
+     推薦的是那一站「唯一走路到不了、也是這條線存在的理由」。
+     已經收下了就退回第一個還沒收的。 */
+  const nx = R.stops.filter(function (st) {
+               return R.feature && st.card === R.feature && !STATE.has(st.card);
+             })[0]
+          || R.stops.filter(function (st) { return !STATE.has(st.card); })[0];
   const nxBox = document.getElementById('nextBox');
   if (nx) {
-    const farNx = nx.dist > 3000;
+    const farNx = nx.dist > 10000;
     nxBox.innerHTML =
       '<div style="padding:14px 16px 0; font-size:12px; font-weight:800;' +
-      ' letter-spacing:.08em; color:var(--yoxi-red)">下一站</div>' +
+      ' letter-spacing:.08em; color:var(--yoxi-red)">先去這一站</div>' +
       '<a class="row-nav" href="place.html?id=' + nx.card + '" style="padding:10px 16px 14px">' +
         '<span style="width:52px; height:68px; border-radius:4px; overflow:hidden;' +
         ' position:relative; flex:none; filter:grayscale(1) contrast(.72) brightness(1.16)"' +

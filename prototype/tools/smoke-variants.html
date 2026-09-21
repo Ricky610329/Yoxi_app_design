@@ -155,10 +155,24 @@ const CASES = [
 
 let out = [], done = 0, bad = 0;
 
+/* 不要固定等一個時間就斷言。
+   三個 iframe 是並行載入的，機器忙一點的時候，頁內排在 DOMContentLoaded
+   之後的程式（SHELL.ready）還沒跑完，測到的就是半成品 ——
+   變體 F 的「切模式時地圖高度不變」就這樣間歇性地 FAIL 過。
+   改成輪詢到頁面真的就緒，最多等 4 秒。 */
+function whenReady(doc, fn) {
+  const t0 = Date.now();
+  (function poll() {
+    const ok = doc.documentElement.hasAttribute('data-shell-ready');
+    if (ok || Date.now() - t0 > 4000) fn();
+    else setTimeout(poll, 60);
+  })();
+}
+
 CASES.forEach((c, i) => {
   const fr = document.createElement('iframe');
   fr.src = c.url;
-  fr.onload = () => setTimeout(() => {
+  fr.onload = () => whenReady(fr.contentDocument, () => {
     const L = ['── ' + c.name + ' ' + '─'.repeat(6)];
     const d = fr.contentDocument;
     c.steps.forEach(([label, run, why]) => {
@@ -178,7 +192,7 @@ CASES.forEach((c, i) => {
       document.getElementById('out').textContent =
         out.join('\n') + (bad ? bad + ' 步失敗。' : '全部通過。');
     }
-  }, 700);
+  });
   document.getElementById('frames').appendChild(fr);
 });
 </script>

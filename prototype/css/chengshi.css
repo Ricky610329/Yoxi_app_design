@@ -526,6 +526,17 @@
   letter-spacing: .04em;
 }
 
+/* 頁面層級的「AI 生成」聲明。
+   收藏牆一次有 18 張明信片，每一張都貼一枚 .ai-mark 會變成一面標籤牆，
+   所以圖多的頁面改用一行文字講一次。單張大圖的頁面才用 .ai-mark。 */
+.ai-note {
+  padding: var(--sp-3) var(--gutter);
+  font-size: var(--fs-cap);
+  color: var(--yoxi-slate);
+  line-height: 1.6;
+  background: var(--yoxi-mist);
+}
+
 /* 「AI 生成示意」標記 —— 原型階段誠實標註。
    放左上：明信片底部是地名與日期，放底部會互相壓到。 */
 .ai-mark {
