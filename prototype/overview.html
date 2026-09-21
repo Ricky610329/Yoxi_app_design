@@ -89,7 +89,7 @@
     <div>
       <h1>全景圖</h1>
       <p>
-        全部 20 張畫面，以及三條 demo 流程各自走過哪些畫面。<br>
+        全部 36 張畫面，以及三條 demo 流程各自走過哪些畫面。<br>
         縮圖是活的 —— 直接縮放真實畫面，不是截圖，所以不會過期。點任一張開新分頁。
       </p>
     </div>
@@ -137,6 +137,19 @@ const S = {
   settings: ['N15', '城事設定',       'new',  'screens/settings.html'],
   push:     ['N16', '模擬推播（早）',  'new',  'screens/push.html'],
   pushN:    ['N16', '模擬推播（晚）',  'new',  'screens/push.html?when=night'],
+  trips:    ['—',   '行程紀錄',       'keep', 'screens/trips.html'],
+  export:   ['—',   '匯出行程',       'keep', 'screens/export.html'],
+  payment:  ['—',   '付款設定',       'keep', 'screens/payment.html'],
+  coupon:   ['—',   '優惠券',         'keep', 'screens/coupon.html'],
+  tasks:    ['—',   '好康任務',       'keep', 'screens/tasks.html'],
+  support:  ['—',   '客服中心',       'keep', 'screens/support.html'],
+  shop:     ['—',   '點數商城',       'keep', 'screens/shop.html'],
+  invite:   ['—',   '邀請好友',       'keep', 'screens/invite.html'],
+  outarea:  ['R4',  '非服務範圍',     'keep', 'screens/outofarea.html'],
+  rideset:  ['R8',  '乘車設定',       'mod',  'screens/ridesettings.html'],
+  postcard: ['N10', '明信片詳情',     'new',  'screens/postcard.html'],
+  badge:    ['N11', '獎章詳情',       'new',  'screens/badge.html'],
+  week:     ['N13', '週回顧',         'new',  'screens/week.html'],
 };
 
 const LABEL = { keep: '沿用', mod: '改造', new: '新增' };
@@ -187,11 +200,13 @@ document.getElementById('flows').innerHTML =
 /* ---- 依分頁分組的牆 ---- */
 const GROUPS = [
   ['叫車', '既有的叫車流程。除了首頁多一條 tab bar 與一個入口，其餘沒動。',
-   ['home', 'drawer', 'pickup', 'ride', 'done', 'notify', 'points']],
+   ['home', 'drawer', 'pickup', 'outarea', 'ride', 'done', 'notify']],
   ['探索', '「接下來去哪」。卡片與地圖是同一批資料的兩種檢視。',
    ['explore', 'map', 'place', 'placefar', 'route', 'routes', 'going', 'fogmap']],
   ['收藏', '「去過哪裡」。情感高點與長期價值的載體。',
-   ['album', 'unlock', 'unlockR', 'lookback', 'elder']],
+   ['album', 'unlock', 'unlockR', 'postcard', 'badge', 'lookback', 'week', 'elder']],
+  ['原封不動的既有畫面', '這些完全沒有為了城事而改動 —— 這本身就是「不破壞既有體驗」的證據。',
+   ['trips', 'export', 'payment', 'coupon', 'tasks', 'support', 'points', 'rideset', 'shop', 'invite']],
   ['設定與 demo 工具', '資料與隱私講清楚；推播浮層是 demo 用的，不是產品畫面。',
    ['settings', 'push', 'pushN']],
 ];

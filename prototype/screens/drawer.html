@@ -50,7 +50,7 @@
             <span data-icon="moodGood"
                   style="width:44px; height:44px; color:var(--yoxi-slate-lite); display:block"></span>
           </span>
-          <span class="u-fill" style="font-size:26px; font-weight:800">Rick</span>
+          <a class="u-fill" href="#" style="font-size:26px; font-weight:800; color:#fff">Rick</a>
           <span class="arrow arrow--onred"></span>
         </div>
 
@@ -62,10 +62,10 @@
         </div>
 
         <nav>
-          <a class="drawer__item" href="#">行程紀錄</a>
-          <a class="drawer__item" href="#">行程匯出</a>
-          <a class="drawer__item" href="#">付款設定</a>
-          <a class="drawer__item" href="#">乘車設定</a>
+          <a class="drawer__item" href="trips.html">行程紀錄</a>
+          <a class="drawer__item" href="export.html">行程匯出</a>
+          <a class="drawer__item" href="payment.html">付款設定</a>
+          <a class="drawer__item" href="ridesettings.html">乘車設定</a>
 
           <!-- 【新增】唯一插入的一項 -->
           <a class="drawer__item" href="settings.html" style="display:flex; align-items:center; gap:10px">
@@ -74,10 +74,10 @@
                          background:rgba(255,255,255,.22)">新</span>
           </a>
 
-          <a class="drawer__item" href="#">優惠券</a>
-          <a class="drawer__item" href="#">好康任務</a>
-          <a class="drawer__item" href="#">客服中心</a>
-          <a class="drawer__item" href="#">點數商城</a>
+          <a class="drawer__item" href="coupon.html">優惠券</a>
+          <a class="drawer__item" href="tasks.html">好康任務</a>
+          <a class="drawer__item" href="support.html">客服中心</a>
+          <a class="drawer__item" href="shop.html">點數商城</a>
         </nav>
 
         <div style="padding:8px 0 20px">
@@ -87,11 +87,11 @@
                     padding:6px 16px; border-radius:999px; border:1.5px solid rgba(255,255,255,.7);
                     color:#fff; font-weight:700">
             <span data-icon="point" style="width:18px; height:18px; display:block"></span>
-            <span class="num">50</span> 點
+            <span class="num" id="pts">50</span> 點
           </a>
         </div>
 
-        <div class="drawer__foot">邀請好友賺搭車金 🎁</div>
+        <a class="drawer__foot" href="invite.html">邀請好友賺搭車金 🎁</a>
       </div>
 
     </div>
@@ -103,5 +103,6 @@
 <script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
 <script src="../js/interact.js"></script>
+<script>document.getElementById("pts").textContent = STATE.all.points;</script>
 </body>
 </html>

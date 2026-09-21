@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>乘車設定 — yoxi 城事</title>
+<!--
+  乘車設定【改造】
+  照 IMG_9563 還原：常用地點／常用旅程／乘車喜好／常用聯絡人。
+
+  唯一的改動：在「常用地點」底下加一列開關「用我的常用地點推薦地方」。
+  知情同意的落點應該在資料原生的地方，而不是藏在新功能的設定頁裡 ——
+  使用者在設定常用地點的當下，才是最適合問他這個問題的時機。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .sw-toggle {
+    width: 50px; height: 30px; border-radius: 999px; flex: none;
+    background: var(--yoxi-slate-lite); position: relative;
+    transition: background var(--t-fast) var(--ease);
+  }
+  .sw-toggle::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 24px; height: 24px; border-radius: 50%; background: #fff;
+    transition: transform var(--t-fast) var(--ease);
+  }
+  .sw-toggle.is-on { background: var(--yoxi-navy); }
+  .sw-toggle.is-on::after { transform: translateX(20px); }
+</style>
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">乘車設定</h1>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist); padding:16px">
+        <div class="card">
+          <div class="row-nav">
+            <span class="tile-icon"><span data-icon="place"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title">常用地點</span>
+              <span class="row-nav__sub">設定常用地點可更快速叫車</span>
+            </span>
+            <span class="arrow"></span>
+          </div>
+
+          <!-- 【新增】知情同意放在資料原生的地方 -->
+          <div class="row-nav" style="background:var(--yoxi-cream)">
+            <span style="width:56px; flex:none"></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:15px">用我的常用地點推薦地方</span>
+              <span class="row-nav__sub">城事會用它判斷哪些地方你每天經過卻沒進去過</span>
+            </span>
+            <button class="sw-toggle" data-switch="place"></button>
+          </div>
+
+          <a class="row-nav" href="#">
+            <span class="tile-icon"><span data-icon="route"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title">常用旅程</span>
+              <span class="row-nav__sub">設定常用旅程可在首頁一鍵叫車</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+          <a class="row-nav" href="#">
+            <span class="tile-icon"><span data-icon="moodGood"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title">乘車喜好</span>
+              <span class="row-nav__sub">設定乘車喜好，享受更貼心的服務</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+          <a class="row-nav" href="#">
+            <span class="tile-icon"><span data-icon="share"></span></span>
+            <span class="row-nav__body">
+              <span class="row-nav__title">常用聯絡人</span>
+              <span class="row-nav__sub">設定常用聯絡人可快速分享行程</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+</body>
+</html>

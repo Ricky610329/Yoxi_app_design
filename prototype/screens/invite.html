@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>邀請好友 — yoxi 城事</title>
+<!--
+  邀請好友【沿用】
+  完全沒有為了城事而改動。
+
+  （備註：brainstorm 裡的「好友模式」願景會接在這裡 ——
+  父母輩透過好友關係觀察家庭成員動向。但那是擴展性，不是這次的原型範圍。）
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">邀請好友賺搭車金</h1>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <div style="padding:16px">
+          <div class="card card--pad u-center" style="padding:28px 20px">
+            <div style="font-size:13px; color:var(--yoxi-slate)">你的推薦碼</div>
+            <div class="num" style="font-size:36px; letter-spacing:.06em; margin-top:8px">
+              RICK926
+            </div>
+            <button class="btn-primary" id="copyBtn" style="margin-top:20px">複製推薦碼</button>
+            <p style="margin-top:16px; font-size:13px; color:var(--yoxi-slate); line-height:1.85">
+              好友首趟完成後，<br>你與好友各得 $100 搭車金。
+            </p>
+          </div>
+        </div>
+
+        <div style="padding:0 16px 32px">
+          <div class="card">
+            <div class="row-nav">
+              <span class="tile-icon"><span data-icon="share"></span></span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">已邀請</span>
+                <span class="row-nav__sub">還沒有人使用你的推薦碼</span>
+              </span>
+              <span class="num" style="font-size:20px">0</span>
+            </div>
+            <div class="row-nav">
+              <span class="tile-icon"><span data-icon="point"></span></span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">累積賺得</span>
+                <span class="row-nav__sub">搭車金</span>
+              </span>
+              <span class="num" style="font-size:20px">$0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const b = document.getElementById('copyBtn');
+  b.onclick = function () {
+    b.textContent = '已複製 ✓';
+    setTimeout(function () { b.textContent = '複製推薦碼'; }, 1600);
+  };
+})();
+</script>
+</body>
+</html>

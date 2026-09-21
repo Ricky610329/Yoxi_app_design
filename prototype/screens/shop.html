@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>點數商城 — yoxi 城事</title>
+<!--
+  點數商城【沿用】
+
+  和泰 Points 可以跨品牌折抵（yoxi 車資、iRent 租車、HOTAI 購商城、汽車保養），
+  其他叫車平台的點數是封閉的。
+
+  這一頁對提案有用處：它是「城事解鎖回饋」最後真的變成實質價值的地方 ——
+  探索行為 → 和泰 Points → 集團生態圈消費。這條路徑別家抄不走。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+        </div>
+        <h1 class="hdr-red__title">點數商城</h1>
+        <p class="hdr-red__sub">
+          可用點數 <span class="num" id="pts" style="font-size:20px">50</span> 點 · 1 點 = 1 元
+        </p>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist); padding:16px">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px" id="grid"></div>
+        <p style="margin-top:20px; font-size:13px; color:var(--yoxi-slate);
+                  line-height:1.8; text-align:center">
+          點數可跨 yoxi、iRent、HOTAI 購與汽車保養使用。
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const pts = STATE.all.points;
+  document.getElementById('pts').textContent = pts;
+
+  const G = [
+    ['yoxi 搭車金 $100',      100, 'tabRide', 'var(--yoxi-red)'],
+    ['iRent 租車折抵 $200',   200, 'route',   'var(--yoxi-navy)'],
+    ['汽車保養折抵 $500',     500, 'badge',   '#5A6B7D'],
+    ['HOTAI 購折抵 $100',     100, 'point',   '#8A5A2B'],
+  ];
+
+  document.getElementById('grid').innerHTML = G.map(function (g) {
+    const can = pts >= g[1];
+    return '<div class="card" style="overflow:hidden">' +
+      '<div style="height:92px; background:' + g[3] + '; display:grid; place-items:center">' +
+        '<span data-icon="' + g[2] + '" style="width:40px; height:40px; display:block;' +
+        ' filter:brightness(0) invert(1)"></span>' +
+      '</div>' +
+      '<div style="padding:12px">' +
+        '<div style="font-weight:800; font-size:14px; line-height:1.4">' + g[0] + '</div>' +
+        '<div class="u-row" style="justify-content:space-between; margin-top:10px">' +
+          '<span class="num" style="font-size:16px">' + g[1] + ' 點</span>' +
+          '<span style="padding:5px 12px; border-radius:4px; font-size:12px; font-weight:800;' +
+          ' background:' + (can ? 'var(--yoxi-navy)' : 'var(--yoxi-mist)') + ';' +
+          ' color:' + (can ? '#fff' : 'var(--yoxi-slate)') + '">' +
+          (can ? '兌換' : '點數不足') + '</span>' +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>匯出行程 — yoxi 城事</title>
+<!--
+  匯出行程【沿用】
+  照 IMG_9561 還原：右上「篩選」、副標「請點選要匯出成 PDF 檔的行程」、
+  可勾選的行程清單。報帳用的功能，完全沒有為了城事而改動。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__action" href="#">篩選</a>
+        </div>
+        <h1 class="hdr-red__title">匯出行程</h1>
+        <p class="hdr-red__sub">請點選要匯出成 PDF 檔的行程</p>
+      </header>
+
+      <div class="scroll" style="padding-bottom:104px">
+        <div id="list"></div>
+      </div>
+
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:45;
+                  padding:14px 16px 22px; background:var(--yoxi-white);
+                  border-top:1px solid var(--yoxi-line)">
+        <button class="btn-primary" id="exportBtn" disabled>匯出</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const T = [
+    ['新竹市 → 內灣老街', '09/21 13:18', '$680'],
+    ['東區 → 竹北',       '09/18 08:42', '$245'],
+    ['新竹市 → 南寮漁港', '09/12 16:05', '$310'],
+  ];
+
+  document.getElementById('list').innerHTML = T.map(function (t, i) {
+    return '<button class="row-nav" data-i="' + i + '">' +
+      '<span class="chk" style="width:26px; height:26px; border-radius:50%; flex:none;' +
+      ' border:2px solid var(--yoxi-slate-lite); display:grid; place-items:center"></span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:16px">' + t[0] + '</span>' +
+        '<span class="row-nav__sub">' + t[1] + '</span>' +
+      '</span>' +
+      '<span class="num" style="font-size:17px">' + t[2] + '</span></button>';
+  }).join('');
+
+  const btn = document.getElementById('exportBtn');
+  const sel = new Set();
+
+  document.querySelectorAll('.row-nav[data-i]').forEach(function (row) {
+    row.onclick = function () {
+      const i = row.dataset.i;
+      const c = row.querySelector('.chk');
+      if (sel.has(i)) {
+        sel.delete(i);
+        c.style.background = '';
+        c.style.borderColor = 'var(--yoxi-slate-lite)';
+        c.innerHTML = '';
+      } else {
+        sel.add(i);
+        c.style.background = 'var(--yoxi-red)';
+        c.style.borderColor = 'var(--yoxi-red)';
+        c.innerHTML = '<span data-icon="check" style="width:14px;height:14px;display:block"></span>';
+        SHELL.injectIcons(c);
+      }
+      btn.disabled = sel.size === 0;
+      btn.textContent = sel.size ? '匯出 ' + sel.size + ' 筆行程' : '匯出';
+    };
+  });
+})();
+</script>
+</body>
+</html>

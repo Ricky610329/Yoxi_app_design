@@ -112,6 +112,22 @@
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
         </section>
 
+        <!-- ===== 週回顧入口 ===== -->
+        <div style="padding:0 16px 16px" id="weekEntry">
+          <a class="card u-row u-gap4" href="week.html" style="padding:14px 16px">
+            <span class="tile-icon" style="width:44px; height:44px; border-radius:16px">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
         <!-- ===== 日誌 ===== -->
         <section id="segLog" class="u-hidden" style="padding:0 16px 24px">
           <div class="card">
@@ -201,10 +217,11 @@
     let prog = b.prog, got = b.got;
     if (b.id === 'b4') { prog = '收集 ' + railDone + '/6';  got = railDone >= 6; }
     if (b.id === 'b5') { prog = '收集 ' + glassDone + '/5'; got = glassDone >= 5; }
-    return '<div class="badge ' + (got ? '' : 'badge--locked') + '" style="width:auto">' +
+    const href = b.id === 'b4' ? 'badge.html' : (b.id === 'b5' ? 'badge.html?id=glass' : '#');
+    return '<a href="' + href + '" class="badge ' + (got ? '' : 'badge--locked') + '" style="width:auto">' +
       '<span class="badge__disc"><span data-icon="' + b.icon + '"></span></span>' +
       '<span class="badge__name">' + b.name + '</span>' +
-      '<span class="badge__prog">' + (got ? '已收集' : prog) + '</span></div>';
+      '<span class="badge__prog">' + (got ? '已收集' : prog) + '</span></a>';
   }).join('');
 
   /* ---- 日誌 ---- */
