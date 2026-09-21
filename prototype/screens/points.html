@@ -81,8 +81,8 @@
   document.getElementById('rows').innerHTML = ROWS.map(function (r) {
     const name = r[0], src = r[1], n = r[2], date = r[3], isNew = r[4];
     return '<div class="row-nav">' +
-      '<span class="tile-icon" style="width:44px;height:44px;border-radius:16px' +
-        (isNew ? ';background:var(--yoxi-navy)' : '') + '">' +
+      '<span class="tile-icon tile-icon--md"' +
+        (isNew ? ' style="background:var(--yoxi-navy)"' : '') + '>' +
         '<span data-icon="' + (isNew ? 'postcard' : 'tabRide') + '"' +
         ' style="width:24px;height:24px;display:block' +
         (isNew ? ';filter:brightness(0) invert(1)' : '') + '"></span>' +

@@ -248,11 +248,52 @@
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: var(--r-tile);
+  /* 比例圓角，不是固定 22px。
+     這塊磚在畫面上有五種尺寸，以前每一種都用 inline style 各寫一個圓角，
+     結果同一個元件長出十種圓角。用比例的話，換尺寸圓角自己跟著走，
+     曲率看起來永遠是同一個。39% ≈ 22/56，跟原本的視覺一致。 */
+  border-radius: 39%;
   background: var(--yoxi-cream);
 }
-.tile-icon svg { width: 30px; height: 30px; }
+.tile-icon svg { width: 54%; height: 54%; }
 .tile-icon--red { background: var(--yoxi-red); }
+
+/* 尺寸只有這四種。要第五種就先問「現有的哪一個不夠用」。 */
+.tile-icon--sm { width: 40px; height: 40px; }
+.tile-icon--md { width: 44px; height: 44px; }
+.tile-icon--lg { width: 48px; height: 48px; }
+.tile-icon--xl { width: 52px; height: 52px; }
+/* 正圓版：設定上車地點那一頁沿用 yoxi 原本的圓形紅磚 */
+.tile-icon--round { border-radius: 50%; }
+
+/* ==========================================================================
+   .sw-toggle —— 【沿用】設定頁的開關
+   本來在 settings.html 與 ridesettings.html 各複製一份、逐字相同。
+   它就是一個元件，只是一直沒被搬進來。
+   ========================================================================== */
+
+.sw-toggle {
+  width: 50px;
+  height: 30px;
+  flex: none;
+  position: relative;
+  border-radius: var(--r-pill);
+  background: var(--yoxi-slate-lite);
+  transition: background var(--t-fast) var(--ease);
+}
+.sw-toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--yoxi-white);
+  transition: transform var(--t-fast) var(--ease);
+}
+.sw-toggle.is-on { background: var(--yoxi-navy); }
+.sw-toggle.is-on::after { transform: translateX(20px); }
 
 /* 圖示磚 + 標題 + 副標 + 紅尾箭頭的列 */
 .row-nav {
@@ -275,7 +316,9 @@
 .row-nav__sub {
   display: block;
   margin-top: 2px;
-  font-size: var(--fs-sm);
+  /* 13px，不是 14px。畫面上有 24 處 inline 版本寫 13px，元件卻是 14px ——
+     同一個副標角色兩種字級。以多數為準統一過來。 */
+  font-size: var(--fs-cap);
   color: var(--yoxi-slate);
   line-height: 1.45;
 }
