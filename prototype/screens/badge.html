@@ -83,25 +83,19 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
-  const B = {
-    rail:  { name: '內灣線全線', award: '你走完了內灣線的每一個站。',
-             icon: 'route', ids: ['p1', 'p5', 'p9', 'p10', 'p12', 'p13'] },
-    glass: { name: '風城玻璃',   award: '你看過了新竹玻璃的一生。',
-             icon: 'badge', ids: ['p11', 'p2', 'p3', 'p4', 'p8'] },
-  };
-  const key = new URLSearchParams(location.search).get('id') === 'glass' ? 'glass' : 'rail';
-  const b = B[key];
-
-  const done = b.ids.filter(function (i) { return STATE.has(i); }).length;
-  const got  = done >= b.ids.length;
+  /* 獎章的定義只有一份：MOCK.BADGES。進度由 STATE 依同一組 id 算。 */
+  const ALIAS = { glass: 'b5', rail: 'b4' };
+  const raw = new URLSearchParams(location.search).get('id') || 'b4';
+  const b = STATE.badge(ALIAS[raw] || raw);
+  const done = b.done, got = b.got;
 
   document.title = b.name + ' — yoxi 城事';
   document.getElementById('name').textContent = '〈' + b.name + '〉';
   document.getElementById('award').textContent = got ? b.award : '集滿就會得到這句話。';
   document.getElementById('when').textContent  = got ? '2026.09.21 獲得' : '還在路上';
   document.getElementById('progLabel').innerHTML =
-    '收集 <span class="num">' + done + '</span>/' + b.ids.length;
-  document.getElementById('bar').style.width = (done / b.ids.length * 100) + '%';
+    '收集 <span class="num">' + done + '</span>/' + b.total;
+  document.getElementById('bar').style.width = (done / b.total * 100) + '%';
 
   const disc = document.getElementById('disc');
   disc.innerHTML = '<span data-icon="' + b.icon + '" style="width:66px;height:66px;display:block"></span>';
@@ -120,7 +114,7 @@
     const has = STATE.has(id);
     const i = MOCK.POSTCARDS.indexOf(P);
     return '<a class="postcard ' + (has ? '' : 'postcard--locked') + '" ' +
-      'href="' + (has ? 'postcard.html?id=' + id : 'place.html') + '" ' +
+      'href="' + (has ? 'postcard.html?id=' + id : 'place.html?id=' + id) + '" ' +
       'style="width:92px; flex:none">' +
       '<div data-art="' + P.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
       '<span class="postcard__foot"><span class="postcard__name" style="font-size:11px">' +

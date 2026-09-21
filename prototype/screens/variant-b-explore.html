@@ -188,7 +188,7 @@
   document.getElementById('spots').innerHTML = MOCK.SPOTS.map(function (s, i) {
     const cls = s.state === 'today' ? 'spot--today'
               : (s.state === 'seen' ? 'spot--seen' : 'spot--new');
-    return '<a class="spot ' + cls + '" href="place.html"' +
+    return '<a class="spot ' + cls + '" href="place.html?id=' + s.id + '"' +
       ' style="left:' + s.x + '%; top:' + (16 + s.y * 0.74) + '%">' +
       (s.state === 'today' ? '<span class="spot__halo"></span>' : '') +
       '<span class="spot__img" data-art="' + s.art + '" data-seed="' + i + '"></span>' +
@@ -198,7 +198,7 @@
 
   /* ---- 還沒去的地方 ---- */
   document.getElementById('pendingList').innerHTML = MOCK.PENDING.map(function (p, i) {
-    return '<a class="row-nav" href="place.html" style="padding:10px 14px">' +
+    return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:10px 14px">' +
       '<span style="width:40px;height:52px;border-radius:4px;overflow:hidden;' +
       'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 5) + '"></span>' +
       '<span class="row-nav__body">' +

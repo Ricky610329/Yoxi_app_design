@@ -81,15 +81,15 @@
 
         <!-- ===== 分段 ===== -->
         <div style="padding:0 16px 12px">
-          <div class="pill-group pill-group--onwhite">
-            <button class="pill is-active" data-seg="cards">明信片</button>
-            <button class="pill" data-seg="badges">獎章</button>
-            <button class="pill" data-seg="log">日誌</button>
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="cards">明信片</button>
+            <button class="pill" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
           </div>
         </div>
 
         <!-- ===== 明信片牆 ===== -->
-        <section id="segCards" style="padding:0 16px 24px">
+        <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
           <div class="postcard-wall" id="wall"></div>
           <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
             灰色的是還沒去過的地方。到了就會上色。
@@ -112,7 +112,7 @@
         </section>
 
         <!-- ===== 獎章 ===== -->
-        <section id="segBadges" class="u-hidden" style="padding:0 16px 24px">
+        <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
         </section>
 
@@ -133,7 +133,7 @@
         </div>
 
         <!-- ===== 日誌 ===== -->
-        <section id="segLog" class="u-hidden" style="padding:0 16px 24px">
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
           <div class="card">
             <div style="padding:16px">
               <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
@@ -168,7 +168,7 @@
   const A = STATE.all;
 
   /* ---- 統計：完全由狀態決定 ---- */
-  const badgesGot = MOCK.BADGES.filter(function (b) { return b.got; }).length;
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
   document.getElementById('nPlaces').textContent = STATE.count();
   document.getElementById('nBadges').textContent = badgesGot;
   document.getElementById('nKm').textContent = A.km;
@@ -191,7 +191,7 @@
     const ride  = got && got.by === 'ride';
 
     if (!got) {
-      return '<a class="postcard postcard--locked" href="place.html">' +
+      return '<a class="postcard postcard--locked" href="place.html?id=' + p.id + '">' +
         '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
         '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span></span></a>';
     }
@@ -213,19 +213,15 @@
       '</span></button>';
   }).join('');
 
-  /* ---- 獎章：進度由已收集的張數算出來 ---- */
-  const railDone  = STATE.routeDone('rail');
-  const glassDone = STATE.routeDone('glass') + 1;   /* 既有的一張 */
-
+  /* ---- 獎章：進度一律由 STATE.badge() 算，每一枚都連得到自己的詳情 ---- */
   document.getElementById('badgeGrid').innerHTML = MOCK.BADGES.map(function (b) {
-    let prog = b.prog, got = b.got;
-    if (b.id === 'b4') { prog = '收集 ' + railDone + '/6';  got = railDone >= 6; }
-    if (b.id === 'b5') { prog = '收集 ' + glassDone + '/5'; got = glassDone >= 5; }
-    const href = b.id === 'b4' ? 'badge.html' : (b.id === 'b5' ? 'badge.html?id=glass' : '#');
-    return '<a href="' + href + '" class="badge ' + (got ? '' : 'badge--locked') + '" style="width:auto">' +
-      '<span class="badge__disc"><span data-icon="' + b.icon + '"></span></span>' +
-      '<span class="badge__name">' + b.name + '</span>' +
-      '<span class="badge__prog">' + (got ? '已收集' : prog) + '</span></a>';
+    const r = STATE.badge(b.id);
+    return '<a href="badge.html?id=' + b.id + '" class="badge ' +
+      (r.got ? '' : 'badge--locked') + '" style="width:auto">' +
+      '<span class="badge__disc"><span data-icon="' + r.icon + '"></span></span>' +
+      '<span class="badge__name">' + r.name + '</span>' +
+      '<span class="badge__prog">' +
+      (r.got ? '已收集' : '收集 ' + r.done + '/' + r.total) + '</span></a>';
   }).join('');
 
   /* ---- 日誌 ---- */

@@ -184,7 +184,7 @@
       document.getElementById('peekMeta').textContent =
         s.type + ' · ' + (s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + ' km' : s.dist + ' m');
       document.getElementById('peekHook').textContent = s.hook;
-      peek.href = s.state === 'today' ? 'place.html' : 'place.html';
+      peek.href = 'place.html?id=' + s.id;
       peek.classList.add('is-on');
     };
   });

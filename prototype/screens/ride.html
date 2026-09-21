@@ -79,7 +79,7 @@
               </span>
             </span>
           </div>
-          <button class="btn-ghost">取消叫車</button>
+          <a class="btn-ghost" href="place.html?id=neiwan">取消叫車</a>
         </div>
 
         <!-- ===== 行程中 ===== -->
@@ -132,7 +132,7 @@
           </div>
 
           <div class="u-row u-gap3" style="margin-top:14px">
-            <button class="btn-ghost">聯絡司機</button>
+            <button class="btn-ghost" id="callBtn">聯絡司機</button>
             <!-- demo 專用：正式版由抵達自動觸發 -->
             <a class="demo-btn" href="ride-done.html" style="width:auto; padding:0 16px">
               抵達內灣
@@ -157,6 +157,15 @@
     document.getElementById('matching').classList.add('u-hidden');
     document.getElementById('onTrip').classList.remove('u-hidden');
   }, 1800);
+
+  document.getElementById('callBtn').onclick = function () {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.style.bottom = '24px';
+    t.textContent = '正在撥號給 陳先生…';
+    document.querySelector('.device').appendChild(t);
+    setTimeout(function () { t.remove(); }, 2200);
+  };
 
   const head = document.getElementById('storyToggle');
   const body = document.getElementById('storyBody');

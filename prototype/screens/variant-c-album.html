@@ -111,22 +111,22 @@
         </div>
 
         <div style="padding:0 16px 12px">
-          <div class="pill-group pill-group--onwhite">
-            <button class="pill is-active" data-seg="cards">明信片</button>
-            <button class="pill" data-seg="badges">獎章</button>
-            <button class="pill" data-seg="log">日誌</button>
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="cards">明信片</button>
+            <button class="pill" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
           </div>
         </div>
 
-        <section id="segCards" style="padding:0 16px 24px">
+        <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
           <div class="postcard-wall" id="wall"></div>
         </section>
 
-        <section id="segBadges" class="u-hidden" style="padding:0 16px 24px">
+        <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
         </section>
 
-        <section id="segLog" class="u-hidden" style="padding:0 16px 24px">
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
           <div class="card">
             <div style="padding:16px">
               <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
@@ -171,7 +171,8 @@
   document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
     const locked = !STATE.has(p.id);
     return '<a class="postcard ' + (locked ? 'postcard--locked ' : '') +
-      (p.by === 'ride' ? 'postcard--gold' : '') + '" href="place.html">' +
+      (p.by === 'ride' ? 'postcard--gold' : '') + '" href="' +
+      (locked ? 'place.html?id=' + p.id : 'postcard.html?id=' + p.id) + '">' +
       '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
       (p.by === 'ride' ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
       '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span>' +
@@ -180,26 +181,19 @@
   }).join('');
 
   document.getElementById('badgeGrid').innerHTML = MOCK.BADGES.map(function (b) {
-    return '<div class="badge ' + (b.got ? '' : 'badge--locked') + '" style="width:auto">' +
-      '<span class="badge__disc"><span data-icon="' + b.icon + '"></span></span>' +
-      '<span class="badge__name">' + b.name + '</span>' +
-      '<span class="badge__prog">' + (b.got ? '已收集' : b.prog) + '</span></div>';
+    const r = STATE.badge(b.id);
+    return '<a href="badge.html?id=' + b.id + '" class="badge ' +
+      (r.got ? '' : 'badge--locked') + '" style="width:auto">' +
+      '<span class="badge__disc"><span data-icon="' + r.icon + '"></span></span>' +
+      '<span class="badge__name">' + r.name + '</span>' +
+      '<span class="badge__prog">' +
+      (r.got ? '已收集' : '收集 ' + r.done + '/' + r.total) + '</span></a>';
   }).join('');
 
   SHELL.injectArt();
   SHELL.injectIcons();
 
-  const map = { cards: 'segCards', badges: 'segBadges', log: 'segLog' };
-  document.querySelectorAll('[data-seg]').forEach(function (btn) {
-    btn.onclick = function () {
-      document.querySelectorAll('[data-seg]').forEach(function (b) { b.classList.remove('is-active'); });
-      btn.classList.add('is-active');
-      Object.values(map).forEach(function (id) {
-        document.getElementById(id).classList.add('u-hidden');
-      });
-      document.getElementById(map[btn.dataset.seg]).classList.remove('u-hidden');
-    };
-  });
+  /* pill 分頁交給 interact.js 的 [data-pills] 處理 */
 })();
 </script>
 </body>

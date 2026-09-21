@@ -31,7 +31,7 @@
 
         <!-- ===== 封面 ===== -->
         <div style="position:relative; height:240px; overflow:hidden">
-          <div data-art="rail" data-seed="3" data-wide style="position:absolute; inset:0"></div>
+          <div id="rArt" data-art="rail" data-seed="3" data-wide style="position:absolute; inset:0"></div>
           <span class="ai-mark" style="top:calc(var(--statusbar-h) + 8px); right:16px; left:auto">AI 生成示意</span>
           <span style="position:absolute; inset:0; background:linear-gradient(to top,
                 rgba(6,32,64,.94), rgba(6,32,64,.3) 55%, transparent 80%)"></span>
@@ -46,10 +46,10 @@
             <div style="font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.85">
               這個月的路線
             </div>
-            <h1 style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px">
+            <h1 id="rName" style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px">
               沿著鐵道走
             </h1>
-            <div style="font-size:15px; opacity:.9; margin-top:4px">內灣線的六個站</div>
+            <div id="rSub" style="font-size:15px; opacity:.9; margin-top:4px">內灣線的六個站</div>
           </div>
         </div>
 
@@ -81,43 +81,28 @@
           <div class="route-track" id="track"></div>
         </div>
 
-        <!-- ===== 下一站 ===== -->
+        <!-- ===== 下一站（由狀態決定是哪一站） ===== -->
         <div style="padding:8px 16px 0">
-          <div class="card" style="border-color:var(--yoxi-navy); border-width:1.5px">
-            <div style="padding:14px 16px 0; font-size:12px; font-weight:800;
-                        letter-spacing:.08em; color:var(--yoxi-red)">下一站</div>
-            <a class="row-nav" href="place.html?id=neiwan" style="padding:10px 16px 14px">
-              <span style="width:52px; height:68px; border-radius:4px; overflow:hidden;
-                           position:relative; flex:none;
-                           filter:grayscale(1) contrast(.72) brightness(1.16)"
-                    data-art="oldst" data-seed="7"></span>
-              <span class="row-nav__body">
-                <span class="row-nav__title">內灣老街</span>
-                <span class="row-nav__sub">28 公里 · 走路到不了，這一段要搭車</span>
-              </span>
-              <span class="arrow"></span>
-            </a>
-            <div style="padding:0 16px 16px">
-              <a class="btn-primary" href="place.html?id=neiwan">用 yoxi 前往</a>
-            </div>
-          </div>
+          <div class="card" id="nextBox"
+               style="border-color:var(--yoxi-navy); border-width:1.5px"></div>
         </div>
 
         <!-- ===== 集滿可得 ===== -->
         <div style="padding:20px 16px 0">
-          <div class="sec"><h2 class="sec__t">六站都走過會得到</h2></div>
-          <div class="card card--pad u-row u-gap4">
+          <div class="sec"><h2 class="sec__t">全部走過會得到</h2></div>
+          <a class="card card--pad u-row u-gap4" id="bLink" href="badge.html?id=b4">
             <span class="badge badge--locked" style="width:auto">
               <span class="badge__disc"><span data-icon="route"></span></span>
             </span>
             <span class="u-fill">
-              <span style="display:block; font-weight:800">〈內灣線全線〉</span>
-              <span style="display:block; font-size:13px; color:var(--yoxi-slate);
+              <span id="bName" style="display:block; font-weight:800">〈內灣線全線〉</span>
+              <span id="bAward" style="display:block; font-size:13px; color:var(--yoxi-slate);
                            margin-top:4px; line-height:1.6">
                 你走完了內灣線的每一個站。
               </span>
             </span>
-          </div>
+            <span class="arrow"></span>
+          </a>
         </div>
 
         <!-- ===== 反任務化的宣告 ===== -->
@@ -138,20 +123,27 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
-  const R = MOCK.ROUTES[0];
+  /* 哪一條路線由 ?id= 決定；每一站的狀態由「那一站的明信片收集了沒」決定 */
+  const rid = new URLSearchParams(location.search).get('id') || 'rail';
+  const R = MOCK.ROUTES.filter(function (r) { return r.id === rid; })[0] || MOCK.ROUTES[0];
 
-  /* 內灣收集了就前進一站 */
-  const CARD_OF = { s1: 'p1', s2: 'p5', s3: 'p9', s4: 'p10', s5: 'p12', s6: 'p13' };
-  R.stops.forEach(function (st) {
-    const c = CARD_OF[st.id];
-    if (c && STATE.has(c)) st.state = 'done';
-  });
   let nextSet = false;
   R.stops.forEach(function (st) {
-    if (st.state !== 'done' && !nextSet) { st.state = 'next'; nextSet = true; }
-    else if (st.state !== 'done') st.state = 'todo';
+    if (STATE.has(st.card)) { st.state = 'done'; }
+    else if (!nextSet)      { st.state = 'next'; nextSet = true; }
+    else                    { st.state = 'todo'; }
   });
   const done = R.stops.filter(function (st) { return st.state === 'done'; }).length;
+
+  document.title = R.name + ' — yoxi 城事';
+  document.getElementById('rName').textContent = R.name;
+  document.getElementById('rSub').textContent  = R.sub;
+  document.getElementById('rArt').dataset.art  = R.art;
+
+  const bd = STATE.badge(R.badge);
+  document.getElementById('bName').textContent  = '〈' + bd.name + '〉';
+  document.getElementById('bAward').textContent = bd.award;
+  document.getElementById('bLink').href = 'badge.html?id=' + R.badge;
 
   document.querySelectorAll('.ring__bar').forEach(function (b) {
     b.setAttribute('stroke-dashoffset', 138.2 * (1 - done / R.total));
@@ -160,8 +152,34 @@
     e.innerHTML = '<span class="num">' + done + '</span>/' + R.total;
   });
   const lead = document.getElementById('progText');
-  if (lead) lead.textContent = done >= R.total ? '六站都走過了' :
+  if (lead) lead.textContent = done >= R.total ? '全部走過了' :
     (done === 0 ? '還沒開始' : '已經走過 ' + done + ' 站');
+
+  /* 下一站 */
+  const nx = R.stops.filter(function (st) { return st.state === 'next'; })[0];
+  const nxBox = document.getElementById('nextBox');
+  if (nx) {
+    const farNx = nx.dist > 3000;
+    nxBox.innerHTML =
+      '<div style="padding:14px 16px 0; font-size:12px; font-weight:800;' +
+      ' letter-spacing:.08em; color:var(--yoxi-red)">下一站</div>' +
+      '<a class="row-nav" href="place.html?id=' + nx.card + '" style="padding:10px 16px 14px">' +
+        '<span style="width:52px; height:68px; border-radius:4px; overflow:hidden;' +
+        ' position:relative; flex:none; filter:grayscale(1) contrast(.72) brightness(1.16)"' +
+        ' data-art="' + nx.art + '" data-seed="7"></span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title">' + nx.name + '</span>' +
+          '<span class="row-nav__sub">' + (nx.dist / 1000).toFixed(1) + ' 公里' +
+          (nx.note ? ' · ' + nx.note : '') + '</span>' +
+        '</span><span class="arrow"></span></a>' +
+      '<div style="padding:0 16px 16px">' +
+        '<a class="btn-primary" href="' + (farNx ? 'place.html?id=' + nx.card : 'going.html') + '">' +
+        (farNx ? '用 yoxi 前往' : '走路前往') + '</a></div>';
+  } else {
+    nxBox.innerHTML = '<div style="padding:18px 16px; text-align:center; font-weight:800">' +
+      '這條路線你已經走完了。</div>';
+  }
+  SHELL.injectArt(nxBox);
 
   document.getElementById('track').innerHTML = R.stops.map((s, i) => {
     const done = s.state === 'done';
@@ -169,17 +187,17 @@
     return `
       <div class="route-track__stop ${done ? 'is-done' : ''} ${next ? 'is-next' : ''}">
         <span class="route-track__rail"><span class="route-track__node"></span></span>
-        <a class="route-track__body" href="${next ? 'place.html?id=neiwan' : '#'}">
+        <a class="route-track__body" href="${done ? 'postcard.html?id=' + s.card : 'place.html?id=' + s.card}">
           <span class="route-track__thumb ${done ? '' : 'is-locked'}"
                 style="position:relative; ${done ? '' : 'filter:grayscale(1) contrast(.72) brightness(1.16)'}"
                 data-art="${s.art}" data-seed="${i + 2}"></span>
           <span style="flex:1; min-width:0">
             <span style="display:block; font-weight:800; line-height:1.35">${s.name}</span>
             <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
-              ${done ? '已收集' : (s.dist / 1000).toFixed(0) + ' km'}${s.note ? ' · ' + s.note : ''}
+              ${done ? '已收集' : '<span class="num">' + (s.dist / 1000).toFixed(1) + '</span> 公里'}${s.note ? ' · ' + s.note : ''}
             </span>
           </span>
-          ${next ? '<span class="arrow"></span>' : ''}
+          <span class="arrow"></span>
         </a>
       </div>`;
   }).join('');

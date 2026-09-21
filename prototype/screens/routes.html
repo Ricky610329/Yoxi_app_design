@@ -51,12 +51,13 @@
 <script>
 (function () {
   const html = MOCK.ROUTES.map(function (r, i) {
+    const done = STATE.routeDone(r.id);
     let track = '';
     for (let n = 0; n < r.total; n++) {
-      if (n) track += '<i class="track-mini__link' + (n < r.done ? ' is-done' : '') + '"></i>';
-      track += '<i class="track-mini__node' + (n < r.done ? ' is-done' : '') + '"></i>';
+      if (n) track += '<i class="track-mini__link' + (n < done ? ' is-done' : '') + '"></i>';
+      track += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
     }
-    return '<a class="card" href="route.html">' +
+    return '<a class="card" href="route.html?id=' + r.id + '">' +
       '<span style="display:block;height:130px;position:relative;overflow:hidden"' +
       ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
       '<span style="display:block;padding:14px 16px">' +
@@ -65,7 +66,7 @@
           r.sub + '</span>' +
         '<span class="track-mini" style="margin-top:12px">' + track +
           '<span style="margin-left:10px;font-size:12px;color:var(--yoxi-slate)">' +
-          '<span class="num">' + r.done + '</span>/' + r.total + '</span>' +
+          '<span class="num">' + done + '</span>/' + r.total + '</span>' +
         '</span>' +
       '</span>' +
     '</a>';

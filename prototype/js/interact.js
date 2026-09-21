@@ -82,7 +82,7 @@
 
     map.style.touchAction = 'none';
     map.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('.fab, .peek, .spot, .modes, .layerbtn, button, a')) return;
+      if (e.target.closest('.fab, .peek, .spot, .modes, .layerbtn, .maplegend, button, a')) return;
       on = true; x0 = e.clientX; y0 = e.clientY; ox = dx; oy = dy;
       layer.style.transition = 'none';
       map.style.cursor = 'grabbing';
@@ -113,7 +113,9 @@
         p.classList.add('is-active');
         const key = p.dataset.tab;
         if (!key) return;
-        document.querySelectorAll('[data-panel]').forEach(function (panel) {
+        /* 只切換這一組管到的 panel：同頁若有兩組 pill 才不會互相干擾 */
+        const scope = group.closest('[data-panel-scope]') || document;
+        scope.querySelectorAll('[data-panel]').forEach(function (panel) {
           panel.classList.toggle('u-hidden', panel.dataset.panel !== key);
         });
       });
@@ -182,5 +184,10 @@
     boot();
   }
 
-  window.INTERACT = { initSheet: initSheet, initPan: initPan };
+  window.INTERACT = {
+    initSheet: initSheet,
+    initPan: initPan,
+    initSwitches: initSwitches,
+    initPills: initPills,
+  };
 })();

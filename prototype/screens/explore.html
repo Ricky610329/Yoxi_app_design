@@ -102,50 +102,7 @@
             <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
           </div>
 
-          <div class="hscroll">
-            <a class="card" href="route.html" style="width:240px; flex:none">
-              <span style="display:block; height:110px; position:relative; overflow:hidden"
-                    data-art="rail" data-seed="3" data-wide></span>
-              <span style="display:block; padding:12px">
-                <span style="display:block; font-weight:800; line-height:1.35">沿著鐵道走</span>
-                <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
-                  內灣線的六個站
-                </span>
-                <span class="track-mini" style="margin-top:10px">
-                  <i class="track-mini__node is-done"></i><i class="track-mini__link is-done"></i>
-                  <i class="track-mini__node is-done"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i>
-                  <span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">
-                    <span class="num">2</span>/6
-                  </span>
-                </span>
-              </span>
-            </a>
-
-            <a class="card" href="route.html" style="width:240px; flex:none">
-              <span style="display:block; height:110px; position:relative; overflow:hidden"
-                    data-art="glass" data-seed="4" data-wide></span>
-              <span style="display:block; padding:12px">
-                <span style="display:block; font-weight:800; line-height:1.35">風城的玻璃</span>
-                <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
-                  從砂到光
-                </span>
-                <span class="track-mini" style="margin-top:10px">
-                  <i class="track-mini__node is-done"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i><i class="track-mini__link"></i>
-                  <i class="track-mini__node"></i>
-                  <span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">
-                    <span class="num">1</span>/5
-                  </span>
-                </span>
-              </span>
-            </a>
-          </div>
+          <div class="hscroll" id="routeCards"></div>
         </div>
 
         <!-- ===== 還沒去的地方 =====
@@ -172,10 +129,37 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
+  /* 這個月的路線：進度一律由狀態算，不寫死 */
+  document.getElementById('routeCards').innerHTML = MOCK.ROUTES.map(function (r, i) {
+    const done = STATE.routeDone(r.id);
+    let track = '';
+    for (let n = 0; n < r.total; n++) {
+      if (n) track += '<i class="track-mini__link' + (n < done ? ' is-done' : '') + '"></i>';
+      track += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
+    }
+    return '<a class="card" href="route.html?id=' + r.id + '" style="width:240px; flex:none">' +
+      '<span style="display:block; height:110px; position:relative; overflow:hidden"' +
+      ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
+      '<span style="display:block; padding:12px">' +
+        '<span style="display:block; font-weight:800; line-height:1.35">' + r.name.split('：')[0] + '</span>' +
+        '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+          r.sub + '</span>' +
+        '<span class="track-mini" style="margin-top:10px">' + track +
+        '<span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">' +
+        '<span class="num">' + done + '</span>/' + r.total + '</span></span>' +
+      '</span></a>';
+  }).join('');
+  SHELL.injectArt(document.getElementById('routeCards'));
+
+  /* 為什麼推薦給你：直接用 MOCK.TODAY.why，不要另抄一份 */
+  document.getElementById('whyList').innerHTML = MOCK.TODAY.why.map(function (w) {
+    return '<div class="why__item"><span class="why__src">' + w.src + '</span>' + w.text + '</div>';
+  }).join('');
+
   /* 還沒去的地方 */
   const list = document.getElementById('pendingList');
   list.innerHTML = MOCK.PENDING.map((p, i) => `
-    <a class="row-nav" href="place.html" style="padding:12px 16px">
+    <a class="row-nav" href="place.html?id=${p.id}" style="padding:12px 16px">
       <span style="width:46px;height:60px;border-radius:4px;overflow:hidden;position:relative;flex:none"
             data-art="${p.art}" data-seed="${i + 5}"></span>
       <span class="row-nav__body">

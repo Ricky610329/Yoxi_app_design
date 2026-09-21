@@ -119,6 +119,14 @@
 
   /* yoxi 限定版：金框、角標、司機同行紀念、點數回饋 */
   if (isRide) {
+    /* 限定版要換的不只是文字 —— 視覺也得換，
+       否則「內灣老街」這張卡上會畫著玻璃窯的煙囪，
+       而且收藏牆是用 p9 的 art 重繪的，同一張卡兩個樣子。 */
+    const P9 = MOCK.POSTCARDS.find(function (p) { return p.id === 'p9'; });
+    const art = P9 ? P9.art : 'oldst';
+    document.querySelector('#act2 .gen__layer').innerHTML = SHELL.postcardArt(art, { seed: 1 });
+    document.querySelector('#act3 [data-art]').innerHTML  = SHELL.postcardArt(art, { seed: 1 });
+
     const card = document.getElementById('finalCard');
     card.classList.add('postcard--gold');
     card.insertAdjacentHTML('afterbegin',
@@ -139,18 +147,19 @@
 
   /* 收進收藏：寫入狀態，收藏頁才會真的多一張 */
   document.getElementById('keepBtn').onclick = function () {
-    STATE.collect(isRide ? 'neiwan' : 'glass-kiln', {
+    const gained = STATE.collect(isRide ? 'neiwan' : 'glass-kiln', {
       by:   isRide ? 'ride' : 'walk',
       date: '09.21',
       note: (document.getElementById('oneLine').value || '').slice(0, 10),
     });
-    location.href = 'album.html';
+    /* 搭車那條線的重點是點數回流和泰生態系，終點該是點數頁 */
+    location.href = isRide ? 'points.html' : 'album.html';
   };
 
   setTimeout(() => show('act2'), 1600);
   setTimeout(() => {
     show('act3');
-    if (isRide) {
+    if (isRide && !STATE.has('p9')) {
       const t = document.getElementById('pointsToast');
       t.classList.remove('u-hidden');
       setTimeout(() => t.classList.add('u-hidden'), 4000);

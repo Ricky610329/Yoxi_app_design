@@ -71,7 +71,10 @@
     collect(placeId, opt) {
       opt = opt || {};
       const id = PLACE_TO_CARD[placeId] || placeId;
-      if (s.cards[id]) return false;
+      /* 未知或空的 id 不建卡：否則統計會 +1，但收藏牆上找不到那張。 */
+      const known = ((window.MOCK && window.MOCK.POSTCARDS) || [])
+        .some(function (p) { return p.id === id; });
+      if (!id || !known || s.cards[id]) return false;
 
       s.cards[id] = {
         date: opt.date || '09.21',
@@ -80,25 +83,40 @@
       };
       s.lastCard = id;
 
-      if (opt.by === 'ride') {
-        s.points += 50;
-        s.km += 28;
-      } else {
-        s.km += 1;
-      }
+      /* 距離由呼叫端給，不要寫死內灣的 28 公里 */
+      s.km += Math.round(opt.km || (opt.by === 'ride' ? 12 : 1));
+      if (opt.by === 'ride') s.points += 50;
       save();
       return true;
     },
 
-    /* 某條路線已完成幾站 */
+    /* 一組明信片的收集進度。全 app 的路線與獎章都走這一個函式，
+       避免同一枚獎章在不同畫面算出不同的數字。 */
+    progress(ids) {
+      ids = ids || [];
+      const done = ids.filter(function (i) { return !!s.cards[i]; }).length;
+      return { done: done, total: ids.length, got: ids.length > 0 && done === ids.length };
+    },
+
+    /* 路線的明信片清單直接從 ROUTES 的站點推導，不另存一份對應表 */
+    routeIds(routeId) {
+      const R = ((window.MOCK && window.MOCK.ROUTES) || [])
+        .filter(function (r) { return r.id === routeId; })[0];
+      return R ? R.stops.map(function (st) { return st.card; }).filter(Boolean) : [];
+    },
+
     routeDone(routeId) {
-      const M = {
-        rail:  ['p1', 'p5', 'p9', 'p10', 'p12', 'p13'],
-        glass: ['p11'],
-        water: ['p3'],
-      };
-      const ids = M[routeId] || [];
-      return ids.filter(function (i) { return !!s.cards[i]; }).length;
+      return this.progress(this.routeIds(routeId)).done;
+    },
+
+    badge(badgeId) {
+      const B = ((window.MOCK && window.MOCK.BADGES) || [])
+        .filter(function (b) { return b.id === badgeId; })[0];
+      if (!B) return { done: 0, total: 0, got: false, name: '', icon: 'badge', ids: [] };
+      const pr = this.progress(B.ids);
+      pr.id = B.id; pr.name = B.name; pr.icon = B.icon;
+      pr.award = B.award; pr.ids = B.ids;
+      return pr;
     },
 
     setToday(patch) { Object.assign(s.today, patch); save(); },

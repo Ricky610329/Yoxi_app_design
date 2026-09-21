@@ -145,8 +145,9 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
-  const far = new URLSearchParams(location.search).get('id') === 'neiwan';
-  const P = far ? MOCK.FAR_PLACE : MOCK.TODAY;
+  const qid = new URLSearchParams(location.search).get('id');
+  const P = MOCK.findPlace(qid);
+  const far = P.distance > 3000;   /* 走不到就以叫車為主要動作 */
 
   document.title = P.name + ' — yoxi 城事';
 
@@ -158,13 +159,13 @@
   document.getElementById('name').textContent    = P.name;
 
   /* 距離決定主次動作 */
+  const km  = (P.distance / 1000).toFixed(1);
+  const mins = far ? Math.round(P.distance / 670) : Math.round(P.distance / 75);
   document.getElementById('meta').innerHTML = far
-    ? `<span>離你 <span class="num" style="color:var(--yoxi-navy)">28</span> km</span>
-       <span>·</span>
-       <span>搭車 <span class="num" style="color:var(--yoxi-navy)">42</span> 分鐘</span>`
-    : `<span>離你 <span class="num" style="color:var(--yoxi-navy)">900</span> m</span>
-       <span>·</span>
-       <span>走路 <span class="num" style="color:var(--yoxi-navy)">12</span> 分鐘</span>`;
+    ? '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + km + '</span> km</span>' +
+      '<span>·</span><span>搭車 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>'
+    : '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + P.distance + '</span> m</span>' +
+      '<span>·</span><span>走路 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>';
 
   document.getElementById('story').innerHTML = P.story.map(s => `
     <div class="story__block">
@@ -179,15 +180,17 @@
   document.getElementById('hours').textContent = P.hours;
   document.getElementById('rewardTitle').textContent = `一張〈${P.name}〉`;
 
-  if (far) {
-    document.getElementById('backBtn').href = 'route.html';
-    document.getElementById('ringBar').setAttribute('stroke-dashoffset', 83.7);
-    document.getElementById('ringLabel').innerHTML = '<span><span class="num">2</span>/6</span>';
-    document.getElementById('badgeNote').textContent = '也會讓〈內灣線全線〉這枚獎章多收集一張';
-  } else {
-    document.getElementById('ringLabel').innerHTML = '<span><span class="num">1</span>/5</span>';
-    document.getElementById('badgeNote').textContent = '也會讓〈風城玻璃〉這枚獎章多收集一張';
-  }
+  /* 這個地方屬於哪一枚獎章 —— 從獎章的組成清單反查，不要寫死 */
+  const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(P.id) >= 0; })[0]
+             || MOCK.BADGES.filter(function (b) { return b.id === 'b5'; })[0];
+  const pr = STATE.badge(owner.id);
+  document.getElementById('ringBar')
+    .setAttribute('stroke-dashoffset', 125.6 * (1 - pr.done / pr.total));
+  document.getElementById('ringLabel').innerHTML =
+    '<span><span class="num">' + pr.done + '</span>/' + pr.total + '</span>';
+  document.getElementById('badgeNote').textContent =
+    '也會讓〈' + pr.name + '〉這枚獎章多收集一張';
+  if (far) document.getElementById('backBtn').href = 'route.html';
 
   /* 頁尾：28 km 走不到，主要動作自動變成叫車 */
   document.getElementById('foot').innerHTML = far
@@ -202,14 +205,14 @@
          <span style="color:var(--yoxi-slate)">回饋 50 和泰 Points</span>
        </div>
        <div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">
-         28 公里，走路到不了 —— 這一段需要搭車
+         ${km} 公里，走路到不了 —— 這一段需要搭車
        </div>`
     : `<div style="display:grid; grid-template-columns:1fr auto; gap:8px">
          <a class="btn-primary" href="going.html">走路前往</a>
          <a class="btn-ghost" href="home.html" style="width:auto; padding:0 20px">用 yoxi</a>
        </div>
        <div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">
-         900 公尺，走過去大概 12 分鐘
+         ${P.distance} 公尺，走過去大概 ${mins} 分鐘
        </div>`;
 
   SHELL.injectIcons();

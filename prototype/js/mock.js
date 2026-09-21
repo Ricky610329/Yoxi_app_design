@@ -113,21 +113,20 @@ const ROUTES = [
     name: '沿著鐵道走：內灣線的六個站',
     sub: '6 站 · 慢慢走，沒有期限',
     art: 'rail',
-    done: 2,
     total: 6,
-    badge: { id: 'rail-badge', name: '內灣線全線', award: '你走完了內灣線的每一個站。' },
+    badge: 'b4',
     stops: [
-      { id: 's1', name: '新竹車站',   type: '車站', art: 'station', dist: 1200,  state: 'done',
+      { id: 's1', name: '新竹車站',   type: '車站', art: 'station', card: 'p1', dist: 1200,  state: 'done',
         note: '1913 年落成，台灣還在用的最老車站。' },
-      { id: 's2', name: '竹中站',     type: '車站', art: 'rail',    dist: 7800,  state: 'done',
+      { id: 's2', name: '竹中站',     type: '車站', art: 'rail', card: 'p5',    dist: 7800,  state: 'done',
         note: '內灣線與六家線在這裡分家。' },
-      { id: 's3', name: '內灣老街',   type: '老街', art: 'oldst',   dist: 28000, state: 'next',
+      { id: 's3', name: '內灣老街',   type: '老街', art: 'oldst', card: 'p9',   dist: 28000, state: 'next',
         note: '線的盡頭。走路到不了，這一段要搭車。' },
-      { id: 's4', name: '合興車站',   type: '車站', art: 'hakka',   dist: 24000, state: 'todo',
+      { id: 's4', name: '合興車站',   type: '車站', art: 'hakka', card: 'p10',   dist: 24000, state: 'todo',
         note: '' },
-      { id: 's5', name: '九讚頭站',   type: '車站', art: 'brick',   dist: 21000, state: 'todo',
+      { id: 's5', name: '九讚頭站',   type: '車站', art: 'brick', card: 'p12',   dist: 21000, state: 'todo',
         note: '' },
-      { id: 's6', name: '橫山站',     type: '車站', art: 'hill',    dist: 19000, state: 'todo',
+      { id: 's6', name: '橫山站',     type: '車站', art: 'hill', card: 'p13',    dist: 19000, state: 'todo',
         note: '' },
     ],
   },
@@ -136,20 +135,29 @@ const ROUTES = [
     name: '風城的玻璃',
     sub: '5 站 · 從砂到光',
     art: 'glass',
-    done: 1,
     total: 5,
-    badge: { id: 'glass-badge', name: '風城玻璃', award: '你看過了新竹玻璃的一生。' },
-    stops: [],
+    badge: 'b5',
+    stops: [
+      { id: 'g1', name: '舊社的矽砂場',    card: 'p16', art: 'hill',  dist: 5200, note: '玻璃的起點是砂。' },
+      { id: 'g2', name: '水利路的老玻璃窯', card: 'p11', art: 'glass', dist: 900,  note: '最後一座沒被拆的窯。' },
+      { id: 'g3', name: '水源地的窯口',    card: 'p17', art: 'glass', dist: 2600, note: '' },
+      { id: 'g4', name: '春池玻璃',        card: 'p15', art: 'glass', dist: 6800, note: '' },
+      { id: 'g5', name: '玻璃工藝博物館',  card: 'p14', art: 'brick', dist: 2100, note: '' },
+    ],
   },
   {
     id: 'water',
     name: '水的三種樣子',
     sub: '4 站 · 河、港、湖',
     art: 'moat',
-    done: 0,
     total: 4,
-    badge: { id: 'water-badge', name: '水路', award: '你走過了新竹的河、港與湖。' },
-    stops: [],
+    badge: 'b2',
+    stops: [
+      { id: 'w1', name: '護城河親水公園', card: 'p3',  art: 'moat',    dist: 1800,  note: '' },
+      { id: 'w2', name: '南寮漁港',      card: 'p4',  art: 'harbour', dist: 8200,  note: '' },
+      { id: 'w3', name: '青草湖',        card: 'p8',  art: 'lake',    dist: 6400,  note: '' },
+      { id: 'w4', name: '頭前溪河口',    card: 'p18', art: 'moat',    dist: 11000, note: '' },
+    ],
   },
 ];
 
@@ -223,15 +231,28 @@ const POSTCARDS = [
   { id: 'p11', name: '水利路老玻璃窯', art: 'glass',  state: 'locked' },
   { id: 'p12', name: '九讚頭站',      art: 'brick',   state: 'locked' },
   { id: 'p13', name: '橫山站',        art: 'hill',    state: 'locked' },
+  { id: 'p14', name: '玻璃工藝博物館', art: 'brick',   state: 'locked' },
+  { id: 'p15', name: '春池玻璃',      art: 'glass',   state: 'locked' },
+  { id: 'p16', name: '舊社的矽砂場',  art: 'hill',    state: 'locked' },
+  { id: 'p17', name: '水源地的窯口',  art: 'glass',   state: 'locked' },
+  { id: 'p18', name: '頭前溪河口',    art: 'moat',    state: 'locked' },
 ];
 
+/* 獎章＝一組明信片 id。進度與是否獲得一律由 STATE 依這組 id 算出來，
+   不在各畫面各寫一份 —— 同一枚獎章在不同畫面顯示不同數字是最容易被抓包的錯。 */
 const BADGES = [
-  { id: 'b1', name: '舊城區',   icon: 'place',  got: true,  prog: '收集 6/6' },
-  { id: 'b2', name: '水路',     icon: 'route',  got: true,  prog: '收集 4/4' },
-  { id: 'b3', name: '老車站',   icon: 'badge',  got: true,  prog: '收集 3/3' },
-  { id: 'b4', name: '內灣線全線', icon: 'route', got: false, prog: '收集 2/6' },
-  { id: 'b5', name: '風城玻璃', icon: 'badge',  got: false, prog: '收集 1/5' },
-  { id: 'b6', name: '山與湖',   icon: 'steps',  got: false, prog: '收集 2/5' },
+  { id: 'b1', name: '舊城區',     icon: 'place', award: '你走遍了新竹的舊城區。',
+    ids: ['p2', 'p3', 'p7'] },
+  { id: 'b3', name: '老車站',     icon: 'badge', award: '你去過新竹最老的兩座車站。',
+    ids: ['p1', 'p5'] },
+  { id: 'b2', name: '水路',       icon: 'route', award: '你走過了新竹的河、港與湖。',
+    ids: ['p3', 'p4', 'p8', 'p18'] },
+  { id: 'b4', name: '內灣線全線', icon: 'route', award: '你走完了內灣線的每一個站。',
+    ids: ['p1', 'p5', 'p9', 'p10', 'p12', 'p13'] },
+  { id: 'b5', name: '風城玻璃',   icon: 'badge', award: '你看過了新竹玻璃的一生。',
+    ids: ['p16', 'p11', 'p17', 'p15', 'p14'] },
+  { id: 'b6', name: '山與湖',     icon: 'steps', award: '你爬過山，也繞過湖。',
+    ids: ['p6', 'p8', 'p16'] },
 ];
 
 /* --------------------------------------------------------------------------
@@ -292,4 +313,54 @@ const SPOTS = [
     type: '車站',     dist: 7800,  hook: '收集於 09.14' },
 ];
 
-window.MOCK = { SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };
+/* 所有「地方」的統一查表。place.html 用 ?id= 開任何一個地方都靠它，
+   不然十幾個入口會全部導到同一頁。 */
+function findPlace(id) {
+  if (!id) return TODAY;
+  if (id === TODAY.id || id === 'glass-kiln') return TODAY;
+  if (id === FAR_PLACE.id || id === 'neiwan') return FAR_PLACE;
+
+  const byPending = PENDING.filter(function (p) { return p.id === id; })[0];
+  if (byPending) return expand(byPending);
+
+  const bySpot = SPOTS.filter(function (p) { return p.id === id; })[0];
+  if (bySpot) return expand(bySpot);
+
+  const byCard = POSTCARDS.filter(function (p) { return p.id === id; })[0];
+  if (byCard) return expand({ id: byCard.id, name: byCard.name, art: byCard.art,
+                              type: '地方', distance: 2000 });
+
+  for (let i = 0; i < ROUTES.length; i++) {
+    const st = ROUTES[i].stops.filter(function (s) { return s.id === id || s.card === id; })[0];
+    if (st) return expand({ id: st.card || st.id, name: st.name, art: st.art,
+                            type: st.type || '地方', distance: st.dist, hook: st.note });
+  }
+  return TODAY;
+}
+
+/* 把精簡的地點資料補成 place.html 需要的完整形狀 */
+function expand(p) {
+  return {
+    id: p.id,
+    name: p.name,
+    art: p.art,
+    type: p.type || '地方',
+    distance: p.distance != null ? p.distance : (p.dist || 1500),
+    hook: p.hook || '',
+    eyebrow: p.type || '地方',
+    tip: p.tip || '到了先站一下，看看四周有什麼是別的地方沒有的。',
+    hours: p.hours || '戶外空間，全天可看',
+    story: p.story || [
+      { label: '現在的它', text: (p.hook || '') + '這裡平常沒什麼人特別停下來，但走近了會發現它跟周圍不太一樣。' },
+      { label: '以前的它', text: '新竹的每一個角落幾乎都有一段跟風、水或工業有關的過去，這裡也是。' },
+      { label: '為什麼是今天', text: '今天的天氣與光線適合走過去看看。' },
+    ],
+    why: p.why || [
+      { src: '常用地點', text: '這個地方在你常走的路線附近，但你從沒進去過' },
+      { src: '收集缺口', text: '你的圖鑑裡還沒有這一張' },
+      { src: '天氣',     text: '今天下午降雨機率低，適合走路' },
+    ],
+  };
+}
+
+window.MOCK = { findPlace, SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };

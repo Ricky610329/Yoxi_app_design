@@ -120,7 +120,8 @@
         </div>
 
         <div style="padding:0 16px 32px">
-          <button class="btn-ghost" style="border-color:var(--yoxi-red); color:var(--yoxi-red)">
+          <button class="btn-ghost" id="wipeBtn" data-reset
+                  style="border-color:var(--yoxi-red); color:var(--yoxi-red)">
             清除我的足跡
           </button>
         </div>
@@ -158,13 +159,10 @@
     </div>`).join('');
 
   SHELL.injectIcons();
-  /* 開關的狀態由 interact.js 從 STATE 還原並寫回 */
-  INTERACT && 0;
-  document.querySelectorAll('[data-switch]').forEach(function (el) {
-    const k = el.dataset.switch;
-    el.classList.toggle('is-on', !!STATE.all.settings[k]);
-    el.onclick = function () { STATE.setSetting(k, el.classList.toggle('is-on')); };
-  });
+
+  /* 開關的還原與寫回一律交給 interact.js 的 initSwitches()，
+     它在 DOMContentLoaded 時跑，看得到這裡動態產生的開關。
+     這裡絕對不能再綁一次 —— 兩個 handler 各 toggle 一次會互相抵銷。 */
 })();
 </script>
 </body>
