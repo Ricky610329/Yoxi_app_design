@@ -10,6 +10,10 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   font-family: var(--font-sans);
+  /* 中文避頭尾與孤字：避免「…最老車 / 站。」「…為了木 / 材」這種難看的斷行 */
+  text-wrap: pretty;
+  line-break: strict;
+  overflow-wrap: break-word;
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   color: var(--yoxi-navy);

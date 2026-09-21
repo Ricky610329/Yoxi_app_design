@@ -87,7 +87,7 @@
         <div style="padding:0 16px 16px">
           <div class="sec"><h2 class="sec__t" style="font-size:16px">換一句話</h2></div>
           <div class="card">
-            <button class="row-text is-on" data-cap="早安 平安喜樂">早安 平安喜樂</button>
+            <button class="row-text is-on" data-cap="早安 平安喜樂">早安 平安喜樂<span class="arrow"></span></button>
             <button class="row-text" data-cap="身體健康 萬事如意">身體健康 萬事如意</button>
             <button class="row-text" data-cap="我今天去走走了">我今天去走走了</button>
             <button class="row-text" data-cap="有空一起來">有空一起來</button>
@@ -127,6 +127,16 @@
   /* 換一句話 */
   document.querySelectorAll('[data-cap]').forEach(b => b.onclick = () => {
     document.getElementById('big').textContent = b.dataset.cap;
+    document.querySelectorAll('[data-cap]').forEach(x => {
+      x.classList.remove('is-on');
+      x.style.background = '';
+      x.style.fontWeight = '';
+      const a = x.querySelector('.arrow'); if (a) a.remove();
+    });
+    b.classList.add('is-on');
+    b.style.background = 'var(--yoxi-cream)';
+    b.style.fontWeight = '800';
+    b.insertAdjacentHTML('beforeend', '<span class="arrow"></span>');
   });
 
   /* 換一個地方：用同一批已收集的明信片資產 */

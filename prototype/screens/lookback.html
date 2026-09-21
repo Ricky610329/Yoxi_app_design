@@ -191,6 +191,12 @@
   /* 幕 1：步數往上跳。刻意慢 —— 這是回顧不是載入條。 */
   const target = 6240;
   const el = document.getElementById('stepNum');
+
+  /* ?still=1 直接停在終值。縮圖若抓到數字動畫的隨機一幀，
+     全景圖上每次重整都會顯示不同的步數。 */
+  if (new URLSearchParams(location.search).has('still')) {
+    el.textContent = target.toLocaleString();
+  } else {
   const t0 = performance.now();
   const tick = now => {
     const p = Math.min((now - t0) / 2600, 1);
@@ -198,6 +204,7 @@
     if (p < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
+  }
 
   document.getElementById('nextBtn').onclick = e => {
     if (idx < acts.length - 1) { e.preventDefault(); show(idx + 1); }

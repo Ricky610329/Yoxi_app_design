@@ -93,7 +93,7 @@
     /* 某條路線已完成幾站 */
     routeDone(routeId) {
       const M = {
-        rail:  ['p1', 'p5', 'p9', 'p10', 'p12'],
+        rail:  ['p1', 'p5', 'p9', 'p10', 'p12', 'p13'],
         glass: ['p11'],
         water: ['p3'],
       };

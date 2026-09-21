@@ -54,7 +54,7 @@
         <div style="padding:16px">
           <div class="statbar">
             <span class="statbar__cell">
-              <span class="statbar__n">12</span>
+              <span class="statbar__n" id="nPlaces">12</span>
               <span class="statbar__k">去過的地方</span>
             </span>
             <span class="statbar__cell">
@@ -62,7 +62,7 @@
               <span class="statbar__k">獎章</span>
             </span>
             <span class="statbar__cell">
-              <span class="statbar__n">48</span>
+              <span class="statbar__n" id="nKm">48</span>
               <span class="statbar__k">公里</span>
             </span>
           </div>
@@ -155,6 +155,9 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nKm').textContent = STATE.all.km;
+
   /* 覆蓋率格：把霧地圖壓成一條 */
   const flat = MOCK.FOG.flat();
   document.getElementById('cover').innerHTML = flat.map(function (s) {
@@ -166,7 +169,7 @@
     .join('');
 
   document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
-    const locked = p.state === 'locked';
+    const locked = !STATE.has(p.id);
     return '<a class="postcard ' + (locked ? 'postcard--locked ' : '') +
       (p.by === 'ride' ? 'postcard--gold' : '') + '" href="place.html">' +
       '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +

@@ -222,6 +222,7 @@ const POSTCARDS = [
   { id: 'p10', name: '合興車站',      art: 'hakka',   state: 'locked' },
   { id: 'p11', name: '水利路老玻璃窯', art: 'glass',  state: 'locked' },
   { id: 'p12', name: '九讚頭站',      art: 'brick',   state: 'locked' },
+  { id: 'p13', name: '橫山站',        art: 'hill',    state: 'locked' },
 ];
 
 const BADGES = [

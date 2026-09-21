@@ -29,7 +29,7 @@
         <p class="hdr-red__sub">請點選要匯出成 PDF 檔的行程</p>
       </header>
 
-      <div class="scroll" style="padding-bottom:104px">
+      <div class="scroll" style="padding-bottom:132px">
         <div id="list"></div>
       </div>
 
@@ -51,9 +51,9 @@
 <script>
 (function () {
   const T = [
-    ['新竹市 → 內灣老街', '09/21 13:18', '$680'],
-    ['東區 → 竹北',       '09/18 08:42', '$245'],
-    ['新竹市 → 南寮漁港', '09/12 16:05', '$310'],
+    ['新竹市 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 內灣老街', '09/21 13:18', '$680'],
+    ['東區 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 竹北', '09/18 08:42', '$245'],
+    ['新竹市 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 南寮漁港', '09/12 16:05', '$310'],
   ];
 
   document.getElementById('list').innerHTML = T.map(function (t, i) {
@@ -69,6 +69,12 @@
 
   const btn = document.getElementById('exportBtn');
   const sel = new Set();
+
+  /* demo：預設勾第一筆，不然按鈕是停用的沒東西可按 */
+  setTimeout(function () {
+    const first = document.querySelector('.row-nav[data-i="0"]');
+    if (first) first.click();
+  }, 0);
 
   document.querySelectorAll('.row-nav[data-i]').forEach(function (row) {
     row.onclick = function () {

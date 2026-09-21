@@ -75,6 +75,9 @@ variant-a-map
 variant-a-map?mode=been:variant-a-map-been
 variant-b-explore
 variant-c-album
+variant-a-album
+variant-b-album
+lookback?still=1:lookback
 "
 
 n=0

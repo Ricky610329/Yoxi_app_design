@@ -27,9 +27,11 @@
 .arrow--up   { transform: rotate(-90deg); }
 .arrow--ne   { transform: rotate(-45deg); }
 
-/* 紅底上的白色版本 */
+/* 深色底（紅色或墨藍）上的版本：白箭頭 + 半透明白尾巴。
+   原本尾巴是深藍色，放在墨藍卡片上會整段消失，
+   yoxi 最有辨識度的微元件在那幾處等於不見了。 */
 .arrow--onred {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 14'%3E%3Crect x='0' y='4.4' width='8.4' height='5.2' fill='%23062040'/%3E%3Crect x='6' y='5.2' width='10' height='3.6' fill='%23FFFFFF'/%3E%3Cpath d='M13.8 .6 23.4 7 13.8 13.4Z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 14'%3E%3Crect x='0' y='4.4' width='8.4' height='5.2' fill='rgba(255,255,255,0.45)'/%3E%3Crect x='6' y='5.2' width='10' height='3.6' fill='%23FFFFFF'/%3E%3Cpath d='M13.8 .6 23.4 7 13.8 13.4Z' fill='%23FFFFFF'/%3E%3C/svg%3E");
 }
 
 /* ==========================================================================
@@ -83,7 +85,7 @@
   opacity: .95;
 }
 
-.hdr-red__pills { margin-top: var(--sp-4); }
+.hdr-red__pills { margin-top: var(--sp-4); margin-bottom: 0; }
 
 /* 置中標題的變體（好康任務） */
 .hdr-red--center .hdr-red__bar { justify-content: flex-start; gap: var(--sp-4); }
@@ -183,7 +185,7 @@
   transition: background var(--t-fast) var(--ease);
 }
 .btn-primary:active { background: var(--yoxi-navy-soft); }
-.btn-primary:disabled { background: var(--yoxi-slate-lite); }
+.btn-primary:disabled { background: var(--yoxi-line); color: var(--yoxi-slate); }
 
 .btn-ghost {
   display: flex;
@@ -290,6 +292,7 @@
   text-align: left;
 }
 .row-text + .row-text { border-top: 1px solid var(--yoxi-line); }
+.row-text.is-on { background: var(--yoxi-cream); font-weight: var(--fw-heavy); }
 
 /* ==========================================================================
    .empty-state —— 【沿用】空狀態
@@ -518,22 +521,35 @@
   background: var(--yoxi-red);
   color: var(--yoxi-white);
   padding: var(--sp-5) var(--sp-5) 0;
-  overflow-y: auto;
+  overflow: hidden;          /* 捲動交給內層，底列才固定得住 */
   z-index: 70;
 }
+
+/* 抽屜要分成「可捲的內容」與「固定的底列」兩層。
+   原本用 margin-top:auto 想把底列推到底，內容一旦超過螢幕高
+   auto margin 就失效，底列會被推到捲動區外面看不見。 */
+.drawer__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.drawer__scroll::-webkit-scrollbar { display: none; }
 
 .drawer__item {
   display: block;
   width: 100%;
-  padding: 11px 0;
+  padding: 8px 0;
   text-align: left;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: var(--fw-heavy);
   color: var(--yoxi-white);
 }
 
 .drawer__foot {
-  margin: auto calc(var(--sp-5) * -1) 0;
+  flex: none;
+  display: block;
+  margin: 0 calc(var(--sp-5) * -1);
   padding: var(--sp-4);
   background: var(--yoxi-white);
   color: var(--yoxi-navy);

@@ -60,7 +60,7 @@
     ['yoxi 搭車金 $100',      100, 'tabRide', 'var(--yoxi-red)'],
     ['iRent 租車折抵 $200',   200, 'route',   'var(--yoxi-navy)'],
     ['汽車保養折抵 $500',     500, 'badge',   '#5A6B7D'],
-    ['HOTAI 購折抵 $100',     100, 'point',   '#8A5A2B'],
+    ['HOTAI 購折抵 $100',     100, 'pointLight', '#8A5A2B'],
   ];
 
   document.getElementById('grid').innerHTML = G.map(function (g) {
@@ -68,14 +68,14 @@
     return '<div class="card" style="overflow:hidden">' +
       '<div style="height:92px; background:' + g[3] + '; display:grid; place-items:center">' +
         '<span data-icon="' + g[2] + '" style="width:40px; height:40px; display:block;' +
-        ' filter:brightness(0) invert(1)"></span>' +
+        (g[2] === 'pointLight' ? '' : ' filter:brightness(0) invert(1)') + '"></span>' +
       '</div>' +
       '<div style="padding:12px">' +
         '<div style="font-weight:800; font-size:14px; line-height:1.4">' + g[0] + '</div>' +
         '<div class="u-row" style="justify-content:space-between; margin-top:10px">' +
-          '<span class="num" style="font-size:16px">' + g[1] + ' 點</span>' +
+          '<span><span class="num" style="font-size:16px">' + g[1] + '</span> 點</span>' +
           '<span style="padding:5px 12px; border-radius:4px; font-size:12px; font-weight:800;' +
-          ' background:' + (can ? 'var(--yoxi-navy)' : 'var(--yoxi-mist)') + ';' +
+          ' background:' + (can ? 'var(--yoxi-navy)' : 'var(--yoxi-line)') + ';' +
           ' color:' + (can ? '#fff' : 'var(--yoxi-slate)') + '">' +
           (can ? '兌換' : '點數不足') + '</span>' +
         '</div>' +

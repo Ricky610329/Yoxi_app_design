@@ -62,26 +62,52 @@ const ICONS = {
     <circle cx="12" cy="12" r="9.4" fill="${NAVY}"/>
     <path d="M9.6 17.4V6.6h3.6a3.5 3.5 0 0 1 0 7h-1.5v3.8Zm2.1-6h1.4a1.4 1.4 0 0 0 0-2.8h-1.4Z" fill="#fff"/>`),
 
+  // 深色底專用的點數圖示。原本靠 filter: brightness(0) invert(1) 把
+  // 「深藍圓 + 白 P」整個轉白，結果白色的 P 被吃掉只剩一個白圓盤。
+  pointLight: svg(`
+    <circle cx="12" cy="12" r="9.4" fill="none" stroke="#fff" stroke-width="2"/>
+    <path d="M9.8 17V7h3.4a3.4 3.4 0 0 1 0 6.8h-1.4V17Zm2-5.9h1.3a1.4 1.4 0 0 0 0-2.8h-1.3Z" fill="#fff"/>`),
+
+  // 喇叭（抽屜公告）
+  megaphone: svg(`
+    <path d="M4 10v4a1.6 1.6 0 0 0 1.6 1.6h1.6L14 20V4L7.2 8.4H5.6A1.6 1.6 0 0 0 4 10Z"
+      fill="currentColor"/>
+    <path d="M17 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round"/>
+    <path d="M19.6 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" opacity=".6"/>`),
+
   /* --- 底部 tab ------------------------------------------------------- */
+
+  /* tab bar 的三個圖示必須是同一種重量（統一線框），
+     而且內部不得寫死紅色 —— 灰色的未選中 tab 上掛一個紅點，
+     會被讀成未讀通知徽章，跟真正的 .tabbar__dot 語意打架。 */
 
   // 叫車
   tabRide: svg(`
-    <path d="M4.6 12.6 6.3 7.4A2.4 2.4 0 0 1 8.6 5.8h6.8a2.4 2.4 0 0 1 2.3 1.6l1.7 5.2Z" fill="currentColor"/>
-    <rect x="3.2" y="12.2" width="17.6" height="6.4" rx="1.8" fill="currentColor"/>
-    <rect x="5.4" y="18.6" width="3.6" height="2.4" rx="1" fill="currentColor"/>
-    <rect x="15" y="18.6" width="3.6" height="2.4" rx="1" fill="currentColor"/>
-    <rect x="9.4" y="2.6" width="5.2" height="2.8" rx="1" fill="${RED}"/>`),
+    <path d="M4.4 12.4 6.2 7.2A2.6 2.6 0 0 1 8.7 5.4h6.6a2.6 2.6 0 0 1 2.5 1.8l1.8 5.2"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+    <rect x="3.2" y="12.4" width="17.6" height="6.2" rx="2"
+      fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M6.4 18.6v1.8M17.6 18.6v1.8"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="7.2" cy="15.5" r="1.1" fill="currentColor"/>
+    <circle cx="16.8" cy="15.5" r="1.1" fill="currentColor"/>`),
 
   // 探索
   tabExplore: svg(`
-    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/>
-    <path d="M15.8 8.2 13.9 14 8.2 15.8 10.1 10Z" fill="${RED}"/>`),
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M15.8 8.2 13.9 14 8.2 15.8 10.1 10Z"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>`),
 
-  // 收藏（明信片）
+  // 收藏
   tabAlbum: svg(`
-    <rect x="2.6" y="5.4" width="18.8" height="13.2" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/>
-    <path d="M2.6 15.4 8 10.6l4 3.4 3.4-2.8 6 5.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
-    <circle cx="8.2" cy="9.6" r="1.8" fill="${RED}"/>`),
+    <rect x="2.8" y="5.4" width="18.4" height="13.2" rx="2.4"
+      fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M3.4 15.6 8 11.4l3.8 3.2 3.2-2.6 5.6 4.6"
+      fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="8.4" cy="9.6" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/>`),
 
   /* --- 城事 ----------------------------------------------------------- */
 

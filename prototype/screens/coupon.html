@@ -26,20 +26,21 @@
   .coupon {
     position: relative; overflow: hidden;
     background: var(--yoxi-cream);
-    border-bottom: 2px solid var(--yoxi-navy);
+    border: 1px solid var(--yoxi-line);
     padding: 16px;
   }
   .coupon + .coupon { margin-top: 12px; }
+  .coupon { border-radius: var(--r-card); }
   .coupon__mark {
-    position: absolute; right: 10px; bottom: 2px;
+    position: absolute; right: 10px; bottom: 2px; z-index: 0;
     font-size: 34px; font-weight: 800; font-style: italic;
-    color: rgba(6,32,64,.055); letter-spacing: -.02em; pointer-events: none;
+    color: rgba(6,32,64,.05); letter-spacing: -.02em; pointer-events: none;
   }
   .coupon__face { font-size: 13px; font-weight: 700; }
   .coupon__title { font-size: 19px; font-weight: 800; margin-top: 4px; line-height: 1.3; }
   .coupon__exp { font-size: 13px; color: var(--yoxi-slate); margin-top: 6px; }
-  .coupon__foot { display: flex; align-items: center; justify-content: space-between;
-                  margin-top: 12px; }
+  .coupon__foot { position: relative; z-index: 1; display: flex; align-items: center;
+                  justify-content: space-between; margin-top: 12px; }
   .coupon__more {
     padding: 7px 14px; border-radius: 4px; background: var(--yoxi-mist);
     font-size: 13px; font-weight: 700;
@@ -77,7 +78,7 @@
             <span class="u-fill" style="text-align:left; font-weight:800">
               最高拿 <span class="num" style="color:var(--yoxi-red); font-size:19px">$50</span>，立即試今日手氣
             </span>
-            <span style="padding:5px 14px; border-radius:999px; background:var(--yoxi-red);
+            <span style="padding:5px 14px; border-radius:999px; background:var(--yoxi-navy);
                          color:#fff; font-size:13px; font-weight:800">GO</span>
           </button>
 
@@ -89,8 +90,8 @@
                    style="flex:1; min-width:0; border:0; background:none; outline:none;
                           font-size:15px">
             <button id="redeem"
-                    style="padding:9px 18px; border-radius:4px; background:var(--yoxi-slate-lite);
-                           color:#fff; font-weight:800; font-size:14px">兌換</button>
+                    style="padding:9px 18px; border-radius:4px; background:var(--yoxi-line);
+                           color:var(--yoxi-slate); font-weight:800; font-size:14px">兌換</button>
           </div>
           <p id="codeMsg" class="u-hidden"
              style="margin-top:8px; font-size:13px; color:var(--yoxi-red)"></p>
@@ -141,8 +142,9 @@
   const btn  = document.getElementById('redeem');
   const msg  = document.getElementById('codeMsg');
   code.addEventListener('input', function () {
-    btn.style.background = code.value.trim()
-      ? 'var(--yoxi-navy)' : 'var(--yoxi-slate-lite)';
+    const on = !!code.value.trim();
+    btn.style.background = on ? 'var(--yoxi-navy)' : 'var(--yoxi-line)';
+    btn.style.color = on ? '#fff' : 'var(--yoxi-slate)';
   });
   btn.onclick = function () {
     if (!code.value.trim()) return;

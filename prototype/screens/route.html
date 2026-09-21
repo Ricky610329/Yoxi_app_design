@@ -141,7 +141,7 @@
   const R = MOCK.ROUTES[0];
 
   /* 內灣收集了就前進一站 */
-  const CARD_OF = { s1: 'p1', s2: 'p5', s3: 'p9', s4: 'p10', s5: 'p12', s6: null };
+  const CARD_OF = { s1: 'p1', s2: 'p5', s3: 'p9', s4: 'p10', s5: 'p12', s6: 'p13' };
   R.stops.forEach(function (st) {
     const c = CARD_OF[st.id];
     if (c && STATE.has(c)) st.state = 'done';

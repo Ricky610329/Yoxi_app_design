@@ -25,9 +25,13 @@
   .task { overflow: hidden; }
   .task + .task { margin-top: 16px; }
   .task__banner {
-    height: 104px; display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 800; text-align: center; line-height: 1.35;
+    height: 104px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px;
+    color: #fff; font-weight: 800; text-align: center; line-height: 1.3;
     padding: 0 16px; font-size: 17px;
+  }
+  .task__banner small {
+    font-size: 13px; font-weight: 500; opacity: .92; line-height: 1.4;
   }
   .task__body { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
   .task__t { font-weight: 800; line-height: 1.4; }
@@ -67,8 +71,8 @@
         <div data-panel="on">
           <div class="card task">
             <div class="task__banner" style="background:linear-gradient(120deg,#2A2E6B,#1A1440)">
-              月來月好運<br>
-              <span style="font-size:13px; opacity:.9">搭車即拿次月 88 折優惠</span>
+              <span>月來月好運</span>
+              <small>搭車即拿次月 88 折優惠</small>
             </div>
             <div class="task__body">
               <span class="u-fill">
@@ -82,8 +86,8 @@
 
           <div class="card task">
             <div class="task__banner" style="background:var(--yoxi-red)">
-              企業簽單選 yoxi<br>
-              <span style="font-size:13px; opacity:.9">趟趟加送 10 點回饋</span>
+              <span>企業簽單選 yoxi</span>
+              <small>趟趟加送 10 點回饋</small>
             </div>
             <div class="task__body">
               <span class="u-fill">
@@ -97,8 +101,8 @@
 
           <div class="card task">
             <div class="task__banner" style="background:linear-gradient(120deg,#5FA845,#2F6B2A)">
-              綁定 iPASS MONEY 搭乘<br>
-              <span style="font-size:13px; opacity:.9">每月搭 1 趟贈 $200 搭車金禮包</span>
+              <span>綁定 iPASS MONEY 搭乘</span>
+              <small>每月搭 1 趟贈 $200 搭車金禮包</small>
             </div>
             <div class="task__body">
               <span class="u-fill">

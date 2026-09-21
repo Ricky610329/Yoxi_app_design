@@ -66,8 +66,8 @@
   const ROWS = [
     ['內灣老街 · 抵達解鎖',  '城事解鎖回饋', '+50', '09/21', true],
     ['南寮漁港 · 抵達解鎖',  '城事解鎖回饋', '+50', '09/12', true],
-    ['行程 · 新竹市 → 內灣', '搭乘回饋',     '+34', '09/21', false],
-    ['行程 · 東區 → 竹北',   '搭乘回饋',     '+12', '09/18', false],
+    ['行程 · 新竹市 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 內灣', '搭乘回饋', '+34', '09/21', false],
+    ['行程 · 東區 <i class="arrow" style="width:16px;vertical-align:-2px"></i> 竹北', '搭乘回饋', '+12', '09/18', false],
   ];
 
   document.getElementById('pts').textContent = STATE.all.points;
@@ -89,7 +89,7 @@
       '<span class="row-nav__body">' +
         '<span class="row-nav__title" style="font-size:16px">' + name + '</span>' +
         '<span class="row-nav__sub">' +
-          '<span style="' + (isNew ? 'color:var(--yoxi-red);font-weight:800' : '') + '">' +
+          '<span style="' + (isNew ? 'color:var(--yoxi-navy);font-weight:800' : '') + '">' +
           src + '</span> · ' + date +
         '</span>' +
       '</span>' +

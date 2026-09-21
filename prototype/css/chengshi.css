@@ -937,6 +937,8 @@
    demo 輔助：模擬按鈕（現場操作用，正式版不存在）
    ========================================================================== */
 
+/* demo 專用控制鈕。虛線框會被當成壞掉的元件，改用低調的實心塊，
+   前面加一個「demo」標籤說清楚它不是產品的一部分。 */
 .demo-btn {
   display: flex;
   align-items: center;
@@ -944,12 +946,23 @@
   gap: var(--sp-2);
   width: 100%;
   min-height: 46px;
-  border: 1.5px dashed var(--yoxi-slate-lite);
+  padding: 0 var(--sp-3);
+  border: 0;
   border-radius: var(--r-btn);
+  background: var(--yoxi-mist);
   color: var(--yoxi-slate);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-cap);
   font-weight: var(--fw-bold);
-  background: var(--yoxi-white);
+  white-space: nowrap;
+}
+.demo-btn::before {
+  content: "demo";
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--yoxi-slate-lite);
+  color: var(--yoxi-white);
+  font-size: 10px;
+  letter-spacing: .04em;
 }
 
 /* ==========================================================================
