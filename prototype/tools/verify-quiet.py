@@ -12,6 +12,8 @@
                   看差異落在哪個範圍。說「畫面沒變」要有座標。
   結構（②）       比對 sheet 裡所有可按的東西（連結與按鈕）的順序、
                   文字與目的地。一樣，叫車的 tap 數就一樣。
+  互動            跑 tools/smoke-variants.html，真的去 click 每個變體最關鍵的
+                  那一段，看狀態有沒有跟著變 —— 點了沒反應是不會報錯的。
 
 需要 Chrome 或 Edge、Pillow，以及先跑過 tools/shoot.py。
 """
@@ -50,18 +52,18 @@ def browser():
     return None
 
 
-# ---------------------------------------------------------------- 幾何
-def geometry():
+# ------------------------------------------------- 在 headless 裡跑一張稽核頁
+def run_page(name, budget=12000):
     exe = browser()
     if not exe:
-        return ['（找不到 Chrome 或 Edge，幾何驗收略過）']
+        return ['（找不到 Chrome 或 Edge，略過）']
     out = subprocess.run(
         [exe, '--headless=new', '--disable-gpu', '--allow-file-access-from-files',
-         '--virtual-time-budget=12000', '--dump-dom',
-         (ROOT / 'tools' / 'audit-quiet.html').as_uri()],
+         '--virtual-time-budget=%d' % budget, '--dump-dom',
+         (ROOT / 'tools' / name).as_uri()],
         capture_output=True, text=True, encoding='utf-8', errors='replace').stdout
     m = re.search(r'<pre id="out">(.*?)</pre>', out, re.S)
-    return unescape(m.group(1)).strip().splitlines() if m else ['（稽核頁沒有回傳結果）']
+    return unescape(m.group(1)).strip().splitlines() if m else ['（%s 沒有回傳結果）' % name]
 
 
 # ---------------------------------------------------------------- 像素
@@ -178,13 +180,16 @@ def main():
     print('「叫車畫面變吵」防護驗收')
     print('═' * 64)
     print('\n── 幾何：③ 收合態外洩 ④ 景點數量 ⑤ 覆蓋 ⑥ 視覺語言 ' + '─' * 8)
-    for l in geometry():
+    for l in run_page('audit-quiet.html'):
         print(l)
     print('\n── 像素：① 與現況的差異落在哪 ' + '─' * 26)
     for l in pixels():
         print(l)
     print('\n── 結構：② 叫車關鍵路徑的 tap 數 ' + '─' * 24)
     for l in structure():
+        print(l)
+    print('\n── 互動：點下去真的有反應嗎 ' + '─' * 28)
+    for l in run_page('smoke-variants.html', 15000):
         print(l)
     print()
     return 0

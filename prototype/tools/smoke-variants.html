@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>變體互動煙霧測試</title>
+<!--
+  三個變體各自最關鍵的那一段互動，用程式點一次，看結果對不對。
+
+    chrome --headless=new --allow-file-access-from-files \
+           --virtual-time-budget=15000 --dump-dom tools/smoke-variants.html
+
+  為什麼需要這一份：這一輪出過兩個只看 console 看不出來的錯 ——
+  ?mode=today 在 interact.js 綁好之前就去點 pill（點了沒反應），
+  以及同一個小卡被 bindPeek 綁兩次、後一次把前一次整個蓋掉。
+  兩個都不會報錯，只會安靜地不動。所以要真的點下去看狀態有沒有變。
+-->
+<style>
+  body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
+  iframe { width: 390px; height: 844px; border: 0; position: absolute; left: -9999px; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<pre id="out">跑中…</pre>
+<div id="frames"></div>
+
+<script>
+/* 每個案例：載入一個變體，做一連串「動作 → 斷言」。
+   動作要用真的 click()，才會走到跟手指一樣的那條路徑。 */
+const CASES = [
+  {
+    name: '變體 D · 城事圖層開關',
+    url: '../screens/variant-d-home.html',
+    steps: [
+      ['一載入是關的', d => d.querySelectorAll('#spots .spot:not([hidden])').length &&
+                            !d.querySelector('.map').classList.contains('layer-on'),
+       d => '地圖 layer-on=' + d.querySelector('.map').classList.contains('layer-on')],
+      ['按下城事鈕 → 圖層開、今天的地方自動浮出', d => {
+        d.getElementById('layerBtn').click();
+        return d.querySelector('.map').classList.contains('layer-on') &&
+               d.getElementById('peek').classList.contains('is-on');
+      }, d => 'layer-on=' + d.querySelector('.map').classList.contains('layer-on') +
+              ' peek=' + d.getElementById('peek').classList.contains('is-on')],
+      ['再按一次 → 圖層關、小卡收起', d => {
+        d.getElementById('layerBtn').click();
+        return !d.querySelector('.map').classList.contains('layer-on') &&
+               !d.getElementById('peek').classList.contains('is-on');
+      }, d => 'layer-on=' + d.querySelector('.map').classList.contains('layer-on')],
+      /* 用 offsetTop／offsetHeight 而不是 getBoundingClientRect：
+         小卡是靠 transform 滑進來的，剛 click 完動畫還沒跑完，
+         量到的會是它滑到一半的位置。這裡要問的是版面關係，不是這一幀在哪。 */
+      ['城事鈕沒有被小卡蓋住', d => {
+        d.getElementById('layerBtn').click();
+        const b = d.getElementById('layerBtn');
+        const k = d.getElementById('peek');
+        return b.offsetTop >= k.offsetTop + k.offsetHeight ||
+               k.offsetTop >= b.offsetTop + b.offsetHeight;
+      }, d => {
+        const b = d.getElementById('layerBtn'), k = d.getElementById('peek');
+        return '城事鈕 y ' + b.offsetTop + '–' + (b.offsetTop + b.offsetHeight) +
+               '、小卡 y ' + k.offsetTop + '–' + (k.offsetTop + k.offsetHeight);
+      }],
+    ],
+  },
+  {
+    name: '變體 E · 一鍵設為下車點',
+    url: '../screens/variant-e-home.html',
+    steps: [
+      ['景點常駐，不必按開關', d => d.querySelector('.map').classList.contains('layer-on') &&
+                                   d.querySelectorAll('.spot').length === 4,
+       d => '.spot ' + d.querySelectorAll('.spot').length + ' 個'],
+      ['一載入不彈小卡', d => !d.getElementById('peek').classList.contains('is-on'),
+       () => '小卡自己開了'],
+      ['點景點 → 小卡浮出、名字填進去', d => {
+        d.querySelectorAll('.spot')[0].click();
+        const n = d.querySelector('[data-peek-name]').textContent.trim();
+        return d.getElementById('peek').classList.contains('is-on') && n.length > 0;
+      }, d => '名字「' + d.querySelector('[data-peek-name]').textContent.trim() + '」'],
+      ['按設為下車點 → 欄位填好、sheet 展開、叫車鈕就緒', d => {
+        const name = d.querySelector('[data-peek-name]').textContent.trim();
+        d.getElementById('setDrop').click();
+        const f = d.querySelectorAll('.route-input__value')[1];
+        const go = d.getElementById('goBtn');
+        return f.textContent.trim() === name &&
+               !f.classList.contains('route-input__value--ph') &&
+               !d.getElementById('sheet').classList.contains('is-collapsed') &&
+               go.classList.contains('is-ready') && go.textContent.includes(name);
+      }, d => '下車點「' + d.querySelectorAll('.route-input__value')[1].textContent.trim() +
+              '」 收合=' + d.getElementById('sheet').classList.contains('is-collapsed') +
+              ' 叫車鈕=' + d.getElementById('goBtn').textContent.trim()],
+    ],
+  },
+  {
+    name: '變體 F · 一個畫面兩種模式',
+    url: '../screens/variant-f-home.html',
+    steps: [
+      ['只有兩個分頁', d => d.querySelectorAll('.tabbar__item').length === 2,
+       d => '分頁 ' + d.querySelectorAll('.tabbar__item').length + ' 個'],
+      ['一載入是叫車模式：地圖乾淨、今天面板收著',
+       d => !d.querySelector('.map').classList.contains('layer-on') &&
+            d.querySelector('[data-panel="today"]').classList.contains('u-hidden'),
+       d => 'layer-on=' + d.querySelector('.map').classList.contains('layer-on') +
+            ' today面板隱藏=' + d.querySelector('[data-panel="today"]').classList.contains('u-hidden')],
+      ['點「今天」→ 面板換掉、景點長出來', d => {
+        d.querySelector('#mode .pill[data-tab="today"]').click();
+        return d.querySelector('.map').classList.contains('layer-on') &&
+               d.querySelector('[data-panel="today"]').classList.contains('u-hidden') === false &&
+               d.querySelector('[data-panel="ride"]').classList.contains('u-hidden');
+      }, d => 'layer-on=' + d.querySelector('.map').classList.contains('layer-on') +
+              ' today面板隱藏=' + d.querySelector('[data-panel="today"]').classList.contains('u-hidden')],
+      ['切模式時地圖高度完全不變', d => {
+        const h1 = Math.round(d.querySelector('.map').getBoundingClientRect().height);
+        d.querySelector('#mode .pill[data-tab="ride"]').click();
+        const h2 = Math.round(d.querySelector('.map').getBoundingClientRect().height);
+        d.querySelector('#mode .pill[data-tab="today"]').click();
+        const h3 = Math.round(d.querySelector('.map').getBoundingClientRect().height);
+        return h1 === h2 && h2 === h3;
+      }, d => '地圖高 ' + Math.round(d.querySelector('.map').getBoundingClientRect().height) + 'px'],
+      ['今天模式點景點 → 小卡浮出', d => {
+        d.querySelectorAll('.spot')[1].click();
+        return d.getElementById('peek').classList.contains('is-on');
+      }, () => '小卡沒開'],
+      ['切回叫車模式 → 小卡收起、地圖乾淨', d => {
+        d.querySelector('#mode .pill[data-tab="ride"]').click();
+        return !d.getElementById('peek').classList.contains('is-on') &&
+               !d.querySelector('.map').classList.contains('layer-on');
+      }, d => 'peek=' + d.getElementById('peek').classList.contains('is-on')],
+    ],
+  },
+];
+
+let out = [], done = 0, bad = 0;
+
+CASES.forEach((c, i) => {
+  const fr = document.createElement('iframe');
+  fr.src = c.url;
+  fr.onload = () => setTimeout(() => {
+    const L = ['── ' + c.name + ' ' + '─'.repeat(6)];
+    const d = fr.contentDocument;
+    c.steps.forEach(([label, run, why]) => {
+      let ok, detail = '';
+      try { ok = !!run(d); } catch (e) { ok = false; detail = e.message; }
+      if (!ok) {
+        bad++;
+        try { detail = detail || why(d); } catch (e) { detail = e.message; }
+        L.push('  FAIL  ' + label + '   ← ' + detail);
+      } else {
+        L.push('  PASS  ' + label);
+      }
+    });
+    L.push('');
+    out[i] = L.join('\n');
+    if (++done === CASES.length) {
+      document.getElementById('out').textContent =
+        out.join('\n') + (bad ? bad + ' 步失敗。' : '全部通過。');
+    }
+  }, 700);
+  document.getElementById('frames').appendChild(fr);
+});
+</script>
+</body>
+</html>
