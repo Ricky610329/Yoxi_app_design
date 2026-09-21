@@ -138,36 +138,63 @@
 
   <div class="v" style="border-color:var(--yoxi-navy); border-width:2px; margin-top:28px">
     <div class="v__tag">防護與驗收</div>
-    <div class="v__n" style="margin-bottom:14px">「叫車畫面變吵」怎麼防、怎麼驗</div>
+    <div class="v__n">「叫車畫面變吵」怎麼防、怎麼驗</div>
+    <p class="v__one">
+      這是這份提案最可能被否決的地方，所以每一條都做成可以當場重跑的檢查，不是簡報上的說法。
+      下面的數字就是它印出來的。<br>
+      <code style="display:inline-block; margin-top:6px; padding:4px 10px;
+            background:var(--yoxi-mist); border-radius:4px; white-space:nowrap"
+            >python prototype/tools/verify-quiet.py</code>
+    </p>
+
     <table style="width:100%; border-collapse:collapse; font-size:14px; line-height:1.7">
       <tr style="background:var(--yoxi-mist)">
-        <th style="text-align:left; padding:10px 14px; width:44%">承諾</th>
-        <th style="text-align:left; padding:10px 14px">怎麼驗</th>
+        <th style="text-align:left; padding:10px 14px; width:34%">承諾</th>
+        <th style="text-align:left; padding:10px 14px">量到的結果</th>
       </tr>
+
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        圖層關閉時，畫面與現況<b>完全相同</b></td>
+        ① 圖層關閉時，畫面與現況<b>完全相同</b></td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        已驗：變體 D 與 home.html 的 DOM 逐行比對，<b style="color:#2F6B3D">差異為零</b></td></tr>
+        把變體 D 與 <code>home.html</code> 的截圖逐像素相減，
+        差異只有 <b style="color:#2F6B3D">0.71%</b>，而且全部落在
+        <code>(33,376)–(116,424)</code> —— 就是左下角那顆城事鈕本身，其餘一個像素沒動。<br>
+        變體 E 的差異 19.3% 全在地圖區（y 34–438），sheet 完全沒動；
+        變體 F 是 25.6%，因為 sheet 頂端多了一排模式 pill，地圖高度從 404px 變 344px —— 這是它的代價。</td></tr>
+
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        叫車關鍵路徑的 tap 數<b>不變</b></td>
+        ② 叫車關鍵路徑的 tap 數<b>不變</b></td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        上下車點卡、機場接送、繼續叫車的位置與連結完全沒動</td></tr>
+        比對 sheet 裡每一個可按元素的順序、文字與目的地。
+        <code>home.html</code> 有 4 個（上車點卡、下車點卡、機場接送、繼續叫車），
+        <b style="color:#2F6B3D">D／E／F 三個變體完全相同</b>。</td></tr>
+
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        收合態 sheet <b>一個像素不動</b></td>
+        ③ 收合態 sheet <b>一個像素不動</b></td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        新內容一律標 <code>data-expand-only</code>，收合態 CSS 直接 display:none</td></tr>
+        新內容一律標 <code>data-expand-only</code>，收合態直接 display:none；
+        稽核逐一量高度，<b style="color:#2F6B3D">三個變體外洩 0 個</b>。<br>
+        變體 F 另外把收合態實高鎖住 —— 切到今天模式時<b>地圖高度完全不變</b>。</td></tr>
+
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        同時最多 <b>4 個</b>景點</td>
+        ④ 同時最多 <b>4 個</b>景點</td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        renderSpots 的 max 限制，探索地圖是 10 個、叫車地圖只給 4 個</td></tr>
+        數 DOM 裡的 <code>.spot</code>：<b style="color:#2F6B3D">三個變體都是 4 個</b>。
+        探索地圖是 10 個，叫車地圖只給 4 個。</td></tr>
+
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        景點<b>不遮住上車點 pin</b> 與四顆浮動鈕</td>
+        ⑤ 景點<b>不遮住上車點 pin</b> 與四顆浮動鈕</td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        座標避開 pin、它上方橫跨 x28–72% 的地址標籤、四顆鈕的熱區與底部小卡</td></tr>
+        在 iframe 裡量真實的 <code>getBoundingClientRect</code>，算景點與 6 個受保護元素
+        （pin、地址標籤、四顆浮動鈕）的重疊面積：<b style="color:#2F6B3D">全部為 0</b>。<br>
+        這條一開始是 <b>FAIL</b> —— 稽核抓到三個變體共 9 處覆蓋，最嚴重的壓住上車點 pin
+        1337 px²。座標因此全部依量到的空隙重配。</td></tr>
+
       <tr><td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        兩種標記的<b>視覺語言完全分開</b></td>
+        ⑥ 兩種標記的<b>視覺語言完全分開</b></td>
         <td style="padding:10px 14px; border-top:1px solid var(--yoxi-line)">
-        上下車點＝海軍藍水滴 pin；景點＝圓角方形明信片縮圖。不共用任何元件</td></tr>
+        上下車點＝海軍藍水滴 pin；景點＝圓角方形明信片縮圖。
+        比對兩者的 class 集合，<b style="color:#2F6B3D">交集為空</b>，連一個樣式都沒共用。</td></tr>
     </table>
   </div>
 
@@ -239,8 +266,8 @@ const V = [
     where: '地圖只有 <b>1 張</b>，住在 <b>探索</b>。收藏用數據磚代替地圖。',
     tabs: [
       ['叫車', 'screens/home.html', '沒動', false],
-      ['探索', 'screens/explore.html', '卡片為主', false],
-      ['探索 · 地圖', 'screens/map.html', '唯一的地圖', true],
+      ['探索', 'screens/variant-c-explore.html', '卡片為主', false],
+      ['探索 · 地圖', 'screens/variant-c-map.html', '唯一的地圖', true],
       ['收藏', 'screens/variant-c-album.html', '數據磚，無地圖', false],
     ],
     good: '資訊架構最乾淨，每個 tab 的職責一句話講得完。改動最小，最不可能做壞。',
@@ -259,7 +286,7 @@ const V2 = [
       ['探索', 'screens/variant-d-explore.html', '純內容，沒有地圖', false],
       ['收藏', 'screens/variant-d-album.html', '足跡入口指回地圖', false],
     ],
-    good: '叫車體驗零風險 —— 關掉就是原本的 yoxi，而且這一點已經用 DOM 逐行比對驗證過。改動最小。',
+    good: '叫車體驗零風險 —— 關掉就是原本的 yoxi。這不是說法：逐像素比對下差異只有 0.71%，而且全部落在左下角那顆城事鈕本身。改動最小。',
     bad: '景點預設看不到，發現性最低。「不搭車也打開 yoxi」的證據因此變弱 —— 而那正是這題要證明的事。',
   },
   {
@@ -269,7 +296,7 @@ const V2 = [
     tabs: [
       ['叫車', 'screens/variant-e-home.html', '景點常駐，極輕', true],
       ['點景點', 'screens/variant-e-home.html?peek=1', '看看這個地方 / 設為下車點', true],
-      ['探索', 'screens/variant-d-explore.html', '純內容，沒有地圖', false],
+      ['探索', 'screens/variant-e-explore.html', '純內容，沒有地圖', false],
       ['收藏', 'screens/variant-e-album.html', '足跡入口指回地圖', false],
     ],
     good: '打開 app 第一眼就有內容，而且它把「探索會直接產生訂單」從論述變成可以當場點給評審看的動作 —— 這是商業轉換價值那 20% 最直接的證據。',

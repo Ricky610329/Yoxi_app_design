@@ -42,7 +42,8 @@ explore map place going routes route fogmap
 album postcard badge week elder
 settings push
 variant-a-map variant-b-explore variant-c-album variant-a-album variant-b-album
-variant-d-home variant-e-home variant-f-home variant-d-explore
+variant-a-explore variant-c-explore variant-c-map
+variant-d-home variant-e-home variant-f-home variant-d-explore variant-e-explore
 variant-d-album variant-e-album variant-f-album
 variant-d-home.html?layer=on:variant-d-home-on
 variant-e-home.html?peek=1:variant-e-home-peek

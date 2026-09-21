@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>變體 D · 探索（純內容） — yoxi 城事</title>
+<title>變體 A · 探索（卡片） — yoxi 城事</title>
 <!--
-  變體 D 的探索頁 —— 純內容，沒有地圖
+  變體 A 的探索首頁（卡片視圖）
 
-  地圖已經併進叫車首頁了，所以這裡不再有「卡片／地圖」切換。
-  探索 tab 的職責收斂成一句話：**今天去哪、這個月的路線、還沒去的地方。**
-
-  原本的切換鈕改成一行「在地圖上看」，指回叫車首頁並自動開啟城事圖層 ——
-  不是另開一張地圖，是回到那唯一的一張。
+  這一份跟預設版的差別只有分頁列指向哪裡（data-tabs）與切換鈕的目的地。
+  少了它，從 tab bar 走一步就會掉回「現況」那一組畫面，
+  變體就白做了 —— 上一輪就是在這裡穿幫的。
 
   N1 探索首頁「今天的地方」【新增】★核心
 
@@ -30,7 +28,7 @@
 <link rel="stylesheet" href="../css/chengshi.css">
 </head>
 
-<body data-tab="explore" data-tabs="d" data-status="light" data-time="8:10">
+<body data-tab="explore" data-tabs="a" data-status="light" data-time="8:10">
 <div class="stage">
   <div class="device">
     <div class="device__screen">
@@ -38,10 +36,16 @@
       <header class="hdr-red hdr-red--compact">
         <div class="hdr-red__bar">
           <h1 class="hdr-red__title">探索</h1>
-          <a class="hdr-red__action u-row u-gap2" href="variant-d-home.html?layer=on">
-            在地圖上看
-            <span class="arrow arrow--onred"></span>
-          </a>
+          <nav class="viewtoggle">
+            <a class="is-on" href="variant-a-explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a href="variant-a-map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
         </div>
       </header>
 
@@ -113,7 +117,7 @@
         <div style="padding:0 16px 24px">
           <div class="sec">
             <h2 class="sec__t">還沒去的地方</h2>
-            <span class="sec__m">不會過期</span>
+            <a class="sec__m u-row u-gap2" href="variant-a-map.html">在地圖上看 <span class="arrow"></span></a>
           </div>
 
           <div class="card" id="pendingList"></div>

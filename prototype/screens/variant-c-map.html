@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>探索 · 地圖 — yoxi 城事</title>
+<!--
+  N3 附近的地方（地圖檢視）【新增】
+
+  探索首頁的另一種檢視，不是另一層功能。
+  卡片回答「今天去哪」（一個明確答案），地圖回答「附近有什麼」——
+  兩個不同的問題，同一批資料。預設是卡片。
+
+  設計要點：
+  1. 圖釘本身就是明信片縮圖（brainstorm：「設計景點的圖片預覽」）。
+     沒去過＝灰階，去過＝上色，今天的地方＝紅框放大加光暈。
+     地圖因此本身就是一面會長大的牆。
+  2. 底層直接用霧地圖的上色。「去過的地方」「附近有什麼」「今天去哪」
+     三件事在同一個平面上，不是三個功能。
+  3. 拉遠 → fogmap.html 看整座城市。同一個地圖的兩個縮放層級。
+
+  防「寶可夢式資訊過載」（Pokémon GO 被批評最兇的一點）：
+  · 同時最多 10 個景點，不隨縮放無限長出來
+  · 沒有倒數、沒有「X 分鐘後消失」、沒有限量
+  · 點圖釘是底部浮出小卡，不是直接跳頁 —— 可以連看好幾個不用一直退回來
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="explore" data-tabs="c" data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <nav class="viewtoggle">
+            <a href="variant-c-explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a class="is-on" href="variant-c-map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <!-- ===== 地圖 ===== -->
+      <div class="map u-fill" data-pan id="mapArea" style="background:var(--map-fog)">
+
+        <!-- 底層：霧地圖的上色 + 道路 -->
+        <svg class="map__svg" id="fogLayer" viewBox="0 0 390 560"
+             preserveAspectRatio="xMidYMid slice"></svg>
+
+        <!-- 你的位置 -->
+        <div class="pin" style="left:46%; top:56%; z-index:7">
+          <span class="pin__drop" style="width:38px; height:38px">
+            <span data-icon="hail" style="width:20px;height:20px;display:block"></span>
+          </span>
+        </div>
+
+        <!-- 景點 -->
+        <div id="spots"></div>
+
+        <!-- 拉遠看整座城市 -->
+        <a class="fab" href="variant-c-album.html" style="top:12px; right:16px" aria-label="收藏">
+          <span data-icon="zoomOut"></span>
+        </a>
+        <button class="fab" style="top:76px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 圖例。放左下，不擋圖釘。 -->
+        <div class="maplegend" style="position:absolute; left:16px; top:12px; z-index:10;
+                    display:flex; gap:10px; padding:7px 11px; border-radius:999px;
+                    background:rgba(255,255,255,.94); box-shadow:var(--sh-card);
+                    font-size:11px; font-weight:700; color:var(--yoxi-slate)">
+          <span class="u-row" style="gap:5px">
+            <i style="width:12px;height:12px;border-radius:3px;background:var(--yoxi-cream);
+                      border:1px solid var(--yoxi-line)"></i>去過
+          </span>
+          <span class="u-row" style="gap:5px">
+            <i style="width:12px;height:12px;border-radius:3px;
+                      background:var(--yoxi-slate-lite)"></i>還沒
+          </span>
+        </div>
+
+        <!-- 點圖釘後浮出的小卡 -->
+        <a class="peek" id="peek" href="place.html">
+          <span class="peek__img"></span>
+          <span class="u-fill" style="min-width:0">
+            <span data-peek-name style="display:block; font-weight:800; line-height:1.3"></span>
+            <span data-peek-meta style="display:block; font-size:12px; color:var(--yoxi-slate);
+                  margin-top:2px"></span>
+            <span data-peek-hook style="display:block; font-size:13px; margin-top:5px;
+                  line-height:1.5; overflow:hidden; text-overflow:ellipsis;
+                  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical"></span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+
+  /* ---- 底層：霧地圖的上色 + 道路 ----------------------------------
+     格子用 SHELL.fogCells()，道路與水系是這張圖自己的美術。 */
+  const cells = SHELL.fogCells(390, 560);
+
+  const roads =
+    '<g stroke="#FFF" stroke-width="8" fill="none" opacity=".92">' +
+      '<path d="M-10 210 L400 196"/><path d="M-10 340 L400 328"/>' +
+      '<path d="M112 -10 L132 570"/><path d="M256 -10 L246 570"/>' +
+    '</g>' +
+    '<g stroke="#FFF" stroke-width="4" fill="none" opacity=".7">' +
+      '<path d="M-10 276 L400 266"/><path d="M-10 432 L400 424"/>' +
+      '<path d="M188 -10 L200 570"/><path d="M330 -10 L322 570"/>' +
+    '</g>' +
+    '<g stroke="#C9D8EC" stroke-width="10" fill="none" opacity=".85">' +
+      '<path d="M-20 120 Q90 148 180 120 T420 140"/>' +
+    '</g>';
+
+  document.getElementById('fogLayer').innerHTML = cells + roads;
+
+  /* ---- 景點圖釘 ---------------------------------------------------- */
+  const spots = SHELL.renderSpots(document.getElementById('spots'));
+
+  /* ---- 點圖釘 → 底部小卡（不跳頁）--------------------------------- */
+  const peek = document.getElementById('peek');
+  const pk = SHELL.bindPeek(peek, spots, {
+    onOpen: function (s) { peek.href = 'place.html?id=' + s.id; },
+  });
+
+  /* 預設先開啟今天的地方 —— 一打開就有一個明確的答案 */
+  const today = spots.findIndex(function (s) { return s.state === 'today'; });
+  if (today >= 0) pk.show(today);
+})();
+</script>
+</body>
+</html>

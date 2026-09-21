@@ -3,15 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>變體 D · 探索（純內容） — yoxi 城事</title>
+<title>變體 E · 探索（純內容） — yoxi 城事</title>
 <!--
-  變體 D 的探索頁 —— 純內容，沒有地圖
+  變體 E 的探索頁 —— 純內容，沒有地圖
 
   地圖已經併進叫車首頁了，所以這裡不再有「卡片／地圖」切換。
   探索 tab 的職責收斂成一句話：**今天去哪、這個月的路線、還沒去的地方。**
 
-  原本的切換鈕改成一行「在地圖上看」，指回叫車首頁並自動開啟城事圖層 ——
-  不是另開一張地圖，是回到那唯一的一張。
+  原本的切換鈕改成一行「在地圖上看」，指回叫車首頁 —— 不是另開一張地圖，
+  是回到那唯一的一張。變體 E 的景點本來就常駐，所以不需要 ?layer=on。
+
+  這一份跟變體 D 的探索頁只差兩個地方：tab 組（data-tabs）與上面那個連結的
+  目的地。共用同一份會讓 tab bar 把人丟回變體 D，走一輪流程就穿幫了。
 
   N1 探索首頁「今天的地方」【新增】★核心
 
@@ -30,7 +33,7 @@
 <link rel="stylesheet" href="../css/chengshi.css">
 </head>
 
-<body data-tab="explore" data-tabs="d" data-status="light" data-time="8:10">
+<body data-tab="explore" data-tabs="e" data-status="light" data-time="8:10">
 <div class="stage">
   <div class="device">
     <div class="device__screen">
@@ -38,7 +41,7 @@
       <header class="hdr-red hdr-red--compact">
         <div class="hdr-red__bar">
           <h1 class="hdr-red__title">探索</h1>
-          <a class="hdr-red__action u-row u-gap2" href="variant-d-home.html?layer=on">
+          <a class="hdr-red__action u-row u-gap2" href="variant-e-home.html">
             在地圖上看
             <span class="arrow arrow--onred"></span>
           </a>

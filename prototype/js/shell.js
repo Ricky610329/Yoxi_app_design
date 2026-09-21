@@ -69,6 +69,23 @@ const TABSETS = {
     { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
     { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
   ],
+  /* 上一輪「問題一」的三個變體。它們各自只改了一兩張畫面，
+     但分頁列如果還指向現況，走一步就掉回現況 —— 變體等於沒做。 */
+  a: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-a-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-a-album.html' },
+  ],
+  b: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-b-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-b-album.html' },
+  ],
+  c: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-c-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-c-album.html' },
+  ],
   d: [
     { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'variant-d-home.html' },
     { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-d-explore.html', dot: true },
@@ -76,7 +93,7 @@ const TABSETS = {
   ],
   e: [
     { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'variant-e-home.html' },
-    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-d-explore.html', dot: true },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-e-explore.html', dot: true },
     { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-e-album.html' },
   ],
   /* 變體 F 只有兩個分頁：叫車與探索合在同一個畫面裡 */
