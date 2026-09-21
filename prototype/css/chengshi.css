@@ -1,0 +1,770 @@
+/* ==========================================================================
+   yoxi 城事 — 新增元件
+   這個檔案裡的每一個元件都是新的。components.css 是 yoxi 既有的。
+   把兩者分開，是為了讓「我們到底加了什麼」在檔案層級就看得出來。
+
+   約束（來自 plan §3.3）：
+   1. 圖示用海軍藍／紅雙色扁平風格，不得引入線性圖示或 Material icon
+   2. 所有箭頭一律用 .arrow，不得用 ">" 或第三方 icon
+   3. 空狀態沿用 .empty-state
+   4. 明信片視覺用 CSS 漸層 + SVG 幾何模擬，畫面標註「AI 生成示意」
+   5. 新畫面頁首一律用 .hdr-red
+   ========================================================================== */
+
+/* ==========================================================================
+   .tabbar —— 底部三分頁
+   叫車（現在）／探索（未來）／收藏（過去）
+   yoxi 原本完全沒有 tab bar，所有功能都埋在左上漢堡抽屜。
+   ========================================================================== */
+
+.tabbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  height: calc(var(--tabbar-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--yoxi-white);
+  border-top: 1px solid var(--yoxi-line);
+  transition: opacity var(--t-base) var(--ease);
+}
+
+/* sheet 展開到全高時，tab bar 降低不透明度而非消失。
+   用視覺讓渡取代「出現／消失」，避免版面跳動。 */
+.tabbar.is-yield { opacity: .6; }
+
+.tabbar__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--yoxi-slate);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+.tabbar__item svg { width: 26px; height: 26px; }
+.tabbar__item.is-active { color: var(--yoxi-navy); }
+
+/* 有當日新內容時的提示。
+   單一小圓點，刻意不顯示數字 —— 數字＝未讀壓力＝任務感。 */
+.tabbar__icon { position: relative; }
+.tabbar__dot {
+  position: absolute;
+  top: -1px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yoxi-red);
+  border: 1.5px solid var(--yoxi-white);
+}
+
+/* ==========================================================================
+   .placecard —— 「今天的地方」主卡
+   探索首頁的視覺主體，約佔 55% 螢幕高。
+   ========================================================================== */
+
+.placecard {
+  position: relative;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  text-align: left;
+  width: 100%;
+  display: block;
+}
+
+.placecard__art {
+  position: relative;
+  height: 280px;
+  background: var(--yoxi-cream);
+}
+
+.placecard__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(6, 32, 64, .92) 0%,
+    rgba(6, 32, 64, .55) 38%,
+    rgba(6, 32, 64, 0) 72%);
+}
+
+.placecard__body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+}
+
+.placecard__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+  letter-spacing: .08em;
+  opacity: .9;
+  margin-bottom: var(--sp-2);
+}
+
+.placecard__name {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-heavy);
+  line-height: var(--lh-tight);
+}
+
+.placecard__hook {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  opacity: .94;
+}
+
+.placecard__meta {
+  margin-top: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  opacity: .88;
+}
+
+/* ==========================================================================
+   .why —— 「為什麼推薦給你」
+   逐條列出 AI 的推薦依據。這是給評審看「AI 與官方資料如何落地」的窗口。
+   ========================================================================== */
+
+.why {
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  overflow: hidden;
+}
+
+.why__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+  text-align: left;
+}
+
+.why__list { padding: 0 var(--sp-4) var(--sp-4); display: grid; gap: var(--sp-2); }
+
+.why__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-img);
+  background: var(--yoxi-mist);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.why__src {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--yoxi-cream);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .02em;
+  margin-top: 1px;
+}
+
+/* ==========================================================================
+   .story —— AI 敘事區塊
+   行高刻意比功能性文字鬆，讓「讀」與「操作」在視覺上分開。
+   ========================================================================== */
+
+.story { display: grid; gap: var(--sp-5); }
+
+.story__block { }
+
+.story__label {
+  display: inline-block;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .1em;
+  color: var(--yoxi-red);
+  margin-bottom: var(--sp-2);
+}
+
+.story__text {
+  font-size: var(--fs-body);
+  line-height: var(--lh-story);
+  color: var(--yoxi-navy);
+}
+
+.story__note {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--yoxi-slate);
+  line-height: 1.7;
+}
+
+/* ==========================================================================
+   .postcard —— 明信片
+   未解鎖＝灰階線稿（收集動機的視覺支點）
+   已解鎖＝上色
+   搭 yoxi 抵達＝金框限定版
+   ========================================================================== */
+
+.postcard {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-img);
+  overflow: hidden;
+  background: var(--yoxi-mist);
+  display: block;
+  width: 100%;
+}
+
+.postcard__art { position: absolute; inset: 0; }
+
+.postcard__foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--sp-4) var(--sp-3) var(--sp-3);
+  background: linear-gradient(to top, rgba(6, 32, 64, .9), rgba(6, 32, 64, 0));
+  color: var(--yoxi-white);
+}
+.postcard__name { font-size: var(--fs-sm); font-weight: var(--fw-heavy); line-height: 1.3; }
+.postcard__date { font-size: var(--fs-xs); opacity: .85; font-style: italic; }
+
+/* 未解鎖：去飽和 + 壓低對比，看得出形狀但沒有生命 */
+.postcard--locked .postcard__art { filter: grayscale(1) contrast(.42) brightness(1.24); }
+.postcard--locked .postcard__foot { background: none; color: var(--yoxi-slate); }
+
+.postcard__lockmark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--yoxi-slate-lite);
+  font-size: 26px;
+  font-weight: var(--fw-heavy);
+}
+
+/* yoxi 限定版：金框 + 角標 */
+.postcard--gold { box-shadow: inset 0 0 0 3px var(--gold); }
+.postcard__ribbon {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: var(--gold);
+  color: var(--yoxi-white);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .04em;
+}
+
+/* 「AI 生成示意」標記 —— 原型階段誠實標註 */
+.ai-mark {
+  position: absolute;
+  left: var(--sp-2);
+  bottom: var(--sp-2);
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(6, 32, 64, .55);
+  color: var(--yoxi-white);
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+  letter-spacing: .03em;
+}
+
+/* 明信片牆：3 欄 */
+.postcard-wall {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+/* ==========================================================================
+   .badge —— 獎章
+   已獲得＝彩色；未獲得＝灰階。
+   文案一律用「收集 4/8」，絕不用「任務 4/8」。
+   ========================================================================== */
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 92px;
+  flex: none;
+  text-align: center;
+}
+
+.badge__disc {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--yoxi-cream);
+  box-shadow: inset 0 0 0 3px var(--yoxi-cream-deep);
+}
+.badge__disc svg { width: 38px; height: 38px; }
+
+.badge--locked .badge__disc {
+  background: var(--yoxi-mist);
+  box-shadow: inset 0 0 0 3px var(--yoxi-line);
+  filter: grayscale(1);
+  opacity: .72;
+}
+
+.badge__name { font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1.35; }
+.badge__prog { font-size: var(--fs-xs); color: var(--yoxi-slate); font-style: italic; }
+
+/* 進度環 */
+.ring { transform: rotate(-90deg); }
+.ring__track { fill: none; stroke: var(--yoxi-line); stroke-width: 4; }
+.ring__bar {
+  fill: none;
+  stroke: var(--yoxi-red);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--t-slow) var(--ease-out);
+}
+
+/* ==========================================================================
+   .route-track —— 主題路線進度軌
+   ●─●─○─○─○
+   ========================================================================== */
+
+.route-track { display: grid; }
+
+.route-track__stop {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-4);
+}
+
+.route-track__rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.route-track__rail::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: calc(var(--sp-4) * -1);
+  width: 2px;
+  background: var(--yoxi-line);
+}
+.route-track__stop:last-child .route-track__rail::before { display: none; }
+
+.route-track__node {
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--yoxi-white);
+  box-shadow: inset 0 0 0 3px var(--yoxi-line);
+}
+.route-track__stop.is-done .route-track__node {
+  background: var(--yoxi-red);
+  box-shadow: inset 0 0 0 3px var(--yoxi-red);
+}
+.route-track__stop.is-next .route-track__node { box-shadow: inset 0 0 0 3px var(--yoxi-navy); }
+.route-track__stop.is-done .route-track__rail::before { background: var(--yoxi-red); }
+
+.route-track__body { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.route-track__thumb { width: 46px; height: 60px; flex: none; border-radius: 4px; overflow: hidden; }
+
+/* 水平進度軌（卡片上的縮圖版） */
+.track-mini { display: flex; align-items: center; gap: 5px; }
+.track-mini__node {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--yoxi-line);
+}
+.track-mini__node.is-done { background: var(--yoxi-red); }
+.track-mini__link { width: 14px; height: 2px; background: var(--yoxi-line); }
+.track-mini__link.is-done { background: var(--yoxi-red); }
+
+/* ==========================================================================
+   .fogmap —— 霧地圖（城市足跡）
+   沒去過＝白霧；去過＝奶油色上色。
+   90 天未回訪的區塊轉淡，但明信片永遠不會消失。
+   ========================================================================== */
+
+.fogmap { position: relative; background: var(--map-fog); }
+.fogmap__cell { transition: fill var(--t-slow) var(--ease); }
+.fogmap__cell--fog   { fill: var(--map-fog); }
+.fogmap__cell--seen  { fill: var(--map-explored); }
+.fogmap__cell--fade  { fill: var(--map-explored); opacity: .45; }
+
+.fogmap__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-size: var(--fs-xs);
+  color: var(--yoxi-slate);
+}
+.fogmap__key { display: flex; align-items: center; gap: 6px; }
+.fogmap__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--yoxi-line);
+}
+
+/* 你的城市顏色：AI 依去過的地點類型配出的色票 */
+.citycolor { display: flex; height: 36px; border-radius: var(--r-img); overflow: hidden; }
+.citycolor__band { flex: 1; }
+
+/* ==========================================================================
+   .unlock —— 抵達解鎖三幕（全螢幕）
+   ========================================================================== */
+
+.unlock {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  text-align: center;
+}
+
+.unlock__scene { display: none; width: 100%; }
+.unlock__scene.is-on { display: block; animation: fade-up var(--t-slow) var(--ease-out) both; }
+
+.unlock__title { font-size: var(--fs-h1); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
+.unlock__sub { margin-top: var(--sp-3); opacity: .82; font-size: var(--fs-sm); }
+
+/* 幕 1：地圖上的灰點爆開上色 */
+.burst {
+  width: 150px;
+  height: 150px;
+  margin: 0 auto var(--sp-5);
+  position: relative;
+}
+.burst__dot {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: var(--yoxi-red);
+  animation: burst-pop 900ms var(--ease-bump) both;
+}
+.burst__wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--yoxi-red);
+  opacity: 0;
+  animation: burst-wave 1.4s var(--ease-out) infinite;
+}
+.burst__wave:nth-child(3) { animation-delay: .35s; }
+
+@keyframes burst-pop {
+  0%   { transform: scale(.2); opacity: 0; }
+  55%  { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes burst-wave {
+  0%   { transform: scale(.18); opacity: .85; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* 幕 2：明信片筆觸逐層堆疊 */
+.gen {
+  position: relative;
+  width: 210px;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto var(--sp-5);
+  border-radius: var(--r-img);
+  overflow: hidden;
+  background: var(--yoxi-mist);
+}
+.gen__layer { position: absolute; inset: 0; opacity: 0; animation: gen-in 600ms var(--ease-out) both; }
+.gen__layer:nth-child(1) { animation-delay: 0ms; }
+.gen__layer:nth-child(2) { animation-delay: 420ms; }
+.gen__layer:nth-child(3) { animation-delay: 840ms; }
+.gen__layer:nth-child(4) { animation-delay: 1260ms; }
+.gen__layer:nth-child(5) { animation-delay: 1680ms; }
+
+@keyframes gen-in { to { opacity: 1; } }
+
+.gen__tag {
+  position: absolute;
+  right: var(--sp-2);
+  bottom: var(--sp-2);
+  z-index: 3;
+  padding: 3px 7px;
+  border-radius: 3px;
+  background: rgba(6, 32, 64, .7);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+}
+
+.gen__sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(105deg,
+    transparent 40%, rgba(255, 255, 255, .55) 50%, transparent 60%);
+  background-size: 260% 100%;
+  animation: sweep 1.5s linear infinite;
+}
+@keyframes sweep {
+  from { background-position: 180% 0; }
+  to   { background-position: -80% 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   .lookback —— 每日回顧四幕（全螢幕）
+   借 Pikmin Bloom 的節奏：慢，不能加速。
+   ========================================================================== */
+
+.lookback {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+}
+
+.lookback__top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--gutter);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  opacity: .85;
+}
+
+.lookback__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--sp-5);
+  text-align: center;
+}
+
+.lookback__act { display: none; }
+.lookback__act.is-on { display: block; animation: fade-up var(--t-slow) var(--ease-out) both; }
+
+/* 幕 1：之字形步數折線
+   轉折點設在 3,000 步、5,000 步，之後每 5,000 步轉一次彎。
+   路徑的形狀本身就是成就 —— 不看數字也知道今天走多少。 */
+.zigzag { width: 100%; height: 300px; }
+.zigzag__path {
+  fill: none;
+  stroke: var(--yoxi-red);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation: draw 2.6s var(--ease-out) forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+.zigzag__stop { opacity: 0; animation: fade-up 400ms var(--ease-out) forwards; }
+.zigzag__stop:nth-of-type(1) { animation-delay: .9s; }
+.zigzag__stop:nth-of-type(2) { animation-delay: 1.5s; }
+.zigzag__stop:nth-of-type(3) { animation-delay: 2.1s; }
+
+.lookback__steps {
+  font-size: 56px;
+  font-weight: var(--fw-heavy);
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.lookback__unit { font-size: var(--fs-body); opacity: .8; margin-top: var(--sp-2); }
+
+/* 幕 4：心情三選一。只有三個選項＝零思考成本。 */
+.mood { display: flex; justify-content: center; gap: var(--sp-4); margin-top: var(--sp-6); }
+.mood__btn {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .12);
+  transition: transform var(--t-fast) var(--ease-bump),
+              background var(--t-fast) var(--ease);
+}
+.mood__btn svg { width: 46px; height: 46px; }
+.mood__btn.is-on { background: var(--yoxi-red); transform: scale(1.12); }
+
+.lookback__foot { flex: none; padding: var(--sp-5) var(--gutter) var(--sp-6); }
+
+/* 完成卡底部的隱私標記 */
+.privacy-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--fs-cap);
+  color: var(--yoxi-slate);
+}
+
+/* ==========================================================================
+   .statbar —— 本月統計
+   刻意沒有「連續天數」。
+   ========================================================================== */
+
+.statbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--yoxi-cream);
+}
+.statbar__cell { flex: 1; text-align: center; }
+.statbar__n {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-heavy);
+  font-style: italic;
+  line-height: 1.1;
+}
+.statbar__k { font-size: var(--fs-xs); color: var(--yoxi-slate); margin-top: 2px; }
+
+/* ==========================================================================
+   區塊標題
+   ========================================================================== */
+
+.sec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.sec__t { font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+.sec__m { font-size: var(--fs-cap); color: var(--yoxi-slate); }
+
+/* 橫向捲動列 */
+.hscroll {
+  display: flex;
+  gap: var(--sp-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+}
+.hscroll::-webkit-scrollbar { display: none; }
+
+/* ==========================================================================
+   .pushmock —— 模擬推播浮層（demo 工具，非產品畫面）
+   ========================================================================== */
+
+.pushmock {
+  position: absolute;
+  inset: 0;
+  z-index: 96;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 120px var(--sp-4) 0;
+  background: linear-gradient(160deg, #1B2A3E, #0A1524);
+}
+
+.pushmock__clock {
+  text-align: center;
+  color: var(--yoxi-white);
+  margin-bottom: var(--sp-6);
+}
+.pushmock__time {
+  font-size: 72px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.pushmock__date { opacity: .75; font-size: var(--fs-sm); margin-top: var(--sp-2); }
+
+.pushmock__card {
+  display: flex;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(20px);
+  text-align: left;
+  animation: fade-up var(--t-slow) var(--ease-out) both;
+}
+.pushmock__app {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 9px;
+  background: var(--yoxi-red);
+  display: grid;
+  place-items: center;
+  color: var(--yoxi-white);
+  font-weight: var(--fw-heavy);
+  font-style: italic;
+  font-size: var(--fs-lead);
+}
+.pushmock__t { font-size: var(--fs-sm); font-weight: var(--fw-heavy); }
+.pushmock__b { font-size: var(--fs-sm); line-height: 1.45; margin-top: 2px; }
+
+/* ==========================================================================
+   demo 輔助：模擬按鈕（現場操作用，正式版不存在）
+   ========================================================================== */
+
+.demo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 46px;
+  border: 1.5px dashed var(--yoxi-slate-lite);
+  border-radius: var(--r-btn);
+  color: var(--yoxi-slate);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  background: var(--yoxi-white);
+}

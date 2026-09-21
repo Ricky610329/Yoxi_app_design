@@ -1,0 +1,171 @@
+/* ==========================================================================
+   yoxi 城事 — Base
+   Reset、字體、手機外框 .device、狀態列。
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--yoxi-navy);
+  background: #D8DEE6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p, figure, ul, ol { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+img, svg { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+input, textarea { font: inherit; color: inherit; }
+
+/* 品牌特徵：英文與數字用斜體（AJA CIS 規範） */
+.italic { font-style: italic; }
+.num { font-style: italic; font-weight: var(--fw-heavy); letter-spacing: .01em; }
+
+/* --------------------------------------------------------------------------
+   手機外框
+   390 × 844（iPhone 14）。截圖原檔 1170×2532 = 390×844 @3x，比例一致。
+   -------------------------------------------------------------------------- */
+
+.stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6) var(--sp-4);
+}
+
+.device {
+  position: relative;
+  width: var(--device-w);
+  height: var(--device-h);
+  background: var(--yoxi-white);
+  border-radius: 44px;
+  box-shadow: var(--sh-lift), 0 0 0 10px #1B1B1F, 0 0 0 12px #34343A;
+  overflow: hidden;
+  flex: none;
+}
+
+/* 畫面本體：狀態列之下、home indicator 之上 */
+.device__screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 瀏海 */
+.device::after {
+  content: "";
+  position: absolute;
+  top: 9px; left: 50%;
+  transform: translateX(-50%);
+  width: 124px; height: 32px;
+  background: #1B1B1F;
+  border-radius: 999px;
+  z-index: 90;
+  pointer-events: none;
+}
+
+/* home indicator */
+.home-bar {
+  position: absolute;
+  bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 134px; height: 5px;
+  border-radius: 999px;
+  background: var(--yoxi-navy);
+  opacity: .28;
+  z-index: 80;
+  pointer-events: none;
+}
+.home-bar--light { background: var(--yoxi-white); opacity: .7; }
+
+/* --------------------------------------------------------------------------
+   狀態列
+   截圖實測：21:35、訊號、Wi-Fi、電量 93
+   -------------------------------------------------------------------------- */
+
+.statusbar {
+  position: relative;
+  z-index: 60;
+  height: var(--statusbar-h);
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 var(--sp-5) 8px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+}
+.statusbar--light { color: var(--yoxi-white); }
+
+.statusbar__time {
+  display: flex; align-items: center; gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.statusbar__right { display: flex; align-items: center; gap: 5px; }
+
+.statusbar__battery {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 26px; height: 15px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: currentColor;
+  font-size: 10px;
+  font-weight: var(--fw-heavy);
+}
+.statusbar__battery span { color: var(--yoxi-white); }
+.statusbar--light .statusbar__battery span { color: var(--yoxi-navy); }
+
+/* --------------------------------------------------------------------------
+   捲動容器
+   -------------------------------------------------------------------------- */
+
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* 有 tab bar 時，捲動內容底部要留位置 */
+.scroll--tabbed { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom)); }
+
+/* --------------------------------------------------------------------------
+   工具
+   -------------------------------------------------------------------------- */
+
+.u-gut     { padding-left: var(--gutter); padding-right: var(--gutter); }
+.u-center  { text-align: center; }
+.u-muted   { color: var(--yoxi-slate); }
+.u-bold    { font-weight: var(--fw-bold); }
+.u-heavy   { font-weight: var(--fw-heavy); }
+.u-sm      { font-size: var(--fs-sm); }
+.u-cap     { font-size: var(--fs-cap); }
+.u-hidden  { display: none !important; }
+.u-fill    { flex: 1 1 auto; }
+.u-row     { display: flex; align-items: center; }
+.u-gap2    { gap: var(--sp-2); }
+.u-gap3    { gap: var(--sp-3); }
+.u-gap4    { gap: var(--sp-4); }
+
+.divider { height: 1px; background: var(--yoxi-line); border: 0; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+}

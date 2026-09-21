@@ -1,0 +1,563 @@
+/* ==========================================================================
+   yoxi 城事 — Components
+   所有共用元件。畫面只組裝，不重寫樣式。
+
+   【沿用】＝從 yoxi 實機截圖還原的既有元件，不得改動視覺。
+   【新增】＝城事的新元件，必須遵守 yoxi 的形狀與顏色語言。
+   ========================================================================== */
+
+/* ==========================================================================
+   .arrow —— 【沿用】yoxi 辨識度最高的微元件
+   海軍藍箭頭 + 一小截紅色矩形尾巴。全 app 的箭頭一律用它，
+   不得用 ">" 或任何第三方 icon。
+   ========================================================================== */
+
+.arrow {
+  display: inline-block;
+  width: 24px;
+  height: 14px;
+  flex: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 14'%3E%3Crect x='0' y='4.4' width='8.4' height='5.2' fill='%23FF2E1A'/%3E%3Crect x='6' y='5.2' width='10' height='3.6' fill='%23062040'/%3E%3Cpath d='M13.8 .6 23.4 7 13.8 13.4Z' fill='%23062040'/%3E%3C/svg%3E");
+}
+
+.arrow--left { transform: rotate(180deg); }
+.arrow--up   { transform: rotate(-90deg); }
+.arrow--ne   { transform: rotate(-45deg); }
+
+/* 紅底上的白色版本 */
+.arrow--onred {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 14'%3E%3Crect x='0' y='4.4' width='8.4' height='5.2' fill='%23062040'/%3E%3Crect x='6' y='5.2' width='10' height='3.6' fill='%23FFFFFF'/%3E%3Cpath d='M13.8 .6 23.4 7 13.8 13.4Z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   .hdr-red —— 【沿用】紅色滿版頁首
+   左上 ✕ 或 ←、特大粗體標題、可選副標、可選 pill 分頁。
+   白色內容區從紅色下方以圓角切入。
+   ========================================================================== */
+
+.hdr-red {
+  position: relative;
+  flex: none;
+  background: var(--yoxi-red);
+  color: var(--yoxi-white);
+  padding: 0 var(--gutter) var(--sp-5);
+}
+
+.hdr-red__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  margin-bottom: var(--sp-2);
+}
+
+.hdr-red__close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin-left: -4px;
+}
+.hdr-red__close svg { width: 22px; height: 22px; }
+
+.hdr-red__action {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-med);
+  color: var(--yoxi-white);
+}
+
+.hdr-red__title {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-heavy);
+  line-height: var(--lh-tight);
+  letter-spacing: .01em;
+}
+
+.hdr-red__sub {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  opacity: .95;
+}
+
+.hdr-red__pills { margin-top: var(--sp-4); }
+
+/* 置中標題的變體（好康任務） */
+.hdr-red--center .hdr-red__bar { justify-content: flex-start; gap: var(--sp-4); }
+.hdr-red--center .hdr-red__title {
+  font-size: var(--fs-title);
+  flex: 1;
+  text-align: center;
+  margin-right: 34px;
+}
+
+/* 白色內容區從紅色下切入 */
+.sheet-top {
+  position: relative;
+  z-index: 2;
+  margin-top: calc(var(--sp-5) * -1);
+  background: var(--yoxi-white);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding-top: var(--sp-4);
+}
+
+/* 白色頁首（設定上車地點） */
+.hdr-plain {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-height: 56px;
+  padding: 0 var(--gutter);
+  background: var(--yoxi-white);
+  border-bottom: 1px solid var(--yoxi-line);
+}
+.hdr-plain__title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  margin-right: 24px;
+}
+
+/* ==========================================================================
+   .pill —— 【沿用】分頁切換器
+   選中＝海軍藍實心白字；未選＝白底深藍字。
+   ========================================================================== */
+
+.pill-group { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 44px;
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.pill.is-active { background: var(--yoxi-navy); color: var(--yoxi-white); }
+.pill svg { width: 16px; height: 16px; }
+
+/* 白底頁面上的 pill 需要邊框才看得出來 */
+.pill-group--onwhite .pill { border: 1px solid var(--yoxi-line); }
+.pill-group--onwhite .pill.is-active { border-color: var(--yoxi-navy); }
+
+/* ==========================================================================
+   .btn —— 【沿用】按鈕
+   主要按鈕＝海軍藍實心、圓角極小（4px）、白色粗體字。
+   ========================================================================== */
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 56px;
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-btn);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-bold);
+  transition: background var(--t-fast) var(--ease);
+}
+.btn-primary:active { background: var(--yoxi-navy-soft); }
+.btn-primary:disabled { background: var(--yoxi-slate-lite); }
+
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--r-btn);
+  border: 1.5px solid var(--yoxi-navy);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  background: var(--yoxi-white);
+}
+
+/* 膠囊按鈕（機場接送） */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 48px;
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+}
+.btn-pill svg { width: 18px; height: 18px; }
+
+/* 文字連結 + 紅尾箭頭（略過下車地點，繼續叫車 →） */
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--yoxi-slate);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-med);
+}
+
+/* ==========================================================================
+   .card / .tile-icon / .row-nav —— 【沿用】列表與卡片
+   ========================================================================== */
+
+.card {
+  background: var(--yoxi-white);
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.card--flat { border: 0; box-shadow: var(--sh-card); }
+.card--pad { padding: var(--sp-4); }
+
+/* 奶油色圓角方磚 + 雙色扁平圖示 */
+.tile-icon {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-tile);
+  background: var(--yoxi-cream);
+}
+.tile-icon svg { width: 30px; height: 30px; }
+.tile-icon--red { background: var(--yoxi-red); }
+
+/* 圖示磚 + 標題 + 副標 + 紅尾箭頭的列 */
+.row-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-4) var(--gutter);
+  text-align: left;
+  background: var(--yoxi-white);
+}
+.row-nav + .row-nav { border-top: 1px solid var(--yoxi-line); }
+.row-nav__body { flex: 1; min-width: 0; }
+.row-nav__title { font-size: var(--fs-lead); font-weight: var(--fw-bold); line-height: 1.35; }
+.row-nav__sub {
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--yoxi-slate);
+  line-height: 1.45;
+}
+
+/* 純文字列（客服中心 FAQ） */
+.row-text {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-5) var(--gutter);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-med);
+  text-align: left;
+}
+.row-text + .row-text { border-top: 1px solid var(--yoxi-line); }
+
+/* ==========================================================================
+   .empty-state —— 【沿用】空狀態
+   淺灰藍幾何插畫 + 淡灰斜體 "Get Started." + 一句口語文案。
+   明信片與獎章的空狀態一律沿用，保持一致。
+   ========================================================================== */
+
+.empty-state {
+  padding: var(--sp-7) var(--sp-5);
+  text-align: center;
+}
+
+.empty-state__art {
+  width: 220px;
+  height: 150px;
+  margin: 0 auto var(--sp-2);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 150'%3E%3Cpath d='M62 22 108 70 62 118 16 70Z' fill='none' stroke='%23EDF1F5' stroke-width='7'/%3E%3Cpath d='M30 112 62 56 94 112Z' fill='%23C3CBDC'/%3E%3Cpath d='M62 56 94 112 76 112Z' fill='%23062040'/%3E%3Cpath d='M118 112 140 74 162 112Z' fill='%23C3CBDC'/%3E%3Cpath d='M140 74 162 112 150 112Z' fill='%23062040'/%3E%3Cpath d='M160 112 182 78 204 112Z' fill='%23C3CBDC'/%3E%3Cpath d='M182 78 204 112 192 112Z' fill='%23062040'/%3E%3Crect x='112' y='40' width='44' height='5' rx='2.5' fill='%23062040'/%3E%3Crect x='128' y='53' width='58' height='5' rx='2.5' fill='%23062040'/%3E%3Crect x='94' y='93' width='34' height='15' rx='5' fill='%23C3CBDC'/%3E%3Crect x='99' y='85' width='24' height='10' rx='4' fill='%23C3CBDC'/%3E%3Ccircle cx='102' cy='109' r='4' fill='%23062040'/%3E%3Ccircle cx='120' cy='109' r='4' fill='%23062040'/%3E%3C/svg%3E");
+}
+
+.empty-state__mark {
+  font-size: 30px;
+  font-style: italic;
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-slate-lite);
+  opacity: .55;
+  letter-spacing: -.01em;
+  margin-bottom: var(--sp-6);
+}
+
+.empty-state__msg {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+}
+
+/* ==========================================================================
+   .map —— 【沿用】地圖
+   灰底 + 白路 + 淡藍水系。pin ＝海軍藍水滴 + 白色招手小人 + 下方小圓環。
+   ========================================================================== */
+
+.map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--map-land);
+  overflow: hidden;
+}
+.map__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+}
+
+.pin__drop {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--yoxi-navy);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-fab);
+}
+.pin__drop::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: var(--yoxi-navy);
+  border-radius: 2px;
+}
+.pin__drop svg { position: relative; z-index: 1; width: 24px; height: 24px; }
+
+.pin__dot {
+  margin-top: 8px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--yoxi-white);
+  border: 4px solid var(--yoxi-navy);
+}
+
+.pin__label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--yoxi-white);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+
+.pin--red .pin__drop,
+.pin--red .pin__drop::after { background: var(--yoxi-red); }
+.pin--red .pin__dot { border-color: var(--yoxi-red); }
+
+/* 地圖上的浮動圓鈕 */
+.fab {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--yoxi-white);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-fab);
+  z-index: 20;
+}
+.fab--navy { background: var(--yoxi-navy); width: 60px; height: 60px; }
+.fab svg { width: 24px; height: 24px; }
+.fab--navy svg { width: 28px; height: 28px; }
+
+/* ==========================================================================
+   .sheet —— 【沿用】底部拉把面板
+   ========================================================================== */
+
+.sheet {
+  position: relative;
+  flex: none;
+  background: var(--yoxi-white);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  box-shadow: var(--sh-sheet);
+  padding: var(--sp-3) var(--gutter) var(--sp-4);
+  z-index: 30;
+}
+
+.sheet__handle {
+  width: 52px;
+  height: 4px;
+  margin: 0 auto var(--sp-4);
+  border-radius: 999px;
+  background: var(--yoxi-slate-lite);
+}
+
+.sheet__greet {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-heavy);
+  margin-bottom: var(--sp-4);
+}
+
+/* 上下車點卡：海軍藍圓點 + 紅色圓點，中間紅線相連 */
+.route-input { display: flex; gap: var(--sp-4); padding: var(--sp-4); }
+
+.route-input__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+}
+.route-input__dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--yoxi-navy);
+  flex: none;
+}
+.route-input__dot--to { background: var(--yoxi-red); }
+.route-input__line { width: 2px; flex: 1; min-height: 34px; background: var(--yoxi-red); }
+
+.route-input__fields { flex: 1; min-width: 0; }
+.route-input__field { display: flex; align-items: center; gap: var(--sp-3); min-height: 44px; }
+.route-input__field + .route-input__field { border-top: 1px solid var(--yoxi-line); }
+.route-input__label { font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.route-input__value {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-bold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.route-input__value--ph { color: var(--yoxi-slate-lite); font-weight: var(--fw-med); }
+
+/* ==========================================================================
+   .banner —— 【沿用】首頁地圖與 sheet 之間的橫幅輪播條
+   ========================================================================== */
+
+.banner {
+  flex: none;
+  height: 76px;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.banner::-webkit-scrollbar { display: none; }
+
+.banner__item {
+  flex: none;
+  width: 100%;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--gutter);
+  background: var(--yoxi-cream);
+  text-align: left;
+}
+
+/* ==========================================================================
+   .drawer —— 【沿用】紅色側邊抽屜
+   ========================================================================== */
+
+.drawer {
+  position: absolute;
+  inset: 0 26% 0 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--yoxi-red);
+  color: var(--yoxi-white);
+  padding: var(--sp-5) var(--sp-5) 0;
+  overflow-y: auto;
+  z-index: 70;
+}
+
+.drawer__item {
+  display: block;
+  width: 100%;
+  padding: var(--sp-4) 0;
+  text-align: left;
+  font-size: 23px;
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-white);
+}
+
+.drawer__foot {
+  margin: auto calc(var(--sp-5) * -1) 0;
+  padding: var(--sp-4);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+
+/* ==========================================================================
+   .modal / .toast —— 【沿用】
+   ========================================================================== */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 75;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+  background: rgba(6, 32, 64, .45);
+}
+
+.modal {
+  width: 100%;
+  background: var(--yoxi-white);
+  padding: var(--sp-6) var(--sp-5) var(--sp-5);
+}
+.modal__text { font-size: var(--fs-body); line-height: 1.6; margin-bottom: var(--sp-5); }
+
+.toast {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--tabbar-h) + var(--sp-5));
+  z-index: 85;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  font-weight: var(--fw-bold);
+  box-shadow: var(--sh-lift);
+}
