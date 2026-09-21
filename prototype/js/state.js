@@ -13,7 +13,7 @@
 (function () {
   'use strict';
 
-  const KEY = 'yoxi-chengshi-v1';
+  const KEY = 'yoxi-chengshi-v1-2';
 
   /* 初始狀態：使用者已經玩了一個月的樣子 */
   function fresh() {
@@ -29,7 +29,9 @@
         p7: { date: '09.19', by: 'walk' },
         p8: { date: '09.20', by: 'ride' },
       },
-      points: 50,
+      /* 點數不另外記總數。points.html 的明細是「每一張搭車抵達的卡 +50」，
+         總數只要跟明細用同一個來源算，就不可能對不起來 ——
+         之前這裡寫 50，而初始就有兩張搭車卡，開場標題 50、明細 100。 */
       km: 48,
       /* 今天的回顧 */
       today: { photo: null, mood: null, done: false },
@@ -63,6 +65,12 @@
 
     has(id) { return !!s.cards[id]; },
 
+    /* 搭車抵達一次回饋 50 點。跟 points.html 的明細同一個算法。 */
+    get points() {
+      return Object.keys(s.cards)
+        .filter(function (k) { return s.cards[k].by === 'ride'; }).length * 50;
+    },
+
     count() { return Object.keys(s.cards).length; },
 
     card(id) { return s.cards[id] || null; },
@@ -85,7 +93,6 @@
 
       /* 距離由呼叫端給，不要寫死內灣的 28 公里 */
       s.km += Math.round(opt.km || (opt.by === 'ride' ? 12 : 1));
-      if (opt.by === 'ride') s.points += 50;
       save();
       return true;
     },

@@ -59,8 +59,8 @@
 
         <!-- 所屬獎章 -->
         <div style="padding:20px 16px 0">
-          <div class="sec"><h2 class="sec__t" style="font-size:16px">這張屬於</h2></div>
-          <a class="card card--pad u-row u-gap4" href="badge.html">
+          <div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>
+          <a class="card card--pad u-row u-gap4" id="badgeLink" href="badge.html">
             <span class="badge badge--locked" style="width:auto">
               <span class="badge__disc"><span data-icon="badge"></span></span>
             </span>
@@ -149,10 +149,20 @@
     '<span>2026.' + got.date + '</span><span>·</span>' +
     '<span>' + (ride ? '搭 yoxi 抵達' : '走路抵達') + '</span>';
 
+  /* 事實卡要跟這一張卡自己的資料一致。
+     以前三行全是常數，所以 1.2 公里的新竹車站也印「走了 2,140 步」，
+     而且每一張搭車卡都印「28.4 公里」。步數用 1,450 步/公里換算，
+     跟每日回顧的 6,240 步 / 4.3 公里對得起來。 */
+  const pl   = MOCK.findPlace(P.id);
+  const dist = pl && pl.distance != null ? pl.distance : null;
+  const km   = dist != null ? (dist / 1000).toFixed(1) : null;
   const FACTS = [
-    ['sun',    '天氣',   '晴 · 26°C'],
-    ['steps',  '怎麼到的', ride ? '搭 yoxi 28.4 公里 · 司機 陳先生' : '走路 2,140 步'],
-    ['place',  '地點',   '新竹市東區'],
+    ['sun',   '天氣',   '晴 · 26°C'],
+    ['steps', '怎麼到的',
+      ride ? (km ? '搭 yoxi ' + km + ' 公里 · 司機 陳先生' : '搭 yoxi 抵達 · 司機 陳先生')
+           : (dist != null ? '走路 ' + Math.round(dist / 1000 * 1450).toLocaleString() + ' 步'
+                           : '走路抵達')],
+    ['place', '地點',   pl && pl.area ? pl.area : '新竹'],
   ];
   document.getElementById('facts').innerHTML = FACTS.map(function (f) {
     return '<div class="row-nav" style="padding:12px 16px">' +
@@ -162,11 +172,22 @@
       '</span><span class="row-nav__title" style="font-size:15px">' + f[2] + '</span></span></div>';
   }).join('');
 
-  const railDone = STATE.routeDone('rail');
-  document.getElementById('badgeName').textContent =
-    P.id === 'p9' || P.id === 'p1' ? '〈內灣線全線〉' : '〈風城玻璃〉';
-  document.getElementById('badgeProg').textContent =
-    P.id === 'p9' || P.id === 'p1' ? '收集 ' + railDone + '/6' : '收集 2/5';
+  /* 獎章一律由 STATE 算。這裡曾經寫死「〈風城玻璃〉收集 2/5」，
+     結果任何一張非 p1/p9 的明信片都被說成屬於風城玻璃，
+     而且那個 2/5 跟收藏頁、獎章頁、路線頁算出來的數字全部打架。
+     這正是上一輪說要消滅、卻漏掉的最後一處。 */
+  const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(P.id) >= 0; })[0];
+  const badgeLink = document.getElementById('badgeLink');
+  if (owner) {
+    const pr = STATE.badge(owner.id);
+    document.getElementById('badgeName').textContent = '〈' + pr.name + '〉';
+    document.getElementById('badgeProg').textContent = '收集 ' + pr.done + '/' + pr.total;
+    if (badgeLink) badgeLink.href = 'badge.html?id=' + owner.id;
+  } else {
+    document.getElementById('badgeName').textContent = '還沒歸到任何一枚獎章';
+    document.getElementById('badgeProg').textContent = '單獨收藏也算數';
+    if (badgeLink) badgeLink.removeAttribute('href');
+  }
 
   const btn = document.getElementById('againBtn');
   btn.onclick = function () {

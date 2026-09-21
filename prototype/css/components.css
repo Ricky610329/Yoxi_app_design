@@ -25,6 +25,7 @@
 
 .arrow--left { transform: rotate(180deg); }
 .arrow--up   { transform: rotate(-90deg); }
+.arrow--down { transform: rotate(90deg); }
 .arrow--ne   { transform: rotate(-45deg); }
 
 /* 深色底（紅色或墨藍）上的版本：白箭頭 + 半透明白尾巴。

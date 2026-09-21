@@ -184,7 +184,7 @@
   font-weight: var(--fw-bold);
   color: var(--yoxi-slate);
 }
-.citylayer.is-on { background: var(--yoxi-navy); color: #fff; }
+.citylayer.is-on { background: var(--yoxi-navy); color: var(--yoxi-white); }
 .citylayer svg { width: 16px; height: 16px; }
 
 /* 圖層關閉時，霧格子與景點完全不存在於畫面上 —— 這是「關掉就是原本的
@@ -405,7 +405,7 @@
 .why__src {
   flex: none;
   padding: 2px 7px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: var(--yoxi-cream);
   color: var(--yoxi-navy);
   font-size: var(--fs-xs);
@@ -462,7 +462,12 @@
   width: 100%;
 }
 
-.postcard__art { position: absolute; inset: 0; }
+/* width/height 不能省。<svg> 是 replaced element：絕對定位又只給 inset 的話，
+   瀏覽器會忽略 bottom、改用 viewBox 的內在比例算高度。橫式圖的 viewBox 是
+   100x70，所以在 390px 寬的容器裡只畫到 273px 高 —— place.html 的 320px
+   hero 底下就露出 47px 的底色帶。有了 100% 高度，preserveAspectRatio
+   的 slice 才會真的去裁切。 */
+.postcard__art { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .postcard__foot {
   display: block;
@@ -509,7 +514,7 @@
   right: var(--sp-2);
   z-index: 2;
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: var(--gold);
   color: var(--yoxi-white);
   font-size: var(--fs-xs);
@@ -525,7 +530,7 @@
   top: var(--sp-2);
   z-index: 2;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: rgba(6, 32, 64, .55);
   color: var(--yoxi-white);
   font-size: 9px;
@@ -673,7 +678,7 @@
 .fogmap__swatch {
   width: 14px;
   height: 14px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   border: 1px solid var(--yoxi-line);
 }
 
@@ -767,7 +772,7 @@
   bottom: var(--sp-2);
   z-index: 3;
   padding: 3px 7px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: rgba(6, 32, 64, .7);
   font-size: 10px;
   font-weight: var(--fw-bold);
@@ -924,7 +929,11 @@
   gap: var(--sp-3);
   margin-bottom: var(--sp-3);
 }
+/* 一頁的主要區塊標題用 18px；區塊裡再分段、或塞在 sheet 裡的次級標題用 16px。
+   原本這 14 個次級標題全是 inline 蓋掉的，結果同一句「這個月的路線」在
+   變體 B／F 是 16px、在變體 D／E 是 18px —— 而變體比較頁正是把它們並排給人看的。 */
 .sec__t { font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+.sec__t--sm { font-size: var(--fs-body); }
 .sec__m { font-size: var(--fs-cap); color: var(--yoxi-slate); }
 
 /* 橫向捲動列 */
@@ -1018,7 +1027,7 @@
 .demo-btn::before {
   content: "demo";
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: var(--yoxi-slate-lite);
   color: var(--yoxi-white);
   font-size: 10px;
@@ -1124,9 +1133,9 @@
   left: var(--sp-2);
   z-index: 3;
   padding: 2px 7px;
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: var(--yoxi-red);
-  color: #fff;
+  color: var(--yoxi-white);
   font-size: 9px;
   font-weight: 800;
 }

@@ -9,19 +9,14 @@
    風險 3：決賽現場不賭即時 API。
    ========================================================================== */
 
+/* 使用者。名字與住址會出現在畫面上，其餘統計一律由 STATE 算 ——
+   這裡曾經放過 monthPlaces / monthBadges / coverage，結果沒有任何畫面在用，
+   值卻全部跟實際狀態對不上，變成簡報引錯數字的來源。刪掉了。 */
 const USER = {
   name: 'Rick',
   home: '東區水利路 46 巷 58 號',
   city: '新竹市',
-  points: 0,
-  steps: 6240,
-  distanceToday: 4.3,
-  monthPlaces: 12,
-  monthBadges: 3,
-  monthKm: 48,
-  coverage: 14,
 };
-
 /* --------------------------------------------------------------------------
    明信片視覺
    原型階段用 CSS 漸層 + SVG 幾何模擬 AI 生成的圖像，畫面上標註「AI 生成示意」。
@@ -49,6 +44,7 @@ const ART = {
 
 const TODAY = {
   id: 'glass-kiln',
+  area: '新竹市東區',
   name: '水利路的老玻璃窯',
   type: '工業遺構',
   art: 'glass',
@@ -115,19 +111,23 @@ const ROUTES = [
     art: 'rail',
     total: 6,
     badge: 'b4',
+    /* 站序照內灣線實際地理排（新竹→竹中→橫山→九讚頭→合興→內灣，內灣是終點）。
+       但這條路線沒有順序壓力，所以另外標一站「先去這裡」—— 它是唯一走路到不了的
+       一站，也是這條線存在的理由。沒有這個欄位的話，推薦會被陣列順序綁死。 */
+    feature: 'p9',
     stops: [
       { id: 's1', name: '新竹車站',   type: '車站', art: 'station', card: 'p1', dist: 1200,  state: 'done',
         note: '1913 年落成，台灣還在用的最老車站。' },
       { id: 's2', name: '竹中站',     type: '車站', art: 'rail', card: 'p5',    dist: 7800,  state: 'done',
         note: '內灣線與六家線在這裡分家。' },
-      { id: 's3', name: '內灣老街',   type: '老街', art: 'oldst', card: 'p9',   dist: 28000, state: 'next',
+      { id: 's3', name: '橫山站',     type: '車站', art: 'hill', card: 'p13',   dist: 19000, state: 'todo',
+        note: '' },
+      { id: 's4', name: '九讚頭站',   type: '車站', art: 'brick', card: 'p12',  dist: 21000, state: 'todo',
+        note: '' },
+      { id: 's5', name: '合興車站',   type: '車站', art: 'hakka', card: 'p10',  dist: 24000, state: 'todo',
+        note: '' },
+      { id: 's6', name: '內灣老街',   type: '老街', art: 'oldst', card: 'p9',   dist: 28000, state: 'next',
         note: '線的盡頭。走路到不了，這一段要搭車。' },
-      { id: 's4', name: '合興車站',   type: '車站', art: 'hakka', card: 'p10',   dist: 24000, state: 'todo',
-        note: '' },
-      { id: 's5', name: '九讚頭站',   type: '車站', art: 'brick', card: 'p12',   dist: 21000, state: 'todo',
-        note: '' },
-      { id: 's6', name: '橫山站',     type: '車站', art: 'hill', card: 'p13',    dist: 19000, state: 'todo',
-        note: '' },
     ],
   },
   {
@@ -165,6 +165,7 @@ const ROUTES = [
 const FAR_PLACE = {
   id: 'neiwan',
   name: '內灣老街',
+  area: '新竹縣橫山鄉',
   type: '老街',
   art: 'oldst',
   distance: 28000,
@@ -291,7 +292,7 @@ const CITY_COLORS = ['#C7452E', '#D4761F', '#2E6F96', '#1F5C7A', '#6B4E2E', '#3E
    -------------------------------------------------------------------------- */
 
 const SPOTS = [
-  { id: 'glass',   name: '水利路的老玻璃窯', art: 'glass',   x: 52, y: 44, state: 'today',
+  { id: 'glass-kiln', name: '水利路的老玻璃窯', art: 'glass', x: 52, y: 44, state: 'today',
     type: '工業遺構', dist: 900,   hook: '這條巷子 1970 年代是全街最亮的地方。' },
   { id: 'market',  name: '東門市場',        art: 'market',  x: 30, y: 30, state: 'seen',
     type: '市場',     dist: 1400,  hook: '收集於 09.05' },
@@ -315,10 +316,18 @@ const SPOTS = [
 
 /* 所有「地方」的統一查表。place.html 用 ?id= 開任何一個地方都靠它，
    不然十幾個入口會全部導到同一頁。 */
+/* 明信片 id → 真正寫過內容的地點。
+   沒有這張表的話，route.html 的「用 yoxi 前往」帶的是 card id（p9），
+   findPlace 會掉到 POSTCARDS 的通用展開，把 28 公里的內灣老街
+   顯示成 2000 公尺、主按鈕變成「走路前往」——
+   整條「走不到所以才叫車」的論證會在評審按下按鈕的那一刻垮掉。 */
+const CARD_TO_PLACE = { p11: 'glass-kiln', p9: 'neiwan' };
+
 function findPlace(id) {
   if (!id) return TODAY;
-  if (id === TODAY.id || id === 'glass-kiln') return TODAY;
-  if (id === FAR_PLACE.id || id === 'neiwan') return FAR_PLACE;
+  id = CARD_TO_PLACE[id] || id;
+  if (id === TODAY.id) return TODAY;
+  if (id === FAR_PLACE.id) return FAR_PLACE;
 
   const byPending = PENDING.filter(function (p) { return p.id === id; })[0];
   if (byPending) return expand(byPending);
@@ -326,17 +335,34 @@ function findPlace(id) {
   const bySpot = SPOTS.filter(function (p) { return p.id === id; })[0];
   if (bySpot) return expand(bySpot);
 
-  const byCard = POSTCARDS.filter(function (p) { return p.id === id; })[0];
-  if (byCard) return expand({ id: byCard.id, name: byCard.name, art: byCard.art,
-                              type: '地方', distance: 2000 });
-
+  /* 路線的站要排在 POSTCARDS 前面：站上有真的距離（合興 24 km、
+     九讚頭 21 km），POSTCARDS 沒有，只會拿到一個假的預設值。 */
   for (let i = 0; i < ROUTES.length; i++) {
     const st = ROUTES[i].stops.filter(function (s) { return s.id === id || s.card === id; })[0];
-    if (st) return expand({ id: st.card || st.id, name: st.name, art: st.art,
-                            type: st.type || '地方', distance: st.dist, hook: st.note });
+    if (st) {
+      if (CARD_TO_PLACE[st.card]) return findPlace(CARD_TO_PLACE[st.card]);
+      return expand({ id: st.card || st.id, name: st.name, art: st.art,
+                      type: st.type || '地方', distance: st.dist, hook: st.note });
+    }
   }
+
+  const byCard = POSTCARDS.filter(function (p) { return p.id === id; })[0];
+  if (byCard) return expand({ id: byCard.id, name: byCard.name, art: byCard.art,
+                              type: '地方' });
   return TODAY;
 }
+
+/* 地點 id → 明信片 id。獎章的組成清單放的是明信片 id，
+   所以任何「這個地方屬於哪一枚獎章」的查詢都要先過這一層。 */
+function cardIdOf(placeId) {
+  for (const c in CARD_TO_PLACE) if (CARD_TO_PLACE[c] === placeId) return c;
+  for (let i = 0; i < ROUTES.length; i++) {
+    const st = ROUTES[i].stops.filter(function (s) { return s.id === placeId; })[0];
+    if (st && st.card) return st.card;
+  }
+  return placeId;
+}
+
 
 /* 把精簡的地點資料補成 place.html 需要的完整形狀 */
 function expand(p) {
@@ -345,8 +371,10 @@ function expand(p) {
     name: p.name,
     art: p.art,
     type: p.type || '地方',
-    distance: p.distance != null ? p.distance : (p.dist || 1500),
+    /* 沒有距離就別編一個。畫面上會顯示「距離待確認」而不是一個假數字。 */
+    distance: p.distance != null ? p.distance : (p.dist != null ? p.dist : null),
     hook: p.hook || '',
+    area: p.area || '新竹市',
     eyebrow: p.type || '地方',
     tip: p.tip || '到了先站一下，看看四周有什麼是別的地方沒有的。',
     hours: p.hours || '戶外空間，全天可看',
@@ -363,4 +391,6 @@ function expand(p) {
   };
 }
 
-window.MOCK = { findPlace, SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };
+window.MOCK = {
+  cardIdOf,
+  CARD_TO_PLACE, findPlace, SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };

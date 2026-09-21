@@ -51,7 +51,7 @@
 
           <div style="position:absolute; inset:0; display:grid; place-items:center">
             <div style="display:flex; flex-direction:column; align-items:center;
-                        gap:10px; color:#fff">
+                        gap:10px; color: var(--yoxi-white)">
               <div style="width:40px; height:40px; opacity:.9" data-icon="lock"></div>
               <div style="font-size:13px; font-weight:800;
                           text-shadow:0 1px 4px rgba(0,0,0,.55)">到了就會上色</div>
@@ -114,7 +114,7 @@
                 這個地方獨有，由 AI 依當天的光線與季節生成
               </span>
             </span>
-            <span style="position:relative; width:46px; height:46px; flex:none">
+            <span id="rewardRing" style="position:relative; width:46px; height:46px; flex:none">
               <svg class="ring" width="46" height="46" viewBox="0 0 46 46">
                 <circle class="ring__track" cx="23" cy="23" r="20"/>
                 <circle class="ring__bar" id="ringBar" cx="23" cy="23" r="20"
@@ -147,7 +147,11 @@
 (function () {
   const qid = new URLSearchParams(location.search).get('id');
   const P = MOCK.findPlace(qid);
-  const far = P.distance > 3000;   /* 走不到就以叫車為主要動作 */
+  /* 什麼時候把叫車換成主要動作。
+     門檻本來是 3 公里 —— 但十八尖山 3.1 公里是一座真的走得上去的山，
+     畫面卻寫「走路到不了」，那是假話。改成 10 公里，
+     並且用「這段距離搭車比較合理」而不是「走不到」。 */
+  const far = P.distance != null && P.distance > 10000;
 
   document.title = P.name + ' — yoxi 城事';
 
@@ -180,16 +184,27 @@
   document.getElementById('hours').textContent = P.hours;
   document.getElementById('rewardTitle').textContent = `一張〈${P.name}〉`;
 
-  /* 這個地方屬於哪一枚獎章 —— 從獎章的組成清單反查，不要寫死 */
-  const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(P.id) >= 0; })[0]
-             || MOCK.BADGES.filter(function (b) { return b.id === 'b5'; })[0];
-  const pr = STATE.badge(owner.id);
-  document.getElementById('ringBar')
-    .setAttribute('stroke-dashoffset', 125.6 * (1 - pr.done / pr.total));
-  document.getElementById('ringLabel').innerHTML =
-    '<span><span class="num">' + pr.done + '</span>/' + pr.total + '</span>';
-  document.getElementById('badgeNote').textContent =
-    '也會讓〈' + pr.name + '〉這枚獎章多收集一張';
+  /* 這個地方屬於哪一枚獎章。
+     獎章的組成清單放的是**明信片 id**，而這一頁拿到的是**地點 id**
+     （neiwan、glass-kiln、地圖上的 moat／hill…），所以要先換過去。
+     以前這裡直接拿地點 id 去比，永遠比不中，於是一律掉進「風城玻璃」的
+     預設值 —— 連內灣老街都被說成屬於風城玻璃。
+     真的不屬於任何一枚就整塊收起來，不要硬塞一個進度製造收集壓力。 */
+  const cardId = MOCK.cardIdOf(P.id);
+  const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0];
+  if (owner) {
+    const pr = STATE.badge(owner.id);
+    document.getElementById('ringBar')
+      .setAttribute('stroke-dashoffset', 125.6 * (1 - pr.done / pr.total));
+    document.getElementById('ringLabel').innerHTML =
+      '<span><span class="num">' + pr.done + '</span>/' + pr.total + '</span>';
+    document.getElementById('badgeNote').textContent =
+      '也會讓〈' + pr.name + '〉這枚獎章多收集一張';
+  } else {
+    /* 明信片照樣拿得到，只是這個地方不歸任何一枚獎章 —— 把進度環收起來就好 */
+    document.getElementById('rewardRing').classList.add('u-hidden');
+    document.getElementById('badgeNote').classList.add('u-hidden');
+  }
   if (far) document.getElementById('backBtn').href = 'route.html';
 
   /* 頁尾：28 km 走不到，主要動作自動變成叫車 */
@@ -205,7 +220,7 @@
          <span style="color:var(--yoxi-slate)">回饋 50 和泰 Points</span>
        </div>
        <div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">
-         ${km} 公里，走路到不了 —— 這一段需要搭車
+         ${km} 公里 —— 這一段搭車比較合理，走路要五個小時以上
        </div>`
     : `<div style="display:grid; grid-template-columns:1fr auto; gap:8px">
          <a class="btn-primary" href="going.html">走路前往</a>

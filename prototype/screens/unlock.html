@@ -83,7 +83,7 @@
             <input id="oneLine" maxlength="10" placeholder="寫一句話（最多 10 字，可以不寫）"
                    style="width:100%; height:52px; padding:0 16px; border-radius:4px;
                           border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.08);
-                          color:#fff; font-size:15px; text-align:center">
+                          color: var(--yoxi-white); font-size:15px; text-align:center">
           </div>
 
           <div style="display:grid; gap:10px; margin-top:20px; padding:0 var(--sp-2)">
@@ -147,7 +147,11 @@
 
   /* 收進收藏：寫入狀態，收藏頁才會真的多一張 */
   document.getElementById('keepBtn').onclick = function () {
+    /* km 一定要帶。state.js 的預設值是「搭車算 12 公里」，
+       所以搭 28 公里去內灣，收藏頁的公里數只會加 12。 */
+    const place  = MOCK.findPlace(isRide ? 'neiwan' : 'glass-kiln');
     const gained = STATE.collect(isRide ? 'neiwan' : 'glass-kiln', {
+      km:   place.distance != null ? place.distance / 1000 : undefined,
       by:   isRide ? 'ride' : 'walk',
       date: '09.21',
       note: (document.getElementById('oneLine').value || '').slice(0, 10),

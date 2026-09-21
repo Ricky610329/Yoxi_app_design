@@ -39,7 +39,7 @@
       <!-- 紅色抽屜 -->
       <div class="drawer" style="padding-top:calc(var(--statusbar-h) + 8px)">
         <div class="u-row" style="justify-content:flex-end">
-          <a href="home.html" style="color:#fff; padding:6px">
+          <a href="home.html" style="color: var(--yoxi-white); padding:6px">
             <span data-icon="close" style="width:22px; height:22px; display:block"></span>
           </a>
         </div>
@@ -50,13 +50,13 @@
             <span data-icon="moodGood"
                   style="width:44px; height:44px; color:#FFFFFF; display:block"></span>
           </span>
-          <a class="u-fill" href="#" style="font-size:26px; font-weight:800; color:#fff">Rick</a>
+          <a class="u-fill" href="#" style="font-size:26px; font-weight:800; color: var(--yoxi-white)">Rick</a>
           <span class="arrow arrow--onred"></span>
         </div>
 
         <div style="display:flex; align-items:center; gap:14px; padding:14px;
                     border-radius:6px; background:rgba(0,0,0,.12); margin-bottom:12px">
-          <span data-icon="megaphone" style="width:26px; height:26px; flex:none; color:#fff"></span>
+          <span data-icon="megaphone" style="width:26px; height:26px; flex:none; color: var(--yoxi-white)"></span>
           <span style="flex:1; font-size:14px; line-height:1.5">綁定信用卡即可開始累積會員趟次</span>
           <span class="arrow arrow--onred"></span>
         </div>
@@ -71,7 +71,7 @@
           <!-- 【新增】唯一插入的一項 -->
           <a class="drawer__item" href="settings.html" style="display:flex; align-items:center; gap:10px">
             城事設定
-            <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:3px;
+            <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:var(--r-btn);
                          background:rgba(255,255,255,.22)">新</span>
           </a>
 
@@ -86,7 +86,7 @@
           <a href="points.html"
              style="display:inline-flex; align-items:center; gap:8px; margin-top:10px;
                     padding:6px 16px; border-radius:999px; border:1.5px solid rgba(255,255,255,.7);
-                    color:#fff; font-weight:700">
+                    color: var(--yoxi-white); font-weight:700">
             <span data-icon="point" style="width:18px; height:18px; display:block"></span>
             <span class="num" id="pts">50</span> 點
           </a>
@@ -105,6 +105,6 @@
 <script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
 <script src="../js/interact.js"></script>
-<script>document.getElementById("pts").textContent = STATE.all.points;</script>
+<script>document.getElementById("pts").textContent = STATE.points;</script>
 </body>
 </html>
