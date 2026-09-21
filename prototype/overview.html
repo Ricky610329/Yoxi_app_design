@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全景圖 — yoxi 城事</title>
+<!--
+  全景圖：一次看到所有畫面。
+
+  縮圖是「活的」—— 直接用 iframe 縮放真實畫面，不是預先截圖。
+  畫面改了這裡自動跟著更新，不會過期。
+
+  兩個區塊：
+  1. 三條流程：橫向排列，可以直接看出每條路徑走過哪些畫面。
+     這一段直接就是簡報裡的流程圖素材。
+  2. 全部畫面：依所屬分頁分組的牆。
+
+  直接雙擊開啟即可，不需要伺服器。
+-->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/chengshi.css">
+<style>
+  body { background: var(--yoxi-mist); }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  .top { display: flex; align-items: flex-end; justify-content: space-between;
+         gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+  .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
+  .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; }
+  .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+
+  /* --- 縮圖 -------------------------------------------------------- */
+  .thumb { width: 198px; flex: none; }
+  .thumb__frame {
+    position: relative; width: 198px; height: 420px;
+    border-radius: 14px; overflow: hidden;
+    background: #fff; box-shadow: 0 2px 10px rgba(6,32,64,.14);
+    transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
+  }
+  .thumb:hover .thumb__frame {
+    transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24);
+  }
+  .thumb__frame iframe {
+    width: 430px; height: 912px; border: 0;
+    transform: scale(.4605); transform-origin: top left; pointer-events: none;
+  }
+  .thumb__hit { position: absolute; inset: 0; }
+  .thumb__cap { margin-top: 10px; }
+  .thumb__id { font-size: 11px; font-weight: 800; font-style: italic; color: var(--yoxi-slate); }
+  .thumb__n  { font-weight: 800; line-height: 1.3; margin-top: 1px; }
+  .thumb__k  { display: inline-block; margin-top: 5px; padding: 2px 7px;
+               border-radius: 3px; font-size: 10px; font-weight: 800; }
+  .k-keep { background: #DCE3EA; color: var(--yoxi-slate); }
+  .k-mod  { background: var(--yoxi-cream); color: #8A5A1E; }
+  .k-new  { background: var(--yoxi-red);   color: #fff; }
+
+  /* --- 流程 -------------------------------------------------------- */
+  .flowrow {
+    background: #fff; border-radius: var(--r-card); border: 1px solid var(--yoxi-line);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .flowrow__h { margin-bottom: 16px; }
+  .flowrow__tag { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
+  .flowrow__n { font-size: 20px; font-weight: 800; margin-top: 3px; }
+  .flowrow__w { font-size: 14px; color: var(--yoxi-slate); margin-top: 5px; line-height: 1.6; }
+  .strip { display: flex; align-items: flex-start; gap: 4px; overflow-x: auto; padding-bottom: 6px; }
+  .strip::-webkit-scrollbar { height: 8px; }
+  .strip::-webkit-scrollbar-thumb { background: var(--yoxi-slate-lite); border-radius: 999px; }
+  .hop { flex: none; align-self: center; padding: 0 6px; margin-top: -40px; }
+
+  /* --- 分組牆 ------------------------------------------------------ */
+  .group { margin-top: 40px; }
+  .group__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .group__t { font-size: 20px; font-weight: 800; }
+  .group__d { font-size: 14px; color: var(--yoxi-slate); }
+  .wall { display: flex; flex-wrap: wrap; gap: 20px; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+            font-size: 13px; color: var(--yoxi-slate); }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>全景圖</h1>
+      <p>
+        全部 20 張畫面，以及三條 demo 流程各自走過哪些畫面。<br>
+        縮圖是活的 —— 直接縮放真實畫面，不是截圖，所以不會過期。點任一張開新分頁。
+      </p>
+    </div>
+    <div style="display:grid; gap:10px; justify-items:end">
+      <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> 回到 demo 首頁</a>
+      <div class="legend">
+        <span><i class="thumb__k k-keep">沿用</i> 原封不動</span>
+        <span><i class="thumb__k k-mod">改造</i> 小幅修改</span>
+        <span><i class="thumb__k k-new">新增</i> 全新</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="flows"></div>
+  <div id="groups"></div>
+
+</div>
+
+<script>
+/* id, 名稱, 類型, 路徑 */
+const S = {
+  home:     ['R1',  '叫車首頁',       'mod',  'screens/home.html'],
+  drawer:   ['R2',  '側邊抽屜',       'mod',  'screens/drawer.html'],
+  pickup:   ['R3',  '設定上車地點',   'keep', 'screens/pickup.html'],
+  ride:     ['R5',  '行程中',         'mod',  'screens/ride.html'],
+  done:     ['R6',  '行程完成',       'mod',  'screens/ride-done.html'],
+  notify:   ['R7',  '通知中心',       'mod',  'screens/notify.html'],
+  points:   ['R9',  '和泰 Points',    'mod',  'screens/points.html'],
+
+  explore:  ['N1',  '探索 · 卡片',    'new',  'screens/explore.html'],
+  place:    ['N2',  '地方詳情',       'new',  'screens/place.html'],
+  placefar: ['N2',  '地方詳情（遠）',  'new',  'screens/place.html?id=neiwan'],
+  map:      ['N3',  '探索 · 地圖',    'new',  'screens/map.html'],
+  going:    ['N4',  '前往中',         'new',  'screens/going.html'],
+  routes:   ['N5',  '路線列表',       'new',  'screens/routes.html'],
+  route:    ['N6',  '路線詳情',       'new',  'screens/route.html'],
+  fogmap:   ['N7',  '城市足跡',       'new',  'screens/fogmap.html'],
+
+  album:    ['N8',  '收藏首頁',       'new',  'screens/album.html'],
+  unlock:   ['N9',  '抵達解鎖',       'new',  'screens/unlock.html'],
+  unlockR:  ['N9',  '解鎖（限定版）',  'new',  'screens/unlock.html?ride=1'],
+  lookback: ['N12', '每日回顧',       'new',  'screens/lookback.html'],
+  elder:    ['N14', '長輩圖',         'new',  'screens/elder.html'],
+
+  settings: ['N15', '城事設定',       'new',  'screens/settings.html'],
+  push:     ['N16', '模擬推播（早）',  'new',  'screens/push.html'],
+  pushN:    ['N16', '模擬推播（晚）',  'new',  'screens/push.html?when=night'],
+};
+
+const LABEL = { keep: '沿用', mod: '改造', new: '新增' };
+
+function thumb(key) {
+  const [id, name, kind, href] = S[key];
+  return `
+    <div class="thumb">
+      <div class="thumb__frame">
+        <iframe src="${href}" loading="lazy" scrolling="no" tabindex="-1" title="${name}"></iframe>
+        <a class="thumb__hit" href="${href}" target="_blank" aria-label="${name}"></a>
+      </div>
+      <div class="thumb__cap">
+        <div class="thumb__id">${id}</div>
+        <div class="thumb__n">${name}</div>
+        <span class="thumb__k k-${kind}">${LABEL[kind]}</span>
+      </div>
+    </div>`;
+}
+
+const hop = '<span class="hop arrow"></span>';
+
+/* ---- 三條流程 ---- */
+const FLOWS = [
+  ['流程 A', '不搭車的日常',
+   '要證明的：不搭車也玩得下去、AI 推薦有個人化依據、動機來自內容而不是獎勵。',
+   ['push', 'explore', 'place', 'going', 'unlock', 'album']],
+  ['流程 B', '搭車的轉換',
+   '要證明的：探索會直接產生訂單、獨佔內容讓搭車比走路多拿到東西、點數回流和泰生態系。',
+   ['route', 'placefar', 'ride', 'done', 'unlockR', 'points']],
+  ['流程 C', '晚上的回顧',
+   '要證明的：90% 自動 + 10% 人工的低負擔儀式、隱私分軌、移動自動沉澱成資產。',
+   ['pushN', 'lookback', 'album']],
+];
+
+document.getElementById('flows').innerHTML =
+  '<h2 class="group__t" style="margin-bottom:16px">三條 demo 流程</h2>' +
+  FLOWS.map(([tag, name, why, keys]) => `
+    <section class="flowrow">
+      <div class="flowrow__h">
+        <div class="flowrow__tag">${tag}</div>
+        <div class="flowrow__n">${name}</div>
+        <p class="flowrow__w">${why}</p>
+      </div>
+      <div class="strip">${keys.map(thumb).join(hop)}</div>
+    </section>`).join('');
+
+/* ---- 依分頁分組的牆 ---- */
+const GROUPS = [
+  ['叫車', '既有的叫車流程。除了首頁多一條 tab bar 與一個入口，其餘沒動。',
+   ['home', 'drawer', 'pickup', 'ride', 'done', 'notify', 'points']],
+  ['探索', '「接下來去哪」。卡片與地圖是同一批資料的兩種檢視。',
+   ['explore', 'map', 'place', 'placefar', 'route', 'routes', 'going', 'fogmap']],
+  ['收藏', '「去過哪裡」。情感高點與長期價值的載體。',
+   ['album', 'unlock', 'unlockR', 'lookback', 'elder']],
+  ['設定與 demo 工具', '資料與隱私講清楚；推播浮層是 demo 用的，不是產品畫面。',
+   ['settings', 'push', 'pushN']],
+];
+
+document.getElementById('groups').innerHTML = GROUPS.map(([t, d, keys]) => `
+  <section class="group">
+    <div class="group__h">
+      <h2 class="group__t">${t}</h2>
+      <span class="group__d">${d}</span>
+    </div>
+    <div class="wall">${keys.map(thumb).join('')}</div>
+  </section>`).join('');
+</script>
+</body>
+</html>

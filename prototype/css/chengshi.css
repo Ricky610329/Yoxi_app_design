@@ -74,6 +74,156 @@
 .hdr-red--compact .hdr-red__bar { margin-bottom: 0; }
 
 /* ==========================================================================
+   .spot —— 地圖上的景點標記
+   圖釘本身就是明信片縮圖（brainstorm：「設計景點的圖片預覽」）。
+   沒去過＝灰階，去過＝上色，今天的地方＝紅框放大。
+   地圖因此本身就是一面會長大的牆。
+
+   防「寶可夢式資訊過載」的三條規則：
+   1. 同時最多顯示約 10 個，不隨縮放無限長出來
+   2. 沒有倒數、沒有「X 分鐘後消失」、沒有限量
+   3. 點下去是底部浮出小卡，不是直接跳頁 —— 降低每一次點擊的承諾感
+   ========================================================================== */
+
+.spot {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 6;
+  display: block;
+  width: 46px;
+}
+
+.spot__img {
+  display: block;          /* span 預設 inline 會忽略寬高，整個圖釘會塌掉 */
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--yoxi-mist);
+  border: 2.5px solid var(--yoxi-white);
+  box-shadow: var(--sh-fab);
+}
+
+/* 下方的小尖角，讓它落在地面上而不是浮著 */
+.spot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-fab);
+}
+
+/* 沒去過：看得出形狀，但沒有生命 */
+.spot--new .spot__img > * { filter: grayscale(1) contrast(.72) brightness(1.16); }
+
+/* 今天的地方：放大、紅框、柔和光暈。全地圖只有一個。 */
+.spot--today { width: 62px; z-index: 8; }
+.spot--today .spot__img {
+  width: 62px;
+  height: 62px;
+  border-radius: 16px;
+  border-color: var(--yoxi-red);
+  border-width: 3px;
+}
+.spot--today::after { background: var(--yoxi-red); }
+
+.spot__halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 62px;
+  height: 62px;
+  margin: -31px 0 0 -31px;
+  border-radius: 50%;
+  background: var(--yoxi-red);
+  opacity: .22;
+  animation: halo 2.6s var(--ease-out) infinite;
+  pointer-events: none;
+}
+@keyframes halo {
+  0%   { transform: scale(.85); opacity: .3; }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+
+/* 已收集的角標 */
+.spot__tick {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--yoxi-red);
+  border: 2px solid var(--yoxi-white);
+  display: grid;
+  place-items: center;
+}
+.spot__tick svg { width: 10px; height: 10px; }
+
+/* --------------------------------------------------------------------------
+   .peek —— 點圖釘後從底部浮出的小卡
+   不是跳頁。使用者可以連點好幾個看看，不用每次都進去再退出來。
+   -------------------------------------------------------------------------- */
+
+.peek {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-3));
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-lift);
+  transform: translateY(140%);
+  transition: transform var(--t-base) var(--ease-out);
+}
+.peek.is-on { transform: none; }
+
+.peek__img {
+  width: 56px;
+  height: 72px;
+  flex: none;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   .viewtoggle —— 卡片／地圖 切換
+   放在紅色頁首右側，沿用 pill 的語言。
+   -------------------------------------------------------------------------- */
+
+.viewtoggle {
+  display: flex;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, .18);
+}
+.viewtoggle a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: var(--r-pill);
+  color: var(--yoxi-white);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+}
+.viewtoggle a.is-on { background: var(--yoxi-white); color: var(--yoxi-navy); }
+.viewtoggle svg { width: 15px; height: 15px; }
+
+/* ==========================================================================
    .placecard —— 「今天的地方」主卡
    探索首頁的視覺主體，約佔 55% 螢幕高。
    ========================================================================== */

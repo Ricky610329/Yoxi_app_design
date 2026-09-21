@@ -138,6 +138,28 @@ const ICONS = {
     <path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.4 5.4l1.9 1.9M16.7 16.7l1.9 1.9M18.6 5.4l-1.9 1.9M7.3 16.7l-1.9 1.9"
       stroke="${NAVY}" stroke-width="2" stroke-linecap="round"/>`),
 
+  // 打勾（已收集）
+  check: svg(`
+    <path d="M4.5 12.4 9.6 17.5 19.5 7.2" fill="none" stroke="#fff"
+      stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>`),
+
+  // 卡片檢視
+  viewCards: svg(`
+    <rect x="3" y="4" width="18" height="7" rx="2" fill="currentColor"/>
+    <rect x="3" y="13" width="18" height="7" rx="2" fill="currentColor" opacity=".5"/>`),
+
+  // 地圖檢視
+  viewMap: svg(`
+    <path d="M9 3 3 5.4v15.2L9 18.2Z" fill="currentColor" opacity=".55"/>
+    <path d="M9 3v15.2L15 21V5.8Z" fill="currentColor"/>
+    <path d="M15 5.8V21l6-2.4V3.4Z" fill="currentColor" opacity=".55"/>`),
+
+  // 拉遠 / 整座城市
+  zoomOut: svg(`
+    <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/>
+    <path d="M8 11h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M16.2 16.2 21 21" stroke="${RED}" stroke-width="2.6" stroke-linecap="round"/>`),
+
   /* --- 心情三選一 ------------------------------------------------------ */
 
   moodGood: svg(`

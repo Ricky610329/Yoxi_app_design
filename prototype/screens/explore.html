@@ -30,10 +30,16 @@
       <header class="hdr-red hdr-red--compact">
         <div class="hdr-red__bar">
           <h1 class="hdr-red__title">探索</h1>
-          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
-            城市足跡
-            <span class="arrow arrow--onred"></span>
-          </a>
+          <nav class="viewtoggle">
+            <a class="is-on" href="explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a href="map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
         </div>
       </header>
 
@@ -148,7 +154,7 @@
         <div style="padding:0 16px 24px">
           <div class="sec">
             <h2 class="sec__t">還沒去的地方</h2>
-            <span class="sec__m">不會過期</span>
+            <a class="sec__m u-row u-gap2" href="map.html">在地圖上看 <span class="arrow"></span></a>
           </div>
 
           <div class="card" id="pendingList"></div>

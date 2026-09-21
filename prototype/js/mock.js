@@ -262,4 +262,33 @@ const FOG = [
 /* 你的城市顏色：AI 依去過的地點類型配出的色票 */
 const CITY_COLORS = ['#C7452E', '#D4761F', '#2E6F96', '#1F5C7A', '#6B4E2E', '#3E6B47'];
 
-window.MOCK = { USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };
+/* --------------------------------------------------------------------------
+   地圖上的景點
+   x / y 是相對地圖區域的百分比。刻意只放 10 個 ——
+   同時顯示太多就會變成寶可夢那種資訊過載。
+   -------------------------------------------------------------------------- */
+
+const SPOTS = [
+  { id: 'glass',   name: '水利路的老玻璃窯', art: 'glass',   x: 52, y: 44, state: 'today',
+    type: '工業遺構', dist: 900,   hook: '這條巷子 1970 年代是全街最亮的地方。' },
+  { id: 'market',  name: '東門市場',        art: 'market',  x: 30, y: 30, state: 'seen',
+    type: '市場',     dist: 1400,  hook: '收集於 09.05' },
+  { id: 'temple',  name: '新竹城隍廟',      art: 'temple',  x: 22, y: 52, state: 'seen',
+    type: '廟宇',     dist: 1600,  hook: '收集於 09.19' },
+  { id: 'station', name: '新竹車站',        art: 'station', x: 41, y: 66, state: 'seen',
+    type: '車站',     dist: 1200,  hook: '收集於 09.02' },
+  { id: 'moat',    name: '護城河的舊碼頭階梯', art: 'moat',  x: 66, y: 30, state: 'new',
+    type: '水岸',     dist: 1800,  hook: '河道被蓋起來之前，這裡是上下貨的地方。' },
+  { id: 'hill',    name: '十八尖山的防空洞', art: 'hill',    x: 72, y: 62, state: 'new',
+    type: '山徑',     dist: 3100,  hook: '山壁上還留著十幾個洞口。' },
+  { id: 'harbour', name: '南寮漁港',        art: 'harbour', x: 14, y: 16, state: 'seen',
+    type: '海岸',     dist: 8200,  hook: '收集於 09.12' },
+  { id: 'lake',    name: '青草湖的舊戲院地基', art: 'lake',  x: 58, y: 80, state: 'new',
+    type: '遺構',     dist: 6400,  hook: '湖乾涸的那幾年，戲院的地基露了出來。' },
+  { id: 'brick',   name: '新竹州廳',        art: 'brick',   x: 36, y: 46, state: 'new',
+    type: '古蹟',     dist: 1500,  hook: '1927 年蓋的，現在還在辦公。' },
+  { id: 'rail',    name: '竹中站',          art: 'rail',    x: 84, y: 40, state: 'seen',
+    type: '車站',     dist: 7800,  hook: '收集於 09.14' },
+];
+
+window.MOCK = { SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };
