@@ -19,10 +19,18 @@ const ARTS = window.MOCK.ART;
    圖示注入
    -------------------------------------------------------------------------- */
 
+/* 冪等：同一個元素被注入第二次不會多長一個 SVG。
+   共用函式內部會注入一次，畫面往往又全域注入一次，mount() 還會再一次 ——
+   重複的 SVG 漸層 id 會讓瀏覽器全部取用第一個定義，顏色就跑掉了。 */
 function injectIcons(root = document) {
   root.querySelectorAll('[data-icon]').forEach(el => {
     const svg = ICONS[el.dataset.icon];
-    if (svg) el.innerHTML = svg;
+    /* 記住上次注入的是哪一個圖示：換了名字要重畫，沒換就跳過。
+       （例如每日回顧的完成卡會依心情換圖示） */
+    if (svg && el.dataset.iconDone !== el.dataset.icon) {
+      el.innerHTML = svg;
+      el.dataset.iconDone = el.dataset.icon;
+    }
   });
 }
 
@@ -220,12 +228,122 @@ function postcardArt(key, opt = {}) {
 /* 把 <div data-art="glass" data-seed="2"> 填成明信片視覺 */
 function injectArt(root = document) {
   root.querySelectorAll('[data-art]').forEach(el => {
+    if (el.querySelector(':scope > .postcard__art')) return;   /* 已經注入過 */
     el.insertAdjacentHTML('afterbegin',
       postcardArt(el.dataset.art, {
         seed: Number(el.dataset.seed || 0),
         wide: el.hasAttribute('data-wide'),
       }));
   });
+}
+
+
+/* --------------------------------------------------------------------------
+   地圖的共用零件
+
+   霧地圖格子與景點圖釘原本在四個畫面重複貼上，再加三個變體會變成七份，
+   任何一次微調都要改七個地方。道路與地名是各畫面自己的美術，不抽；
+   只抽真正重複的這兩段。
+   -------------------------------------------------------------------------- */
+
+/** 霧地圖的格子。回傳 SVG 內容字串，塞進畫面自己的 <svg> 裡。 */
+function fogCells(w, h) {
+  const rows = window.MOCK.FOG;
+  const cw = w / rows[0].length;
+  const ch = h / rows.length;
+  return rows.map(function (row, y) {
+    return row.map(function (st, x) {
+      const cls = st === 'seen' ? 'fogmap__cell--seen'
+                : st === 'fade' ? 'fogmap__cell--fade'
+                : 'fogmap__cell--fog';
+      return '<rect class="fogmap__cell ' + cls + '" x="' + (x * cw) + '" y="' + (y * ch) +
+             '" width="' + (cw + .5) + '" height="' + (ch + .5) + '"/>';
+    }).join('');
+  }).join('');
+}
+
+/** 霧地圖的覆蓋率（%）。畫面上不要再寫死數字。 */
+function fogCoverage() {
+  const flat = window.MOCK.FOG.flat();
+  return Math.round(flat.filter(function (c) { return c !== 'fog'; }).length / flat.length * 100);
+}
+
+/**
+ * 景點圖釘。
+ * @param {Element} el   容器
+ * @param {object}  opt  spots 要畫哪些（預設 MOCK.SPOTS）
+ *                       max 最多幾個 —— 叫車首頁靠它控制「不要變吵」
+ *                       compact 縮小一號，疊在叫車地圖上時用
+ *                       squeeze/offset 垂直壓縮與位移，避開瀏海與 sheet
+ *                       href(spot) 有回傳值就用 <a>，沒有就用 <button>
+ */
+function renderSpots(el, opt) {
+  opt = opt || {};
+  const list = (opt.spots || window.MOCK.SPOTS).slice(0, opt.max || 99);
+  const sq = opt.squeeze != null ? opt.squeeze : 1;
+  const of = opt.offset  != null ? opt.offset  : 0;
+
+  el.innerHTML = list.map(function (s, i) {
+    const cls = s.state === 'today' ? 'spot--today'
+              : (s.state === 'seen' ? 'spot--seen' : 'spot--new');
+    const href = opt.href && opt.href(s);
+    const tag  = href ? 'a' : 'button';
+    return '<' + tag + ' class="spot ' + cls + (opt.compact ? ' spot--compact' : '') + '"' +
+      ' data-i="' + i + '"' + (href ? ' href="' + href + '"' : '') +
+      ' style="left:' + s.x + '%; top:' + (of + s.y * sq) + '%">' +
+      (s.state === 'today' ? '<span class="spot__halo"></span>' : '') +
+      '<span class="spot__img" data-art="' + s.art + '" data-seed="' + i + '"></span>' +
+      (s.state === 'seen' ? '<span class="spot__tick"><span data-icon="check"></span></span>' : '') +
+      '</' + tag + '>';
+  }).join('');
+
+  injectArt(el);
+  injectIcons(el);
+  return list;
+}
+
+/**
+ * 點圖釘 → 底部浮出小卡。不跳頁，可以連看好幾個。
+ * @param {Element} peekEl  .peek 元素
+ * @param {Array}   list    renderSpots 回傳的清單
+ * @param {object}  opt     onOpen(spot) 讓畫面自己決定小卡內容與連結
+ */
+function bindPeek(peekEl, list, opt) {
+  opt = opt || {};
+  let open = -1;
+
+  function show(i) {
+    const s = list[i];
+    if (!s) return;
+    const img = peekEl.querySelector('.peek__img');
+    if (img) {
+      img.innerHTML = postcardArt(s.art, { seed: i });
+      img.style.filter = s.state === 'new'
+        ? 'grayscale(1) contrast(.72) brightness(1.16)' : '';
+    }
+    const set = function (sel, txt) {
+      const e = peekEl.querySelector(sel);
+      if (e) e.textContent = txt;
+    };
+    set('[data-peek-name]', s.name);
+    set('[data-peek-meta]', s.type + ' · ' +
+        (s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + ' km' : s.dist + ' m'));
+    set('[data-peek-hook]', s.hook);
+    peekEl.classList.add('is-on');
+    open = i;
+    if (opt.onOpen) opt.onOpen(s, i);
+  }
+
+  document.querySelectorAll('.spot[data-i]').forEach(function (btn) {
+    if (btn.tagName === 'A') return;          /* <a> 直接跳頁，不開小卡 */
+    btn.onclick = function () {
+      const i = Number(btn.dataset.i);
+      if (open === i) { peekEl.classList.remove('is-on'); open = -1; }
+      else show(i);
+    };
+  });
+
+  return { show: show, close: function () { peekEl.classList.remove('is-on'); open = -1; } };
 }
 
 /* --------------------------------------------------------------------------
@@ -297,5 +415,8 @@ if (document.readyState === 'loading') {
   mount();
 }
 
-window.SHELL = { injectIcons, injectArt, postcardArt, showPush, yieldTabbar };
+window.SHELL = {
+  injectIcons, injectArt, postcardArt, showPush, yieldTabbar,
+  fogCells, fogCoverage, renderSpots, bindPeek,
+};
 })();

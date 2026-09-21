@@ -138,16 +138,7 @@
 <script>
 (function () {
   /* ---- 底圖 ---- */
-  const rows = MOCK.FOG, cols = rows[0].length;
-  const w = 390 / cols, h = 560 / rows.length;
-  const cells = rows.map(function (row, y) {
-    return row.map(function (st, x) {
-      const cls = st === 'seen' ? 'fogmap__cell--seen'
-                : st === 'fade' ? 'fogmap__cell--fade' : 'fogmap__cell--fog';
-      return '<rect class="fogmap__cell ' + cls + '" x="' + (x * w) + '" y="' + (y * h) +
-             '" width="' + (w + .5) + '" height="' + (h + .5) + '"/>';
-    }).join('');
-  }).join('');
+  const cells = SHELL.fogCells(390, 560);
   const roads =
     '<g stroke="#FFF" stroke-width="8" fill="none" opacity=".92">' +
       '<path d="M-10 210 L400 196"/><path d="M-10 340 L400 328"/>' +
@@ -159,23 +150,9 @@
   document.getElementById('fogLayer').innerHTML = cells + roads;
 
   /* ---- 景點 ---- */
-  const spots = MOCK.SPOTS;
-  document.getElementById('spots').innerHTML = spots.map(function (s, i) {
-    const cls = s.state === 'today' ? 'spot--today'
-              : (s.state === 'seen' ? 'spot--seen' : 'spot--new');
-    return '<button class="spot ' + cls + '" data-i="' + i + '"' +
-      ' style="left:' + s.x + '%; top:' + s.y + '%">' +
-      (s.state === 'today' ? '<span class="spot__halo"></span>' : '') +
-      '<span class="spot__img" data-art="' + s.art + '" data-seed="' + i + '"></span>' +
-      (s.state === 'seen' ? '<span class="spot__tick"><span data-icon="check"></span></span>' : '') +
-      '</button>';
-  }).join('');
-  SHELL.injectArt(document.getElementById('spots'));
-  SHELL.injectIcons();
+  const spots = SHELL.renderSpots(document.getElementById('spots'));
 
-  const flatF = MOCK.FOG.flat();
-  document.getElementById('cov').textContent =
-    Math.round(flatF.filter(function (c) { return c !== 'fog'; }).length / flatF.length * 100) + '%';
+  document.getElementById('cov').textContent = SHELL.fogCoverage() + '%';
 
   document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
     .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })

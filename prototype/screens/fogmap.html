@@ -125,17 +125,7 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
-  /* 網格：8 欄 × 10 列 */
-  const rows = MOCK.FOG;
-  const cols = rows[0].length;
-  const w = 390 / cols;
-  const h = 420 / rows.length;
-
-  const cells = rows.flatMap((row, y) => row.map((state, x) => {
-    const cls = { seen: 'fogmap__cell--seen', fade: 'fogmap__cell--fade', fog: 'fogmap__cell--fog' }[state];
-    return `<rect class="fogmap__cell ${cls}"
-              x="${x * w}" y="${y * h}" width="${w + .5}" height="${h + .5}"/>`;
-  })).join('');
+  const cells = SHELL.fogCells(390, 420);
 
   /* 道路疊在色塊之上，讓它還是一張「地圖」而不是棋盤 */
   const roads = `
@@ -149,11 +139,8 @@
 
   document.getElementById('fog').innerHTML = cells + roads;
 
-  /* 覆蓋率由格子算，不要寫死 —— 圖上畫 22 格、文字卻說 14% 是最容易被抓包的 */
-  const flat = MOCK.FOG.flat();
-  const lit  = flat.filter(function (c) { return c !== 'fog'; }).length;
-  document.getElementById('cov').textContent =
-    Math.round(lit / flat.length * 100) + '%';
+  /* 覆蓋率由格子算，不要寫死 */
+  document.getElementById('cov').textContent = SHELL.fogCoverage() + '%';
 
   document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
     .map(c => `<span class="citycolor__band" style="background:${c}"></span>`).join('');

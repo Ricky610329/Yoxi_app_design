@@ -77,7 +77,7 @@
         </button>
 
         <!-- 圖例。放左下，不擋圖釘。 -->
-        <div style="position:absolute; left:16px; top:12px; z-index:10;
+        <div class="maplegend" style="position:absolute; left:16px; top:12px; z-index:10;
                     display:flex; gap:10px; padding:7px 11px; border-radius:999px;
                     background:rgba(255,255,255,.94); box-shadow:var(--sh-card);
                     font-size:11px; font-weight:700; color:var(--yoxi-slate)">
@@ -93,12 +93,12 @@
 
         <!-- 點圖釘後浮出的小卡 -->
         <a class="peek" id="peek" href="place.html">
-          <span class="peek__img" id="peekImg"></span>
+          <span class="peek__img"></span>
           <span class="u-fill" style="min-width:0">
-            <span id="peekName" style="display:block; font-weight:800; line-height:1.3"></span>
-            <span id="peekMeta" style="display:block; font-size:12px; color:var(--yoxi-slate);
+            <span data-peek-name style="display:block; font-weight:800; line-height:1.3"></span>
+            <span data-peek-meta style="display:block; font-size:12px; color:var(--yoxi-slate);
                   margin-top:2px"></span>
-            <span id="peekHook" style="display:block; font-size:13px; margin-top:5px;
+            <span data-peek-hook style="display:block; font-size:13px; margin-top:5px;
                   line-height:1.5; overflow:hidden; text-overflow:ellipsis;
                   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical"></span>
           </span>
@@ -119,20 +119,9 @@
 <script>
 (function () {
 
-  /* ---- 底層：霧地圖的上色 + 道路 ---------------------------------- */
-  const rows = MOCK.FOG;
-  const cols = rows[0].length;
-  const w = 390 / cols, h = 560 / rows.length;
-
-  const cells = rows.map(function (row, y) {
-    return row.map(function (state, x) {
-      const cls = state === 'seen' ? 'fogmap__cell--seen'
-                : state === 'fade' ? 'fogmap__cell--fade'
-                : 'fogmap__cell--fog';
-      return '<rect class="fogmap__cell ' + cls + '" x="' + (x * w) + '" y="' + (y * h) +
-             '" width="' + (w + .5) + '" height="' + (h + .5) + '"/>';
-    }).join('');
-  }).join('');
+  /* ---- 底層：霧地圖的上色 + 道路 ----------------------------------
+     格子用 SHELL.fogCells()，道路與水系是這張圖自己的美術。 */
+  const cells = SHELL.fogCells(390, 560);
 
   const roads =
     '<g stroke="#FFF" stroke-width="8" fill="none" opacity=".92">' +
@@ -150,48 +139,17 @@
   document.getElementById('fogLayer').innerHTML = cells + roads;
 
   /* ---- 景點圖釘 ---------------------------------------------------- */
-  const spots = MOCK.SPOTS;
-
-  document.getElementById('spots').innerHTML = spots.map(function (s, i) {
-    const cls = s.state === 'today' ? 'spot--today' : (s.state === 'seen' ? 'spot--seen' : 'spot--new');
-    return '<button class="spot ' + cls + '" data-i="' + i + '"' +
-           ' style="left:' + s.x + '%; top:' + s.y + '%">' +
-           (s.state === 'today' ? '<span class="spot__halo"></span>' : '') +
-           '<span class="spot__img" data-art="' + s.art + '" data-seed="' + i + '"></span>' +
-           (s.state === 'seen'
-             ? '<span class="spot__tick"><span data-icon="check"></span></span>' : '') +
-           '</button>';
-  }).join('');
-
-  SHELL.injectArt(document.getElementById('spots'));
-  SHELL.injectIcons();
+  const spots = SHELL.renderSpots(document.getElementById('spots'));
 
   /* ---- 點圖釘 → 底部小卡（不跳頁）--------------------------------- */
   const peek = document.getElementById('peek');
-  let open = -1;
-
-  document.querySelectorAll('.spot').forEach(function (btn) {
-    btn.onclick = function () {
-      const i = Number(btn.dataset.i);
-      if (open === i) { peek.classList.remove('is-on'); open = -1; return; }
-      open = i;
-      const s = spots[i];
-
-      document.getElementById('peekImg').innerHTML = SHELL.postcardArt(s.art, { seed: i });
-      document.getElementById('peekImg').style.filter =
-        s.state === 'new' ? 'grayscale(1) contrast(.72) brightness(1.16)' : '';
-      document.getElementById('peekName').textContent = s.name;
-      document.getElementById('peekMeta').textContent =
-        s.type + ' · ' + (s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + ' km' : s.dist + ' m');
-      document.getElementById('peekHook').textContent = s.hook;
-      peek.href = 'place.html?id=' + s.id;
-      peek.classList.add('is-on');
-    };
+  const pk = SHELL.bindPeek(peek, spots, {
+    onOpen: function (s) { peek.href = 'place.html?id=' + s.id; },
   });
 
   /* 預設先開啟今天的地方 —— 一打開就有一個明確的答案 */
   const today = spots.findIndex(function (s) { return s.state === 'today'; });
-  if (today >= 0) document.querySelector('.spot[data-i="' + today + '"]').click();
+  if (today >= 0) pk.show(today);
 })();
 </script>
 </body>
