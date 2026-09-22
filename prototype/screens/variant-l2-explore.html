@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 L2 · 零決策開場 — yoxi 城事</title>
+<!--
+  變體 L2：零決策開場（軸線 load）—— 這是刻意做壞的對照組，不是提案。
+
+  回答什麼問題
+    「少放一點」的那一端，最極端長什麼樣？整張畫面只留一個可按的東西，
+    連分頁列都拿掉，人會覺得清爽，還是覺得自己被關在一張圖裡？
+
+  動了什麼（相對 explore.html）
+    · 可按的東西只剩一顆「走」。今天的地方變成背景，本身不是連結。
+    · <body> 不掛 data-tab，所以 shell.js 不長分頁列 ——
+      叫車與收藏在這張畫面上完全不存在。
+    · 正式版的設定是「滑動或點一下畫面，分頁列才淡入」；
+      原型沒有做那一段手勢，改用一行小字加 data-toast 講清楚，
+      點下去至少會回一句話，不是完全沒反應。
+    · 為什麼推薦、路線、還沒去的地方：全部沒有，不是收起來，是沒有。
+
+  代價（這就是它當對照組的價值）
+    · 什麼都找不到。使用者不能從探索走到收藏，也回不去叫車。
+    · 今天不想去這個地方的人，在這張畫面上無事可做，只能關掉 app。
+    · 「還沒去的地方永不過期」這個提案最溫和的主張，在這裡完全看不到。
+
+  參考了哪個遊戲介面的哪一點
+    Walkr 的開場：一顆星球、一個動作，其餘介面全部等你主動叫出來。
+    它成立是因為那顆星球本身會動、會長大；靜態的一張推薦卡撐不起同樣的空。
+
+  量出來的數字（tools/audit-load.html）：可按 1、到達 1 步。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .l2-stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .l2-stage .placecard,
+  .l2-stage .placecard__art { position: absolute; inset: 0; height: 100%; border-radius: 0; }
+  .l2-stage .placecard__body { padding: var(--sp-6) var(--gutter) var(--sp-5); }
+  .l2-stage .placecard__name { font-size: var(--fs-display); }
+  .l2-stage .ai-mark { top: calc(var(--statusbar-h) + 2px); }
+
+  /* 底部只有一顆按鈕與一行小字。沒有分頁列，所以自己留出 home indicator 的位置。 */
+  .l2-act {
+    flex: none;
+    padding: var(--sp-3) var(--gutter) calc(var(--safe-bottom) + var(--sp-3));
+    background: var(--yoxi-white);
+  }
+  .l2-hint {
+    margin-top: var(--sp-3);
+    text-align: center;
+    font-size: var(--fs-cap);
+    color: var(--yoxi-slate);
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body data-tabs="l2" data-status="dark" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 今天的地方。刻意不是連結：整張畫面只有一個可按的東西。 ===== -->
+      <div class="l2-stage">
+        <div class="placecard">
+          <div class="placecard__art" data-art="glass" data-seed="1">
+            <span class="ai-mark">AI 生成示意</span>
+            <span class="placecard__scrim"></span>
+            <span class="placecard__body">
+              <span class="placecard__name" id="pName">水利路的老玻璃窯</span>
+              <span class="placecard__meta" id="pMeta"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="l2-act">
+        <a class="btn-primary" href="going.html">走</a>
+        <!-- 正式版是手勢；原型用一句話代替，點下去會回話。 -->
+        <div class="l2-hint" data-toast="正式版是往上滑，分頁列與其他內容才淡入；這份原型只做到說明這一句">
+          往上滑看更多
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const T = MOCK.TODAY;
+  document.getElementById('pName').textContent = T.name;
+  document.getElementById('pMeta').innerHTML =
+    '<span><span class="num">' + T.distance + '</span> m</span>' +
+    '<span style="opacity:.5">·</span>' +
+    '<span>走路 <span class="num">' + T.walkMin + '</span> 分鐘</span>';
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

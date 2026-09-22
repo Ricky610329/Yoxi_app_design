@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 L1 · 一屏一事 — yoxi 城事</title>
+<!--
+  變體 L1：一屏一事（軸線 load：畫面上要放多少東西）
+
+  回答什麼問題
+    探索首頁一次只放一個地方、一個動作，第一眼的認知負擔會低到什麼程度？
+    低下來之後，人是更想出門，還是覺得這個 app 沒東西？
+
+  動了什麼（相對 explore.html）
+    · 今天的地方從 280px 的主卡拉成接近滿屏，畫面上只剩它跟一顆「走路前往」。
+    · 為什麼推薦給你、這個月的路線、還沒去的地方，全部搬進底部那個
+      sheet.sheet--drag.is-collapsed 裡，整包標 data-expand-only ——
+      收合態連 DOM 上都不存在（見 chengshi.css 的 .sheet--drag.is-collapsed [data-expand-only]）。
+    · 收合態只露一條拉把，不露任何一列內容。
+    · 卡片／地圖切換也收掉：這一版沒有頁首。
+
+  代價
+    · 其餘所有內容都多一步（往上拉）才看得到，發現性靠那條拉把撐。
+    · 「還沒去的地方」那份反限時的清單看不見了 —— 它是這個提案最會說話的一塊。
+    · 沒有頁首就沒有「探索」兩個字，人只能從分頁列知道自己在哪一頁。
+
+  參考了哪個遊戲介面的哪一點
+    Neko Atsume 的院子：一屏就是一個場景，選項刻意少到不用讀，
+    代價是每個動作的步數變多。這一版借的是「一屏一事」，
+    但把被藏起來的東西集中在一個拉把後面，而不是散在好幾層選單裡。
+
+  量出來的數字（tools/audit-load.html）：可按 2、到達 1 步。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 滿屏的今天的地方。.placecard 本來是 280px 高的主卡，這一版讓它吃掉整個內容區。 */
+  .l1-stage { display: flex; flex-direction: column; min-height: 0; }
+  .l1-art { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .l1-art .placecard,
+  .l1-art .placecard__art { position: absolute; inset: 0; height: 100%; border-radius: 0; }
+  .l1-art .placecard__body { padding: var(--sp-6) var(--gutter) var(--sp-5); }
+  .l1-art .placecard__name { font-size: var(--fs-display); }
+  /* AI 標記下移，避開狀態列 —— 這一版沒有頁首，卡片直接頂到瀏海。 */
+  .l1-art .ai-mark { top: calc(var(--statusbar-h) + 2px); }
+  /* 走路前往站在一條白色的檯子上。深色遮罩底部已經接近海軍藍，
+     海軍藍的按鈕壓在上面會糊成一塊 —— 顏色紀律要看得出來才算數。 */
+  .l1-go { flex: none; padding: var(--sp-3) var(--gutter) var(--sp-3); background: var(--yoxi-white); }
+</style>
+</head>
+
+<body data-tab="explore" data-tabs="l1" data-status="dark" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 一屏一事：今天的地方 ===== -->
+      <div class="l1-stage u-fill">
+        <div class="l1-art">
+        <a class="placecard" href="place.html">
+          <div class="placecard__art" data-art="glass" data-seed="1">
+            <span class="ai-mark">AI 生成示意</span>
+            <span class="placecard__scrim"></span>
+            <span class="placecard__body">
+              <span class="placecard__eyebrow" id="eyebrow">今天的地方</span>
+              <span class="placecard__name" id="pName">水利路的老玻璃窯</span>
+              <span class="placecard__hook" id="pHook"></span>
+              <span class="placecard__meta" id="pMeta"></span>
+            </span>
+          </div>
+        </a>
+        </div>
+        <div class="l1-go"><a class="btn-primary" href="going.html">走路前往</a></div>
+      </div>
+
+      <!-- ===== 其餘全部收在拉把後面 =====
+           收合態只露拉把：--sheet-min 剛好等於 padding + 拉把的高度。 -->
+      <div class="sheet sheet--drag is-collapsed" data-drag
+           style="--sheet-min:34px; --sheet-max:82%">
+        <div class="sheet__handle"></div>
+
+        <div data-expand-only>
+          <p class="ai-note" style="margin:-4px -16px 14px">
+            明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。
+          </p>
+
+          <div class="sec" style="margin-bottom:10px">
+            <h2 class="sec__t sec__t--sm">為什麼推薦給你</h2>
+          </div>
+          <div class="why"><div class="why__list" id="whyList" style="display:grid"></div></div>
+
+          <div class="sec" style="margin:20px 0 10px">
+            <h2 class="sec__t sec__t--sm">這個月的路線</h2>
+            <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+          </div>
+          <div class="hscroll" id="routeCards"></div>
+
+          <div class="sec" style="margin:20px 0 10px">
+            <h2 class="sec__t sec__t--sm">還沒去的地方</h2>
+            <span class="sec__m">不會過期</span>
+          </div>
+          <div class="card" id="pendingList"></div>
+
+          <div style="height:16px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const T = MOCK.TODAY;
+
+  /* 今天的地方：文字一律取自 MOCK，不在畫面上另抄一份 */
+  document.getElementById('eyebrow').textContent = T.eyebrow;
+  document.getElementById('pName').textContent = T.name;
+  document.getElementById('pHook').textContent = T.hook;
+  document.getElementById('pMeta').innerHTML =
+    '<span>離你 <span class="num">' + T.distance + '</span> m</span>' +
+    '<span style="opacity:.5">·</span>' +
+    '<span>走路 <span class="num">' + T.walkMin + '</span> 分鐘</span>' +
+    '<span style="opacity:.5">·</span><span>' + T.type + '</span>';
+
+  /* 拉開才看得到的三塊 */
+  document.getElementById('whyList').innerHTML = T.why.map(function (w) {
+    return '<div class="why__item"><span class="why__src">' + w.src + '</span>' + w.text + '</div>';
+  }).join('');
+
+  document.getElementById('routeCards').innerHTML = MOCK.ROUTES.map(function (r, i) {
+    const done = STATE.routeDone(r.id);
+    return '<a class="card" href="route.html?id=' + r.id + '" style="width:220px; flex:none">' +
+      '<span style="display:block; height:96px; position:relative; overflow:hidden"' +
+      ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
+      '<span style="display:block; padding:12px">' +
+        '<span style="display:block; font-weight:800">' + r.name.split('：')[0] + '</span>' +
+        '<span style="display:block; font-size:12px; color:var(--yoxi-slate); margin-top:4px">' +
+          '<span class="num">' + done + '</span>/' + r.total + ' 站</span>' +
+      '</span></a>';
+  }).join('');
+
+  document.getElementById('pendingList').innerHTML = MOCK.PENDING.map(function (p, i) {
+    return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:10px 14px">' +
+      '<span style="width:40px;height:52px;border-radius:4px;overflow:hidden;position:relative;' +
+      'flex:none" data-art="' + p.art + '" data-seed="' + (i + 5) + '"></span>' +
+      '<span class="row-nav__body"><span class="row-nav__title" style="font-size:15px">' + p.name +
+      '</span><span class="row-nav__sub">' + (p.distance / 1000).toFixed(1) + ' km · ' + p.ago +
+      '</span></span><span class="arrow"></span></a>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

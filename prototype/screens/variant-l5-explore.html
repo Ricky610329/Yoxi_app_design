@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 L5 · 圖示取代文字（探索）— yoxi 城事</title>
+<!--
+  變體 L5：圖示取代文字 —— 探索那一張（軸線 load）
+
+  回答什麼問題
+    畫面上的文字能少到什麼程度？把「先看看這是什麼地方」「在地圖上看」
+    「為什麼推薦給你」這種一整列的文字換成一塊大圖示磚，還讀得懂嗎？
+    順便驗長輩可讀性：這一版的字級與觸控面積是整批裡最大的。
+
+  動了什麼（相對 explore.html）
+    · 沒有頁首、沒有卡片／地圖切換。第一眼是圖，不是字。
+    · 三整段（為什麼推薦給你、這個月的路線、還沒去的地方）換成一排三塊
+      tile-icon--xl 大磚：地圖、圖鑑、為什麼。標題以外一個字都沒有。
+    · 主要動作只剩一顆，字面就一個「走」＋腳印圖示，高度加到 72px。
+    · 畫面上的詞：地名、走、地圖、圖鑑、為什麼 —— 五個，加兩個數字
+      （900 m、12 分鐘）。AI 聲明那一行是誠實標註，不算在這個預算裡。
+
+  代價
+    · 圖示要學。第一次看到那三塊磚的人，不會知道「為什麼」是 AI 的推薦依據。
+    · 「還沒去的地方永不過期」這件事只剩一個圖示，講不出來。
+    · 路線的進度（2/6 站）也沒有位置放。
+
+  參考了哪個遊戲介面的哪一點
+    Neko Atsume：主畫面幾乎沒有文字，功能都是大圖示，一個畫面只有四五個
+    可按的東西。代價它也照付 —— 每個動作要多點一兩下，而且圖示得學。
+
+  量出來的數字（tools/audit-load.html）：可按 5、到達 1 步。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 圖吃掉剩下的高度，底下那一塊固定 —— 中間不留空白帶。 */
+  .l5-hero { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .l5-hero .placecard,
+  .l5-hero .placecard__art { position: absolute; inset: 0; height: 100%; border-radius: 0; }
+  .l5-hero .ai-mark { top: calc(var(--statusbar-h) + 2px); }
+  .l5-hero .placecard__name { font-size: var(--fs-display); }
+  .l5-hero .placecard__meta { font-size: var(--fs-lead); }
+
+  /* 走：字級與高度都比主線大一號，給長輩看的。 */
+  .l5-go { min-height: 72px; font-size: var(--fs-title); gap: var(--sp-3); }
+  .l5-go svg { width: 34px; height: 34px; }
+  .l5-foot { flex: none; padding: var(--sp-4) var(--gutter) var(--sp-3); background: var(--yoxi-white); }
+
+  /* 一排三塊大磚。整列文字換成一個圖示＋兩個字。 */
+  .l5-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .l5-tile {
+    display: grid;
+    justify-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-4) var(--sp-2);
+    background: var(--yoxi-white);
+    border: 1px solid var(--yoxi-line);
+    border-radius: var(--r-card);
+  }
+  .l5-tile b { font-size: var(--fs-body); font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
+</style>
+</head>
+
+<body data-tab="explore" data-tabs="l5" data-status="dark" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 一張圖、一個地名、兩個數字 ===== -->
+      <div class="l5-hero">
+          <a class="placecard" href="place.html">
+            <div class="placecard__art" data-art="glass" data-seed="1">
+              <span class="ai-mark">AI 生成示意</span>
+              <span class="placecard__scrim"></span>
+              <span class="placecard__body">
+                <span class="placecard__name" id="pName">水利路的老玻璃窯</span>
+                <span class="placecard__meta" id="pMeta"></span>
+              </span>
+            </div>
+          </a>
+      </div>
+
+      <div class="l5-foot">
+          <a class="btn-primary l5-go" href="going.html">
+            <span class="ic-ondark" data-icon="steps" style="display:block"></span>
+            走
+          </a>
+
+          <!-- ===== 三塊大磚取代三整段 ===== -->
+          <div class="l5-tiles" style="margin-top:16px">
+            <a class="l5-tile" href="map.html">
+              <span class="tile-icon tile-icon--xl"><span data-icon="viewMap"></span></span>
+              <b>地圖</b>
+            </a>
+            <a class="l5-tile" href="album.html">
+              <span class="tile-icon tile-icon--xl"><span data-icon="postcard"></span></span>
+              <b>圖鑑</b>
+            </a>
+            <a class="l5-tile" href="place.html">
+              <span class="tile-icon tile-icon--xl"><span data-icon="sun"></span></span>
+              <b>為什麼</b>
+            </a>
+          </div>
+
+          <p class="ai-note" style="background:none; padding:14px 0 0">
+            插圖是 AI 依地點生成的示意圖，不是實景照片。
+          </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const T = MOCK.TODAY;
+  document.getElementById('pName').textContent = T.name;
+  /* 只有數字，沒有形容詞 */
+  document.getElementById('pMeta').innerHTML =
+    '<span><span class="num">' + T.distance + '</span> m</span>' +
+    '<span style="opacity:.5">·</span>' +
+    '<span><span class="num">' + T.walkMin + '</span> 分鐘</span>';
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

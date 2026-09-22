@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 L3 · 圖鑑一頁一格 — yoxi 城事</title>
+<!--
+  變體 L3：圖鑑一頁一格（軸線 load）
+
+  回答什麼問題
+    收藏首頁的統計條、回顧入口、三顆 pill、傳給家人那張卡 —— 拿掉之後，
+    明信片牆本身撐不撐得起一整頁？「我這個月真的出門了」這句話，
+    需不需要旁邊那三個數字幫忙講？
+
+  動了什麼（相對 album.html）
+    · 只剩牆。統計條、今天的回顧卡、明信片／獎章／日誌三顆 pill、
+      傳給家人那張入口卡，全部拿掉。
+    · 進度從 statbar 的三個大數字縮成頁首底下一行小字「8／22」，
+      數字照樣由 STATE.count() 與 MOCK.POSTCARDS.length 算。
+    · 獎章、日誌、這一週三個入口併成頁首右上一顆。
+    · 還沒去過的那 14 張留在牆上當剪影，但不再是連結 —— 灰卡不承諾點得開。
+
+  代價
+    · 獎章、日誌、這一週全部退到一顆按鈕後面，發現性明顯變差。
+    · 灰卡不能點，就少了一條「從牆上挑一個地方去」的路。
+    · 沒有統計條，就沒有「48 公里」這種一眼看得到的證據。
+
+  參考了哪個遊戲介面的哪一點
+    Neko Atsume 的貓咪圖鑑：整頁就是格子，沒見過的貓只有剪影、點不開，
+    進度是頁緣一行小字。那一頁的情緒全部由格子自己提供。
+
+  量出來的數字（tools/audit-load.html）：可按 9（8 張收到的卡＋頁首 1 顆）、到達 1 步。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 進度不再是三個大數字，是頁首底下一行小字。 */
+  .l3-prog { margin-top: var(--sp-2); font-size: var(--fs-cap); font-weight: var(--fw-bold); opacity: .95; }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="l3" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <!-- 三個入口併成這一顆。原型只做到說明，所以按下去給一句話。 -->
+          <button class="hdr-red__action u-row u-gap2"
+                  data-toast="獎章、日誌、這一週都收在這一顆裡；這一版把它們全部移出首頁">
+            更多 <span class="arrow arrow--onred"></span>
+          </button>
+        </div>
+        <div class="l3-prog" id="prog"></div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <div style="padding:16px">
+          <div id="wall"></div>
+          <p class="ai-note" style="background:none; padding:14px 0 0">
+            灰色的是還沒去過的地方，到了就會上色。明信片都是 AI 依地點生成的示意圖。
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 進度：一行小字，數字照樣從狀態算 */
+  document.getElementById('prog').innerHTML =
+    '明信片 <span class="num">' + STATE.count() + '</span>／' + MOCK.POSTCARDS.length;
+
+  const wall = document.getElementById('wall');
+  SHELL.postcardWall(wall);
+
+  /* 還沒收到的那幾張改成純剪影：不是連結，也不是按鈕。
+     Neko Atsume 的圖鑑就是這樣 —— 沒見過的那一格點不開，不假裝可以按。
+     （這一版的可按數因此等於已收到的張數，而不是格子數。） */
+  wall.querySelectorAll('a.postcard--locked').forEach(function (a) {
+    const d = document.createElement('div');
+    d.className = a.className;
+    d.innerHTML = a.innerHTML;
+    a.replaceWith(d);
+  });
+})();
+</script>
+</body>
+</html>

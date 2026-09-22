@@ -125,9 +125,13 @@ function tapCount(win, doc) {
 function blockCount(win, doc) {
   const root = doc.querySelector('.device') || doc.body;
   let n = 0;
-  root.querySelectorAll('h1, h2, h3, p, li, span').forEach(function (el) {
+  root.querySelectorAll('h1, h2, h3, p, li, span, div').forEach(function (el) {
     const d = win.getComputedStyle(el).display;
     if (d !== 'block' && d !== 'flex' && d !== 'grid') return;
+    /* 收合態藏起來的內容不算：getComputedStyle 回的是子元素自己的 display，
+       父層 display:none 看不出來，所以要用 [data-expand-only] 與 .tabbar 排除。 */
+    if (inside(el, '[data-expand-only]') || inside(el, '.tabbar') || inside(el, '.statusbar')) return;
+    if (el.getBoundingClientRect().height === 0) return;
     let txt = '';
     for (let i = 0; i < el.childNodes.length; i++) {
       const c = el.childNodes[i];

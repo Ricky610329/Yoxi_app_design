@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 L6 · 一個數字 — yoxi 城事</title>
+<!--
+  變體 L6：一個數字（軸線 load）—— X5「走路就會長」的極簡版。
+
+  回答什麼問題
+    一個數字夠不夠當出門的理由？如果探索首頁只有今天走了幾步，
+    加上一條會跟著長的線，人會不會為了讓線再長一點而出門？
+
+  動了什麼（相對 explore.html）
+    · 畫面上只有三樣東西：今天的步數（大字）、一條每一千步轉一次彎的折線、
+      一行小字說今天的地方在 900 m。
+    · 那一行小字是整張畫面唯一的連結。
+    · 「走路前往」收進底部拉把裡（data-expand-only），要往上拉才看得到。
+    · 今天的地方從滿版主卡退成一行小字 —— 這是這個變體最大的代價。
+
+  刻意沒有的東西
+    · 沒有目標步數、沒有進度條、沒有連續幾天、沒有任何「還差多少」。
+      折線沒有終點：它不是一條要填滿的槽，只是今天走過的形狀。
+      有了目標值，這一頁就變成健身 app，城事的立場就沒了。
+    · 沒有換一個、沒有倒數、沒有限量。
+
+  代價
+    · 今天的地方變成一行小字，AI 推薦的內容價值幾乎看不見。
+    · 步數是另一套計量單位，會跟明信片搶注意力（X5 的風險在這裡更明顯）。
+    · 走路前往要多一步才按得到。
+
+  參考了哪個遊戲介面的哪一點
+    Walkr／Wokamon：主畫面只有一個數字與一隻會跟著長的東西，
+    介面幾乎沒有選項。它們的問題也一起繼承過來了 ——
+    數字本身沒有內容，長期只靠好奇心撐不住。
+
+  量出來的數字（tools/audit-load.html）：可按 1、到達 2 步。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .l6-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: var(--sp-3);
+    padding: var(--statusbar-h) var(--gutter) var(--sp-5);
+    background: var(--yoxi-paper);
+  }
+  /* 折線沒有終點，所以也不需要一個框把它框起來。 */
+  .l6-zig { width: 100%; max-width: 290px; height: 330px; }
+  .l6-num { font-size: 72px; }
+  .l6-link {
+    margin-top: var(--sp-4);
+    font-size: var(--fs-cap);
+    font-weight: var(--fw-bold);
+    color: var(--yoxi-navy);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style>
+</head>
+
+<body data-tab="explore" data-tabs="l6" data-status="dark" data-time="17:20">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="l6-stage">
+        <!-- 一條每一千步轉一次彎的線。畫多長由步數決定，沒有終點。 -->
+        <svg class="zigzag l6-zig" id="zig" viewBox="0 0 300 380" aria-hidden="true"></svg>
+
+        <div class="lookback__steps l6-num" id="steps">0</div>
+        <div class="lookback__unit">步</div>
+
+        <!-- 整張畫面唯一的連結 -->
+        <a class="l6-link" href="place.html" id="near"></a>
+      </div>
+
+      <!-- 走路前往收在拉把後面：收合態只露拉把。 -->
+      <div class="sheet sheet--drag is-collapsed" data-drag
+           style="--sheet-min:34px; --sheet-max:56%">
+        <div class="sheet__handle"></div>
+
+        <div data-expand-only>
+          <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                      color:var(--yoxi-slate); margin-bottom:8px" id="eyebrow"></div>
+          <a class="u-row u-gap4" href="place.html" style="padding-bottom:14px">
+            <span style="width:60px; height:78px; border-radius:6px; overflow:hidden;
+                         position:relative; flex:none" data-art="glass" data-seed="1"></span>
+            <span class="u-fill" style="min-width:0">
+              <span style="display:block; font-size:18px; font-weight:800; line-height:1.3"
+                    id="pName"></span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate);
+                           margin-top:4px; line-height:1.5" id="pHook"></span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+          <a class="btn-primary" href="going.html">走路前往</a>
+          <div style="height:12px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const L = MOCK.LOOKBACK;
+  const T = MOCK.TODAY;
+
+  /* ---- 大字。千分位有逗號，但不做跳動動畫：這一頁不表演。 ---- */
+  document.getElementById('steps').textContent = L.steps.toLocaleString('en-US');
+
+  /* ---- 折線：每 1,000 步轉一次彎，最後一段按餘數畫一半。
+         線的形狀就是今天走了多少 —— 沒有終點、沒有要填滿的槽，
+         所以也沒有「還差多少」可以講。 ---- */
+  const W = 300, H = 380, pad = 30;
+  const turns = L.steps / 1000;                 /* 6.24 */
+  const n = Math.floor(turns);
+  const frac = turns - n;
+  const y = function (k) { return H - pad - (H - pad * 2) * (k / turns); };
+
+  const pts = [];
+  for (let k = 0; k <= n; k++) pts.push([k % 2 === 0 ? pad : W - pad, y(k)]);
+  if (frac > 0.001) {
+    const x0 = pts[pts.length - 1][0];
+    const x1 = (n % 2 === 0) ? W - pad : pad;
+    pts.push([x0 + (x1 - x0) * frac, y(turns)]);
+  }
+  const d = pts.map(function (p, i) {
+    return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+  }).join(' ');
+  const tip = pts[pts.length - 1];
+
+  document.getElementById('zig').innerHTML =
+    '<path class="zigzag__path" d="' + d + '"/>' +
+    '<circle class="zigzag__stop" cx="' + tip[0].toFixed(1) + '" cy="' + tip[1].toFixed(1) +
+    '" r="7" fill="var(--yoxi-navy)"/>';
+
+  /* .zigzag__path 的 dasharray 是為 lookback.html 那條固定長度的線寫死的 640。
+     這條線的長度由步數決定，沿用 640 會在中段留一個假缺口 ——
+     看起來像線斷了，而不是「走到這裡」。所以照實際長度重設，
+     一路畫到底，逐段畫出來的效果留給同一組 keyframes。 */
+  const path = document.querySelector('#zig .zigzag__path');
+  const len = path.getTotalLength();
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+
+  /* ---- 唯一的一行字。距離從 MOCK.TODAY 來。 ---- */
+  document.getElementById('near').innerHTML =
+    '今天的地方在 <span class="num">' + T.distance + '</span> m';
+
+  /* ---- 拉開才看得到的：今天的地方與走路前往 ---- */
+  document.getElementById('eyebrow').textContent = T.eyebrow;
+  document.getElementById('pName').textContent = T.name;
+  document.getElementById('pHook').textContent = T.hook;
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

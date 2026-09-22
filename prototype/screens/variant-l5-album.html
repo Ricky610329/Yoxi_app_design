@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 L5 · 圖示取代文字（收藏）— yoxi 城事</title>
+<!--
+  變體 L5：圖示取代文字 —— 收藏那一張（軸線 load）
+
+  回答什麼問題
+    收藏頁的文字能不能幾乎全部拿掉？明信片本來就是圖，
+    那地名、日期、統計條、入口列這些字，有多少是真的必要？
+    同時驗長輩可讀性：這一頁只有三個詞與兩個數字，觸控面積全部 ≥ 88px。
+
+  動了什麼（相對 album.html）
+    · 統計條的三個數字縮成最上面一行「去過 8／22」，數字照樣由 STATE 算。
+    · 牆改成兩欄大格，只放最近收到的四張，而且蓋掉卡面的地名與日期 ——
+      牆變成純圖。地名跟日期沒有消失，點一下翻面就在背面。
+    · 明信片／獎章／日誌三顆 pill、今天的回顧卡、傳給家人那張列，
+      換成兩塊 tile-icon--xl 大磚：足跡、家人。
+    · 沒有紅色頁首，第一眼就是圖。
+
+  代價
+    · 看不到地名，就沒辦法用眼睛掃「我去過哪些地方」，要一張一張翻。
+    · 牆上只有四張，一個月的累積感（22 格的形狀）不見了 ——
+      這正是 L3「一頁一格」相反的取捨。
+    · 獎章、日誌、這一週三個入口在這一版完全沒有位置。
+
+  參考了哪個遊戲介面的哪一點
+    Neko Atsume 的院子與相簿：畫面上幾乎沒有字，可按的東西四五個，
+    每一個都大到不用瞄。它的代價是「這個圖示是什麼意思」要學一次。
+
+  量出來的數字（tools/audit-load.html）：可按 6（4 張卡＋2 塊磚）、到達 1 步。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 只有數字的一行。紅色留給強調數字，這是顏色紀律允許的用法。 */
+  .l5-count { font-size: var(--fs-h1); font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
+  .l5-count .num { color: var(--yoxi-red); font-size: var(--fs-display); }
+
+  /* 兩欄大格的牆，卡面不放字 —— 地名與日期在背面。 */
+  .l5-wall .postcard-wall { grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }
+  .l5-wall .postcard__foot { display: none; }
+
+  .l5-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }
+  .l5-tile {
+    display: grid;
+    justify-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-4);
+    background: var(--yoxi-white);
+    border: 1px solid var(--yoxi-line);
+    border-radius: var(--r-card);
+  }
+  .l5-tile b { font-size: var(--fs-body); font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="l5" data-status="dark" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <div style="padding:calc(var(--statusbar-h) + 10px) 16px 16px">
+
+          <div class="l5-count" id="count"></div>
+
+          <div class="l5-wall" id="wall" style="margin-top:16px"></div>
+
+          <div class="l5-tiles" style="margin-top:16px">
+            <a class="l5-tile" href="fogmap.html">
+              <span class="tile-icon tile-icon--xl"><span data-icon="viewMap"></span></span>
+              <b>足跡</b>
+            </a>
+            <a class="l5-tile" href="elder.html">
+              <span class="tile-icon tile-icon--xl"><span data-icon="elder"></span></span>
+              <b>家人</b>
+            </a>
+          </div>
+
+          <p class="ai-note" style="background:none; padding:12px 0 0">
+            明信片是 AI 生成的示意圖。點一張看地名。
+          </p>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 一行數字，來源跟 album.html 的統計條一樣 */
+  document.getElementById('count').innerHTML =
+    '去過 <span class="num">' + STATE.count() + '</span>／' + MOCK.POSTCARDS.length;
+
+  /* 最近收到的四張。順序照 MOCK.POSTCARDS，取已收的最後四張。 */
+  const got = MOCK.POSTCARDS.filter(function (p) { return STATE.card(p.id); });
+  SHELL.postcardWall(document.getElementById('wall'), {
+    cards: got.slice(-4),
+    locked: false,
+  });
+})();
+</script>
+</body>
+</html>
