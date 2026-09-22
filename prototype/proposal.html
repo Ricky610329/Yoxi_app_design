@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>提案總覽 · 城事怎麼接進 yoxi — yoxi 城事</title>
+<!--
+  提案總覽（給隊友內部對齊用）
+
+  這一頁只做一件事：把散在 84 張畫面檔頭與 catalog 裡的論述收成一頁
+  「為什麼 → 分幾步 → 每一步接哪個既有服務 → 每個取捨是什麼」。
+  不重寫任何主張；roadmap 與決策矩陣的資料在 js/catalog.js（ROADMAP、AXES.revisit），
+  變體改了矩陣跟著變，縮圖來自 assets/thumbs。刻意不過分格式：表格、一句話、縮圖，沒有段落。
+-->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/chengshi.css">
+<style>
+  body { background: var(--yoxi-mist); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 40px 24px 96px; }
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
+  .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
+  .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; max-width: 56em; }
+  .kicker { display: inline-block; padding: 5px 12px; border-radius: 999px; background: var(--yoxi-red); color: #fff;
+            font-size: 12px; font-weight: 800; letter-spacing: .06em; margin-bottom: 12px; }
+  .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; }
+  .links { display: grid; gap: 8px; justify-items: end; }
+
+  h2 { font-size: 22px; font-weight: 800; margin: 40px 0 6px; }
+  .lead { color: var(--yoxi-slate); line-height: 1.7; margin-bottom: 14px; max-width: 70em; }
+  .card { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 18px 22px; }
+
+  /* ① 一句話與迴路 */
+  .claim { font-size: 20px; font-weight: 800; line-height: 1.5; }
+  .loop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; font-size: 14px; font-weight: 700; }
+  .loop span { padding: 6px 12px; border-radius: 999px; background: var(--yoxi-mist); }
+  .loop i { color: var(--yoxi-slate); font-style: normal; }
+  .why { margin-top: 14px; font-size: 14px; line-height: 1.75; }
+  .why li { display: flex; gap: 8px; }
+  .why li::before { content: "·"; color: var(--yoxi-red); font-weight: 800; }
+  .why small { color: var(--yoxi-slate); }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+  @media (max-width: 800px) { .nums { grid-template-columns: repeat(2, 1fr); } }
+  .num-tile { padding: 14px 16px; border-radius: var(--r-card); background: var(--yoxi-cream); }
+  .num-tile b { display: block; font-size: 28px; font-weight: 800; font-style: italic; line-height: 1.1; }
+  .num-tile span { display: block; font-size: 12px; color: var(--yoxi-slate); margin-top: 4px; line-height: 1.4; }
+
+  /* ② roadmap */
+  .step { display: grid; grid-template-columns: 1fr 480px; gap: 20px 28px; margin-bottom: 14px; }
+  @media (max-width: 1000px) { .step { grid-template-columns: 1fr; } }
+  .step__n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+             background: var(--yoxi-navy); color: #fff; font-weight: 800; font-style: italic; margin-right: 10px; }
+  .step__t { font-size: 20px; font-weight: 800; display: flex; align-items: center; }
+  .step__one { margin-top: 10px; font-size: 15px; line-height: 1.7; }
+  .kv { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; font-size: 13px; line-height: 1.6; margin-top: 12px; }
+  .kv dt { color: var(--yoxi-slate); font-weight: 800; }
+  .kv dd { margin: 0; }
+  .kv .tags { margin-top: 2px; }
+  .kv .trade { color: #8A5A1E; }
+  .frs { display: flex; gap: 12px; flex-wrap: wrap; align-content: flex-start; }
+  .frc { width: 106px; }
+  .fr { position: relative; width: 106px; height: calc(106px * 912 / 430); border-radius: 10px; overflow: hidden;
+        background: var(--yoxi-mist); box-shadow: 0 2px 10px rgba(6,32,64,.14); display: grid; place-items: center;
+        font-size: 11px; font-weight: 800; color: var(--yoxi-slate); text-align: center; padding: 6px; }
+  .fr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .fr a { position: absolute; inset: 0; }
+  .fr__cap { margin-top: 6px; font-size: 11px; line-height: 1.4; color: var(--yoxi-navy); }
+  .fr__cap small { display: block; color: var(--yoxi-slate); }
+  .more { align-self: flex-end; font-size: 12px; font-weight: 800; color: var(--yoxi-navy); text-decoration: underline; }
+
+  /* ③ 決策矩陣 */
+  table.mx { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); overflow: hidden; }
+  .mx th, .mx td { text-align: left; vertical-align: top; padding: 12px 14px; border-top: 1px solid var(--yoxi-line); font-size: 13px; line-height: 1.6; }
+  .mx th { background: var(--yoxi-mist); font-size: 12px; color: var(--yoxi-slate); border-top: 0; }
+  .mx td.q { font-weight: 800; width: 20%; }
+  .mx td.pick { width: 24%; }
+  .mx td.pick a { display: flex; gap: 10px; align-items: flex-start; }
+  .mx td.pick img { width: 34px; height: 72px; object-fit: cover; object-position: top; border-radius: 5px; flex: none; box-shadow: 0 1px 4px rgba(6,32,64,.2); }
+  .mx td.pick b { display: block; }
+  .mx td.pick small { color: var(--yoxi-slate); }
+  .mx td.cost { color: #8A5A1E; }
+  .verdict { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 800; white-space: nowrap; margin-right: 6px; }
+  .verdict--pick { background: var(--yoxi-navy); color: #fff; }
+  .verdict--open { background: var(--yoxi-cream); color: #8A5A1E; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 800; background: var(--yoxi-mist); color: var(--yoxi-navy); }
+
+  /* ④ 風險控制 */
+  .proofs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  @media (max-width: 1100px) { .proofs { grid-template-columns: repeat(4, 1fr); } }
+  .proof { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 12px 12px 10px; }
+  .proof small { display: block; font-size: 11px; font-weight: 800; color: var(--yoxi-slate); }
+  .proof b { display: block; font-size: 24px; font-weight: 800; font-style: italic; margin-top: 2px; line-height: 1.1; color: #2F6B3D; }
+  .proof b.warn { color: #8A5A1E; }
+  .proof span { display: block; font-size: 12px; margin-top: 2px; }
+  .walls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  @media (max-width: 900px) { .walls { grid-template-columns: 1fr; } }
+  .walls b { display: block; margin-bottom: 4px; }
+  .walls p { font-size: 13px; line-height: 1.65; color: var(--yoxi-navy); }
+  .walls .card { padding: 14px 16px; }
+  code { background: var(--yoxi-mist); padding: 0 5px; border-radius: 3px; font-size: 12px; }
+
+  /* ⑤ 還沒決定 */
+  .open { font-size: 14px; line-height: 1.8; }
+  .open li { display: flex; gap: 8px; }
+  .open li::before { content: "?"; color: var(--yoxi-red); font-weight: 800; flex: none; width: 14px; }
+  .open small { color: var(--yoxi-slate); }
+  .src { margin-top: 24px; font-size: 12px; color: var(--yoxi-slate); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <span class="kicker">提案總覽 · 給隊友對齊用</span>
+      <h1>城事怎麼接進 yoxi</h1>
+      <p>先從記錄去過哪裡與獎章開始，一步一步接到本業。這一頁只講「為什麼、分幾步、每一步接什麼、每個取捨是什麼」；
+         細節都在原型裡，點縮圖就到。</p>
+    </div>
+    <div class="links">
+      <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
+      <a class="backlink" href="overview.html">層級樹（寫評語） <span class="arrow"></span></a>
+      <a class="backlink" href="variants.html">變體比較 <span class="arrow"></span></a>
+    </div>
+  </header>
+
+  <!-- ① 一句話與商業迴路 -->
+  <section class="card">
+    <p class="claim">把叫車 app 變成一個不搭車也會打開的城市探索與收藏工具，再把「發現一個地方 → 叫車去那裡」接回本業。</p>
+    <div class="loop">
+      <span>探索</span><i>→</i><span>走路或叫車抵達</span><i>→</i><span>明信片、獎章</span><i>→</i><span>分享（長輩圖）</span><i>→</i><span>訂單與和泰 Points</span><i>→</i><span>集團生態圈</span>
+    </div>
+    <ul class="why">
+      <li><span><b>為什麼是 yoxi。</b>和泰 Points 跨 yoxi／iRent／HOTAI 購折抵，其他平台的點數是封閉的 —— 探索行為回流到點數是別家抄不走的迴路。<small>（points.html、shop.html）</small></span></li>
+      <li><span><b>現在的痛點。</b>在地合作靠一檔一檔的優惠碼跑，「優惠券機制令人困惑」是 App Store 前列的抱怨；我們把它升級成內容，不是再多發幾張券。<small>（coupon.html）</small></span></li>
+      <li><span><b>為什麼要「不搭車也打開」。</b>車隊 1.1 萬輛是三大平台最小，非服務範圍一樣能走路收集 —— 開啟的理由不能只靠叫車。<small>（outofarea.html）</small></span></li>
+      <li><span><b>設計立場。</b>尊重 yoxi 原有設計，在上面疊加；叫車主畫面的收合態一個像素都沒動，叫車關鍵路徑的 tap 數與現況相同。<small>（index.html）</small></span></li>
+    </ul>
+    <div class="nums">
+      <div class="num-tile"><b>4</b><span>叫車關鍵路徑 tap 數，與現況相同</span></div>
+      <div class="num-tile"><b>0</b><span>收合態 sheet 像素改動</span></div>
+      <div class="num-tile"><b id="nScreens">—</b><span>張畫面（主線與變體），全站稽核死按鈕、數字、禁用詞</span></div>
+      <div class="num-tile"><b id="nVariants">—</b><span>個變體，<i id="nAxes" style="font-style:normal">—</i> 條設計軸線</span></div>
+    </div>
+  </section>
+
+  <!-- ② roadmap -->
+  <h2>五步 roadmap：不標日期，只標前提</h2>
+  <p class="lead">每一步接一個 yoxi 已經有的東西，做完一步再談下一步。右邊是已經做好的畫面，點了就開。</p>
+  <div id="steps"></div>
+
+  <!-- ③ 決策矩陣 -->
+  <h2>決策矩陣：一軸一行</h2>
+  <p class="lead">每條軸線是一個設計問題。「我們選」連到變體比較頁，所有選項與對照組都在那裡；「什麼時候回頭看」是這個決定的到期條件。</p>
+  <table class="mx" id="matrix">
+    <thead><tr><th>問題</th><th>我們選</th><th>代價</th><th>什麼時候回頭看</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- ④ 風險控制 -->
+  <h2>風險控制：叫車沒有變難用，城事沒有變成任務</h2>
+  <p class="lead">六條承諾全部可以當場重跑：<code>python prototype/tools/verify-quiet.py</code>。第七顆是還沒量的，寫在這裡，不藏。</p>
+  <div class="proofs">
+    <div class="proof"><small>① 圖層關閉時</small><b>464</b><span>節點逐節點相同</span></div>
+    <div class="proof"><small>② 叫車關鍵路徑</small><b>4</b><span>tap 數不變</span></div>
+    <div class="proof"><small>③ 收合態 sheet</small><b>0</b><span>像素改動</span></div>
+    <div class="proof"><small>④ 同時最多</small><b>4</b><span>個景點在叫車地圖</span></div>
+    <div class="proof"><small>⑤ 遮住 pin／浮動鈕</small><b>0</b><span>px² 重疊</span></div>
+    <div class="proof"><small>⑥ 兩種標記</small><b>∅</b><span>class 交集</span></div>
+    <div class="proof"><small>還沒量的</small><b class="warn">E</b><span>足跡上色的干擾</span></div>
+  </div>
+  <div class="walls">
+    <div class="card"><b>語氣</b><p>禁用詞：任務／完成／達成／挑戰／每日。沒有連續天數、倒數、限量、排名、未讀數字；獎章寫「收集 4/8」。</p></div>
+    <div class="card"><b>打擾</b><p>推播一天最多兩則（早上的地方、晚上的回顧），各自可關；探索地圖最多 10 個景點，叫車地圖最多 4 個。</p></div>
+    <div class="card"><b>隱私</b><p>只有你：日誌、心情、照片、走過的路線。你可分享：明信片、獎章、週回顧、長輩圖。家人與好友只看得到對方按過分享的。</p></div>
+  </div>
+
+  <!-- ⑤ 還沒決定 -->
+  <h2>還沒決定的事</h2>
+  <ul class="open card">
+    <li><span>城事從哪裡進：抽屜入口（候選 G）還是三分頁 tab bar？<small>第 1 步上線前必決。</small></span></li>
+    <li><span>K1 的「還給不給走路」門檻是 3 km，主線 place.html 是 10 km（十八尖山 3.1 km 走得上去）。<small>要重談。</small></span></li>
+    <li><span>好友系統五問：AI 鄰居該不該回信？能不能寄給不在 app 的人？「回一張」要不要做成按鈕？20 字是不是太多？入口放側邊選單還是第四顆 pill？<small>boards/board-friends.html</small></span></li>
+    <li><span>明信片與插圖什麼時候從程式生成示意換成 AI 依地點生成？實景照片要不要進正式版？<small>concept.html 的授權段</small></span></li>
+    <li><span>城市景點與活動的內容誰來細緻整理、多久更新一次？<small>brainstorm 的但書；routes.html 主張「每月由 AI 從官方活動與熱點重生」。</small></span></li>
+  </ul>
+
+  <p class="src">出處：README、index.html 設計立場、js/catalog.js（FLOWS.why、AXES、VARIANTS、ROADMAP）、各畫面檔頭註解（elder.html 的 ESG 數字、points.html／shop.html／coupon.html／outofarea.html 的商業論述）。數字都來自工具量測或 catalog，不是手寫。</p>
+</div>
+
+<script src="js/catalog.js"></script>
+<script>
+(function () {
+  const C = window.CATALOG;
+  const esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+
+  /* ---- 數字磚：從 catalog 算，不手寫 ---- */
+  document.getElementById('nVariants').textContent = C.VARIANTS.filter(function (v) { return v.state !== 'candidate'; }).length;
+  document.getElementById('nAxes').textContent = C.AXES.length;
+  document.getElementById('nScreens').textContent = Object.keys(C.SCREENS).length + C.VARIANTS.reduce(function (n, v) { return n + (v.screens || []).length; }, 0);
+
+  /* ---- 縮圖卡：畫面／變體／願景／概念 → {href, thumb, name, sub} ---- */
+  function fromScreen(k) {
+    const s = C.screen(k);
+    return { href: 'screens/' + s.href, thumb: s.thumb, name: s.name, sub: s.kindLabel };
+  }
+  function fromVariant(k) {
+    const v = C.VARIANTS.filter(function (x) { return x.key === k; })[0];
+    if (!v) return null;
+    const t = v.tabs && v.tabs[0];
+    return { href: t ? t[1] : 'variants.html#var-' + k, thumb: t ? C.thumbOf(t[1]) : null, name: v.name, sub: v.tag + (v.state === 'candidate' ? ' · 只有論述' : '') };
+  }
+  function fromNode(id) {
+    const n = C.node(id);
+    if (!n) return null;
+    return { href: n.href, thumb: n.thumb, name: n.name, sub: n.meta && n.meta.board ? '概念板' : (id.indexOf('vis:') === 0 ? '願景稿' : '概念稿') };
+  }
+  function frame(c) {
+    return '<div class="frc"><div class="fr">' +
+      (c.thumb ? '<img src="' + esc(c.thumb) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+      '<span>' + esc(c.name) + '</span>' +
+      '<a href="' + esc(c.href) + '" target="_blank" aria-label="' + esc(c.name) + '"></a></div>' +
+      '<div class="fr__cap">' + esc(c.name) + '<small>' + esc(c.sub) + '</small></div></div>';
+  }
+
+  /* ---- ② roadmap ---- */
+  const MORE = { 0: 'variants.html#axis-album', 1: 'variants.html#axis-explore', 2: 'variants.html#axis-conv', 3: 'concept.html#friend', 4: 'concept.html' };
+  document.getElementById('steps').innerHTML = C.ROADMAP.map(function (st) {
+    const cards = []
+      .concat(st.screens.map(fromScreen))
+      .concat(st.variants.map(fromVariant))
+      .concat(st.visions.map(fromNode))
+      .concat(st.concepts.map(fromNode))
+      .filter(Boolean);
+    const shown = cards.slice(0, 8);
+    return '<section class="card step" id="step-' + st.step + '">' +
+      '<div>' +
+        '<div class="step__t"><span class="step__n">' + st.step + '</span>' + esc(st.name) + '</div>' +
+        '<p class="step__one">' + esc(st.one) + '</p>' +
+        '<dl class="kv">' +
+          '<dt>前提</dt><dd>' + esc(st.premise) + '</dd>' +
+          '<dt>接既有服務</dt><dd><div class="tags">' + st.services.map(function (s) { return '<span class="tag">' + esc(s) + '</span>'; }).join('') + '</div></dd>' +
+          '<dt>一個指標</dt><dd>' + esc(st.metric) + '</dd>' +
+          '<dt>取捨</dt><dd class="trade">' + esc(st.tradeoff) + '</dd>' +
+        '</dl>' +
+      '</div>' +
+      '<div class="frs">' + shown.map(frame).join('') +
+        (cards.length > shown.length || MORE[st.step] ? '<a class="more" href="' + MORE[st.step] + '">更多 →</a>' : '') +
+      '</div>' +
+    '</section>';
+  }).join('');
+
+  /* ---- ③ 決策矩陣：一軸一行 ---- */
+  document.querySelector('#matrix tbody').innerHTML = C.AXES.map(function (a) {
+    const v = a.pick ? C.VARIANTS.filter(function (x) { return x.key === a.pick; })[0] : null;
+    const c = v ? fromVariant(v.key) : null;
+    const pick = v
+      ? '<a href="variants.html#axis-' + a.key + '">' + (c && c.thumb ? '<img src="' + esc(c.thumb) + '" alt="" onerror="this.remove()">' : '') +
+        '<span><span class="verdict verdict--pick">' + esc(v.tag) + '</span><b>' + esc(v.name) + '</b><small>' + esc(v.one) + '</small></span></a>'
+      : '<span class="verdict verdict--open">未定</span>' + esc(a.undecided || '') + ' <a href="variants.html#axis-' + a.key + '" style="text-decoration:underline">看選項</a>';
+    return '<tr>' +
+      '<td class="q">' + esc(a.title) + '</td>' +
+      '<td class="pick">' + pick + '</td>' +
+      '<td class="cost">' + esc(v ? v.bad : '還沒選，代價要看選哪一邊。') + '</td>' +
+      '<td>' + esc(a.revisit || '') + '</td>' +
+    '</tr>';
+  }).join('');
+})();
+</script>
+</body>
+</html>
