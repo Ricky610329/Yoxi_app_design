@@ -1,0 +1,382 @@
+/* ==========================================================================
+   yoxi 城事 web app — album 區塊樣式（/album /postcard /badge /footprint /lookback /week /elder）
+   沿用 chengshi.css 的 .postcard／.badge／.track-mini／.statbar／.lookback／.mood／.citycolor／.fogmap__*；
+   這裡只補 app 版需要的版面。不准 hex：顏色、圓角、時間全用 tokens.css 的變數。
+   ========================================================================== */
+
+/* ---- 共用 ---- */
+.alb { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.alb-scroll { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-4)); }
+body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
+.alb-pad { padding: var(--sp-4) var(--gutter) 0; }
+.alb-pad--stat { padding-top: var(--sp-1); padding-bottom: var(--sp-3); }
+.alb-pad--pills { padding-top: 0; padding-bottom: var(--sp-3); }
+.alb-pad--end { padding-bottom: var(--sp-6); }
+.alb-panel { padding: 0 var(--gutter) var(--sp-5); }
+.alb-foot {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-cap);
+  color: var(--yoxi-slate);
+  line-height: 1.7;
+}
+.alb-center { text-align: center; }
+.alb-left { justify-content: flex-start; text-align: left; line-height: 1.6; }
+.alb-h1 { font-size: var(--fs-title); font-weight: var(--fw-heavy); line-height: 1.3; }
+.alb-sub { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--yoxi-slate); }
+.alb-gap { margin-top: var(--sp-4); }
+.alb-empty { padding-top: var(--sp-5); background: none; }
+.hdr-red__action[data-act="share"] { padding: var(--sp-1) 0; }
+
+.alb-stat__of { font-size: var(--fs-sm); font-weight: var(--fw-bold); opacity: .6; }
+
+/* ---- 一列可按的卡（回顧入口、週回顧入口、長輩圖、所屬獎章） ---- */
+.alb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 14px var(--sp-4);
+  margin-top: var(--sp-3);
+}
+.alb-row__t { display: block; font-weight: var(--fw-heavy); line-height: 1.35; }
+.alb-row__s { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); line-height: 1.5; }
+.alb-row--navy { background: var(--yoxi-navy); border: 0; color: var(--yoxi-white); }
+.alb-row--navy .alb-row__s { color: var(--yoxi-white); opacity: .75; }
+.alb-row__icon { background: rgba(255, 255, 255, .14); }
+.alb-row__icon [data-icon] { width: 24px; height: 24px; display: block; }
+.alb-row .tile-icon [data-icon] { width: 24px; height: 24px; display: block; }
+.alb-row__badge { width: auto; }
+.alb-row__badge .badge__disc { width: 52px; height: 52px; }
+.alb-row__badge .badge__disc svg { width: 28px; height: 28px; }
+
+/* ---- S3 書架 ---- */
+.alb-shelf { margin-bottom: var(--sp-3); }
+.alb-shelf__spine {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) 14px var(--sp-3) 18px;
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-card);
+  text-align: left;
+  overflow: hidden;
+}
+/* 左緣那一條：書的側面 */
+.alb-shelf__spine::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--yoxi-navy);
+}
+.alb-shelf__spine--open { border-radius: var(--r-card) var(--r-card) 0 0; }
+.alb-shelf__thumb {
+  position: relative;
+  width: 40px;
+  height: 52px;
+  flex: none;
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+.alb-shelf__thumb--loose {
+  display: grid;
+  place-items: center;
+  background: var(--yoxi-cream);
+}
+.alb-shelf__thumb--loose [data-icon] { width: 22px; height: 22px; display: block; }
+.alb-shelf__body { min-width: 0; }
+.alb-shelf__open { flex: none; font-size: var(--fs-cap); font-weight: var(--fw-bold); color: var(--yoxi-navy); }
+.alb-shelf__name { display: block; font-weight: var(--fw-heavy); line-height: 1.35; font-size: var(--fs-sm); }
+.alb-shelf__meta { display: block; margin: 2px 0 var(--sp-2); font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.alb-shelf__cells {
+  padding: var(--sp-3);
+  background: var(--yoxi-white);
+  border-radius: 0 0 var(--r-card) var(--r-card);
+  box-shadow: var(--sh-card);
+}
+.alb-shelf.is-open .alb-shelf__cells { animation: alb-rise var(--t-base) var(--ease-out) both; }
+.alb-shelf__all {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+  text-align: center;
+}
+@keyframes alb-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.alb-cell .postcard__name { font-size: var(--fs-xs); line-height: 1.25; }
+.alb-cell .postcard__foot { padding: var(--sp-3) var(--sp-2) var(--sp-2); }
+.alb-cell__lock {
+  position: absolute;
+  right: var(--sp-2);
+  top: var(--sp-2);
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  color: var(--yoxi-slate);
+  opacity: .9;
+}
+.alb-cell__lock [data-icon] { width: 13px; height: 13px; display: block; }
+.alb-cell__lock--big { width: 34px; height: 34px; }
+.alb-cell__lock--big [data-icon] { width: 18px; height: 18px; }
+
+/* ---- X4 勳章牆（沒有進度環） ---- */
+.alb-badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); padding-top: var(--sp-2); }
+.alb-badges .badge { width: auto; }
+.alb-badges .badge__prog { font-style: normal; }
+
+/* ---- 日誌（只有你） ---- */
+.alb-journal { position: relative; overflow: hidden; }
+.alb-journal__in { padding: var(--sp-4); }
+.alb-journal__date { font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.alb-journal__line { margin-top: var(--sp-3); }
+.alb-journal__mood { width: 26px; height: 26px; display: block; color: var(--yoxi-red); }
+.alb-journal__moodt { font-weight: var(--fw-heavy); }
+.alb-journal__moodt--none { font-weight: var(--fw-med); color: var(--yoxi-slate); }
+.alb-journal__steps { margin-top: var(--sp-2); font-weight: var(--fw-bold); }
+.alb-journal__places { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--yoxi-slate); }
+.alb-journal__pics { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+.alb-journal__pic {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+.alb-journal__new { margin-top: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+/* 角落一行小字 */
+.alb-journal__privacy {
+  justify-content: flex-end;
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--yoxi-line);
+  font-size: var(--fs-xs);
+}
+
+/* ---- 明信片詳情 ---- */
+.alb-big { padding: var(--sp-5) 42px var(--sp-2); }
+.alb-big__card { box-shadow: var(--sh-lift); text-align: left; }
+.alb-big__name { font-size: var(--fs-body); }
+.alb-big__back { padding: 18px; }
+.alb-big__back b { font-size: var(--fs-body); }
+.alb-big__back small { font-size: var(--fs-xs); }
+.alb-big__back p { font-size: var(--fs-xs); line-height: 1.8; margin-top: var(--sp-2); }
+.alb-big__back .postcard__stamp { width: 40px; height: 40px; font-size: 10px; }
+.alb-big__note { font-weight: var(--fw-heavy); font-size: var(--fs-cap) !important; }
+.alb-hint { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.alb-fact { padding: var(--sp-3) var(--sp-4); }
+.alb-fact .tile-icon [data-icon] { width: 22px; height: 22px; display: block; }
+.alb-fact .row-nav__sub { margin-top: 0; }
+.alb-fact .row-nav__title { font-size: var(--fs-body); }
+.alb-again { margin-top: var(--sp-3); background: var(--yoxi-cream); border: 0; }
+.alb-again__k {
+  margin-bottom: 6px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .08em;
+  color: var(--yoxi-red);
+}
+.alb-again__t { font-size: var(--fs-body); line-height: 1.8; }
+
+/* ---- 獎章詳情 ---- */
+.alb-medal { padding: var(--sp-6) var(--sp-5) 28px; background: var(--yoxi-white); text-align: center; }
+.alb-medal__disc {
+  width: 132px;
+  height: 132px;
+  margin: 0 auto;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  background: var(--yoxi-cream);
+  box-shadow: inset 0 0 0 6px var(--yoxi-cream-deep);
+}
+.alb-medal__disc [data-icon] { width: 66px; height: 66px; display: block; }
+.alb-medal.is-locked .alb-medal__disc {
+  background: var(--yoxi-mist);
+  box-shadow: inset 0 0 0 6px var(--yoxi-line);
+  filter: grayscale(1);
+  opacity: .75;
+}
+.alb-medal__name { margin-top: 18px; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
+.alb-medal__award { margin-top: var(--sp-3); font-size: var(--fs-body); line-height: 1.8; color: var(--yoxi-navy); }
+.alb-medal__wait { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--yoxi-slate); }
+.alb-medal__prog { margin-top: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.alb-member { padding: 10px var(--sp-4); }
+.alb-member .row-nav__title { font-size: var(--fs-body); }
+.alb-member__pic {
+  position: relative;
+  width: 40px;
+  height: 52px;
+  flex: none;
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+.alb-member__pic.postcard--locked .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
+.alb-member__check { width: 24px; height: 24px; padding: 4px; display: block; flex: none; border-radius: var(--r-pill); background: var(--yoxi-navy); }
+
+/* ---- 城市足跡 ---- */
+.alb-fp { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; background: var(--map-fog); }
+.alb-fp__map { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.alb-fp__back {
+  position: absolute;
+  z-index: 8;
+  left: var(--gutter);
+  top: calc(var(--statusbar-h) + var(--sp-2));
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-fab);
+  color: var(--yoxi-navy);
+}
+.alb-fp__back [data-icon] { width: 20px; height: 20px; display: block; }
+.alb-fp__title {
+  position: absolute;
+  z-index: 8;
+  left: calc(var(--gutter) + 52px);
+  top: calc(var(--statusbar-h) + var(--sp-2));
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-fab);
+  font-weight: var(--fw-heavy);
+  pointer-events: none;
+}
+.alb-fp__sheet {
+  position: relative;
+  z-index: 9;
+  flex: none;
+  margin-top: calc(var(--r-sheet) * -1);
+  padding: var(--sp-4) var(--gutter) calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-3));
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-sheet);
+}
+.alb-fp__row { justify-content: space-between; align-items: flex-end; }
+.alb-fp__cov { display: block; font-size: var(--fs-h1); line-height: 1; color: var(--yoxi-red); }
+.alb-fp__covk { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.alb-fp__sec { margin: var(--sp-4) 0 var(--sp-2); }
+.alb-fp .citycolor { height: 28px; }
+
+/* ---- 每日回顧（深色底；幕與幕之間用 --t-scene） ---- */
+.alb-lb { z-index: 5; }
+.alb-lb .lookback__top { padding-top: calc(var(--statusbar-h) + var(--sp-2)); }
+.alb-lb .lookback__act.is-on { animation: alb-scene var(--t-scene) var(--ease-out) both; }
+@keyframes alb-scene { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.alb-lb__exit { color: var(--yoxi-white); opacity: .8; font-weight: var(--fw-bold); }
+.alb-lb__t { font-size: var(--fs-title); }
+.alb-lb__sub { margin-bottom: var(--sp-5); }
+.alb-lb__km { font-size: 44px; }
+.alb-lb__card { width: 170px; margin: 0 auto 28px; }
+.alb-lb__photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.alb-lb__photo { aspect-ratio: 1 / 1; }
+.alb-lb__photo.is-on { box-shadow: 0 0 0 3px var(--yoxi-white); }
+.alb-lb__skip { justify-content: center; width: 100%; margin-top: var(--sp-5); color: var(--yoxi-white); opacity: .7; }
+.alb-lb__next { background: var(--yoxi-white); color: var(--yoxi-navy); }
+.alb-lb .mood__btn { color: var(--yoxi-white); }
+.alb-zz__dot { fill: var(--yoxi-white); }
+.alb-zz__dot--last { fill: var(--yoxi-red); }
+.alb-zz__t { font-size: 10px; font-weight: var(--fw-heavy); fill: var(--yoxi-navy); }
+.alb-zz__t--last { fill: var(--yoxi-white); }
+
+/* ---- 這一週（本週／上週：同色系明度差） ---- */
+.alb-cover { overflow: hidden; }
+.alb-cover__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; height: 150px; }
+.alb-cover__cell { position: relative; overflow: hidden; }
+.alb-cover__txt { padding: var(--sp-4); }
+.alb-cover__range { font-size: var(--fs-xs); font-weight: var(--fw-heavy); letter-spacing: .08em; color: var(--yoxi-red); }
+.alb-cover__t { margin-top: 5px; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
+.alb-cmp { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); }
+.alb-cmp__k { font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.alb-cmp__bars { display: flex; flex-direction: column; gap: 3px; }
+.alb-cmp__bar { display: block; height: 8px; min-width: 2px; border-radius: var(--r-btn); background: var(--yoxi-red); }
+.alb-cmp__bar--prev { opacity: .32; }
+.alb-cmp__v { text-align: right; line-height: 1.2; }
+.alb-cmp__v b { display: block; font-size: var(--fs-body); }
+.alb-cmp__v small { display: block; font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.alb-days { display: flex; gap: var(--sp-2); height: 110px; margin-top: var(--sp-4); }
+.alb-days__col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.alb-days__col small { font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.alb-days__pair { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
+.alb-days__bar { width: 38%; border-radius: var(--r-btn) var(--r-btn) 0 0; background: var(--yoxi-red); }
+.alb-days__bar--prev { opacity: .32; }
+.alb-legend { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.alb-legend > span { gap: 6px; }
+.alb-legend__sw { width: 12px; height: 12px; border-radius: var(--r-btn); background: var(--yoxi-red); }
+.alb-legend__sw--prev { opacity: .32; }
+.alb-weekcards { padding-bottom: 2px; }
+.alb-weekcard { width: 76px; flex: none; text-align: center; }
+.alb-weekcard__pic { position: relative; display: block; width: 76px; height: 76px; border-radius: var(--r-img); overflow: hidden; }
+.alb-weekcard__t { display: block; margin-top: 5px; font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1.3; }
+
+/* ---- 長輩圖：排版語言跟 app 其它地方相反（大字、高飽和、描邊）——它要在 LINE 裡被看見 ---- */
+.alb-elder {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-img);
+  overflow: hidden;
+  background: var(--yoxi-cream);
+}
+.alb-elder__art { position: absolute; inset: 0; }
+.alb-elder__shade { position: absolute; inset: 0; background: rgba(0, 0, 0, .18); }
+.alb-elder__cap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: var(--sp-4);
+  text-align: center;
+}
+.alb-elder__big {
+  font-size: 30px;
+  font-weight: var(--fw-heavy);
+  line-height: 1.25;
+  color: var(--gold-lite);
+  text-shadow: 2px 2px 0 var(--yoxi-red-dark), -2px 2px 0 var(--yoxi-red-dark),
+               2px -2px 0 var(--yoxi-red-dark), -2px -2px 0 var(--yoxi-red-dark);
+}
+.alb-elder__small {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-white);
+  text-shadow: 1.5px 1.5px 0 rgba(0, 0, 0, .55);
+}
+.alb-elder__sig {
+  position: absolute;
+  right: 10px;
+  bottom: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-white);
+  opacity: .8;
+}
+.alb-cap { width: 100%; text-align: left; }
+.alb-elder__picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+.alb-elder__pick { text-align: center; border-radius: var(--r-img); padding: var(--sp-1); }
+.alb-elder__pick.is-on { box-shadow: 0 0 0 2px var(--yoxi-navy); }
+.alb-elder__pickart { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: var(--r-btn); overflow: hidden; }
+.alb-elder__pickt { display: block; margin-top: 5px; font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1.3; }
+
+/* tile-icon 內的 svg 預設 54%：包了一層 [data-icon] 的要讓 svg 填滿那一層 */
+main.view .alb-row [data-icon] > svg,
+main.view .alb-fact [data-icon] > svg,
+main.view .alb-member__check > svg,
+main.view .alb-cell__lock [data-icon] > svg { width: 100%; height: 100%; display: block; }
+.alb-row__badge .badge__disc [data-icon] { width: 28px; height: 28px; display: block; }
