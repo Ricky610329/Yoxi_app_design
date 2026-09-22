@@ -121,7 +121,7 @@
         </div>
 
         <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
-          <div class="postcard-wall" id="wall"></div>
+          <div id="wall"></div>
         </section>
 
         <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
@@ -170,30 +170,9 @@
     .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
     .join('');
 
-  /* 收藏牆一律讀 STATE，不要讀 MOCK.POSTCARDS 的靜態 by/date ——
-     不然剛解鎖的那一張在這個變體上會是「解鎖了但沒有日期、沒有金框」。 */
-  document.getElementById('wall').innerHTML = MOCK.POSTCARDS.map(function (p, i) {
-    const got  = STATE.card(p.id);
-    const ride = got && got.by === 'ride';
-    return '<a class="postcard ' + (got ? '' : 'postcard--locked ') +
-      (ride ? 'postcard--gold' : '') + '" href="' +
-      (got ? 'postcard.html?id=' + p.id : 'place.html?id=' + p.id) + '">' +
-      '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
-      (ride ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
-      '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span>' +
-      (got ? '<span class="postcard__date">' + got.date + '</span>' : '') +
-      '</span></a>';
-  }).join('');
-
-  document.getElementById('badgeGrid').innerHTML = MOCK.BADGES.map(function (b) {
-    const r = STATE.badge(b.id);
-    return '<a href="badge.html?id=' + b.id + '" class="badge ' +
-      (r.got ? '' : 'badge--locked') + '" style="width:auto">' +
-      '<span class="badge__disc"><span data-icon="' + r.icon + '"></span></span>' +
-      '<span class="badge__name">' + r.name + '</span>' +
-      '<span class="badge__prog">' +
-      (r.got ? '已收集' : '收集 ' + r.done + '/' + r.total) + '</span></a>';
-  }).join('');
+  /* 明信片牆與獎章格：共用零件（js/shell.js） */
+  SHELL.postcardWall(document.getElementById('wall'));
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
 
   SHELL.injectArt();
   SHELL.injectIcons();

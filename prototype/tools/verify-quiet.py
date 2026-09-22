@@ -20,10 +20,19 @@
                   這兩類都不會讓 console 變紅，只會在評審手上安靜地出錯。
   圍牆            跑 tools/audit-walls.html，從每個變體的三張入口頁走兩層連結，
                   看會不會掉回現況的叫車／探索／收藏。以前圍牆只蓋到 tab bar。
+  樹              跑 tools/audit-tree.html，把 catalog.js 那棵樹跟現實對帳：
+                  節點指到的檔案在不在、流程的每一步接不接得起來、縮圖有沒有
+                  少拍或多拍、變體的 tabset 跟 shell.js 的 ROOTS 對不對得上。
+                  目錄是單一來源，所以它自己說謊的時候沒有人會發現。
+  功能數          跑 tools/audit-load.html，量每一張畫面的可按數、文字塊數，
+                  以及按到核心動作要幾步。「可按數從 9 降到 2」這種話寫在
+                  變體檔頭就會過期，量出來才會自己變紅。順手把結果寫成
+                  assets/load.json 與 assets/load.js，給總覽頁讀。
 
 需要 Chrome 或 Edge。不依賴 tools/shoot.py 的成品。
 """
 import io
+import json
 import re
 import shutil
 import subprocess
@@ -298,6 +307,39 @@ def structure():
     return lines
 
 
+# ------------------------------------------------- 功能數的原始資料存檔
+def dump_load():
+    """把 audit-load.html 量到的數字存成 assets/load.{json,js}。
+
+    為什麼要兩份：總覽頁要在 file:// 底下讀這份資料，而 fetch('load.json')
+    會被 CORS 擋掉（file:// 的 origin 是 null）。<script src="load.js"> 不會，
+    所以同一份資料另外寫一份掛在 window.LOAD 上。json 那份是給人與 git diff 看的。
+    """
+    exe = browser()
+    if not exe:
+        return '（找不到 Chrome 或 Edge，略過）'
+    out = subprocess.run(
+        [exe, '--headless=new', '--disable-gpu', '--allow-file-access-from-files',
+         '--virtual-time-budget=90000', '--dump-dom',
+         (ROOT / 'tools' / 'audit-load.html').as_uri()],
+        capture_output=True, text=True, encoding='utf-8', errors='replace').stdout
+    m = re.search(r'<script id="json" type="application/json">(.*?)</script>', out, re.S)
+    if not m:
+        return '（audit-load.html 沒有回傳資料，沒有寫檔）'
+    try:
+        data = json.loads(unescape(m.group(1)))
+    except ValueError as e:
+        return '（audit-load.html 的資料讀不動：%s）' % e
+    body = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True)
+    (ROOT / 'assets').mkdir(exist_ok=True)
+    (ROOT / 'assets' / 'load.json').write_text(body + '\n', encoding='utf-8')
+    (ROOT / 'assets' / 'load.js').write_text(
+        '/* 由 tools/verify-quiet.py 產生，不要手改。'
+        '同 assets/load.json —— file:// 底下 fetch 讀不到 json，所以多這一份。 */\n'
+        'window.LOAD = %s;\n' % body, encoding='utf-8')
+    return '寫入 assets/load.json（%d 張）' % len(data.get('screens', {}))
+
+
 def main():
     bad = [0]
 
@@ -322,12 +364,17 @@ def main():
     show(run_page('audit-app.html', 90000))
     print('\n── 圍牆：變體會不會掉回現況 ' + '─' * 26)
     show(run_page('audit-walls.html', 150000))
+    print('\n── 樹：節點、流程、縮圖、ROOTS 對帳 ' + '─' * 22)
+    show(run_page('audit-tree.html', 60000))
+    print('\n── 功能數：可按數與到達步數 ' + '─' * 26)
+    show(run_page('audit-load.html', 90000))
+    print(dump_load())
     print()
     print('═' * 64)
     if bad[0]:
         print('未通過 %d 條。' % bad[0])
     else:
-        print('六條防護承諾、互動測試、全站一致性與變體圍牆全部通過。')
+        print('六條防護承諾、互動、全站、圍牆、樹、功能數全部通過。')
     print('═' * 64)
     print()
     return 1 if bad[0] else 0

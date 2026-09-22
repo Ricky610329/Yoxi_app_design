@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>樹的結構稽核 — catalog.js</title>
+<!--
+  catalog.js 是整個原型的單一來源：demo 首頁、全景圖、變體比較頁、願景頁、
+  導覽列、評語層都從那棵樹讀。這一份掃的是「樹自己說的話對不對得上磁碟」。
+
+    chrome --headless=new --allow-file-access-from-files \
+           --virtual-time-budget=30000 --dump-dom tools/audit-tree.html
+
+  為什麼要有這一份：catalog.js 的清單是手寫的，磁碟上的檔案是另外長出來的。
+  兩邊分岔的時候沒有任何東西會變紅 —— 全景圖照樣畫出一格，點下去才是空白；
+  縮圖照樣指過去，載不到就是一塊灰。這些都只會在評審手上安靜地出錯。
+
+  七條：
+    1 樹建得起來（id 重複、parent 不存在由 buildTree 自己丟錯，這裡接住）
+    2 每個節點的 parent 都在、往上走不會繞回自己
+    3 三條流程的每一步都對得到節點
+    4 指向 screens/ 的 href 真的有那個檔案（planned 的除外）
+    5 已建檔的節點縮圖也在（抓的是改了畫面卻忘了重拍）
+    6 shell.js 的 ROOTS 與 catalog.js 的 walled 變體對帳
+
+  第 4 條不用 <img> 載縮圖來判斷檔案在不在 —— 縮圖是 tools/shoot.py 的產物，
+  畫面刪掉了縮圖還會留著，會漏判。改成真的用 iframe 把 href 載起來，
+  等 shell.js 掛上 data-shell-ready；載不到就是沒有那個檔案。
+  ?still=1 是定格模式，不要讓四十個 iframe 同時跑轉場動畫。
+-->
+<style>
+  body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
+  iframe { width: 390px; height: 844px; border: 0; position: absolute; left: -9999px; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<pre id="out">跑中…</pre>
+<div id="frames"></div>
+
+<script src="../js/catalog.js"></script>
+<script>
+const L = [];
+let bad = 0;
+
+function head(t) { L.push(''); L.push('── ' + t + ' ' + '─'.repeat(Math.max(4, 46 - t.length * 2))); }
+function pass(t) { L.push('  PASS  ' + t); }
+function fail(t) { bad++; L.push('  FAIL  ' + t); }
+function skip(t) { L.push('  —     ' + t); }
+function info(t) { L.push('        ' + t); }
+
+function finish() {
+  L.push('');
+  L.push(bad ? '共 ' + bad + ' 項未通過。' : '全部通過。');
+  document.getElementById('out').textContent = L.join('\n').replace(/^\n/, '');
+}
+
+/* ------------------------------------------------------------ 載頁的工具 -- */
+const FRAMES = document.getElementById('frames');
+
+/* 把一個 URL 載進 iframe，等 shell.js 掛上 data-shell-ready。
+   最多等 4 秒 —— 檔案不存在時 file:// 的錯誤頁不一定會觸發 onload，
+   所以不靠 onload，一律輪詢，逾時就當作載不到。 */
+function probe(url, cb, keep) {
+  const fr = document.createElement('iframe');
+  const t0 = Date.now();
+  let done = false;
+  function fin(ok) {
+    if (done) return;
+    done = true;
+    clearInterval(iv);
+    if (!keep) fr.remove();
+    cb(ok, fr);
+  }
+  const iv = setInterval(function () {
+    let ok = false;
+    try {
+      const d = fr.contentDocument;
+      ok = !!(d && d.documentElement.hasAttribute('data-shell-ready') && fr.contentWindow.SHELL);
+    } catch (e) { /* 還沒載好時讀 contentDocument 可能丟錯 */ }
+    if (ok) fin(true);
+    else if (Date.now() - t0 > 4000) fin(false);
+  }, 50);
+  FRAMES.appendChild(fr);
+  fr.src = url;
+}
+
+/* 最多 6 個並行，用完就 remove —— 一次開一百個 iframe 這台機器會先跪。 */
+function pool(items, n, worker, done) {
+  if (!items.length) return done();
+  let i = 0, active = 0, fin = 0;
+  (function next() {
+    while (active < n && i < items.length) {
+      active++;
+      worker(items[i++], function () {
+        active--;
+        if (++fin === items.length) done();
+        else next();
+      });
+    }
+  })();
+}
+
+function stillURL(href) {
+  const u = '../' + href;
+  return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'still=1';
+}
+
+/* ================================================================= 1 樹 == */
+if (!window.CATALOG) {
+  fail('catalog.js 沒有掛上 window.CATALOG —— 這支檔案自己就壞了。');
+  finish();
+  throw new Error('no CATALOG');
+}
+
+let T = null;
+try {
+  T = CATALOG.tree();
+} catch (e) {
+  /* buildTree 自己會在 id 重複、parent 不存在的時候丟錯。 */
+  head('1 樹建得起來嗎');
+  fail('CATALOG.tree() 丟錯：' + e.message);
+  finish();
+  throw e;
+}
+
+const nodes = T.nodes, order = T.order;
+
+head('1 樹建得起來嗎');
+pass('建起來了，共 ' + order.length + ' 個節點');
+
+const byType = {};
+order.forEach(function (id) { byType[nodes[id].type] = (byType[nodes[id].type] || 0) + 1; });
+pass('類型：' + Object.keys(byType).sort().map(function (t) {
+  return t + ' ' + byType[t];
+}).join('、'));
+
+/* ========================================================= 2 parent／循環 == */
+/* 抓的是「掛錯父層」：節點還在，但走不回根，全景圖那一格就不會被畫出來。 */
+head('2 每個節點都掛得回根');
+
+const orphanParent = [], cycles = [], rootsFound = [];
+order.forEach(function (id) {
+  const n = nodes[id];
+  if (!n.parent) { rootsFound.push(id); return; }
+  if (!nodes[n.parent]) { orphanParent.push(id + ' 的 parent 不存在：' + n.parent); return; }
+  const seen = { };
+  seen[id] = 1;
+  let p = n.parent, depth = 0;
+  while (p) {
+    if (seen[p]) { cycles.push(id + ' 往上走繞回 ' + p); break; }
+    seen[p] = 1;
+    if (++depth > 64) { cycles.push(id + ' 往上走超過 64 層'); break; }
+    p = nodes[p] ? nodes[p].parent : null;
+  }
+});
+
+if (orphanParent.length) orphanParent.forEach(fail);
+else pass('所有非根節點的 parent 都存在');
+
+if (cycles.length) cycles.forEach(fail);
+else pass('沒有循環');
+
+const declared = (T.roots || []).slice().sort().join(' ');
+const actual = rootsFound.slice().sort().join(' ');
+if (declared === actual) pass('根節點：' + actual);
+else fail('宣告的 roots（' + declared + '）跟實際沒有 parent 的節點（' + actual + '）對不上');
+
+/* =============================================================== 3 流程 == */
+/* 抓的是「改了畫面 key 卻忘了改流程」：導覽列會停在一步空的，
+   現場按下一步就沒反應。meta.steps 的 null 不會丟錯，只會安靜地斷掉。 */
+head('3 三條流程的每一步都對得到節點');
+
+CATALOG.FLOWS.forEach(function (f) {
+  const fid = 'flow:' + f.key;
+  const fn = nodes[fid];
+  if (!fn) { fail('樹上沒有 ' + fid); return; }
+
+  let bads = 0;
+  f.steps.forEach(function (st, i) {
+    const id = nodes['st:' + st.s] ? 'st:' + st.s : (nodes['scr:' + st.s] ? 'scr:' + st.s : null);
+    if (!id) { fail(f.tag + ' 第 ' + (i + 1) + ' 步 ' + st.s + ' 在樹上找不到（st: 與 scr: 都沒有）'); bads++; }
+  });
+
+  const steps = (fn.meta && fn.meta.steps) || [];
+  if (steps.length !== f.steps.length) {
+    fail(fid + '.meta.steps 有 ' + steps.length + ' 步，FLOWS 有 ' + f.steps.length + ' 步');
+    bads++;
+  }
+  steps.forEach(function (id, i) {
+    if (!id) { fail(fid + '.meta.steps 第 ' + (i + 1) + ' 步是 null'); bads++; }
+    else if (!nodes[id]) { fail(fid + '.meta.steps 第 ' + (i + 1) + ' 步指向不存在的 ' + id); bads++; }
+  });
+
+  if (!bads) pass(f.tag + ' · ' + f.name + '：' + f.steps.length + ' 步全部對得到節點');
+});
+
+/* =========================================================== 4 檔案在不在 == */
+/* 抓的是「目錄上有、磁碟上沒有」：全景圖畫得出那一格，點下去是空白頁。
+   planned（待做的變體與願景）本來就還沒建檔，印出來但不算未通過。 */
+const targets = {};     /* url → { href, ids: [] } */
+order.forEach(function (id) {
+  const n = nodes[id];
+  if (!n.href || n.href.indexOf('screens/') !== 0) return;
+  const url = stillURL(n.href);
+  (targets[url] = targets[url] || { href: n.href, ids: [] }).ids.push(id);
+});
+const urls = Object.keys(targets).sort();
+
+const built = {};       /* url → true/false */
+
+head('4 指向 screens/ 的 href 真的有那個檔案');
+pool(urls, 6, function (url, next) {
+  probe(url, function (ok) { built[url] = ok; next(); });
+}, step5);
+
+/* ================================================================ 5 縮圖 == */
+function step5() {
+  let nBuilt = 0, nPlanned = 0;
+  const missing = [];
+
+  urls.forEach(function (url) {
+    const t = targets[url];
+    if (built[url]) { nBuilt += t.ids.length; return; }
+    t.ids.forEach(function (id) {
+      if (nodes[id].kind === 'planned') { nPlanned++; missing.push(['—', id, t.href]); }
+      else missing.push(['FAIL', id, t.href]);
+    });
+  });
+
+  pass('已建檔 ' + nBuilt + ' 個節點（' +
+       urls.filter(function (u) { return built[u]; }).length + ' 個檔案）、尚未建檔 ' +
+       (nPlanned + missing.filter(function (m) { return m[0] === 'FAIL'; }).length) + ' 個節點');
+  missing.forEach(function (m) {
+    if (m[0] === 'FAIL') fail('載不到 ' + m[2] + '（節點 ' + m[1] + '，kind=' + (nodes[m[1]].kind || '—') + '）');
+    else skip('尚未建檔 ' + m[1] + '　' + m[2]);
+  });
+
+  /* 縮圖：只看已建檔的。planned 還沒有畫面，當然也還沒有縮圖。
+     這一條抓的是「改了畫面但忘了跑 tools/shoot.py 重拍」留下的空格。 */
+  head('5 已建檔的節點都有縮圖');
+  const thumbs = {};
+  urls.forEach(function (url) {
+    if (!built[url]) return;
+    targets[url].ids.forEach(function (id) {
+      const th = nodes[id].thumb;
+      if (th) (thumbs[th] = thumbs[th] || []).push(id);
+    });
+  });
+  const list = Object.keys(thumbs).sort();
+
+  pool(list, 6, function (th, next) {
+    const img = new Image();
+    img.onload = function () { next(); };
+    img.onerror = function () { fail('缺縮圖 ' + th + '（' + thumbs[th].join('、') + '）'); next(); };
+    img.src = '../' + th;
+  }, function () {
+    pass('檢查了 ' + list.length + ' 張縮圖');
+    step6();
+  });
+}
+
+/* ================================================================ 6 對帳 == */
+/* 抓的是「加了變體卻忘了在 shell.js 登記 ROOTS」：分頁列與返回鍵還指著現況，
+   在變體裡走一步就掉回主線，變體等於沒做 —— 而且不會有任何錯誤訊息。
+   反過來 ROOTS 有、VARIANTS 沒標 walled 的，是圍牆稽核掃不到的死角。 */
+function step6() {
+  head('6 shell.js 的 ROOTS 與 walled 變體對帳');
+
+  const want = {}, noTabset = [];
+  CATALOG.VARIANTS.filter(function (v) { return v.walled; }).forEach(function (v) {
+    if (!v.tabset) noTabset.push(v.tag);
+    else want[v.tabset] = v.tag;
+  });
+  noTabset.forEach(function (tag) { fail(tag + ' 標了 walled 但沒有 tabset，對不到任何 ROOTS'); });
+
+  probe(stillURL('screens/variant-e-album.html'), function (ok, fr) {
+    let ROOTS = null;
+    try { ROOTS = ok && fr.contentWindow.SHELL ? fr.contentWindow.SHELL.ROOTS : null; } catch (e) {}
+    fr.remove();
+
+    if (!ROOTS) {
+      fail('拿不到 SHELL.ROOTS（variant-e-album.html 載不起來，或 shell.js 沒有匯出 ROOTS）');
+      return finish();
+    }
+
+    const has = Object.keys(ROOTS).sort();
+    const need = Object.keys(want).sort();
+    let diff = 0;
+
+    need.forEach(function (k) {
+      if (!ROOTS[k]) { fail('VARIANTS 的 ' + want[k] + ' 是 walled、tabset=' + k + '，但 shell.js 的 ROOTS 沒有它'); diff++; }
+    });
+    has.forEach(function (k) {
+      if (!want[k]) { fail('ROOTS 有 ' + k + '，但 VARIANTS 沒有 walled 變體用它'); diff++; }
+    });
+
+    if (!diff) pass('兩邊一致：' + has.join('、'));
+    else info('ROOTS：' + (has.join('、') || '（空）') + '　｜　walled tabset：' + (need.join('、') || '（空）'));
+
+    finish();
+  }, true);
+}
+</script>
+</body>
+</html>

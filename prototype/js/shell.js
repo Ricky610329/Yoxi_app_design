@@ -121,14 +121,94 @@ const TABSETS = {
     { id: 'ride',   label: '地圖', icon: 'tabExplore', href: 'variant-f-home.html', dot: true },
     { id: 'album',  label: '收藏', icon: 'tabAlbum',   href: 'variant-f-album.html' },
   ],
+  /* ---- 第二輪：收藏／探索／認知負擔軸線的變體。
+          先登記、後建檔：稽核工具會把「登記了但還沒建檔」印成「尚未建檔」而不是 FAIL。
+          每個變體只換自己那一頁，其餘指回主線。 ---- */
+  s1: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-s1-album.html' },
+  ],
+  s2: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-s2-album.html' },
+  ],
+  s3: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-s3-album.html' },
+  ],
+  s4: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-s4-album.html' },
+  ],
+  s5: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-s5-album.html' },
+  ],
+  x1: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-x1-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  x2: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-x2-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-x2-album.html' },
+  ],
+  x3: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-x3-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  x5: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-x5-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  l1: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-l1-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  l2: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-l2-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  l3: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-l3-album.html' },
+  ],
+  l4: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
+  l5: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-l5-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'variant-l5-album.html' },
+  ],
+  l6: [
+    { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
+    { id: 'explore', label: '探索', icon: 'tabExplore', href: 'variant-l6-explore.html', dot: true },
+    { id: 'album',   label: '收藏', icon: 'tabAlbum',   href: 'album.html' },
+  ],
 };
 
 function tabbar(active, set) {
   const TABS = TABSETS[set] || TABSETS.default;
-  /* 變體 A／B／C 的叫車頁是共用的 home.html，連過去時要把變體帶著 */
-  const carry = (set === 'a' || set === 'b' || set === 'c')
-    ? function (h) { return h === 'home.html' ? 'home.html?v=' + set : h; }
-    : function (h) { return h; };
+  /* 沿用主線檔的那幾個根（例如 A／B／C 共用 home.html、S 系列共用 explore.html），
+     連過去時要把變體帶著，不然按一下就掉回現況。以前寫死 a／b／c，加新變體就漏。 */
+  const roots = ROOTS[set] || {};
+  const carry = function (h) {
+    return (set && roots[h] === h) ? h + '?v=' + set : h;
+  };
   return `
     <nav class="tabbar" id="tabbar">
       ${TABS.map(t => `
@@ -500,6 +580,142 @@ function nearSpots(pos) {
   });
 }
 
+
+/* --------------------------------------------------------------------------
+   收藏的共用零件：明信片牆與獎章格
+
+   以前這兩段在 album.html 與六個 variant-*-album.html 裡逐字重複，改一處漏六處：
+   統計預設值、深底圖示、週回顧卡的位置都各自漂掉了。第二輪要再加十個收藏／探索變體，
+   複製會變十七份。抽成兩個函式，變體只決定「怎麼排」，不再重寫「怎麼畫一張卡」。
+   -------------------------------------------------------------------------- */
+
+/* 明信片背面的敘事。沒有專屬文字的卡用通用句。 */
+const CARD_STORY = {
+  p11: '新竹曾經是全世界最會做玻璃的地方之一。1970 年代這條巷子裡有七座窯，日夜不熄。',
+  p9:  '內灣線 1951 年通車，原本是為了把尖石山上的木材運下山。',
+};
+
+/** 一張明信片（收藏牆用）。已收的可翻面，沒收的是灰階佔位連到地方詳情。 */
+function postcardCell(p, i) {
+  const got   = STATE.card(p.id);
+  const A     = STATE.all;
+  const fresh = STATE.lastIsNew && A.lastCard === p.id;
+  const ride  = got && got.by === 'ride';
+  if (!got) {
+    return '<a class="postcard postcard--locked" href="place.html?id=' + p.id + '">' +
+      '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+      '<span class="postcard__foot"><span class="postcard__name">' + p.name + '</span></span></a>';
+  }
+  return '<button class="postcard ' + (ride ? 'postcard--gold ' : '') +
+    (fresh ? 'postcard--fresh ' : '') + '" data-flip>' +
+    '<div data-art="' + p.art + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+    (fresh ? '<span class="postcard__new">新</span>' : '') +
+    (ride ? '<span class="postcard__ribbon" style="font-size:9px;padding:2px 5px">yoxi</span>' : '') +
+    '<span class="postcard__foot">' +
+      '<span class="postcard__name">' + p.name + '</span>' +
+      '<span class="postcard__date">' + got.date + '</span>' +
+    '</span>' +
+    '<span class="postcard__back">' +
+      '<b>' + p.name + '</b>' +
+      '<small>2026.' + got.date + ' · ' + (ride ? '搭 yoxi 抵達' : '走路抵達') + '</small>' +
+      '<p>' + (got.note ? '「' + got.note + '」' : (CARD_STORY[p.id] || '在這裡停了一下。')) + '</p>' +
+      '<span class="postcard__stamp">yoxi</span>' +
+    '</span></button>';
+}
+
+/**
+ * 明信片牆。
+ * @param {Element} el
+ * @param {object}  opt  cards   要畫哪些（預設 MOCK.POSTCARDS，順序照給的）
+ *                       filter  fn(p, got) → 要不要畫
+ *                       locked  false＝不畫沒收的佔位（預設 true）
+ *                       group   fn(p, got) → 分組標題；有給就依標題分成幾面牆，順序照第一次出現
+ *                       empty   分組沒有任何卡時顯示的一句話（例：「這一類還沒有」）；沒給就不畫空組
+ *                       groups  預先給定的分組順序（含空組），配 empty 用
+ * 呼叫端記得在最後呼叫 STATE.markLastSeen()（收藏首頁才要，變體看情況）。
+ */
+function postcardWall(el, opt) {
+  opt = opt || {};
+  const cards = (opt.cards || MOCK.POSTCARDS).filter(function (p) {
+    const got = STATE.card(p.id);
+    if (!got && opt.locked === false) return false;
+    return opt.filter ? opt.filter(p, got) : true;
+  });
+  const idx = function (p) { return MOCK.POSTCARDS.indexOf(p); };
+
+  if (!opt.group) {
+    el.innerHTML = '<div class="postcard-wall">' +
+      cards.map(function (p) { return postcardCell(p, idx(p)); }).join('') + '</div>';
+  } else {
+    const order = (opt.groups || []).slice();
+    const by = {};
+    order.forEach(function (g) { by[g] = []; });
+    cards.forEach(function (p) {
+      const g = opt.group(p, STATE.card(p.id));
+      if (g == null) return;
+      if (!by[g]) { by[g] = []; order.push(g); }
+      by[g].push(p);
+    });
+    el.innerHTML = order.map(function (g) {
+      const list = by[g];
+      if (!list.length && !opt.empty) return '';
+      return '<section class="wallgroup">' +
+        '<div class="sec" style="margin-bottom:10px"><h2 class="sec__t sec__t--sm">' + g + '</h2>' +
+        '<span class="sec__m">' + (list.length ? list.filter(function (p) { return STATE.card(p.id); }).length + '/' + list.length : '') + '</span></div>' +
+        (list.length
+          ? '<div class="postcard-wall">' + list.map(function (p) { return postcardCell(p, idx(p)); }).join('') + '</div>'
+          : '<p class="wallgroup__empty">' + opt.empty + '</p>') +
+        '</section>';
+    }).join('');
+  }
+  injectArt(el);
+  injectIcons(el);
+  return cards.length;
+}
+
+/**
+ * 獎章格。同一份 MOCK.BADGES，三種呈現：
+ *   disc  現況的圓盤格（預設）
+ *   ring  每枚一個進度環
+ *   stamp 集點卡：一列格子，收到幾張就蓋幾格 —— 刻意做出來當「我們試過、不選」的那一版
+ * 文案一律「收集 n/total」或「已收集」，只在這裡寫一次。
+ */
+function badgeGrid(el, opt) {
+  opt = opt || {};
+  const style = opt.style || 'disc';
+  const list = opt.badges || MOCK.BADGES;
+  const href = opt.href || function (b) { return 'badge.html?id=' + b.id; };
+  const prog = function (r) { return r.got ? '已收集' : '收集 ' + r.done + '/' + r.total; };
+
+  el.classList.remove('badges--disc', 'badges--ring', 'badges--stamp');
+  el.classList.add('badges--' + style);
+
+  el.innerHTML = list.map(function (b) {
+    const r = STATE.badge(b.id);
+    if (style === 'stamp') {
+      let cells = '';
+      for (let i = 0; i < r.total; i++) cells += '<i class="stamp' + (i < r.done ? ' is-on' : '') + '"></i>';
+      return '<a href="' + href(b) + '" class="stampcard' + (r.got ? ' is-got' : '') + '">' +
+        '<span class="stampcard__head"><span class="tile-icon tile-icon--sm"><span data-icon="' + r.icon + '"></span></span>' +
+        '<span class="u-fill"><span class="stampcard__name">' + r.name + '</span>' +
+        '<span class="stampcard__prog">' + prog(r) + '</span></span></span>' +
+        '<span class="stampcard__row">' + cells + '</span></a>';
+    }
+    const ring = style === 'ring'
+      ? '<svg class="ring badge__ring" viewBox="0 0 72 72"><circle class="ring__track" cx="36" cy="36" r="33"/>' +
+        '<circle class="ring__bar" cx="36" cy="36" r="33" stroke-dasharray="207.3" stroke-dashoffset="' +
+        (207.3 * (1 - (r.total ? r.done / r.total : 0))).toFixed(1) + '"/></svg>'
+      : '';
+    return '<a href="' + href(b) + '" class="badge ' + (r.got ? '' : 'badge--locked') + '" style="width:auto">' +
+      '<span class="badge__disc' + (style === 'ring' ? ' badge__disc--ring' : '') + '">' + ring +
+      '<span data-icon="' + r.icon + '"></span></span>' +
+      '<span class="badge__name">' + r.name + '</span>' +
+      '<span class="badge__prog">' + prog(r) + '</span></a>';
+  }).join('');
+  injectIcons(el);
+  return list.length;
+}
+
 function bindPeek(peekEl, list, opt) {
   opt = opt || {};
   let open = -1;
@@ -604,6 +820,23 @@ const ROOTS = {
        'album.html': 'variant-e-album.html', 'map.html': 'variant-e-home.html' },
   f: { 'home.html': 'variant-f-home.html', 'explore.html': 'variant-f-home.html?mode=today',
        'album.html': 'variant-f-album.html', 'map.html': 'variant-f-home.html?mode=today' },
+  /* 第二輪：只換自己那一頁，其餘 identity 對應（圍牆稽核靠這張表判斷什麼算「掉回主線」，
+     所以沒改的根也要填，填成自己）。 */
+  s1: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'variant-s1-album.html', 'map.html': 'map.html' },
+  s2: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'variant-s2-album.html', 'map.html': 'map.html' },
+  s3: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'variant-s3-album.html', 'map.html': 'map.html' },
+  s4: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'variant-s4-album.html', 'map.html': 'variant-s4-album.html' },
+  s5: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'variant-s5-album.html', 'map.html': 'map.html' },
+  x1: { 'home.html': 'home.html', 'explore.html': 'variant-x1-explore.html', 'album.html': 'album.html', 'map.html': 'map.html' },
+  x2: { 'home.html': 'home.html', 'explore.html': 'variant-x2-explore.html', 'album.html': 'variant-x2-album.html', 'map.html': 'map.html' },
+  x3: { 'home.html': 'home.html', 'explore.html': 'variant-x3-explore.html', 'album.html': 'album.html', 'map.html': 'map.html' },
+  x5: { 'home.html': 'home.html', 'explore.html': 'variant-x5-explore.html', 'album.html': 'album.html', 'map.html': 'map.html' },
+  l1: { 'home.html': 'home.html', 'explore.html': 'variant-l1-explore.html', 'album.html': 'album.html', 'map.html': 'map.html' },
+  l2: { 'home.html': 'home.html', 'explore.html': 'variant-l2-explore.html', 'album.html': 'album.html', 'map.html': 'map.html' },
+  l3: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'variant-l3-album.html', 'map.html': 'map.html' },
+  l4: { 'home.html': 'home.html', 'explore.html': 'explore.html', 'album.html': 'album.html', 'map.html': 'variant-l4-map.html' },
+  l5: { 'home.html': 'home.html', 'explore.html': 'variant-l5-explore.html', 'album.html': 'variant-l5-album.html', 'map.html': 'map.html' },
+  l6: { 'home.html': 'home.html', 'explore.html': 'variant-l6-explore.html', 'album.html': 'album.html', 'map.html': 'map.html' },
 };
 
 /* 導覽、變體與工具自己的參數，不算在「這是哪一頁」裡 */
@@ -734,5 +967,6 @@ window.SHELL = {
     shareSheet: shareSheet,
   injectIcons, injectArt, postcardArt, showPush, yieldTabbar,
   fogCells, fogCoverage, renderSpots, bindPeek,
+  postcardWall, postcardCell, badgeGrid,
 };
 })();

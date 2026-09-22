@@ -16,13 +16,27 @@
   也檢查沿途每一頁的 tab bar 是不是那個變體自己的。
 
     chrome --headless=new --allow-file-access-from-files \
-           --virtual-time-budget=120000 --dump-dom tools/audit-walls.html
+           --virtual-time-budget=150000 --dump-dom tools/audit-walls.html
+
+  要跑哪些變體不再手寫：載一張畫面、讀它的 SHELL.ROOTS，keys 就是清單。
+  手寫清單的問題是它永遠落後 —— 新增一個變體、忘了加進這裡，圍牆就沒檢查。
+
+  三種「中間狀態」分得清楚：
+    三張入口頁都還沒建   ROOTS 先登記、畫面之後畫。印「尚未建檔，略過」，不算洞。
+    有的建了、有的沒建   照常跑，沒建的那張印 FAIL「連到不存在的檔」——
+                         這正是「登記了 ROOTS 卻沒建檔」的真洞，必須抓。
+    body[data-vision]    探索稿不進圍牆，不追。
+
+  收尾多一段對帳：shell.js 的 ROOTS 與 catalog.js 裡 walled 的變體要一樣多。
+  兩邊各自維護，對不上就是有一邊漏了。
 -->
 <style>
   body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
   iframe { width: 390px; height: 844px; border: 0; position: absolute; left: -9999px; }
   pre { white-space: pre-wrap; }
 </style>
+<!-- 對帳要用 catalog.js 的 VARIANTS。傳統 script，file:// 底下載得到。 -->
+<script src="../js/catalog.js"></script>
 </head>
 <body>
 <pre id="out">跑中…</pre>
@@ -30,9 +44,13 @@
 
 <script>
 const BASE = '../screens/';
-const VARIANTS = ['a', 'b', 'c', 'd', 'e', 'f'];
 const MAIN = ['home.html', 'explore.html', 'album.html', 'map.html'];
+const ENTRIES = ['home.html', 'explore.html', 'album.html'];
 const DEPTH = 2;
+
+/* 變體清單不手寫：載一張畫面讀它的 SHELL.ROOTS，keys 就是要跑的變體。 */
+let ROOTS = null;
+let VARIANTS = [];
 
 function whenReady(doc, fn) {
   const t0 = Date.now();
@@ -42,16 +60,25 @@ function whenReady(doc, fn) {
   })();
 }
 
+/* 回呼拿到 (doc, win, err)。檔案不存在時 Chrome 換成錯誤頁，
+   contentDocument 可能是 null 或讀不到 —— 一律當成「這個檔不在」。 */
 function load(url, fn) {
   const fr = document.createElement('iframe');
-  fr.src = BASE + url;
+  let settled = false;
+  function finish(doc, win, err) {
+    if (settled) return;
+    settled = true;
+    try { fn(doc, win, err); } catch (e) { /* 呼叫端自己的錯，不吃掉整份稽核 */ }
+    fr.remove();
+  }
+  setTimeout(function () { finish(null, null, new Error('逾時')); }, 20000);
   fr.onload = function () {
-    whenReady(fr.contentDocument, function () {
-      try { fn(fr.contentDocument, fr.contentWindow); }
-      catch (e) { fn(null, null, e); }
-      fr.remove();
-    });
+    let doc = null, win = null;
+    try { doc = fr.contentDocument; win = fr.contentWindow; } catch (e) {}
+    if (!doc || !doc.documentElement) return finish(null, null, new Error('讀不到'));
+    whenReady(doc, function () { finish(doc, win, null); });
   };
+  fr.src = BASE + url;
   document.getElementById('frames').appendChild(fr);
 }
 
@@ -74,7 +101,8 @@ function isLeak(k, v, roots) {
   if (MAIN.indexOf(b) < 0) return false;
   const own = Object.keys(roots).map(function (m) { return baseOf(roots[m]); });
   if (own.indexOf(b) < 0) return true;                 /* 主線的檔，且不是這個變體自己的 */
-  if (b === 'home.html' && !hasV(k, v)) return true;   /* a／b／c 共用 home.html，沒帶 v 就掉了 */
+  /* 沿用主線檔當根的（a／b／c 共用 home.html、S 系列共用 explore.html…），沒帶 v 就掉了 */
+  if (roots[b] === b && !hasV(k, v)) return true;
   return false;
 }
 
@@ -82,12 +110,15 @@ const report = {};
 let vi = 0;
 
 function runVariant(v, done) {
+  const roots = ROOTS[v] || {};
   const seen = {};
   const queue = [];
   const leaks = [];
   const tabbad = [];
-  let roots = null;
+  const missing = [];          /* 登記了、檔案沒建 */
+  const entryMissing = [];
   let pages = 0;
+  let entriesTotal = 0, entriesSeen = 0, entriesOk = 0;
 
   function visit(k, depth, via) {
     if (seen[k]) return;
@@ -95,19 +126,44 @@ function runVariant(v, done) {
     queue.push([k, depth, via]);
   }
 
+  /* 三張入口頁都讀不到 ＝ 這個變體還沒建檔，略過，不算洞。
+     只要有一張讀得到就照常跑，其餘讀不到的就是真的洞。 */
+  function entryPhaseDone() {
+    if (entriesSeen !== entriesTotal) return false;
+    if (entriesOk === 0) { done({ skipped: true, pages: pages }); return true; }
+    entryMissing.forEach(function (m) { missing.push(m); });
+    entryMissing.length = 0;
+    return false;
+  }
+
   function next() {
-    if (!queue.length) { done({ pages: pages, leaks: leaks, tabbad: tabbad }); return; }
+    if (!queue.length) {
+      done({ pages: pages, leaks: leaks, tabbad: tabbad, missing: missing });
+      return;
+    }
     const item = queue.shift();
     const k = item[0], depth = item[1], via = item[2];
     load(k, function (doc, win, err) {
       pages++;
+      const entry = depth === 0;
+      if (entry) entriesSeen++;
+
       if (err || !doc || !win || !win.SHELL) {
-        leaks.push(via + ' → ' + k + '（讀不到：' + (err && err.message || 'SHELL 不在') + '）');
+        (entry ? entryMissing : missing).push(k + '（來自 ' + via + '）');
+        if (entry && entryPhaseDone()) return;
         return next();
       }
-      if (!roots) roots = win.SHELL.ROOTS[v];
+      if (entry) entriesOk++;
+
+      /* 探索稿不進圍牆：body[data-vision] 只是一張想法草圖，不追它的連結。 */
+      if (doc.body && doc.body.hasAttribute('data-vision')) {
+        if (entry && entryPhaseDone()) return;
+        return next();
+      }
+
       if (isLeak(k, v, roots)) {
         leaks.push(via + ' → ' + k);
+        if (entry && entryPhaseDone()) return;
         return next();                                  /* 已經掉出去了，不再往下追 */
       }
       /* tab bar 必須是這個變體自己的 */
@@ -115,34 +171,36 @@ function runVariant(v, done) {
         const t = norm(a.getAttribute('href'));
         if (isLeak(t, v, roots)) tabbad.push(k + ' 的分頁列 → ' + t);
       });
-      if (depth >= DEPTH) return next();
-      doc.querySelectorAll('.device a[href]').forEach(function (a) {
-        const raw = a.getAttribute('href');
-        if (!raw || raw[0] === '#' || /^[a-z]+:/i.test(raw)) return;
-        if (a.hasAttribute('data-toast') || a.hasAttribute('data-share')) return;
-        if (a.closest('.tour')) return;
-        const real = win.SHELL.rewriteHref(raw, {
-          back: a.hasAttribute('data-back'),
-          tab:  !!a.closest('.tabbar'),
+      if (depth < DEPTH) {
+        doc.querySelectorAll('.device a[href]').forEach(function (a) {
+          const raw = a.getAttribute('href');
+          if (!raw || raw[0] === '#' || /^[a-z]+:/i.test(raw)) return;
+          if (a.hasAttribute('data-toast') || a.hasAttribute('data-share')) return;
+          if (a.closest('.tour')) return;
+          const real = win.SHELL.rewriteHref(raw, {
+            back: a.hasAttribute('data-back'),
+            tab:  !!a.closest('.tabbar'),
+          });
+          const label = (a.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 14) ||
+                        a.getAttribute('aria-label') || raw;
+          visit(norm(real), depth + 1, k + '「' + label + '」');
         });
-        const label = (a.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 14) ||
-                      a.getAttribute('aria-label') || raw;
-        visit(norm(real), depth + 1, k + '「' + label + '」');
-      });
+      }
+      if (entry && entryPhaseDone()) return;
       next();
     });
   }
 
   /* 入口：三個根。a／b／c 的叫車頁是共用的 home.html，要帶 v。 */
-  load('variant-' + v + '-album.html', function (doc, win) {
-    roots = win.SHELL.ROOTS[v];
-    ['home.html', 'explore.html', 'album.html'].forEach(function (m) {
-      let k = roots[m];
-      if (baseOf(k) === 'home.html') k += (k.indexOf('?') >= 0 ? '&' : '?') + 'v=' + v;
-      visit(norm(k), 0, '入口');
-    });
-    next();
+  ENTRIES.forEach(function (m) {
+    let k = roots[m];
+    if (!k) return;
+    if (roots[m] === m) k += (k.indexOf('?') >= 0 ? '&' : '?') + 'v=' + v;   /* 沿用主線檔的根要帶 v */
+    visit(norm(k), 0, '入口');
   });
+  entriesTotal = queue.length;
+  if (!entriesTotal) { done({ skipped: true, pages: 0 }); return; }
+  next();
 }
 
 function runNext() {
@@ -151,28 +209,89 @@ function runNext() {
   runVariant(v, function (r) { report[v] = r; runNext(); });
 }
 
+/* shell.js 的 ROOTS 與 catalog.js 裡 walled 的變體，兩邊各自維護，
+   對不上就是有一邊漏了 —— 少了 ROOTS 等於沒圍牆，少了 catalog 等於文件上沒這個變體。 */
+function reconcile(L, bad) {
+  L.push('');
+  L.push('── D shell.js ROOTS 與 catalog.js walled 變體對帳 ' + '─'.repeat(12));
+  if (typeof CATALOG === 'undefined' || !CATALOG.VARIANTS) {
+    bad.add('catalog');
+    L.push('  FAIL  對帳：catalog.js 沒載進來（window.CATALOG 不在）');
+    return;
+  }
+  const inRoots = Object.keys(ROOTS);
+  const inCat = CATALOG.VARIANTS
+    .filter(function (v) { return v.walled; })
+    .map(function (v) { return v.tabset; })
+    .filter(function (t) { return !!t; });
+
+  const onlyRoots = inRoots.filter(function (k) { return inCat.indexOf(k) < 0; });
+  const onlyCat = inCat.filter(function (k) { return inRoots.indexOf(k) < 0; });
+
+  onlyRoots.forEach(function (k) {
+    bad.add(k);
+    L.push('  FAIL  ' + k + '：shell.js 的 ROOTS 有，catalog.js 沒有對應的 walled 變體');
+  });
+  onlyCat.forEach(function (k) {
+    bad.add(k);
+    L.push('  FAIL  ' + k + '：catalog.js 登記成 walled，shell.js 的 ROOTS 沒有這一組');
+  });
+  if (!onlyRoots.length && !onlyCat.length) {
+    L.push('  PASS  兩邊都是 ' + inRoots.length + ' 個：' + inRoots.join('、'));
+  }
+}
+
 function finish() {
   const L = [];
-  let bad = 0;
+  const bad = new Set();
   VARIANTS.forEach(function (v) {
     const r = report[v];
+    const name = '變體 ' + v.toUpperCase();
+    if (r.skipped) {
+      L.push('  —     ' + name + '：尚未建檔，略過');
+      return;
+    }
     const n = r.leaks.length + r.tabbad.length;
-    if (!n) {
-      L.push('  PASS  變體 ' + v.toUpperCase() + '：走了 ' + r.pages + ' 頁、兩層連結，沒有一條掉回現況');
-    } else {
-      bad++;
-      L.push('  FAIL  變體 ' + v.toUpperCase() + '：' + r.pages + ' 頁裡有 ' + n + ' 條掉回現況');
+    if (!n && !r.missing.length) {
+      L.push('  PASS  ' + name + '：走了 ' + r.pages + ' 頁、兩層連結，沒有一條掉回現況');
+      return;
+    }
+    if (n) {
+      bad.add(v);
+      L.push('  FAIL  ' + name + '：' + r.pages + ' 頁裡有 ' + n + ' 條掉回現況');
       r.leaks.slice(0, 12).forEach(function (t) { L.push('          ' + t); });
       r.tabbad.slice(0, 6).forEach(function (t) { L.push('          ' + t); });
       if (n > 18) L.push('          …還有 ' + (n - 18) + ' 條');
     }
+    /* 登記了 ROOTS 但畫面還沒建：catalog 標 planned 的印成「尚未建檔」，
+       不算洞；標 built 卻讀不到檔才是真的洞。 */
+    const cat = (typeof CATALOG !== 'undefined' && CATALOG.VARIANTS || [])
+      .filter(function (x) { return x.tabset === v; })[0];
+    r.missing.forEach(function (h) {
+      if (cat && cat.state === 'planned') { L.push('  —     ' + name + '：尚未建檔 ' + h); return; }
+      bad.add(v);
+      L.push('  FAIL  ' + name + '：連到不存在的檔 ' + h);
+    });
   });
+
+  reconcile(L, bad);
+
   L.push('');
-  L.push(bad ? '共 ' + bad + ' 個變體有洞。' : '全部通過。');
+  L.push(bad.size ? '共 ' + bad.size + ' 個變體有洞。' : '全部通過。');
   document.getElementById('out').textContent = L.join('\n');
 }
 
-runNext();
+/* 先拿 ROOTS。album.html 是主線畫面，一定在。 */
+load('album.html', function (doc, win, err) {
+  if (err || !win || !win.SHELL || !win.SHELL.ROOTS) {
+    document.getElementById('out').textContent =
+      '  FAIL  讀不到 screens/album.html 的 SHELL.ROOTS，沒有變體清單可跑。\n\n共 1 個變體有洞。';
+    return;
+  }
+  ROOTS = win.SHELL.ROOTS;
+  VARIANTS = Object.keys(ROOTS);
+  runNext();
+});
 </script>
 </body>
 </html>

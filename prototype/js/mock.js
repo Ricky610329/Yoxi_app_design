@@ -664,6 +664,59 @@ function expand(p) {
   };
 }
 
+
+/* --------------------------------------------------------------------------
+   願景探索稿用的資料（vision-*.html）
+   只放 demo 需要的兩三筆。地點一律引用既有的 SPOTS／POSTCARDS id，
+   不新增地點，findPlace() 才不會掉進罐頭文案。
+   -------------------------------------------------------------------------- */
+const FAMILY = [
+  { id: 'mom',  name: '媽媽',  relation: '母親', shares: 'cards',  lastCard: 'p7', lastAt: '今天 15:20',
+    lastArea: '城隍廟附近', out: true,  watchedBack: true,  routeDone: { rail: 1, glass: 0, water: 2 } },
+  { id: 'sis',  name: '小芸',  relation: '妹妹', shares: 'cards',  lastCard: 'p4', lastAt: '昨天',
+    lastArea: '南寮',       out: false, watchedBack: true,  routeDone: { rail: 3, glass: 1, water: 1 } },
+  { id: 'dad',  name: '爸爸',  relation: '父親', shares: 'status', lastCard: null, lastAt: '三天前',
+    lastArea: '家附近',     out: true,  watchedBack: false, routeDone: { rail: 0, glass: 0, water: 0 } },
+];
+
+const EVENTS = [
+  { id: 'expo', name: '城市博覽會', from: '09.20', to: '10.05', area: '左岸',  art: 'harbour',
+    spots: ['harbour', 'moat', 'lake', 'brick'],
+    gates: [{ name: '3 號門', why: '離場人少，往市區的車在這裡好媒合', crowd: '低' },
+            { name: '1 號門', why: '主入口，散場時排隊', crowd: '高' }],
+    note: '結束後這條線會收起來，但你收過的明信片留著。' },
+  { id: 'lantern', name: '風城燈節', from: '10.18', to: '10.26', area: '護城河', art: 'moat',
+    spots: ['moat', 'market', 'temple'],
+    gates: [{ name: '東門圓環', why: '散場往車站方向的人最少', crowd: '中' }],
+    note: '燈節只有九天，護城河的明信片沒有期限。' },
+];
+
+const PLANS = [
+  { id: 'sat', name: '一個下午', members: ['me'],
+    legs: [{ placeId: 'moat',  by: 'walk', min: 22, dist: 1800 },
+           { placeId: 'brick', by: 'walk', min: 9,  dist: 700 },
+           { placeId: 'lake',  by: 'ride', min: 14, dist: 6400 }], fare: 245 },
+  { id: 'fam', name: '跟小芸的下午', members: ['me', 'sis'],
+    legs: [{ placeId: 'market', by: 'walk', min: 15, dist: 1100, who: 'sis' },
+           { placeId: 'moat',   by: 'walk', min: 12, dist: 900,  who: 'me' },
+           { placeId: 'harbour',by: 'ride', min: 18, dist: 8200, who: 'sis' }], fare: 310 },
+];
+
+const HEALTH = [
+  { id: 'chk', kind: '健檢', where: '新竹馬偕', at: '9月25日 星期四 08:30', rideBack: true, elderFleet: true,
+    nearby: ['brick', 'moat'] },
+  { id: 'rev', kind: '回診', where: '台大新竹分院', at: '10月2日 星期四 14:00', rideBack: true, elderFleet: false,
+    nearby: ['market'] },
+];
+
+/* 這個月每天的步數。刻意沒有 goal 欄位：健康資料最容易長出目標與達標線。 */
+const HEALTH_STEPS = {
+  month: [4120, 5310, 2880, 6020, 3450, 7210, 4980, 5600, 3120, 6840, 4410, 5230, 2960, 6120,
+          4870, 5540, 3380, 7010, 4690, 5120, 6240, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  avg: 4870,
+};
+
 window.MOCK = {
   cardIdOf,
-  CARD_TO_PLACE, findPlace, SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS };
+  CARD_TO_PLACE, findPlace, SPOTS, USER, ART, TODAY, PENDING, ROUTES, FAR_PLACE, POSTCARDS, BADGES, LOOKBACK, FOG, CITY_COLORS,
+  FAMILY, EVENTS, PLANS, HEALTH, HEALTH_STEPS };

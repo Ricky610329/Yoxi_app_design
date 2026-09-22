@@ -2,23 +2,35 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<title>全站稽核 — 死按鈕與數字矛盾</title>
+<title>全站稽核 — 死按鈕、數字矛盾與詞彙禁用</title>
 <!--
-  兩類「不會報錯、只會安靜出錯」的問題，全站掃一次。
+  三類「不會報錯、只會安靜出錯」的問題，全站掃一次。
 
     chrome --headless=new --allow-file-access-from-files \
            --virtual-time-budget=90000 --dump-dom tools/audit-app.html
 
+    tools/audit-app.html?scope=vision   改掃 12 張願景探索稿，只看死按鈕
+
   為什麼要有這一份：console 全綠、斷連為零、六條防護承諾全過 —— 然後
   五份人工稽核一次抓到 57 個「看起來可按、實際沒有任何行為」的元素，
-  以及四組「同一個數字在不同畫面互相打架」。兩類都不會讓任何既有檢查變紅。
+  以及四組「同一個數字在不同畫面互相打架」。三類都不會讓既有檢查變紅。
 
   A 死按鈕：在 iframe 裡攔截 addEventListener 與 onclick 的指派，
   然後掃全頁的可按元素，看每一個要嘛有真的 href、要嘛留下了綁定紀錄。
-  攔截必須在頁面自己的腳本跑之前裝好，所以用 about:blank + document.write。
+  攔截必須在頁面自己的腳本跑之前裝好，所以用 about:blank 再改 src。
 
   B 數字矛盾：同一份狀態下載入多個畫面，把它們各自算出來的獎章進度、
   點數、去過幾個地方、覆蓋率抓出來比對。
+
+  C 詞彙禁用：整份設計的立場是「城事不是任務」。走 .device 底下算繪後的
+  文字節點 —— 不是原始碼。原始碼的註解裡本來就有這些詞在解釋「為什麼
+  不用它們」，掃原始碼會把說明本身當成違規。
+
+  兩種「不是 FAIL」的狀態：
+    尚未建檔          清單／ROOTS 先登記、畫面還沒畫（載進來沒有 SHELL）。
+                      這一行同時就是待辦表。
+    探索稿（未稽核）  body[data-vision]。想法草圖，還沒到定稿文案的階段，
+                      不進 A／B／C；要單獨看就跑 ?scope=vision。
 -->
 <style>
   body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
@@ -32,6 +44,7 @@
 
 <script>
 const BASE = '../screens/';
+const VISION_SCOPE = new URLSearchParams(location.search).get('scope') === 'vision';
 
 /* 這些 href 是刻意的「沒有下一步」：demo 外殼、或是靠 JS 攔下來的。 */
 const OK_HASH = new Set(['nextBtn']);
@@ -48,7 +61,12 @@ function whenReady(doc, fn) {
 function load(url, fn) {
   const fr = document.createElement('iframe');
   fr.src = BASE + url;
-  fr.onload = function () { whenReady(fr.contentDocument, function () { fn(fr.contentDocument, fr); }); };
+  fr.onload = function () {
+    let doc = null;
+    try { doc = fr.contentDocument; } catch (e) {}
+    if (!doc || !doc.documentElement) return fn(null, fr);
+    whenReady(doc, function () { fn(doc, fr); });
+  };
   document.getElementById('frames').appendChild(fr);
 }
 
@@ -101,6 +119,54 @@ function deadClicks(doc) {
   return dead;
 }
 
+/* ------------------------------------------------------- C 詞彙禁用 ---- */
+const BANNED = ['任務', '完成', '達成', '挑戰', '每日'];
+
+/* 白名單：這幾張裡的這些字是 yoxi 自己既有的文案，不是城事寫的。 */
+const WORD_OK = {
+  'tasks.html':            'yoxi 既有的好康任務頁，刻意完全不動',
+  'variant-t1-tasks.html': '好康任務頁的變體，詞是 yoxi 的',
+  'ride-done.html':        '白名單：yoxi 既有文案（「行程完成」是既有畫面的標題）',
+  'drawer.html':           '白名單：抽屜列的是 yoxi 既有功能名稱（「好康任務」）',
+  'invite.html':           '白名單：yoxi 既有的邀請頁文案（「首趟完成後」）',
+};
+
+/* 走算繪後的文字節點：script／style／template 裡的文字不是給人看的，
+   HTML 註解根本不是文字節點 —— 這正是不掃原始碼的原因。 */
+function bannedHits(doc) {
+  const hits = [];
+  const seen = {};
+  const found = doc.querySelectorAll('.device');
+  const roots = found.length ? Array.prototype.slice.call(found)
+                             : (doc.body ? [doc.body] : []);
+  roots.forEach(function (root) {
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        const p = n.parentElement;
+        if (!p) return NodeFilter.FILTER_REJECT;
+        if (p.closest('script, style, template, noscript')) return NodeFilter.FILTER_REJECT;
+        if (!/\S/.test(n.nodeValue || '')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let n;
+    while ((n = walker.nextNode())) {
+      const t = n.nodeValue || '';
+      BANNED.forEach(function (w) {
+        const i = t.indexOf(w);
+        if (i < 0) return;
+        const ctx = t.slice(Math.max(0, i - 12), i + w.length + 12)
+                     .replace(/\s+/g, ' ').trim();
+        const key = w + '|' + ctx;
+        if (seen[key]) return;
+        seen[key] = true;
+        hits.push({ word: w, ctx: ctx });
+      });
+    }
+  });
+  return hits;
+}
+
 /* ------------------------------------------------------- B 數字矛盾 ---- */
 const num = function (el) {
   if (!el) return null;
@@ -145,52 +211,128 @@ const PROBES = [
 ];
 
 /* ---------------------------------------------------------------- 跑 ---- */
-const SCREENS = [];
-/* 掃哪些畫面：由 index 的清單決定會漏掉變體，所以直接列。 */
-`home drawer pickup outofarea ride ride-done notify ridesettings points trips export
- payment coupon tasks support shop invite explore map place going routes route fogmap
- album postcard badge week elder settings push unlock lookback
- variant-a-map variant-a-explore variant-a-album variant-b-explore variant-b-album
- variant-c-map variant-c-explore variant-c-album
- variant-d-home variant-d-explore variant-d-album
- variant-e-home variant-e-explore variant-e-album
- variant-f-home variant-f-album`.split(/\s+/).filter(Boolean).forEach(function (s) {
-  SCREENS.push(s + '.html');
-});
+/* 掃哪些畫面：由 index 的清單決定會漏掉變體，所以直接列。
+   還沒建檔的也照列 —— 這份清單同時是「登記了但還沒畫」的待辦表。 */
+const MAIN_LIST =
+ 'home drawer pickup outofarea ride ride-done notify ridesettings points trips export ' +
+ 'payment coupon tasks support shop invite explore map place going routes route fogmap ' +
+ 'album postcard badge week elder settings push unlock lookback ' +
+ 'variant-a-map variant-a-explore variant-a-album variant-b-explore variant-b-album ' +
+ 'variant-c-map variant-c-explore variant-c-album ' +
+ 'variant-d-home variant-d-explore variant-d-album ' +
+ 'variant-e-home variant-e-explore variant-e-album ' +
+ 'variant-f-home variant-f-album ' +
+ 'variant-s1-album variant-s2-album variant-s3-album variant-s4-album variant-s5-album ' +
+ 'variant-x1-explore variant-x2-explore variant-x2-album variant-x3-explore ' +
+ 'variant-x4-badges variant-x5-explore ' +
+ 'variant-t1-tasks ' +
+ 'variant-l1-explore variant-l2-explore variant-l3-album variant-l4-map ' +
+ 'variant-l5-explore variant-l5-album variant-l6-explore';
 
-const deadOut = {};
-let deadDone = 0;
+const VISION_LIST =
+ 'vision-family-a vision-family-b vision-family-c ' +
+ 'vision-event-a vision-event-b vision-event-c ' +
+ 'vision-plan-a vision-plan-b vision-plan-c ' +
+ 'vision-health-a vision-health-b vision-health-c';
 
-SCREENS.forEach(function (s) {
-  /* 攔截器要在頁面腳本之前裝好，所以先開一個空 iframe、寫進去再導向。 */
+const SCREENS = (VISION_SCOPE ? VISION_LIST : MAIN_LIST)
+  .split(/\s+/).filter(Boolean).map(function (s) { return s + '.html'; });
+
+const deadOut = {};      /* 檔名 → 死按鈕清單 */
+const wordOut = {};      /* 檔名 → 禁用詞命中 */
+const notBuilt = [];     /* 清單裡有、畫面還沒建 */
+const visionSkip = [];   /* body[data-vision]，探索稿不稽核 */
+let audited = 0;
+
+/* 一張一張掃。攔截器要在頁面自己的腳本之前裝好，所以先開一個空 iframe、
+   在它上面換掉 addEventListener，再把 src 指到真正的畫面。 */
+function scanOne(s, done) {
   const fr = document.createElement('iframe');
+  let settled = false;
+  function finish(state, payload) {
+    if (settled) return;
+    settled = true;
+    fr.remove();
+    done(state, payload);
+  }
+  /* 檔案不存在時 Chrome 換成錯誤頁，onload 不一定照預期發生。給一個上限，
+     逾時就當成「還沒建檔」，不讓整份稽核卡在一張沒畫的畫面上。 */
+  setTimeout(function () { finish('missing'); }, 20000);
+
   fr.src = 'about:blank';
   fr.onload = function onblank() {
     fr.onload = null;
-    const w = fr.contentWindow;
+    let w = null;
+    try { w = fr.contentWindow; } catch (e) {}
+    if (!w) return finish('missing');
     const origAdd = w.EventTarget.prototype.addEventListener;
     w.EventTarget.prototype.addEventListener = function (type) {
       if (type === 'click' || type === 'pointerdown') { try { this.__bound = true; } catch (e) {} }
       return origAdd.apply(this, arguments);
     };
     fr.onload = function () {
-      whenReady(fr.contentDocument, function () {
-        const dead = deadClicks(fr.contentDocument);
-        if (dead.length) deadOut[s] = dead;
-        if (++deadDone === SCREENS.length) runProbes();
+      let doc = null, win = null;
+      try { doc = fr.contentDocument; win = fr.contentWindow; } catch (e) {}
+      if (!doc || !doc.documentElement) return finish('missing');
+      whenReady(doc, function () {
+        /* SHELL 不在 ＝ 這個檔還沒建（載到的是錯誤頁）。不是死按鈕，也不是 FAIL。 */
+        let shell = null;
+        try { shell = win && win.SHELL; } catch (e) {}
+        if (!shell) return finish('missing');
+        const isVision = !!(doc.body && doc.body.hasAttribute('data-vision'));
+        if (isVision && !VISION_SCOPE) return finish('vision');
+        let payload;
+        try {
+          payload = {
+            dead: deadClicks(doc),
+            words: (VISION_SCOPE || isVision || WORD_OK[s]) ? [] : bannedHits(doc),
+          };
+        } catch (e) {
+          payload = { dead: [], words: [] };
+        }
+        finish('ok', payload);
       });
     };
     fr.src = BASE + s;
   };
   document.getElementById('frames').appendChild(fr);
-});
+}
+
+/* 同時開六十幾個 iframe 會讓慢的那幾張互相拖累，而且結果不穩定 ——
+   一次最多八張。 */
+const POOL = 8;
+let cursor = 0, running = 0, finished = 0;
+
+function pump() {
+  while (running < POOL && cursor < SCREENS.length) {
+    const s = SCREENS[cursor++];
+    running++;
+    scanOne(s, function (state, payload) {
+      running--;
+      finished++;
+      if (state === 'missing') notBuilt.push(s);
+      else if (state === 'vision') visionSkip.push(s);
+      else {
+        audited++;
+        if (payload.dead.length) deadOut[s] = payload.dead;
+        if (payload.words.length) wordOut[s] = payload.words;
+      }
+      if (finished === SCREENS.length) {
+        if (VISION_SCOPE) report({});
+        else runProbes();
+      } else pump();
+    });
+  }
+}
+pump();
 
 function runProbes() {
   const res = {};
   let n = 0;
   PROBES.forEach(function (p) {
     load(p[0], function (d) {
-      try { res[p[0]] = p[1](d); } catch (e) { res[p[0]] = { 錯誤: e.message }; }
+      if (!d) res[p[0]] = { 錯誤: '讀不到' };
+      else { try { res[p[0]] = p[1](d); } catch (e) { res[p[0]] = { 錯誤: e.message }; } }
       if (++n === PROBES.length) report(res);
     });
   });
@@ -200,10 +342,12 @@ function report(res) {
   const L = [];
   let bad = 0;
 
+  if (VISION_SCOPE) L.push('（scope=vision：12 張願景探索稿，只跑死按鈕這一段）');
+
   L.push('── A 看起來可按、實際沒有行為的元素 ' + '─'.repeat(20));
   const files = Object.keys(deadOut).sort();
   if (!files.length) {
-    L.push('  PASS  ' + SCREENS.length + ' 個畫面，沒有死按鈕');
+    L.push('  PASS  ' + audited + ' 個畫面，沒有死按鈕');
   } else {
     let total = 0;
     files.forEach(function (f) {
@@ -213,27 +357,57 @@ function report(res) {
     L.push('        共 ' + total + ' 個，散在 ' + files.length + ' 個畫面');
     bad += files.length;
   }
+  if (notBuilt.length) {
+    L.push('  —     尚未建檔 ' + notBuilt.length + ' 張：' + notBuilt.sort().join('、'));
+  }
+  if (visionSkip.length) {
+    L.push('  —     探索稿（未稽核）' + visionSkip.length + ' 張：' + visionSkip.sort().join('、'));
+  }
 
-  L.push('');
-  L.push('── B 同一個數字在不同畫面一不一致 ' + '─'.repeat(20));
-  const groups = {};
-  Object.keys(res).forEach(function (page) {
-    Object.keys(res[page]).forEach(function (k) {
-      (groups[k] = groups[k] || []).push([page, res[page][k]]);
+  if (!VISION_SCOPE) {
+    L.push('');
+    L.push('── B 同一個數字在不同畫面一不一致 ' + '─'.repeat(20));
+    const groups = {};
+    Object.keys(res).forEach(function (page) {
+      Object.keys(res[page]).forEach(function (k) {
+        (groups[k] = groups[k] || []).push([page, res[page][k]]);
+      });
     });
-  });
-  Object.keys(groups).forEach(function (k) {
-    const vals = groups[k].filter(function (x) { return x[1] != null; });
-    const uniq = Array.from(new Set(vals.map(function (x) { return String(x[1]); })));
-    if (uniq.length <= 1) {
-      L.push('  PASS  ' + k + ' = ' + (uniq[0] || '—') +
-             '（' + vals.length + ' 個畫面一致）');
+    Object.keys(groups).forEach(function (k) {
+      const vals = groups[k].filter(function (x) { return x[1] != null; });
+      const uniq = Array.from(new Set(vals.map(function (x) { return String(x[1]); })));
+      if (uniq.length <= 1) {
+        L.push('  PASS  ' + k + ' = ' + (uniq[0] || '—') +
+               '（' + vals.length + ' 個畫面一致）');
+      } else {
+        bad++;
+        L.push('  FAIL  ' + k + ' 有 ' + uniq.length + ' 種說法：');
+        vals.forEach(function (x) { L.push('          ' + x[0] + ' → ' + x[1]); });
+      }
+    });
+
+    L.push('');
+    L.push('── C 詞彙禁用（' + BANNED.join('／') + '） ' + '─'.repeat(20));
+    const wfiles = Object.keys(wordOut).sort();
+    if (!wfiles.length) {
+      L.push('  PASS  ' + audited + ' 個畫面的算繪文字裡沒有這幾個詞');
     } else {
-      bad++;
-      L.push('  FAIL  ' + k + ' 有 ' + uniq.length + ' 種說法：');
-      vals.forEach(function (x) { L.push('          ' + x[0] + ' → ' + x[1]); });
+      wfiles.forEach(function (f) {
+        wordOut[f].slice(0, 8).forEach(function (h) {
+          L.push('  FAIL  ' + f + '「' + h.word + '」：…' + h.ctx + '…');
+        });
+        if (wordOut[f].length > 8) {
+          L.push('        ' + f + ' 還有 ' + (wordOut[f].length - 8) + ' 處');
+        }
+      });
+      L.push('        共 ' + wfiles.length + ' 個畫面用到禁用詞');
+      bad += wfiles.length;
     }
-  });
+    Object.keys(WORD_OK).forEach(function (f) {
+      L.push('  —     白名單 ' + f + '：' + WORD_OK[f]);
+    });
+    L.push('  —     白名單 body[data-vision]：探索稿還沒到定稿文案的階段');
+  }
 
   L.push('');
   L.push(bad ? '共 ' + bad + ' 項未通過。' : '全部通過。');

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>變體比較 — yoxi 城事</title>
 <!--
-  地圖該歸誰？七個變體的並排比較，加上還沒做的候選變體。
+  變體比較：依軸線分區的卡牆。
 
-  順序刻意是：先給結論與光譜，再看變體。
-  以前讀者要先讀完四個「會被作廢」的變體才看到真正的提案。
-
-  每一列是一個變體的分頁組合（叫車／探索／收藏），標了「狀態」的格子是
-  同一張畫面的另一個狀態、「第二層」是從分頁再點進去的畫面。
+  每張卡＝一個變體：一張代表縮圖、一句話、代價一行、好處一行、判定標籤。
+  點卡片原地展開才看到完整的分頁縮圖、什麼情況選它、風險。長論述全部收進 <details>。
+  資料在 js/catalog.js 的 AXES／VARIANTS，這裡不再手寫任何一個變體；
+  跟層級樹（overview.html）同源，每張卡都能跳到樹上的那個節點寫評語。
+  「畫面上要放多少東西」那條軸線的數字來自 assets/load.js（tools/verify-quiet.py 產生）。
 -->
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -21,128 +21,112 @@
   body { background: var(--yoxi-mist); }
   .wrap { max-width: 1320px; margin: 0 auto; padding: 40px 24px 96px; }
 
-  .top { display: flex; align-items: flex-end; justify-content: space-between;
-         gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
   .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
+  .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; max-width: 56em; }
   .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
 
-  .problem {
-    background: #fff; border-left: 4px solid var(--yoxi-red);
-    border-radius: var(--r-card); padding: 20px 24px; margin-bottom: 20px;
-    line-height: 1.85;
-  }
-  .problem b { color: var(--yoxi-red); }
-  .problem--navy { border-left-color: var(--yoxi-navy); }
-  .problem--navy b { color: var(--yoxi-navy); }
+  /* 結論帶 */
+  .verdicts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 1000px) { .verdicts { grid-template-columns: repeat(2, 1fr); } }
+  .verdicts a { display: block; padding: 14px 16px; background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); }
+  .verdicts a:hover { border-color: var(--yoxi-navy); }
+  .verdicts small { display: block; font-size: 12px; color: var(--yoxi-slate); }
+  .verdicts b { display: block; font-size: 17px; margin-top: 4px; }
 
-  /* 光譜：從「地圖住收藏」到「整個 app 只剩一張畫面」 */
-  .spectrum {
-    background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
-    padding: 20px 24px; margin-bottom: 36px;
-  }
+  .spectrum { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 18px 24px; margin-bottom: 28px; }
   .spectrum__t { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-slate); }
   .spectrum__bar { display: flex; align-items: stretch; gap: 6px; margin-top: 12px; }
-  .spectrum__seg {
-    flex: 1; padding: 10px 12px; border-radius: 6px; background: var(--yoxi-mist);
-    font-size: 13px; line-height: 1.5; text-align: center;
-  }
+  .spectrum__seg { flex: 1; padding: 10px 12px; border-radius: 6px; background: var(--yoxi-mist); font-size: 13px; line-height: 1.5; text-align: center; }
   .spectrum__seg b { display: block; font-size: 15px; }
   .spectrum__seg.is-pick { background: var(--yoxi-navy); color: #fff; }
   .spectrum__seg.is-sub  { background: var(--yoxi-cream); }
-  .spectrum__ends { display: flex; justify-content: space-between; margin-top: 8px;
-                    font-size: 12px; color: var(--yoxi-slate); }
-  .spectrum__rule { margin-top: 14px; font-size: 14px; line-height: 1.75; }
-  .spectrum__rule b { color: var(--yoxi-navy); }
+  .spectrum__ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--yoxi-slate); }
   @media (max-width: 820px) { .spectrum__bar { flex-wrap: wrap; } .spectrum__seg { min-width: 42%; } }
 
-  .v {
-    background: #fff; border-radius: var(--r-card);
-    border: 1px solid var(--yoxi-line); padding: 24px; margin-bottom: 20px;
-  }
-  .v--pick { border-color: var(--yoxi-navy); border-width: 2px; }
+  .fold { margin-top: 12px; }
+  .fold summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--yoxi-slate); list-style: none; }
+  .fold summary::before { content: "▸ "; }
+  .fold[open] summary::before { content: "▾ "; }
+  .fold p { margin-top: 10px; font-size: 14px; line-height: 1.8; color: var(--yoxi-navy); }
+  .fold b { color: var(--yoxi-red); }
 
-  .v__head { display: flex; align-items: flex-start; justify-content: space-between;
-             gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
-  .v__tag { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
-  .v__n { font-size: 22px; font-weight: 800; margin-top: 3px; }
-  .v__one { color: var(--yoxi-slate); margin-top: 6px; line-height: 1.65; max-width: 54em; }
-  .v__pickmark {
-    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
-    border-radius: 999px; background: var(--yoxi-navy); color: #fff;
-    font-size: 12px; font-weight: 800; white-space: nowrap;
-  }
-  .v__pickmark--sub { background: var(--yoxi-mist); color: var(--yoxi-navy); }
+  /* 軸線分區 */
+  .axis { margin-top: 36px; scroll-margin-top: 16px; }
+  .axis__h { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .axis__t { font-size: 24px; font-weight: 800; }
+  .axis__pick { font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: var(--yoxi-navy); color: #fff; }
+  .axis__intro { font-size: 14px; color: var(--yoxi-slate); line-height: 1.7; margin-bottom: 16px; max-width: 70em; }
+  .axis__intro a { text-decoration: underline; }
 
-  .tabs { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
-  :root { --tw: 186px; }
-  @media (max-width: 1240px) { :root { --tw: 168px; } }
-  @media (max-width: 1060px) { :root { --tw: 150px; } }
-  .tabcol { width: var(--tw); }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 1100px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 700px)  { .cards { grid-template-columns: 1fr; } }
+
+  /* 一張變體卡 */
+  .vcard { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 18px; display: grid; grid-template-columns: 118px 1fr; gap: 16px; align-items: start; position: relative; }
+  .vcard.is-open { grid-column: 1 / -1; grid-template-columns: 1fr; }
+  .vcard[data-state="candidate"] { background: var(--yoxi-mist); }
+  .vcard[data-verdict="pick"] { border-color: var(--yoxi-navy); border-width: 2px; }
+  .vcard__thumb { position: relative; width: 118px; height: calc(118px * 912 / 430); border-radius: 10px; overflow: hidden; background: #E3E8EE; box-shadow: 0 2px 8px rgba(6,32,64,.14); display: grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--yoxi-slate); text-align: center; }
+  .vcard__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .vcard__thumb a { position: absolute; inset: 0; }
+  .vcard.is-open .vcard__thumb { display: none; }
+  .vcard__tag { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); display: flex; gap: 8px; align-items: center; }
+  .vcard__n { font-size: 17px; font-weight: 800; margin-top: 2px; line-height: 1.3; }
+  .vcard__one { font-size: 13px; color: var(--yoxi-navy); margin-top: 8px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vcard.is-open .vcard__one { display: block; }
+  .vcard__to { margin-top: 10px; display: grid; gap: 6px; font-size: 13px; line-height: 1.5; }
+  .vcard__to .bad  { color: #8A5A1E; }
+  .vcard__to .bad b { color: #8A5A1E; }
+  .vcard__to .good { color: #2F6B3D; }
+  .vcard__to .good b { color: #2F6B3D; }
+  .vcard__to span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vcard.is-open .vcard__to span { display: block; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .verdict { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+  .verdict--pick  { background: var(--yoxi-navy); color: #fff; }
+  .verdict--sub   { background: var(--yoxi-mist); color: var(--yoxi-navy); border: 1px solid var(--yoxi-slate-lite); }
+  .verdict--do    { background: #E8EFEA; color: #2F6B3D; }
+  .verdict--maybe { background: var(--yoxi-cream); color: #8A5A1E; }
+  .verdict--no    { background: #DCE3EA; color: var(--yoxi-slate); }
+  .verdict--state { background: #fff; color: var(--yoxi-slate); border: 1px dashed var(--yoxi-slate-lite); }
+  .verdict--load  { background: #fff; color: var(--yoxi-navy); border: 1px solid var(--yoxi-line); }
+  .verdict--load.is-bad { color: var(--yoxi-red); border-color: var(--yoxi-red); }
+  .vcard__acts { display: flex; gap: 12px; margin-top: 12px; font-size: 12px; font-weight: 800; }
+  .vcard__acts a, .vcard__acts button { color: var(--yoxi-navy); text-decoration: underline; padding: 0; }
+
+  /* 展開後的內容 */
+  .vcard__more { display: none; grid-column: 1 / -1; border-top: 1px solid var(--yoxi-line); padding-top: 14px; margin-top: 4px; }
+  .vcard.is-open .vcard__more { display: block; }
+  .tabs { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; margin-top: 8px; }
+  .tabcol { width: 160px; }
   .tabcol--st .fr { outline: 2px dashed var(--yoxi-slate-lite); outline-offset: 3px; }
-  .tabcol__l {
-    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
-    font-size: 12px; font-weight: 800; color: var(--yoxi-slate);
-  }
+  .tabcol__l { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px; font-weight: 800; color: var(--yoxi-slate); }
   .tabcol__l i { width: 8px; height: 8px; border-radius: 50%; background: var(--yoxi-slate-lite); flex: none; }
   .tabcol__l.is-map i { background: var(--yoxi-red); }
   .tabcol__l.is-map { color: var(--yoxi-red); }
-  .tabcol__st { margin-left: auto; padding: 1px 6px; border-radius: 3px; background: var(--yoxi-mist);
-                color: var(--yoxi-slate); font-size: 10px; font-weight: 800; }
-
-  .fr {
-    position: relative; width: var(--tw); height: calc(var(--tw) * 912 / 430);
-    border-radius: 13px; overflow: hidden; background: #fff;
-    box-shadow: 0 2px 10px rgba(6,32,64,.14);
-    transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
-  }
-  .fr:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24); }
-  .fr img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .tabcol__st { margin-left: auto; padding: 1px 6px; border-radius: 3px; background: var(--yoxi-mist); color: var(--yoxi-slate); font-size: 10px; font-weight: 800; }
+  .fr { position: relative; width: 160px; height: calc(160px * 912 / 430); border-radius: 12px; overflow: hidden; background: #E3E8EE; box-shadow: 0 2px 10px rgba(6,32,64,.14); display: grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--yoxi-slate); }
+  .fr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
   .fr a { position: absolute; inset: 0; }
   .fr__cap { margin-top: 8px; font-size: 12px; color: var(--yoxi-slate); line-height: 1.5; }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; font-size: 13px; line-height: 1.6; margin-top: 14px; }
+  .kv dt { color: var(--yoxi-slate); font-weight: 800; }
+  .kv dd { margin: 0; }
 
-  /* 代價放左邊、加粗：真正決定的是代價，不是好處 */
-  .tradeoff { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
-  @media (max-width: 720px) { .tradeoff { grid-template-columns: 1fr; } }
-  .to { padding: 14px 16px; border-radius: var(--r-card); line-height: 1.75; font-size: 14px; }
-  .to--good { background: #F1F7F2; }
-  .to--bad  { background: var(--yoxi-cream); }
-  .to b { display: block; margin-bottom: 4px; font-size: 12px; letter-spacing: .04em; }
-  .to--good b { color: #2F6B3D; }
-  .to--bad  b { color: #8A5A1E; font-size: 13px; }
-
-  .where {
-    margin-top: 16px; padding: 12px 16px; border-radius: var(--r-card);
-    background: var(--yoxi-mist); font-size: 14px; line-height: 1.7;
-  }
-  .where b { color: var(--yoxi-navy); }
-  .when { margin-top: 10px; font-size: 14px; line-height: 1.7; padding: 0 4px; }
-  .when b { color: var(--yoxi-navy); }
-
-  h2.sec { font-size: 24px; font-weight: 800; margin: 8px 0 6px; }
-  p.lead { color: var(--yoxi-slate); margin-bottom: 20px; line-height: 1.7; }
-
-  /* 共同前提：兩張圖並排 */
-  .premise { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 900px) { .premise { grid-template-columns: 1fr; } }
-  .premise__pair { display: flex; gap: 14px; }
-  .premise__pair .tabcol { width: 150px; }
-  .premise__pair .fr { width: 150px; height: calc(150px * 912 / 430); }
-
-  table.proof { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.7; }
-  table.proof th { text-align: left; padding: 10px 14px; background: var(--yoxi-mist); }
-  table.proof td { padding: 10px 14px; border-top: 1px solid var(--yoxi-line); vertical-align: top; }
-  table.proof td:first-child { width: 34%; }
-  .ok { color: #2F6B3D; font-weight: 800; }
-
-  /* 候選變體 */
-  table.cand { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.6; }
-  table.cand th { text-align: left; padding: 10px 12px; background: var(--yoxi-mist); font-size: 12px; }
-  table.cand td { padding: 10px 12px; border-top: 1px solid var(--yoxi-line); vertical-align: top; }
-  table.cand td:first-child { white-space: nowrap; font-weight: 800; }
-  .verdict { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 800; white-space: nowrap; }
-  .verdict--do   { background: var(--yoxi-navy); color: #fff; }
-  .verdict--maybe{ background: var(--yoxi-cream); color: #8A5A1E; }
-  .verdict--no   { background: var(--yoxi-mist); color: var(--yoxi-slate); }
+  /* 承諾：六顆晶片 */
+  .proofs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 18px; }
+  @media (max-width: 1100px) { .proofs { grid-template-columns: repeat(4, 1fr); } }
+  .proof { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 12px 12px 10px; }
+  .proof summary { list-style: none; cursor: pointer; }
+  .proof summary small { display: block; font-size: 11px; font-weight: 800; color: var(--yoxi-slate); }
+  .proof summary b { display: block; font-size: 24px; font-weight: 800; font-style: italic; margin-top: 2px; line-height: 1.1; }
+  .proof summary b.ok { color: #2F6B3D; }
+  .proof summary b.warn { color: #8A5A1E; }
+  .proof summary span { display: block; font-size: 12px; margin-top: 2px; }
+  .proof p { font-size: 13px; line-height: 1.7; margin-top: 10px; color: var(--yoxi-navy); }
+  .proof code { background: var(--yoxi-mist); padding: 0 4px; border-radius: 3px; }
 </style>
 </head>
 
@@ -151,31 +135,20 @@
 
   <header class="top">
     <div>
-      <h1>地圖該歸誰？</h1>
-      <p style="color:var(--yoxi-slate); margin-top:8px; line-height:1.7; max-width:56em">
-        兩個問題、七個變體的並排比較，加上還沒做的候選。每一列是一個變體的分頁組合，<br>
-        標「狀態」的格子是同一張畫面的另一個狀態，「第二層」是從分頁再點進去的畫面。點任一張開新分頁看實際畫面。
-      </p>
+      <h1>變體比較</h1>
+      <p>每條軸線是一個設計問題，每張卡是一個答案。點卡片展開看完整分頁與論述；「在樹上看」可以寫評語。
+         灰底＝只有論述沒畫面；虛線框＝尚未建檔。</p>
     </div>
     <div style="display:grid; gap:10px; justify-items:end">
       <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
-      <a class="backlink" href="overview.html"><span class="arrow arrow--left"></span> 全景圖</a>
+      <a class="backlink" href="overview.html?node=variants">層級樹 <span class="arrow"></span></a>
     </div>
   </header>
 
-  <div class="problem">
-    <b>問題</b>：地圖同時出現在兩個地方 —— 探索的「附近有什麼」和收藏的「城市足跡」。
-    兩張互不相干的地圖是功能堆疊的典型症狀，正是 Pikmin Bloom 五年從三個功能長成
-    五分頁六區塊的那條路。<br><br>
-    但這個重複是<b>結構性的</b>，不是隨手擺錯：地圖在回答兩個不同時態的問題 ——
-    「附近有什麼可以去」（未來）與「我去過哪裡」（過去），而 tab bar 正是照時態切的。
-    所以解法必須決定：<b>地圖到底屬於哪一個時態</b>。而一旦決定「探索＝地圖＋sheet」，
-    下一個問題就自動出現：<b>那為什麼不直接用叫車那一張？</b>
-  </div>
+  <div class="verdicts" id="verdicts"></div>
 
-  <!-- ===== 先給結論與光譜 ===== -->
   <div class="spectrum">
-    <div class="spectrum__t">先講結論 —— 七個變體其實是同一條光譜上的七個點，只有三個互斥主張</div>
+    <div class="spectrum__t">地圖該歸誰 —— 七個變體其實是同一條光譜上的七個點，只有三個互斥主張</div>
     <div class="spectrum__bar">
       <div class="spectrum__seg"><b>0</b>兩張地圖<br>現況</div>
       <div class="spectrum__seg"><b>C</b>收藏不放地圖<br>0 的一個開關</div>
@@ -186,311 +159,150 @@
       <div class="spectrum__seg"><b>F</b>一畫面兩模式<br>主張三：只剩一張</div>
     </div>
     <div class="spectrum__ends"><span>← 地圖離叫車越遠、干擾越小</span><span>整合越徹底、干擾越大 →</span></div>
-    <p class="spectrum__rule">
-      <b>整份提案推薦 E</b>：發現一個地方到叫車去那裡只要一步，「探索會直接產生訂單」從論述變成可以當場點給評審看的動作。<br>
-      <b>如果團隊不被允許動叫車主畫面</b>，退一步選 B：探索頁跟叫車頁同一個版型，B 與 E 其實是同一張畫面放在不同的分頁 ——
-      B 已經走到 90%，只差這張圖要不要就是打開 app 的第一眼。<br>
-      <b>Demo 主線跑的是保守版</b>（變體 0 加上叫車首頁的一個入口）：動的是 yoxi 已經上線的畫面，那是灰度發布的題目，
-      所以 E 帶著六條可以當場重跑的驗收一起提，而不是直接改掉 demo。流程 B 的最後一步就是 E 的對照。
-    </p>
-  </div>
-
-  <h2 class="sec">問題一：探索內部，地圖該放哪？</h2>
-  <p class="lead">
-    在「<b>探索有自己的地圖</b>」這個前提下，地圖與城市足跡怎麼分配。
-    這一題的最佳解是 B；但 B 的結論「探索＝地圖＋sheet」也正是問題二的起點 ——
-    <b style="color:var(--yoxi-navy)">採用 E 的話，這四列一起作廢</b>。
-  </p>
-  <div id="list"></div>
-
-  <div class="problem problem--navy" style="margin:48px 0 20px">
-    <b>問題二：那為什麼不直接用叫車的那張？</b><br><br>
-    yoxi 的叫車首頁<b>本來就是一張地圖 + 底部拉把 sheet</b>。
-    探索的地圖也是地圖 + 底部小卡 —— 兩者在結構上是同一種東西，只是內容不同。
-    上面四個變體都只在探索與收藏之間搬動地圖，沒有質問這件事。<br><br>
-    如果合併成立，好處不只是少一張地圖：使用者<b>打開 app 第一眼就看到附近有什麼</b>，
-    「不搭車也打開 yoxi」變成字面意義的真實；而且從「發現一個地方」到「叫車去那裡」可以壓到<b>一步</b>。<br><br>
-    風險也很明確：<b>叫車主畫面會不會變吵。</b>
-    這是這份提案最可能被評審否決的地方，所以三個變體共用兩條前提，再各自帶四條可驗收的防護承諾。
-  </div>
-
-  <!-- ===== D／E／F 的共同前提：先看差在哪，再看變體 ===== -->
-  <div class="v" style="border-color:var(--yoxi-navy); border-width:2px">
-    <div class="v__tag">D／E／F 的共同前提</div>
-    <div class="v__n">圖層以外一個都沒動、叫車的 tap 數不變</div>
-    <div class="premise" style="margin-top:16px">
-      <div class="premise__pair">
-        <div class="tabcol">
-          <div class="tabcol__l"><i></i>現況 home.html</div>
-          <div class="fr"><img src="assets/thumbs/home.png" alt="現況" loading="lazy">
-            <a href="screens/home.html" target="_blank" aria-label="現況"></a></div>
-          <div class="fr__cap">基準。它本身已是改造版：廣告條第 1 格換成今天的地方、展開態多一列。</div>
-        </div>
-        <div class="tabcol">
-          <div class="tabcol__l is-map"><i></i>變體 E</div>
-          <div class="fr"><img src="assets/thumbs/variant-e-home.png" alt="變體 E" loading="lazy">
-            <a href="screens/variant-e-home.html" target="_blank" aria-label="變體 E"></a></div>
-          <div class="fr__cap">差在哪一眼看得到：四顆景點縮圖，以及足跡上色那一片米色。</div>
-        </div>
-      </div>
-      <table class="proof">
-        <tr><th>承諾</th><th>量到的結果</th></tr>
-        <tr><td>① 圖層關閉時，畫面與基準<b>逐節點相同</b></td>
-          <td>把變體跑完 JS 的 DOM 與 <code>home.html</code> 的 DOM 各自<b>整棵拿掉城事圖層</b>
-          （景點、霧格子、小卡、圖層鈕），剩下的 464 個節點<span class="ok">逐節點相同</span>。<br>
-          變體 E 多 3 處（展開態才出現、選好下車點才會亮的叫車鈕）；變體 F 多 39 處（鎖住的收合態高度，
-          加上分頁列從三個變兩個）。兩者都是它們寫明的代價。<br>
-          注意①證明的是「圖層以外沒有再多動」，不是「與上線中的 yoxi 相同」—— 基準已含叫車首頁那個入口。</td></tr>
-        <tr><td>② 叫車關鍵路徑的 tap 數<b>不變</b></td>
-          <td>比對 sheet <b>收合態</b>裡每一個可按元素的順序、文字與目的地（展開態才出現的不算）。
-          <code>home.html</code> 有 4 個（上車點卡、下車點卡、機場接送、繼續叫車），
-          <span class="ok">D／E／F 三個變體完全相同</span>。</td></tr>
-      </table>
+    <details class="fold">
+      <summary>為什麼是這條光譜、為什麼推 E、為什麼 demo 主線跑保守版</summary>
+      <p><b>問題</b>：地圖同時出現在兩個地方 —— 探索的「附近有什麼」和收藏的「城市足跡」。兩張互不相干的地圖是功能堆疊的典型症狀。
+         但這個重複是結構性的：地圖在回答兩個不同時態的問題（「附近有什麼可以去」與「我去過哪裡」），而 tab bar 正是照時態切的。
+         所以解法必須決定地圖屬於哪一個時態；一旦決定「探索＝地圖＋sheet」，下一個問題就自動出現：那為什麼不直接用叫車那一張？</p>
+      <p><b>推薦 E</b>：發現一個地方到叫車去那裡只要一步，「探索會直接產生訂單」從論述變成可以當場點給評審看的動作。
+         如果團隊不被允許動叫車主畫面，退一步選 B：探索頁跟叫車頁同一個版型，B 與 E 是同一張畫面放在不同分頁，差的只有「是不是第一眼」。</p>
+      <p><b>Demo 主線跑保守版</b>（變體 0 加叫車首頁的一個入口）：動的是 yoxi 已經上線的畫面，那是灰度發布的題目，所以 E 帶著可以當場重跑的驗收一起提，而不是直接改掉 demo。
+         風險也很明確：叫車主畫面會不會變吵 —— 下面七顆晶片就是量出來的答案。</p>
+    </details>
+    <div class="proofs">
+      <details class="proof"><summary><small>① 圖層關閉時</small><b class="ok">464</b><span>節點逐節點相同</span></summary>
+        <p>把變體跑完 JS 的 DOM 與 <code>home.html</code> 各自整棵拿掉城事圖層，剩下的 464 個節點逐節點相同。E 多 3 處（展開態才出現的叫車鈕）、F 多 39 處（鎖住的收合態高度＋分頁列從三個變兩個），都是寫明的代價。基準本身已含叫車首頁那個入口，所以①證明的是「圖層以外沒有再多動」。</p></details>
+      <details class="proof"><summary><small>② 叫車關鍵路徑</small><b class="ok">4</b><span>tap 數不變</span></summary>
+        <p>比對 sheet 收合態裡每一個可按元素的順序、文字與目的地（展開態才出現的不算）。基準 4 個，D／E／F 完全相同。</p></details>
+      <details class="proof"><summary><small>③ 收合態 sheet</small><b class="ok">0</b><span>像素改動</span></summary>
+        <p>新內容一律標 <code>data-expand-only</code>，收合態直接 display:none；稽核逐一量高度，三個變體外洩 0 個。F 另外把收合態實高鎖住，切到今天模式時地圖高度完全不變。</p></details>
+      <details class="proof"><summary><small>④ 同時最多</small><b class="ok">4</b><span>個景點</span></summary>
+        <p>數 DOM 裡的 <code>.spot</code>：三個變體都是 4 個，下界、可見性、「今天的地方」在不在三件事都驗。探索地圖是 10 個，叫車地圖只給 4 個。</p></details>
+      <details class="proof"><summary><small>⑤ 遮住 pin／浮動鈕</small><b class="ok">0</b><span>px² 重疊</span></summary>
+        <p>在 iframe 裡量 <code>getBoundingClientRect</code>，景點與浮出的小卡跟 6 個受保護元素的重疊面積全部為 0。小卡那一半以前是空驗；現在 D／E／F 各帶 <code>?peek=1</code> 開著小卡量，抓到後把叫車地圖上的小卡改矮一號、右邊留給定位鈕。</p></details>
+      <details class="proof"><summary><small>⑥ 兩種標記</small><b class="ok">∅</b><span>class 交集</span></summary>
+        <p>上下車點＝海軍藍水滴 pin；景點＝圓角方形明信片縮圖。兩者的 class 集合交集為空。</p></details>
+      <details class="proof"><summary><small>還沒量的</small><b class="warn">E</b><span>足跡上色</span></summary>
+        <p>E 的足跡上色永遠蓋在叫車地圖上，六條承諾沒有一條量它 —— 這是 E 目前最大、也最沒被驗的視覺改動。要補的判準：叫車模式下地圖的非道路著色面積上限。寫在這裡，不藏。</p></details>
     </div>
+    <p style="margin-top:12px; font-size:12px; color:var(--yoxi-slate)">全部可重跑：<code style="background:var(--yoxi-mist); padding:2px 8px; border-radius:4px">python prototype/tools/verify-quiet.py</code></p>
   </div>
 
-  <div id="list2"></div>
-
-  <div class="v" style="margin-top:28px">
-    <div class="v__tag">防護與驗收</div>
-    <div class="v__n">「叫車畫面變吵」怎麼防、怎麼驗</div>
-    <p class="v__one">
-      每一條都做成可以當場重跑的檢查，不是簡報上的說法。下面的數字就是它印出來的。<br>
-      <code style="display:inline-block; margin-top:6px; padding:4px 10px;
-            background:var(--yoxi-mist); border-radius:4px; white-space:nowrap"
-            >python prototype/tools/verify-quiet.py</code>
-    </p>
-
-    <table class="proof">
-      <tr><th>承諾</th><th>量到的結果</th></tr>
-      <tr><td>③ 收合態 sheet <b>一個像素不動</b></td>
-        <td>新內容一律標 <code>data-expand-only</code>，收合態直接 display:none；
-        稽核逐一量高度，<span class="ok">三個變體外洩 0 個</span>。<br>
-        變體 F 另外把收合態實高鎖住 —— 切到今天模式時<b>地圖高度完全不變</b>。</td></tr>
-      <tr><td>④ 同時最多 <b>4 個</b>景點</td>
-        <td>數 DOM 裡的 <code>.spot</code>：<span class="ok">三個變體都是 4 個</span>，而且下界、可見性、
-        「今天的地方」在不在，三件事都驗。探索地圖是 10 個，叫車地圖只給 4 個。</td></tr>
-      <tr><td>⑤ 景點與小卡<b>不遮住上車點 pin</b> 與四顆浮動鈕</td>
-        <td>在 iframe 裡量真實的 <code>getBoundingClientRect</code>，算景點<b>與浮出的小卡</b>
-        跟 6 個受保護元素（pin、地址標籤、四顆浮動鈕）的重疊面積：<span class="ok">全部為 0</span>。<br>
-        小卡那一半以前是空驗 —— D／F 改成不自動彈卡之後，稽核的三個案例沒有一個開著小卡。
-        現在多一個案例是變體 E 帶 <code>?peek=1</code>（小卡開著）才量，而且案例裡沒量到小卡會直接 FAIL。</td></tr>
-      <tr><td>⑥ 兩種標記的<b>視覺語言完全分開</b></td>
-        <td>上下車點＝海軍藍水滴 pin；景點＝圓角方形明信片縮圖。
-        比對兩者的 class 集合，<span class="ok">交集為空</span>，連一個樣式都沒共用。</td></tr>
-      <tr><td>圍牆：變體<b>不會掉回現況</b></td>
-        <td>從每個變體的三張入口頁走兩層連結（返回鍵、抽屜、上車點、地方詳情……全部追），
-        <span class="ok">六個變體沒有一條落到主線的叫車／探索／收藏</span>。以前圍牆只蓋到 tab bar。</td></tr>
-      <tr><td>還沒量的：E 的<b>足跡上色</b></td>
-        <td>E 的足跡上色永遠蓋在叫車地圖上（縮圖中央那一片米色），六條承諾沒有一條量它 ——
-        這是 E 目前最大、也最沒被驗的視覺改動。要補的判準：叫車模式下地圖的非道路著色面積上限。
-        寫在這裡，不藏。</td></tr>
-    </table>
-  </div>
-
-  <!-- ===== 還沒做的變體 ===== -->
-  <h2 class="sec" style="margin-top:48px">還沒做的變體：候選與評估</h2>
-  <p class="lead">
-    上面七個全部沿「地圖歸誰」這一條軸線。其他軸線上有幾個值得考慮的，先評估、還沒做。
-    最推薦先做的是 <b style="color:var(--yoxi-navy)">K</b>（給 E 一把降落傘），其次 <b style="color:var(--yoxi-navy)">G</b>（堵住「你憑什麼加分頁」）。
-  </p>
-  <div class="v">
-    <table class="cand">
-      <tr><th>變體</th><th>一句話</th><th>回答什麼</th><th>要動哪些畫面</th><th>最大風險</th><th>值不值得</th></tr>
-      <tr><td>K 轉換點在內容頁</td>
-        <td>地方詳情的主要動作從「用 yoxi 前往」改成「設為下車點」→ 回叫車頁，欄位已填。</td>
-        <td>叫車與探索的轉換點該在地圖上，還是內容頁？</td>
-        <td>place.html 的頁尾、home.html 接參數。<b>小</b></td>
-        <td>少了 E 那個「一步」的戲劇性，變兩步。</td>
-        <td><span class="verdict verdict--do">做，最推薦</span><br>完全不動叫車主畫面也能證明「探索產生訂單」；E 被否決時轉換價值不會跟著死。</td></tr>
-      <tr><td>G 抽屜入口版</td>
-        <td>完全不動 tab bar，城事只從漢堡抽屜與首頁 banner 進入。</td>
-        <td>「疊加不破壞」到底要不要動 yoxi 最貴的導覽資產？</td>
-        <td>drawer.html 加一列，探索頁沿用 D 的純內容版。<b>小</b></td>
-        <td>探索深度最低，「不搭車也打開 yoxi」的證據最弱。</td>
-        <td><span class="verdict verdict--do">做</span><br>評審必問「你憑什麼加分頁」，它是現成答案；有了 G，光譜 G→D→E→F 才完整。</td></tr>
-      <tr><td>H 只有推播＋banner</td>
-        <td>沒有探索分頁，「今天的地方」只活在推播與首頁 banner。</td>
-        <td>內容需要一個「家」，還是只需要出現的時機？</td>
-        <td>沿用 push／home／place，新增 banner 展開清單一張。<b>小</b></td>
-        <td>留存全押推播，關掉就沒了。</td>
-        <td><span class="verdict verdict--maybe">有空再做</span><br>乾淨的對照組，但弱到容易被說「這不是產品」。</td></tr>
-      <tr><td>L 家人是一個模式</td>
-        <td>長輩圖從收藏第三層升成可切換的整組 UI：大字、少色、只問今天去哪。</td>
-        <td>這個提案對誰最不可替代？</td>
-        <td>全套三張（<b>大</b>）；只做一張切換示意（<b>中</b>）。</td>
-        <td>範圍暴衝、稀釋主線敘事。</td>
-        <td><span class="verdict verdict--maybe">有空再做，只做一張</span></td></tr>
-      <tr><td>I 解鎖壓成一秒</td>
-        <td>取消前往中的 1 分鐘停留與整頁解鎖，抵達就地在地圖上開卡。</td>
-        <td>儀式換到的是可信度還是流失？</td>
-        <td>going.html 改或刪、unlock.html 改成浮層。<b>中</b></td>
-        <td>拆掉「80 公尺內停 1 分鐘才算數」—— 目前唯一的反假打卡論述。</td>
-        <td><span class="verdict verdict--no">決賽前不做</span></td></tr>
-      <tr><td>J 收藏首頁＝地圖</td>
-        <td>收藏首頁直接是足跡地圖，明信片牆退到第二層。</td>
-        <td>過去的組織軸是時間、牆，還是空間？</td>
-        <td>album.html 與 fogmap.html 對調層級。<b>中</b></td>
-        <td>與 D／E／F「全 app 只有一張地圖」正面衝突，把問題二重新炸開。</td>
-        <td><span class="verdict verdict--no">不做</span></td></tr>
-    </table>
-    <p style="margin-top:16px; font-size:14px; line-height:1.75; color:var(--yoxi-slate)">
-      也建議<b>併掉</b>兩列：C 與主線逐行相同（只差 4 個 href），是變體 0 的一個開關；
-      A 的探索卡片頁與主線相同，真正新的只有地圖的「去過」模式，可以降成 0 的一個附註。
-      D 與 E 是同一個主張的兩個預設值。真正互斥的只有三個：地圖住探索（B）、地圖住叫車（D·E）、整個 app 只剩一張畫面（F）。
-      這一頁先保留七列，因為它們是走到結論的過程；簡報上只放 0 / B / E / F 四列。
-    </p>
-  </div>
+  <div id="axes"></div>
 
 </div>
 
 <script src="js/catalog.js"></script>
+<script src="assets/load.js" onerror="window.LOAD=null"></script>
 <script>
-const thumbSrc = CATALOG.thumbOf;
+(function () {
+  const C = CATALOG;
+  const LOAD = (window.LOAD && window.LOAD.screens) || {};
+  const STATE_LABEL = { built: '已做', planned: '尚未建檔', candidate: '只有論述' };
+  const VERDICT_LABEL = { pick: '這條軸線的推薦', sub: '前提成立時的最佳解', do: '值得做', maybe: '有空再做', no: '對照組 · 不選' };
 
-/* tabs：[標籤, 路徑, 說明, 是地圖, 狀態標籤（'狀態' | '第二層' | 無）] */
-const V = [
-  {
-    tag: '變體 0', name: '現況 —— 兩張地圖', pick: false,
-    one: '探索有「卡片／地圖」切換，收藏另有一整頁「城市足跡」。兩張地圖各自獨立，彼此不知道對方存在。',
-    where: '地圖出現在 <b>探索</b> 與 <b>收藏</b> 兩處，共 <b>2 張</b>。',
-    when: '<b>什麼情況選它：</b>不想在決賽前碰任何結構問題。它也是 demo 主線目前跑的版本。',
-    tabs: [
-      ['叫車', 'screens/home.html', '沒動', false],
-      ['探索', 'screens/map.html', '卡片／地圖切換', true],
-      ['收藏', 'screens/album.html', '右上進城市足跡', false],
-      ['城市足跡', 'screens/fogmap.html', '第二張地圖', true, '第二層'],
-    ],
-    good: '兩個場景各自最佳化：探索的地圖專心找地方，足跡頁專心給你滿版的情緒。',
-    bad: '使用者會問「這兩張地圖有什麼不一樣」。而且維護成本雙倍，未來每加一個圖層都要做兩次。',
-  },
-  {
-    tag: '變體 A', name: '一張地圖，兩個模式', pick: false,
-    one: '全 app 只有一張地圖，用「想去／去過」切換。想去＝未探索的景點高亮；去過＝足跡上色、只留去過的地方、底部換成覆蓋率。收藏 tab 的入口深連結到「去過」模式。',
-    where: '地圖只有 <b>1 張</b>，住在 <b>探索</b>，用模式切換兼顧兩種時態。',
-    when: '<b>什麼情況選它：</b>要保留滿版足跡的情緒，又只肯做最小改動。實際上它是變體 0 加一個模式。',
-    tabs: [
-      ['叫車', 'screens/home.html', '沒動', false],
-      ['探索 · 想去', 'screens/variant-a-map.html', '未探索的高亮', true],
-      ['探索 · 去過', 'screens/variant-a-map.html?mode=been', '同一張圖，換模式', true, '狀態'],
-      ['收藏', 'screens/variant-a-album.html', '入口深連結到「去過」', false],
-    ],
-    good: '真的只有一張地圖，而且兩種時態都保住了滿版的視覺。改動最小，現有畫面幾乎照用。',
-    bad: '多一個模式要學。而且「去過」模式住在探索 tab 裡，跟「過去屬於收藏」的心理歸屬打架 —— 使用者可能在收藏裡找不到它。',
-  },
-  {
-    tag: '變體 B', name: '地圖就是探索', pick: 'sub',
-    one: '沿用 yoxi 自己首頁的版型：地圖滿版在上、底部拉把 sheet 在下。收合態就是「今天的地方」，往上拉是路線與還沒去的地方。足跡是地圖的一個圖層，不是另一張地圖。收藏 tab 完全沒有地圖。',
-    where: '地圖只有 <b>1 張</b>，就是 <b>探索</b> 本身。足跡是它的圖層。',
-    when: '<b>什麼情況選它：</b>團隊不被允許動叫車主畫面。它跟 E 是同一張畫面放在不同分頁，差的只有「是不是第一眼」。',
-    tabs: [
-      ['叫車', 'screens/home.html', '地圖 + sheet', false],
-      ['探索', 'screens/variant-b-explore.html', '同一個版型', true],
-      ['收藏', 'screens/variant-b-album.html', '純收藏，無地圖', false],
-    ],
-    good: '最像 yoxi 原生的：探索頁跟叫車頁是同一個版型，看起來本來就該長這樣，不像外掛功能。地圖歸屬乾淨，沒有模式要學，足跡是圖層很直覺。',
-    bad: '「今天的地方」從滿版主卡變成 sheet 收合態裡的一張卡（縮圖、標題、距離、兩顆按鈕都在，但不是滿版）—— 而那是「一天一個明確答案」的反焦慮設計。地圖也讓畫面比純卡片吵一些。',
-  },
-  {
-    tag: '變體 C', name: '收藏不放地圖', pick: false,
-    one: '最保守：把整頁「城市足跡」拿掉，覆蓋率與城市顏色壓成收藏首頁裡的一塊數據磚。探索維持現況的卡片／地圖切換。',
-    where: '地圖只有 <b>1 張</b>，住在 <b>探索</b>。收藏用數據磚代替地圖。',
-    when: '<b>什麼情況選它：</b>只想消掉「兩張地圖」這個問題本身、其餘都不動。它其實是變體 0 關掉足跡頁。',
-    tabs: [
-      ['叫車', 'screens/home.html', '沒動', false],
-      ['探索', 'screens/variant-c-explore.html', '卡片為主', false],
-      ['探索 · 地圖', 'screens/variant-c-map.html', '唯一的地圖', true, '第二層'],
-      ['收藏', 'screens/variant-c-album.html', '數據磚，無地圖', false],
-    ],
-    good: '資訊架構最乾淨，每個 tab 的職責一句話講得完。改動最小，最不可能做壞。',
-    bad: '失去「你的城市慢慢長出顏色」那個滿版畫面 —— 那是長期動機最強的視覺。壓成一條格子後資訊還在，情緒張力差很多。而且收藏的「在地圖上看」進的是「想去」的地圖，沒有「去過」模式，時態是斷的。',
-  },
-];
+  /* 參考連結：只有「畫面上要放多少東西」這條軸線有 */
+  const REFS = {
+    load: '參考：<a href="https://www.pikminwiki.com/Pikmin_Bloom_interface" target="_blank">Pikmin Bloom</a> 主畫面同時可按 12 個、地圖畫面約 6 個；' +
+          '<a href="https://en.wikipedia.org/wiki/Neko_Atsume" target="_blank">Neko Atsume</a> 大圖示取代文字、選項刻意少，代價是每個動作步數多；' +
+          '<a href="https://www.gamedeveloper.com/design/pokemon-go-and-the-good-things-that-can-come-from-a-bad-ui" target="_blank">Pokémon GO</a> 那篇提醒功能數不是唯一判準。' +
+          '兩個數字都由 <code>tools/audit-load.html</code> 自動量：可按數＝初始狀態看得見的可按元素（tab bar 另計）；到達步數＝按到核心動作要幾下。',
+  };
 
-const V2 = [
-  {
-    tag: '變體 D', name: '城事圖層（保守）', pick: false,
-    one: '叫車地圖左下角加一顆「城事」圖層鈕，預設關閉 —— 關閉時畫面與基準一模一樣。按一下才長出景點與足跡上色。探索 tab 變成純內容，沒有地圖。',
-    where: '全 app 只有 <b>1 張</b>地圖，就是叫車首頁那張。城市足跡是它的圖層。',
-    when: '<b>什麼情況選它：</b>要把地圖併進叫車，但第一版必須零風險上線。它是 E 的「預設關」版本。',
-    tabs: [
-      ['叫車 · 圖層關', 'screens/variant-d-home.html', '與 home.html 完全相同', false],
-      ['叫車 · 圖層開', 'screens/variant-d-home.html?layer=on', '景點與足跡長出來', true, '狀態'],
-      ['探索', 'screens/variant-d-explore.html', '純內容，沒有地圖', false],
-      ['收藏', 'screens/variant-d-album.html', '足跡入口指回地圖', false],
-    ],
-    good: '叫車體驗零風險 —— 關掉就是基準。這不是說法：把城事圖層整棵拿掉之後，它與 home.html 的 DOM 逐節點相同，剩下的 464 個節點一個都沒動。改動最小。',
-    bad: '景點預設看不到，發現性最低。「不搭車也打開 yoxi」的證據因此變弱 —— 而那正是這題要證明的事。',
-  },
-  {
-    tag: '變體 E', name: '景點常駐 + 一鍵設為下車點', pick: true,
-    one: '景點一直在叫車地圖上，但極輕：同時最多 4 個、比探索地圖小一號、沒去過的是灰階。點景點浮出小卡，上面有「設為下車點」—— 一下就填好下車點、展開 sheet、叫車按鈕就緒。',
-    where: '全 app 只有 <b>1 張</b>地圖。從發現到叫車<b>只有一步</b>。',
-    when: '<b>什麼情況選它：</b>要把「探索會直接產生訂單」做成可以當場演示的一步。這是整份提案的推薦。',
-    tabs: [
-      ['叫車', 'screens/variant-e-home.html', '景點常駐，極輕', true],
-      ['點景點', 'screens/variant-e-home.html?peek=1', '看看這個地方 / 設為下車點', true, '狀態'],
-      ['探索', 'screens/variant-e-explore.html', '純內容，沒有地圖', false],
-      ['收藏', 'screens/variant-e-album.html', '足跡入口指回地圖', false],
-    ],
-    good: '打開 app 第一眼就有內容，而且它把「探索會直接產生訂單」從論述變成可以當場點給評審看的動作 —— 這是商業轉換價值那 20% 最直接的證據。',
-    bad: '三個變體裡對叫車主畫面干擾最大的一個。防護是「最多 4 個景點、避開 pin 與浮動鈕、收合態 sheet 不動」。兩件事要老實講：足跡上色永遠開著，六條承諾沒有一條量它；「一步」是用展開 sheet 換來的 —— 設為下車點會把主畫面從收合態推到展開態，②只量收合態，帳面沒變，但使用者感受到的是主畫面被別的功能操控了版面。',
-  },
-  {
-    tag: '變體 F', name: '一個畫面兩種模式（激進）', pick: false,
-    one: 'tab bar 砍成兩個：地圖、收藏。叫車與探索共用同一個畫面，靠 sheet 頂端的「叫車／今天」切換分流。叫車模式地圖乾淨，今天模式才長出景點。',
-    where: '全 app 只有 <b>1 張</b>地圖，而且只有 <b>2 個</b> tab。',
-    when: '<b>什麼情況選它：</b>願意重談 tab bar 架構，追求最徹底的整合。決賽前不建議。',
-    tabs: [
-      ['地圖 · 叫車模式', 'screens/variant-f-home.html', '地圖乾淨，等同基準', false],
-      ['地圖 · 今天模式', 'screens/variant-f-home.html?mode=today', '景點長出來、sheet 換內容', true, '狀態'],
-      ['收藏', 'screens/variant-f-album.html', '只剩兩個 tab', false],
-    ],
-    good: '最徹底的整合。一個畫面把「現在要去哪」與「接下來去哪」兩個時態收在一起，而且完全沿用 yoxi 自己的版型。',
-    bad: '動到已經定案的 tab bar 架構，而且探索沒有獨立入口 —— 評審可能會覺得功能被藏起來了，而「不搭車也打開 yoxi」正是這題要證明的事。',
-  },
-];
+  function thumbBox(href, name, cls) {
+    return '<div class="' + cls + '">' +
+      (href ? '<img src="' + C.thumbOf(href) + '" alt="' + name + '" loading="lazy" onerror="this.remove()">' : '') +
+      '<span>' + (href ? '尚未建檔' : '沒有畫面') + '</span>' +
+      (href ? '<a href="' + href + '" target="_blank" aria-label="' + name + '"></a>' : '') +
+    '</div>';
+  }
 
-const mark = function (pick) {
-  if (pick === 'sub') return '<span class="v__pickmark v__pickmark--sub">前提成立時的最佳解 · 採用 E 則本列作廢</span>';
-  if (pick) return '<span class="v__pickmark">整份提案推薦</span>';
-  return '';
-};
+  function loadBadge(v) {
+    if (!v.target) return '';
+    const first = v.screens && v.screens[0];
+    const m = first && LOAD[first];
+    const t = v.target;
+    if (!m) return '<span class="verdict verdict--load">目標 可按 ≤ ' + t.taps + ' · 到達 ≤ ' + t.steps + ' 步</span>';
+    const bad = (m.taps > t.taps) || (m.steps != null && m.steps > t.steps);
+    return '<span class="verdict verdict--load' + (bad ? ' is-bad' : '') + '">可按 ' + m.taps + '／目標 ' + t.taps +
+           ' · 到達 ' + (m.steps == null ? '—' : m.steps) + '／' + t.steps + ' 步</span>';
+  }
 
-const render = (list, el) => document.getElementById(el).innerHTML = list.map(v => `
-  <section class="v ${v.pick === true ? 'v--pick' : ''}">
-    <div class="v__head">
-      <div>
-        <div class="v__tag">${v.tag}</div>
-        <div class="v__n">${v.name}</div>
-        <p class="v__one">${v.one}</p>
-      </div>
-      ${mark(v.pick)}
-    </div>
+  function card(v) {
+    const first = v.tabs.filter(function (t) { return t[3]; })[0] || v.tabs[0];
+    const more =
+      '<div class="vcard__more">' +
+        (v.tabs.length ? '<div class="tabs">' + v.tabs.map(function (t) {
+          return '<div class="tabcol ' + (t[4] ? 'tabcol--st' : '') + '">' +
+            '<div class="tabcol__l ' + (t[3] ? 'is-map' : '') + '"><i></i>' + t[0] + (t[4] ? '<span class="tabcol__st">' + t[4] + '</span>' : '') + '</div>' +
+            thumbBox(t[1], t[0], 'fr') + '<div class="fr__cap">' + t[2] + '</div></div>';
+        }).join('') + '</div>' : '') +
+        '<dl class="kv">' +
+          (v.question ? '<dt>回答什麼</dt><dd>' + v.question + '</dd>' : '') +
+          (v.where ? '<dt>地圖在哪</dt><dd>' + v.where + '</dd>' : '') +
+          (v.when ? '<dt>什麼情況選它</dt><dd>' + v.when + '</dd>' : '') +
+          (v.risk ? '<dt>最大風險</dt><dd>' + v.risk + '</dd>' : '') +
+          (v.ref ? '<dt>參考</dt><dd>' + v.ref + '</dd>' : '') +
+          (v.screens && v.screens.length ? '<dt>畫面</dt><dd>' + v.screens.join('、') + '</dd>' : '') +
+        '</dl>' +
+      '</div>';
+    return '<article class="vcard" id="var-' + v.key + '" data-state="' + v.state + '" data-verdict="' + (v.verdict || '') + '">' +
+      thumbBox(first ? first[1] : null, v.name, 'vcard__thumb') +
+      '<div>' +
+        '<div class="vcard__tag">' + v.tag + (v.effort && v.effort !== '—' ? '<span class="verdict verdict--state">工作量 ' + v.effort + '</span>' : '') + '</div>' +
+        '<div class="vcard__n">' + v.name + '</div>' +
+        '<p class="vcard__one">' + v.one + '</p>' +
+        '<div class="vcard__to">' +
+          (v.bad ? '<span class="bad"><b>代價</b>　' + v.bad + '</span>' : '') +
+          (v.good ? '<span class="good"><b>好處</b>　' + v.good + '</span>' : '') +
+        '</div>' +
+        '<div class="badges">' +
+          (v.verdict ? '<span class="verdict verdict--' + v.verdict + '">' + VERDICT_LABEL[v.verdict] + '</span>' : '') +
+          (v.state !== 'built' ? '<span class="verdict verdict--state">' + STATE_LABEL[v.state] + '</span>' : '') +
+          loadBadge(v) +
+        '</div>' +
+        '<div class="vcard__acts">' +
+          '<button type="button" data-open>展開</button>' +
+          '<a href="overview.html?node=var:' + v.key + '">在樹上看</a>' +
+        '</div>' +
+      '</div>' + more +
+    '</article>';
+  }
 
-    <div class="tabs">
-      ${v.tabs.map(([label, href, cap, isMap, st]) => `
-        <div class="tabcol ${st ? 'tabcol--st' : ''}">
-          <div class="tabcol__l ${isMap ? 'is-map' : ''}"><i></i>${label}${st ? `<span class="tabcol__st">${st}</span>` : ''}</div>
-          <div class="fr">
-            <img src="${thumbSrc(href)}" alt="${label}" loading="lazy">
-            <a href="${href}" target="_blank" aria-label="${label}"></a>
-          </div>
-          <div class="fr__cap">${cap}</div>
-        </div>`).join('')}
-    </div>
+  document.getElementById('axes').innerHTML = C.AXES.map(function (a) {
+    const list = C.byAxis(a.key);
+    if (!list.length) return '';
+    const pick = a.pick ? C.variant(a.pick) : null;
+    return '<section class="axis" id="axis-' + a.key + '">' +
+      '<div class="axis__h"><h2 class="axis__t">' + a.title + '</h2>' +
+        (pick ? '<span class="axis__pick">推薦 ' + pick.tag.replace('變體 ', '').replace('候選 ', '') + ' · ' + pick.name + '</span>' : '') +
+        '<span style="font-size:12px; color:var(--yoxi-slate)">' + list.length + ' 個</span></div>' +
+      '<p class="axis__intro">' + a.intro + (REFS[a.key] ? '<br>' + REFS[a.key] : '') + '</p>' +
+      '<div class="cards">' + list.map(card).join('') + '</div>' +
+    '</section>';
+  }).join('');
 
-    <div class="where">${v.where}</div>
-    <div class="when">${v.when}</div>
+  /* 結論帶：每條有推薦的軸線一格 */
+  document.getElementById('verdicts').innerHTML = C.AXES.filter(function (a) { return a.pick; }).map(function (a) {
+    const v = C.variant(a.pick);
+    return '<a href="#axis-' + a.key + '"><small>' + a.title + '</small><b>' + v.tag.replace('變體 ', '').replace('候選 ', '') + ' · ' + v.name + '</b></a>';
+  }).join('');
 
-    <div class="tradeoff">
-      <div class="to to--bad"><b>代價</b>${v.bad}</div>
-      <div class="to to--good"><b>好處</b>${v.good}</div>
-    </div>
-  </section>`).join('');
+  document.getElementById('axes').addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-open]');
+    if (!btn) return;
+    const card = btn.closest('.vcard');
+    const open = card.classList.toggle('is-open');
+    btn.textContent = open ? '收起' : '展開';
+  });
 
-render(V, 'list');
-render(V2, 'list2');
+  /* ?open=E 直接展開某一張（層級樹會這樣連過來） */
+  const want = new URLSearchParams(location.search).get('open');
+  if (want) {
+    const el = document.getElementById('var-' + want);
+    if (el) { el.classList.add('is-open'); el.querySelector('[data-open]').textContent = '收起'; el.scrollIntoView(); }
+  }
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>功能數稽核 — 可按數、文字塊、到達步數</title>
+<!--
+  每一張畫面到底放了多少東西？用量的，不用手數的。
+
+    chrome --headless=new --allow-file-access-from-files \
+           --virtual-time-budget=90000 --dump-dom tools/audit-load.html
+
+  為什麼要有這一份：「畫面上要放多少東西」（軸線 load）那組變體的好處與代價
+  都寫成數字 —— 可按數從 9 降到 2、文字塊 ≤ 3。那些數字如果是人手數出來的，
+  改一次版就過期一次，而且沒有人會發現它過期了。這份工具把同一個數字量出來，
+  變體檔頭寫的 target 就變成一條會自己變紅的檢查。
+
+  三個數字：
+
+    可按  初始狀態下看得見、按了會有事的元素。不含 tab bar（每頁都一樣）、
+          不含狀態列與導覽列（不是產品畫面）、不含收合態根本不存在的
+          [data-expand-only]、不含 href="#" 又沒有任何 data-* 行為的裝飾。
+          整列是一個 <a>、裡面又包一顆 button 的，只算一次。
+    文字塊  .device 底下自己帶文字的區塊元素數。粗略，但同一頁重跑一定一樣。
+    到達  從載入到按下「這張畫面的核心動作」要幾步。核心動作是哪一顆由
+          下面 GOALS 那張表決定 —— 按得到就是 1 步；被收在 sheet 裡要先拉開、
+          或要先點景點才會浮出 .peek，就是 2 步。
+
+  主線畫面永遠只印 INFO：它們沒有 target，量出來是給人看的基準。
+  planned 的變體大多還沒建檔，記「尚未建檔」，不算未通過 —— 這份工具是
+  拿來擋「建好之後偷偷超標」的，不是拿來催進度的。
+-->
+<style>
+  body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
+  iframe { width: 390px; height: 844px; border: 0; position: absolute; left: -9999px; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<pre id="out">跑中…</pre>
+<div id="frames"></div>
+
+<script src="../js/catalog.js"></script>
+<script>
+const BASE = '../screens/';
+
+/* 主線：三個 tab 的門面，加上量得出「核心動作」的幾張內容頁。 */
+const MAIN = ['explore', 'map', 'album', 'home', 'place', 'route', 'routes', 'lookback', 'fogmap']
+  .map(function (s) { return s + '.html'; });
+
+/* --------------------------------------------------- 清單與 target ---- */
+const FILES = [];
+const TARGET = {};                                   /* 檔名 → {taps, steps} */
+
+function push(f) { if (FILES.indexOf(f) < 0) FILES.push(f); }
+MAIN.forEach(push);
+
+((window.CATALOG && window.CATALOG.VARIANTS) || []).forEach(function (v) {
+  if (v.state === 'candidate') return;               /* 候選只有文字，沒有畫面 */
+  (v.screens || []).forEach(function (f) {
+    push(f);
+    if (v.target) TARGET[f] = v.target;
+  });
+});
+
+/* ------------------------------------------------------------ 核心動作 ----
+   每張畫面「來這裡是為了按哪一顆」。沒有共識的就留 null，印「—」，
+   不要為了湊一個數字硬指一顆。 */
+function goalOf(doc, file) {
+  const base = file.replace(/\?.*$/, '').replace(/\.html$/, '');
+  if (/explore/.test(base)) {
+    /* 探索：出門那一顆。文案可能是「走路前往」，極簡版只剩一個「走」。 */
+    const cs = Array.prototype.slice.call(doc.querySelectorAll('.btn-primary, .demo-btn'));
+    return cs.filter(function (el) {
+      const t = (el.textContent || '').replace(/\s+/g, '');
+      return t.indexOf('走路前往') >= 0 || t.indexOf('走') >= 0;
+    })[0] || null;
+  }
+  if (/album/.test(base))  return doc.querySelector('.postcard[data-flip]');
+  if (/map$/.test(base))   return doc.querySelector('.spot');
+  if (/home$/.test(base))  return doc.querySelector('a[href^="pickup"]');
+  if (base === 'place')    return doc.querySelector('.btn-primary');
+  if (base === 'lookback') return doc.getElementById('nextBtn');
+  if (base === 'route')    return doc.querySelector('#nextBox .btn-primary');
+  return null;                                       /* routes、fogmap… */
+}
+
+/* ------------------------------------------------------------ 共用判斷 ---- */
+function inside(el, sel) { return !!(el.closest && el.closest(sel)); }
+
+function shown(win, el) {
+  const r = el.getBoundingClientRect();
+  if (!(r.width > 0 && r.height > 0)) return false;
+  const s = win.getComputedStyle(el);
+  return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) > 0;
+}
+
+/* ------------------------------------------------------------ 可按數 ---- */
+const CLICKY = 'a[href], button, [role=button], .spot, .pill, .sw-toggle';
+
+function tapCount(win, doc) {
+  const all = Array.prototype.slice.call(doc.querySelectorAll(CLICKY));
+  const keep = all.filter(function (el) {
+    if (!shown(win, el)) return false;
+    if (inside(el, '.tabbar')) return false;         /* 每頁都一樣，不是這頁的負擔 */
+    if (inside(el, '.statusbar')) return false;      /* 手機外殼 */
+    if (inside(el, '.tour')) return false;           /* demo 導覽列，不是產品 */
+    if (inside(el, '[data-expand-only]')) return false;  /* 收合態不存在 */
+    const href = el.getAttribute && el.getAttribute('href');
+    if (href === '#' && !el.hasAttribute('data-toast') && !el.hasAttribute('data-share')) return false;
+    return true;
+  });
+  /* 整列是一個 <a>、裡面又包一顆 button 的，只算一次。 */
+  const set = new Set(keep);
+  return keep.filter(function (el) {
+    let p = el.parentElement;
+    while (p && p !== doc.body) {
+      if (set.has(p)) return false;
+      p = p.parentElement;
+    }
+    return true;
+  }).length;
+}
+
+/* ------------------------------------------------------------ 文字塊 ---- */
+function blockCount(win, doc) {
+  const root = doc.querySelector('.device') || doc.body;
+  let n = 0;
+  root.querySelectorAll('h1, h2, h3, p, li, span').forEach(function (el) {
+    const d = win.getComputedStyle(el).display;
+    if (d !== 'block' && d !== 'flex' && d !== 'grid') return;
+    let txt = '';
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const c = el.childNodes[i];
+      if (c.nodeType === 3) txt += c.nodeValue;      /* 只算自己的文字，不算子孫的 */
+    }
+    if (txt.replace(/\s+/g, '').length >= 2) n++;
+  });
+  return n;
+}
+
+/* ------------------------------------------------------------ 到達步數 ---- */
+function stepCount(win, doc, file) {
+  const g = goalOf(doc, file);
+  if (!g) return null;
+  /* 收在 sheet 裡：要先往上拉。 */
+  if (inside(g, '[data-expand-only]') || (inside(g, '.sheet--drag.is-collapsed') && !shown(win, g))) return 2;
+  /* 在小卡裡：要先點景點，小卡才浮出來。 */
+  if (inside(g, '.peek')) return 2;
+  if (shown(win, g)) return 1;
+  return 2;
+}
+
+/* ---------------------------------------------------------------- 跑 ---- */
+/* 等頁內排在 DOMContentLoaded 之後的程式跑完（見 shell.js 的 SHELL.ready）。 */
+function whenReady(doc, fn) {
+  const t0 = Date.now();
+  (function poll() {
+    if (!doc || doc.documentElement.hasAttribute('data-shell-ready') || Date.now() - t0 > 5000) fn();
+    else setTimeout(poll, 60);
+  })();
+}
+
+const RESULT = {};                                   /* 檔名 → {taps, blocks, steps} 或 null */
+let done = 0;
+
+function finish(file, data) {
+  if (file in RESULT) return;
+  RESULT[file] = data;
+  if (++done === FILES.length) report();
+}
+
+FILES.forEach(function (file) {
+  const fr = document.createElement('iframe');
+  /* 檔案不存在時 file:// 不一定會發 onload，所以另外押一個時限。 */
+  setTimeout(function () { finish(file, null); }, 20000);
+  fr.onload = function () {
+    const win = fr.contentWindow, doc = fr.contentDocument;
+    whenReady(doc, function () {
+      let data = null;
+      try {
+        if (win && win.SHELL && doc && doc.querySelector('.device')) {
+          data = { taps: tapCount(win, doc), blocks: blockCount(win, doc), steps: stepCount(win, doc, file) };
+        }
+      } catch (e) { data = null; }                   /* 讀不到就是還沒建檔 */
+      finish(file, data);
+    });
+  };
+  fr.src = BASE + file + '?still=1';
+  document.getElementById('frames').appendChild(fr);
+});
+
+/* ---------------------------------------------------------------- 報告 ---- */
+function pad(s, n) { while (s.length < n) s += ' '; return s; }
+
+function report() {
+  const L = [];
+  let bad = 0, built = 0;
+
+  FILES.forEach(function (file) {
+    const d = RESULT[file];
+    const name = pad(file, 26);
+    if (!d) { L.push('  INFO  ' + name + '尚未建檔'); return; }
+    built++;
+    const s = d.steps === null ? '—' : String(d.steps);
+    const body = '可按 ' + d.taps + ' · 文字塊 ' + d.blocks + ' · 到達 ' + s + ' 步';
+    const t = TARGET[file];
+    if (!t) { L.push('  INFO  ' + name + body); return; }
+    const okTaps = d.taps <= t.taps;
+    const okStep = d.steps !== null && d.steps <= t.steps;
+    if (okTaps && okStep) {
+      L.push('  PASS  ' + name + body + '（目標 可按 ≤ ' + t.taps + ' · 到達 ≤ ' + t.steps + ' 步）');
+    } else {
+      bad++;
+      L.push('  FAIL  ' + name + body);
+      if (!okTaps) L.push('        ' + pad('', 26) + '可按目標 ≤ ' + t.taps + '，實測 ' + d.taps);
+      if (!okStep) L.push('        ' + pad('', 26) + '到達目標 ≤ ' + t.steps + ' 步，實測 ' + s);
+    }
+  });
+
+  L.push('');
+  L.push('共 ' + FILES.length + ' 張，量到 ' + built + ' 張。');
+  L.push(bad ? '共 ' + bad + ' 項未通過。' : '全部通過。');
+  document.getElementById('out').textContent = L.join('\n');
+
+  /* 給 verify-quiet.py 抽走存成 assets/load.json 與 assets/load.js。 */
+  const screens = {};
+  FILES.forEach(function (f) { if (RESULT[f]) screens[f] = RESULT[f]; });
+  document.getElementById('json').textContent =
+    JSON.stringify({ generatedAt: new Date().toISOString(), screens: screens });
+}
+</script>
+<script id="json" type="application/json">{}</script>
+</body>
+</html>

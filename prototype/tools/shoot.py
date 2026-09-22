@@ -2,7 +2,14 @@
 """
 產生所有畫面的縮圖，給全景圖與變體比較頁使用。
 
-    python prototype/tools/shoot.py
+    python prototype/tools/shoot.py                 拍全部，然後產生 mini
+    python prototype/tools/shoot.py --mini          只把現有縮圖縮成 mini，不開瀏覽器
+    python prototype/tools/shoot.py --only a,b      只拍這幾張（做單張變體時不重拍五十幾張）
+    python prototype/tools/shoot.py --only a --mini  兩段都跑
+
+為什麼要 mini：層級樹一頁上百格，430x912 的原圖乘以上百張，在比賽現場的
+筆電上會先卡住再顯示。mini 是同一張圖縮到 86x182，純 Pillow、不重開瀏覽器，
+原圖一個 byte 都不動（只讀不寫）。
 
 為什麼不用 iframe：全景圖有 38 張畫面、變體頁有 15 格，用 iframe 會變成
 五十幾個 iframe、將近五百個子資源請求。載入慢，而且常常有幾格還沒畫完
@@ -33,6 +40,8 @@ TMP  = OUT / '_raw'
 # 不然放大後手機底部會被切掉，找外框只找到半支，再縮成 430x912 就變形。
 WIN_W, WIN_H = 1400, 1300
 OUT_W, OUT_H = 430, 912           # 縮圖統一尺寸，跟變體頁與全景圖對得上
+MINI = OUT / 'mini'
+MINI_W, MINI_H = 86, 182          # 430x912 的五分之一，層級樹一頁上百格用這個
 
 CANDIDATES = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -60,6 +69,21 @@ unlock.html?ride=1&still=1:unlock-ride
 push.html?when=night:push-night
 variant-a-map.html?mode=been:variant-a-map-been
 lookback.html?still=1:lookback
+
+variant-s1-album variant-s2-album variant-s3-album variant-s4-album variant-s5-album
+variant-x1-explore variant-x2-explore variant-x2-album variant-x3-explore variant-x5-explore
+variant-x4-badges
+variant-x4-badges.html?style=ring:variant-x4-badges-ring
+variant-x4-badges.html?style=stamp:variant-x4-badges-stamp
+variant-t1-tasks
+variant-t1-tasks.html?mode=merged:variant-t1-tasks-merged
+variant-l1-explore variant-l2-explore variant-l3-album variant-l4-map
+variant-l5-explore variant-l5-album variant-l6-explore
+
+vision-family-a vision-family-b vision-family-c
+vision-event-a vision-event-b vision-event-c
+vision-plan-a vision-plan-b vision-plan-c
+vision-health-a vision-health-b vision-health-c
 """.split()
 
 
@@ -102,23 +126,89 @@ def crop_device(im):
     return rgb.crop(box).resize((OUT_W, OUT_H), Image.LANCZOS)
 
 
-def main():
-    chrome = find_browser()
-    if not chrome:
-        print('找不到 Chrome 或 Edge，無法產生縮圖。')
+def stem_of(entry):
+    """SHOTS 的一格 → 輸出檔名（url:name 取 name，其餘取檔名去掉 .html）。"""
+    return entry.split(':', 1)[1] if ':' in entry else entry
+
+
+def make_mini():
+    """把 assets/thumbs/*.png 縮成 86x182 放進 assets/thumbs/mini/。
+
+    只讀原圖、只寫 mini/，原圖一個 byte 都不動。不開瀏覽器，所以改完
+    單一張縮圖之後跑這一段是秒級的。mini/ 底下的檔不會被自己再縮一次
+    （glob('*.png') 不會進子資料夾）。
+    """
+    from PIL import Image
+    if not OUT.exists():
+        print('沒有 assets/thumbs/，先跑一次截圖。')
+        return 0
+    MINI.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for src in sorted(OUT.glob('*.png')):
+        with Image.open(src) as im:
+            im.convert('RGB').resize((MINI_W, MINI_H), Image.LANCZOS).save(MINI / src.name)
+        n += 1
+    print('mini：%d 張 → prototype/assets/thumbs/mini/  (%dx%d)'
+          % (n, MINI_W, MINI_H))
+    return n
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+
+    only = None
+    want_mini = False
+    rest = []
+    while argv:
+        a = argv.pop(0)
+        if a == '--mini':
+            want_mini = True
+        elif a == '--only':
+            only = argv.pop(0) if argv else ''
+        elif a.startswith('--only='):
+            only = a.split('=', 1)[1]
+        else:
+            rest.append(a)
+    if rest:
+        print('不認得的參數：' + ' '.join(rest))
         return 1
+
     try:
         from PIL import Image
     except ImportError:
         print('需要 Pillow：pip install Pillow')
         return 1
 
+    # --mini 自己一個人來的時候只跑縮小那一段（不開瀏覽器）；
+    # 只要有 --only，就是「拍這幾張，然後照常重建 mini」。
+    if want_mini and only is None:
+        make_mini()
+        return 0
+
+    shots = SHOTS
+    if only is not None:
+        want = [x for x in only.replace(',', ' ').split() if x]
+        index = {stem_of(e): e for e in SHOTS}
+        unknown = [w for w in want if w not in index]
+        if unknown:
+            print('--only 裡有不在 SHOTS 的名字：' + '、'.join(unknown))
+            return 1
+        shots = [index[w] for w in want]
+        if not shots:
+            print('--only 沒有指定任何一張。')
+            return 1
+
+    chrome = find_browser()
+    if not chrome:
+        print('找不到 Chrome 或 Edge，無法產生縮圖。')
+        return 1
+
     OUT.mkdir(parents=True, exist_ok=True)
     TMP.mkdir(parents=True, exist_ok=True)
 
-
     ok = 0
-    for entry in SHOTS:
+    missing = []
+    for entry in shots:
         if ':' in entry:
             url, name = entry.split(':', 1)
         else:
@@ -127,6 +217,13 @@ def main():
         # 查詢字串要接在 file URI 之後，不能交給 as_uri() —— 它會把 ? 編成 %3F，
         # 變成在找一個檔名裡真的有問號的檔案，結果截到 FILE_NOT_FOUND 的錯誤頁。
         fname, _, query = url.partition('?')
+
+        # 還沒建檔的畫面（ROOTS／catalog 先登記、畫面之後才畫）不必真的去開
+        # 瀏覽器等它逾時：先看檔案在不在，不在就記下來，最後彙整印一行。
+        if not (ROOT / 'screens' / fname).exists():
+            missing.append(name)
+            continue
+
         # 每一張都加 still=1：小卡滑入、數字跑動這些轉場會讓同一頁連拍三張
         # 拿到三種結果。定格之後縮圖才是可比對的（見 base.css 的 data-still）。
         if 'still' not in query:
@@ -157,7 +254,7 @@ def main():
         shutil.rmtree(prof, ignore_errors=True)
 
         if not raw.exists():
-            print('\n  失敗：', url)
+            missing.append(name)
             continue
 
         with Image.open(raw) as im:
@@ -168,8 +265,15 @@ def main():
         sys.stdout.flush()
 
     shutil.rmtree(TMP, ignore_errors=True)
-    print('\n完成：%d 張縮圖 → prototype/assets/thumbs/  (%dx%d)'
+    print()
+    print('完成：%d 張縮圖 → prototype/assets/thumbs/  (%dx%d)'
           % (ok, OUT_W, OUT_H))
+    # 失敗的不散在中間洗掉進度點，最後彙整成一行 —— 這一行就是
+    # 「ROOTS／catalog 登記了、畫面還沒畫」的待辦清單。
+    if missing:
+        print('尚未建檔：%d 張 — %s' % (len(missing), '、'.join(missing)))
+
+    make_mini()
     return 0
 
 

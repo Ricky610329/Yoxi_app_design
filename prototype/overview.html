@@ -3,17 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>全景圖 — yoxi 城事</title>
+<title>層級樹 — yoxi 城事</title>
 <!--
-  全景圖：一次看到所有主線畫面，依所屬分頁分組。
+  全景圖＝一棵樹。系統 → 分頁 → 畫面 → 狀態；流程、變體（依軸線）、願景探索稿各自一支。
+  每個節點可以寫評語、打分（存在瀏覽器，key 跟 demo 狀態分開，按「重設」不會清掉），
+  可以匯出 JSON 傳給隊友、匯入合併。頂部可切回舊的「牆」視圖（依分頁分組的縮圖牆）。
 
-  三條 demo 流程（附縮圖與講稿）在 index.html，這裡不再重複一份。
-  畫面清單來自 js/catalog.js；縮圖由 tools/shoot.py 產生，改了畫面重跑一次即可。
-
-  不用 iframe 的原因：這頁有數十格，iframe 會變成數百個子資源請求，
-  載入慢而且常常有幾格還沒畫完就被看到空白 —— 在比賽現場的筆電上更不可靠。
-
-  直接雙擊開啟即可，不需要伺服器。
+  資料全部來自 js/catalog.js 的 tree()；評語走 js/review.js；
+  「可按數／到達步數」來自 assets/load.js（tools/verify-quiet.py 產生）。
+  深連結：?node=scr:place、?flow=b、?filter=bug、?view=wall。
+  鍵盤：↑↓ 移動、←→ 收合展開、Enter 開新分頁、1/2/3 打三態、/ 搜尋、Esc 清除。
 -->
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -21,133 +20,615 @@
 <link rel="stylesheet" href="css/chengshi.css">
 <style>
   body { background: var(--yoxi-mist); }
-  .wrap { max-width: 1440px; margin: 0 auto; padding: 40px 24px 96px; }
+  .tv { max-width: 1500px; margin: 0 auto; padding: 24px 24px 64px; }
 
-  .top { display: flex; align-items: flex-end; justify-content: space-between;
-         gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
-  .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
-  .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; }
-  .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+  /* --- 頂列 --------------------------------------------------------- */
+  .tv__bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tv__title { font-size: 26px; font-weight: 800; margin-right: 8px; }
+  .tv__count { font-size: 12px; color: var(--yoxi-slate); }
+  .seg { display: inline-flex; border: 1px solid var(--yoxi-line); border-radius: 999px; background: #fff; overflow: hidden; }
+  .seg button { padding: 6px 14px; font-size: 13px; font-weight: 800; color: var(--yoxi-slate); }
+  .seg button.is-on { background: var(--yoxi-navy); color: #fff; }
+  .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .chipb { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--yoxi-line); background: #fff; font-size: 12px; font-weight: 800; color: var(--yoxi-navy); }
+  .chipb.is-on { background: var(--yoxi-navy); color: #fff; border-color: var(--yoxi-navy); }
+  .chipb--flow.is-on { background: var(--yoxi-red); border-color: var(--yoxi-red); }
+  .chipb i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+  .search { height: 32px; padding: 0 12px; border: 1px solid var(--yoxi-line); border-radius: 999px; background: #fff; font-size: 13px; width: 200px; }
+  .search:focus { outline: 2px solid var(--yoxi-navy); }
+  .spacer { flex: 1; }
+  .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; }
+  .prog { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--yoxi-slate); }
+  .prog svg { width: 28px; height: 28px; }
 
-  /* 分頁式目錄：點一下跳到那一組 */
-  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 8px; }
-  .toc a {
-    display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px;
-    border-radius: 999px; background: #fff; border: 1px solid var(--yoxi-line);
-    font-size: 13px; font-weight: 800;
-  }
-  .toc a:hover { border-color: var(--yoxi-navy); }
-  .toc a i { font-style: italic; color: var(--yoxi-slate); font-weight: 800; }
+  /* --- 版面 --------------------------------------------------------- */
+  .tv__body { display: grid; grid-template-columns: 420px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 1100px) { .tv__body { grid-template-columns: 1fr; } }
+  .tv__aside { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 10px 8px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+  .tv__main  { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 20px 22px; min-height: 480px; }
 
-  /* --- 縮圖 --------------------------------------------------------
-     寬度抽成 --tw，高度由圖的長寬比（430:912）算出來，
-     不手填才不會因為差幾個像素而把手機底部裁掉。 */
-  :root { --tw: 198px; }
-  @media (max-width: 1440px) { :root { --tw: 180px; } }
-  @media (max-width: 1180px) { :root { --tw: 164px; } }
-
-  .thumb { width: var(--tw); flex: none; }
-  .thumb__frame {
-    position: relative; width: var(--tw); height: calc(var(--tw) * 912 / 430);
-    border-radius: 14px; overflow: hidden;
-    background: #fff; box-shadow: 0 2px 10px rgba(6,32,64,.14);
-    transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
-  }
-  .thumb:hover .thumb__frame {
-    transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24);
-  }
-  .thumb__frame img {
-    display: block; width: 100%; height: 100%; object-fit: cover; object-position: top;
-  }
-  .thumb__hit { position: absolute; inset: 0; }
-  .thumb__cap { margin-top: 10px; }
-  .thumb__id { font-size: 11px; font-weight: 800; font-style: italic; color: var(--yoxi-slate); }
-  .thumb__n  { font-weight: 800; line-height: 1.3; margin-top: 1px; }
-  .thumb__k  { display: inline-block; margin-top: 5px; padding: 2px 7px;
-               border-radius: 3px; font-size: 10px; font-weight: 800; }
+  /* --- 樹 ----------------------------------------------------------- */
+  .tnode__row { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 6px; border-radius: 6px; cursor: pointer; font-size: 13px; position: relative; }
+  .tnode__row:hover { background: var(--yoxi-mist); }
+  .tnode.is-sel > .tnode__row { background: var(--yoxi-navy); color: #fff; }
+  .tnode.is-sel > .tnode__row .thumb__k { filter: brightness(1.2); }
+  .tnode__twist { width: 16px; flex: none; text-align: center; font-size: 11px; color: var(--yoxi-slate); }
+  .tnode.is-sel > .tnode__row .tnode__twist { color: #fff; }
+  .tnode__twist.is-leaf { visibility: hidden; }
+  .tnode__mini { width: 26px; height: 26px; flex: none; border-radius: 5px; overflow: hidden; background: var(--yoxi-line); display: grid; place-items: center; }
+  .tnode__mini img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .tnode__mini--t { background: var(--yoxi-cream); font-size: 11px; font-weight: 800; color: #8A5A1E; }
+  .tnode__mini--g { background: var(--yoxi-navy); color: #fff; font-size: 11px; font-weight: 800; }
+  .tnode__name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+  .tnode[data-type="tab"] > .tnode__row .tnode__name,
+  .tnode[data-type="axis"] > .tnode__row .tnode__name,
+  .tnode[data-type="theme"] > .tnode__row .tnode__name,
+  .tnode[data-type="group"] > .tnode__row .tnode__name { font-weight: 800; }
+  .tnode__tags { display: flex; gap: 4px; align-items: center; flex: none; }
+  .thumb__k { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 800; }
   .k-keep { background: #DCE3EA; color: var(--yoxi-slate); }
   .k-mod  { background: var(--yoxi-cream); color: #8A5A1E; }
   .k-new  { background: var(--yoxi-red);   color: #fff; }
+  .k-planned { background: #fff; color: var(--yoxi-slate); border: 1px dashed var(--yoxi-slate-lite); }
+  .k-candidate { background: var(--yoxi-mist); color: var(--yoxi-slate); }
+  .k-built { display: none; }
+  .tag--var { font-size: 10px; font-weight: 800; color: var(--yoxi-slate); }
+  .fdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+  .fdot--a { background: #1F6F5C; } .fdot--b { background: var(--yoxi-red); } .fdot--c { background: #6B4E9B; }
+  .rdot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--yoxi-slate-lite); flex: none; }
+  .rdot--ok { background: var(--yoxi-navy); border-color: var(--yoxi-navy); }
+  .rdot--todo { background: var(--yoxi-cream); border-color: #C89B3C; }
+  .rdot--bug { background: var(--yoxi-red); border-color: var(--yoxi-red); }
+  .tnode__kids { margin-left: 18px; border-left: 1px solid var(--yoxi-line); padding-left: 2px; }
+  .tnode.is-closed > .tnode__kids { display: none; }
+  .tnode.is-hidden { display: none; }
+  .tnode.is-onflow > .tnode__row { box-shadow: inset 3px 0 0 var(--yoxi-red); }
+  .tnode__step { position: absolute; right: 6px; top: -6px; background: var(--yoxi-red); color: #fff; font-size: 10px; font-weight: 800; padding: 0 5px; border-radius: 999px; font-style: italic; }
+  .tv__wallnote { font-size: 12px; color: var(--yoxi-slate); padding: 6px 8px 2px; }
 
-  /* --- 分組牆 ------------------------------------------------------ */
-  .group { margin-top: 36px; scroll-margin-top: 16px; }
-  .group__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  /* --- 右面板 ------------------------------------------------------- */
+  .crumbs { font-size: 12px; color: var(--yoxi-slate); display: flex; gap: 6px; flex-wrap: wrap; }
+  .crumbs a { text-decoration: underline; }
+  .panel__head { display: flex; gap: 20px; align-items: flex-start; margin-top: 10px; }
+  .panel__hero { width: 200px; flex: none; }
+  .panel__hero .fr { position: relative; width: 200px; height: calc(200px * 912 / 430); border-radius: 14px; overflow: hidden; background: var(--yoxi-mist); box-shadow: 0 2px 10px rgba(6,32,64,.14); display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--yoxi-slate); }
+  .panel__hero .fr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .panel__hero .fr a { position: absolute; inset: 0; }
+  .panel__t { font-size: 24px; font-weight: 800; line-height: 1.25; }
+  .panel__meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+  .panel__meta code { font-size: 11px; background: var(--yoxi-mist); padding: 2px 6px; border-radius: 3px; }
+  .panel__acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .panel__acts a, .panel__acts button { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 4px; background: var(--yoxi-mist); font-size: 13px; font-weight: 800; color: var(--yoxi-navy); }
+  .panel__acts .go { background: var(--yoxi-navy); color: #fff; }
+  .panel__p { font-size: 14px; line-height: 1.7; color: var(--yoxi-navy); margin-top: 10px; }
+  .panel__p b { color: var(--yoxi-red); }
+  .kv { display: grid; grid-template-columns: 96px 1fr; gap: 4px 12px; font-size: 13px; line-height: 1.6; margin-top: 12px; }
+  .kv dt { color: var(--yoxi-slate); font-weight: 800; }
+  .kv dd { margin: 0; }
+  .sec-t { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--yoxi-slate); margin: 22px 0 8px; }
+  .kids { display: flex; gap: 10px; flex-wrap: wrap; }
+  .kid { width: 92px; cursor: pointer; }
+  .kid .fr { position: relative; width: 92px; height: calc(92px * 912 / 430); border-radius: 8px; overflow: hidden; background: var(--yoxi-mist); box-shadow: 0 1px 6px rgba(6,32,64,.14); display: grid; place-items: center; font-size: 10px; color: var(--yoxi-slate); text-align: center; }
+  .kid .fr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .kid__n { font-size: 11px; font-weight: 800; margin-top: 5px; line-height: 1.3; }
+  .rel { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rel button { padding: 5px 10px; border-radius: 999px; background: var(--yoxi-mist); font-size: 12px; font-weight: 800; color: var(--yoxi-navy); }
+
+  /* 評語 */
+  .rv { margin-top: 22px; padding: 16px; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: #FCFDFF; }
+  .rv__row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .rv__v { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--yoxi-line); background: #fff; font-size: 13px; font-weight: 800; }
+  .rv__v[data-v="ok"].is-on { background: var(--yoxi-navy); color: #fff; border-color: var(--yoxi-navy); }
+  .rv__v[data-v="todo"].is-on { background: var(--yoxi-cream); color: #8A5A1E; border-color: #C89B3C; }
+  .rv__v[data-v="bug"].is-on { background: var(--yoxi-red); color: #fff; border-color: var(--yoxi-red); }
+  .rv__score { display: inline-flex; gap: 4px; margin-left: auto; }
+  .rv__score button { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--yoxi-line); background: #fff; font-weight: 800; font-size: 13px; }
+  .rv__score button.is-on { background: var(--yoxi-navy); color: #fff; border-color: var(--yoxi-navy); }
+  .rv textarea { width: 100%; min-height: 84px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--yoxi-line); border-radius: 6px; font-size: 14px; line-height: 1.6; resize: vertical; background: #fff; }
+  .rv__stamp { font-size: 11px; color: var(--yoxi-slate); margin-top: 6px; display: flex; justify-content: space-between; }
+  .rv__stamp button { text-decoration: underline; color: var(--yoxi-slate); font-size: 11px; }
+
+  /* 匯入 */
+  .imp { margin-top: 12px; padding: 14px; border: 1px dashed var(--yoxi-slate-lite); border-radius: var(--r-card); font-size: 13px; display: none; }
+  .imp.is-on { display: block; }
+  .imp textarea { width: 100%; min-height: 80px; margin-top: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; padding: 8px; border: 1px solid var(--yoxi-line); border-radius: 6px; }
+  .imp__preview { margin-top: 8px; font-size: 12px; color: var(--yoxi-slate); }
+  .imp__acts { display: flex; gap: 8px; margin-top: 8px; }
+  .imp__acts button { padding: 6px 12px; border-radius: 4px; background: var(--yoxi-mist); font-size: 12px; font-weight: 800; }
+  .imp__acts button.go { background: var(--yoxi-navy); color: #fff; }
+
+  /* --- 牆視圖 --------------------------------------------------------- */
+  .wall-view { display: none; }
+  .tv[data-view="wall"] .wall-view { display: block; }
+  .tv[data-view="wall"] .tv__body { display: none; }
+  .group { margin-top: 28px; }
+  .group__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
   .group__t { font-size: 20px; font-weight: 800; }
-  .group__d { font-size: 14px; color: var(--yoxi-slate); }
-  .wall { display: flex; flex-wrap: wrap; gap: 20px; }
-
-  .legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
-            font-size: 13px; color: var(--yoxi-slate); }
+  .group__d { font-size: 13px; color: var(--yoxi-slate); }
+  .wall { display: flex; flex-wrap: wrap; gap: 18px; }
+  .thumb { width: 164px; flex: none; }
+  .thumb__frame { position: relative; width: 164px; height: calc(164px * 912 / 430); border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 2px 10px rgba(6,32,64,.14); }
+  .thumb__frame img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .thumb__hit { position: absolute; inset: 0; }
+  .thumb__cap { margin-top: 8px; }
+  .thumb__id { font-size: 11px; font-weight: 800; font-style: italic; color: var(--yoxi-slate); }
+  .thumb__n  { font-weight: 800; line-height: 1.3; margin-top: 1px; font-size: 13px; }
 </style>
 </head>
 
 <body>
-<div class="wrap">
+<div class="tv" id="tv" data-view="tree">
 
-  <header class="top">
-    <div>
-      <h1>全景圖</h1>
-      <p>
-        全部 <span id="nScreens">33</span> 張主線畫面（另有 16 張變體畫面在變體比較頁）。<br>
-        點任一張開新分頁看實際畫面。三條 demo 流程與講稿在 demo 首頁。
-      </p>
-    </div>
-    <div style="display:grid; gap:10px; justify-items:end">
-      <div style="display:flex; gap:18px">
-        <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
-        <a class="backlink" href="variants.html">變體比較 <span class="arrow"></span></a>
-      </div>
-      <div class="legend">
-        <span><i class="thumb__k k-keep">沿用</i> 原封不動</span>
-        <span><i class="thumb__k k-mod">改造</i> 小幅修改</span>
-        <span><i class="thumb__k k-new">新增</i> 全新</span>
-      </div>
-    </div>
+  <header class="tv__bar">
+    <span class="tv__title">層級樹</span>
+    <span class="tv__count" id="count"></span>
+    <span class="seg" id="viewSeg">
+      <button type="button" data-view="tree" class="is-on">樹</button>
+      <button type="button" data-view="wall">牆</button>
+    </span>
+    <input class="search" id="q" type="search" placeholder="搜尋節點（/）">
+    <span class="chips" id="filters">
+      <button type="button" class="chipb is-on" data-filter="all">全部</button>
+      <button type="button" class="chipb" data-filter="unrated">未評</button>
+      <button type="button" class="chipb" data-filter="ok"><i style="background:var(--yoxi-navy)"></i>好</button>
+      <button type="button" class="chipb" data-filter="todo"><i style="background:#C89B3C"></i>待議</button>
+      <button type="button" class="chipb" data-filter="bug"><i style="background:var(--yoxi-red)"></i>有問題</button>
+    </span>
+    <span class="chips" id="flowChips">
+      <button type="button" class="chipb chipb--flow" data-flow="a"><i class="fdot--a" style="background:#1F6F5C"></i>流程 A</button>
+      <button type="button" class="chipb chipb--flow" data-flow="b"><i style="background:var(--yoxi-red)"></i>流程 B</button>
+      <button type="button" class="chipb chipb--flow" data-flow="c"><i style="background:#6B4E9B"></i>流程 C</button>
+    </span>
+    <span class="chips">
+      <button type="button" class="chipb" data-expand="all">全部展開</button>
+      <button type="button" class="chipb" data-expand="none">全部收合</button>
+    </span>
+    <span class="spacer"></span>
+    <span class="prog" id="prog"></span>
+    <span class="chips">
+      <button type="button" class="chipb" data-review-export>匯出評語</button>
+      <button type="button" class="chipb" data-review-import>匯入</button>
+    </span>
+    <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
   </header>
 
-  <nav class="toc" id="toc"></nav>
-  <div id="groups"></div>
+  <div class="imp" id="imp">
+    <b>匯入評語</b>　選檔或貼上 JSON。合併＝逐節點比更新時間取新的；覆蓋＝整份換掉。
+    <div style="margin-top:8px"><input type="file" id="impFile" accept=".json,application/json"></div>
+    <textarea id="impText" placeholder='{"v":1,"notes":{…}}'></textarea>
+    <div class="imp__preview" id="impPreview"></div>
+    <div class="imp__acts">
+      <button type="button" data-imp="merge" class="go">合併</button>
+      <button type="button" data-imp="replace">覆蓋</button>
+      <button type="button" data-imp="close">關閉</button>
+    </div>
+  </div>
 
+  <div class="tv__body">
+    <aside class="tv__aside" id="tree"></aside>
+    <main class="tv__main" id="panel"></main>
+  </div>
+
+  <div class="wall-view" id="wall"></div>
 </div>
 
 <script src="js/catalog.js"></script>
+<script src="js/review.js"></script>
+<script src="assets/load.js" onerror="window.LOAD=null"></script>
 <script>
 (function () {
-  function thumb(key) {
-    const s = CATALOG.screen(key);
-    return '<div class="thumb">' +
-      '<div class="thumb__frame">' +
-        '<img src="' + s.thumb + '" alt="' + s.name + '" loading="lazy">' +
-        '<a class="thumb__hit" href="screens/' + s.href + '" target="_blank" aria-label="' + s.name + '"></a>' +
+  const C = CATALOG;
+  const T = C.tree();
+  const LOAD = (window.LOAD && window.LOAD.screens) || {};
+  const q = new URLSearchParams(location.search);
+  const tv = document.getElementById('tv');
+  const treeEl = document.getElementById('tree');
+  const panelEl = document.getElementById('panel');
+  const KIND_LABEL = { keep: '沿用', mod: '改造', new: '新增', planned: '尚未建檔', candidate: '只有論述', built: '' };
+  const FLOW_NAME = { a: '流程 A', b: '流程 B', c: '流程 C' };
+  const VERDICT_LABEL = { ok: '好', todo: '待議', bug: '有問題' };
+
+  let sel = null;            /* 選中的節點 id */
+  let flowOn = null;         /* 覆蓋中的流程 */
+  let filter = 'all';
+  let query = '';
+  const open = {};           /* id → 展開？ */
+
+  /* 預設展開到第二層；再深收合 */
+  T.order.forEach(function (id) {
+    const n = T.nodes[id];
+    const depth = C.ancestors(id).length;
+    open[id] = depth < 2;
+  });
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function typeIcon(n) {
+    if (n.type === 'tab') return '<span class="tnode__mini tnode__mini--g">' + n.name.slice(0, 1) + '</span>';
+    if (n.type === 'axis' || n.type === 'theme') return '<span class="tnode__mini tnode__mini--t">軸</span>';
+    if (n.type === 'group' || n.type === 'system') return '<span class="tnode__mini tnode__mini--g">■</span>';
+    if (n.type === 'flow') return '<span class="tnode__mini tnode__mini--g">' + n.name.slice(3, 4) + '</span>';
+    if (n.mini) return '<span class="tnode__mini"><img data-mini="' + n.mini + '" alt="" onerror="this.parentNode.classList.add(\'tnode__mini--t\'); this.remove();"></span>';
+    return '<span class="tnode__mini tnode__mini--t">·</span>';
+  }
+  function rdot(id) {
+    const r = REVIEW.get(id);
+    const v = r && r.verdict;
+    return '<span class="rdot' + (v ? ' rdot--' + v : '') + '" title="' + (v ? VERDICT_LABEL[v] : '未評') + '"></span>';
+  }
+  function tags(n) {
+    let t = '';
+    if (n.kind && KIND_LABEL[n.kind]) t += '<span class="thumb__k k-' + n.kind + '">' + KIND_LABEL[n.kind] + '</span>';
+    const vs = C.variantsOf(n.id);
+    if (vs.length) t += '<span class="tag--var">' + vs.length + ' 變體</span>';
+    C.flowsOf(n.id).forEach(function (f) { t += '<span class="fdot fdot--' + f.flow + '" title="' + FLOW_NAME[f.flow] + ' 第 ' + f.step + ' 步"></span>'; });
+    const l = n.file && LOAD[n.file];
+    if (l && n.type === 'screen' && !n.id.indexOf('scr:')) t += '<span class="tag--var" title="可按數">' + l.taps + '</span>';
+    return t + rdot(n.id);
+  }
+
+  function renderNode(id) {
+    const n = T.nodes[id];
+    const kids = n.children;
+    return '<div class="tnode' + (open[id] ? '' : ' is-closed') + '" data-id="' + esc(id) + '" data-type="' + n.type + '">' +
+      '<div class="tnode__row" data-tree-open="' + esc(id) + '">' +
+        '<span class="tnode__twist' + (kids.length ? '' : ' is-leaf') + '" data-tree-toggle="' + esc(id) + '">' + (open[id] ? '▾' : '▸') + '</span>' +
+        typeIcon(n) +
+        '<span class="tnode__name" title="' + esc(n.name) + '">' + esc(n.name) + '</span>' +
+        '<span class="tnode__tags">' + tags(n) + '</span>' +
       '</div>' +
-      '<div class="thumb__cap">' +
-        '<div class="thumb__id">' + s.id + '</div>' +
-        '<div class="thumb__n">' + s.name + '</div>' +
-        '<span class="thumb__k k-' + s.kind + '">' + s.kindLabel + '</span>' +
-      '</div>' +
+      (kids.length ? '<div class="tnode__kids">' + kids.map(renderNode).join('') + '</div>' : '') +
     '</div>';
   }
 
-  document.getElementById('toc').innerHTML = CATALOG.GROUPS.map(function (g, i) {
-    return '<a href="#g' + i + '">' + g[0] + ' <i>' + g[2].length + '</i></a>';
-  }).join('');
+  function renderTree() {
+    treeEl.innerHTML = T.roots.map(renderNode).join('');
+    applyVisibility();
+    applyFlow();
+    lazyMini();
+    if (sel) { const el = treeEl.querySelector('.tnode[data-id="' + cssq(sel) + '"]'); if (el) el.classList.add('is-sel'); }
+  }
+  function cssq(s) { return s.replace(/["\\]/g, '\\$&'); }
 
-  document.getElementById('groups').innerHTML = CATALOG.GROUPS.map(function (g, i) {
-    return '<section class="group" id="g' + i + '">' +
-      '<div class="group__h">' +
-        '<h2 class="group__t">' + g[0] + '</h2>' +
-        '<span class="group__d">' + g[1] + '</span>' +
+  /* 只更新一列的標籤（評語變了不用整棵重畫） */
+  function refreshRow(id) {
+    const el = treeEl.querySelector('.tnode[data-id="' + cssq(id) + '"] > .tnode__row .tnode__tags');
+    if (el) el.innerHTML = tags(T.nodes[id]);
+  }
+
+  /* 過濾與搜尋：命中的節點與它的祖先顯示，其餘藏起來 */
+  function matches(n) {
+    if (query && n.name.toLowerCase().indexOf(query) < 0 && n.id.toLowerCase().indexOf(query) < 0) return false;
+    if (filter === 'all') return true;
+    const r = REVIEW.get(n.id);
+    if (filter === 'unrated') return !(r && r.verdict) && (n.type === 'screen' || n.type === 'state' || n.type === 'variant' || n.type === 'vision');
+    return !!(r && r.verdict === filter);
+  }
+  function applyVisibility() {
+    const active = !!query || filter !== 'all';
+    const show = {};
+    if (active) {
+      T.order.forEach(function (id) {
+        if (matches(T.nodes[id])) { show[id] = true; C.ancestors(id).forEach(function (a) { show[a.id] = true; }); }
+      });
+    }
+    treeEl.querySelectorAll('.tnode').forEach(function (el) {
+      const id = el.dataset.id;
+      el.classList.toggle('is-hidden', active && !show[id]);
+      if (active && show[id]) el.classList.remove('is-closed');
+    });
+    document.getElementById('count').textContent = active
+      ? Object.keys(show).length + ' / ' + T.order.length + ' 個節點'
+      : T.order.length + ' 個節點';
+  }
+
+  /* 流程覆蓋：在流程上的節點加紅邊與步號，並展開沿途 */
+  function applyFlow() {
+    treeEl.querySelectorAll('.tnode__step').forEach(function (e) { e.remove(); });
+    treeEl.querySelectorAll('.is-onflow').forEach(function (e) { e.classList.remove('is-onflow'); });
+    if (!flowOn) return;
+    const f = T.nodes['flow:' + flowOn];
+    f.meta.steps.forEach(function (id, i) {
+      if (!id) return;
+      const el = treeEl.querySelector('.tnode[data-id="' + cssq(id) + '"]');
+      if (!el) return;
+      el.classList.add('is-onflow');
+      el.querySelector('.tnode__row').insertAdjacentHTML('beforeend', '<span class="tnode__step">' + (i + 1) + '</span>');
+      C.ancestors(id).forEach(function (a) {
+        const ae = treeEl.querySelector('.tnode[data-id="' + cssq(a.id) + '"]');
+        if (ae) { ae.classList.remove('is-closed'); open[a.id] = true; }
+      });
+    });
+    const fe = treeEl.querySelector('.tnode[data-id="flow:' + flowOn + '"]');
+    if (fe) fe.classList.add('is-onflow');
+  }
+
+  /* 縮圖：進到視窗才載 */
+  const io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { const img = e.target; img.src = img.dataset.mini; img.removeAttribute('data-mini'); io.unobserve(img); } });
+  }, { root: treeEl, rootMargin: '200px' }) : null;
+  function lazyMini() {
+    treeEl.querySelectorAll('img[data-mini]').forEach(function (img) {
+      if (io) io.observe(img); else { img.src = img.dataset.mini; }
+    });
+  }
+
+  /* --- 右面板 ------------------------------------------------------- */
+  function flowLinks(id) {
+    return C.flowsOf(id).map(function (f) {
+      const n = T.nodes[id];
+      const href = n.href + (n.href.indexOf('?') >= 0 ? '&' : '?') + 'flow=' + f.flow + '&step=' + f.step;
+      return '<a href="' + href + '" target="_blank">在' + FLOW_NAME[f.flow] + '第 ' + f.step + ' 步開啟</a>';
+    }).join('');
+  }
+  function kidCards(n) {
+    if (!n.children.length) return '';
+    return '<div class="sec-t">底下（' + n.children.length + '）</div><div class="kids">' + n.children.map(function (cid) {
+      const k = T.nodes[cid];
+      return '<div class="kid" data-tree-open="' + esc(cid) + '"><div class="fr">' +
+        (k.thumb ? '<img src="' + k.thumb + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+        '<span>' + esc(k.type === 'screen' || k.type === 'state' || k.type === 'variant' || k.type === 'vision' ? (k.kind === 'planned' ? '尚未建檔' : '') : k.name.slice(0, 6)) + '</span></div>' +
+        '<div class="kid__n">' + esc(k.name) + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function reviewBox(id) {
+    const r = REVIEW.get(id) || {};
+    return '<div class="rv" data-rv="' + esc(id) + '">' +
+      '<div class="rv__row">' +
+        ['ok', 'todo', 'bug'].map(function (v, i) {
+          return '<button type="button" class="rv__v' + (r.verdict === v ? ' is-on' : '') + '" data-v="' + v + '" title="按 ' + (i + 1) + '">' + VERDICT_LABEL[v] + '</button>';
+        }).join('') +
+        '<span class="rv__score">' + [1, 2, 3, 4, 5].map(function (s) {
+          return '<button type="button" data-s="' + s + '"' + (r.score === s ? ' class="is-on"' : '') + '>' + s + '</button>';
+        }).join('') + '</span>' +
       '</div>' +
-      '<div class="wall">' + g[2].map(thumb).join('') + '</div>' +
-    '</section>';
-  }).join('');
+      '<textarea placeholder="評語：這個節點好在哪、哪裡不對、要不要改…">' + esc(r.note || '') + '</textarea>' +
+      '<div class="rv__stamp"><span>' + (r.updatedAt ? '最後更新 ' + r.updatedAt.replace('T', ' ').slice(0, 16) : '還沒有評語') + '</span>' +
+      (r.updatedAt ? '<button type="button" data-rv-clear>清掉這一則</button>' : '') + '</div>' +
+    '</div>';
+  }
 
-  /* 主線畫面張數：只算分組裡的，同一個檔案帶不同參數只算一張 */
-  const files = {};
-  CATALOG.GROUPS.forEach(function (g) {
-    g[2].forEach(function (k) { files[CATALOG.screen(k).href.replace(/\?.*$/, '')] = 1; });
+  function renderPanel() {
+    const n = sel ? T.nodes[sel] : null;
+    if (!n) {
+      panelEl.innerHTML = '<p class="panel__p">點左邊任一個節點。每個節點可以打三態（好／待議／有問題）、1–5 分、寫評語；存在這台瀏覽器，用右上「匯出評語」帶走。</p>' +
+        '<div class="sec-t">怎麼讀這棵樹</div><dl class="kv">' +
+        '<dt>系統</dt><dd>叫車／探索／收藏／設定四個分頁，底下是畫面；畫面底下是它的狀態（帶參數的同一張）與抽屜裡的頁。</dd>' +
+        '<dt>流程</dt><dd>三條 demo 流程不是父層 —— 一張畫面可能同時在 A 與 B 上。點頂列「流程 A」會把它經過的節點標紅並標步號。</dd>' +
+        '<dt>變體</dt><dd>依軸線分區；一個變體底下是它自己的畫面與狀態。虛線標籤＝尚未建檔。</dd>' +
+        '<dt>願景</dt><dd>四個主題各三個方向的探索稿，不在 demo 流程上。</dd></dl>';
+      return;
+    }
+    const m = n.meta || {};
+    const l = n.file && LOAD[n.file];
+    const crumbs = C.ancestors(n.id).map(function (a) { return '<a data-tree-open="' + esc(a.id) + '">' + esc(a.name) + '</a>'; }).join('<span>›</span>');
+    let body = '';
+    if (m.blurb) body += '<p class="panel__p">' + esc(m.blurb) + '</p>';
+    if (m.one) body += '<p class="panel__p">' + esc(m.one) + '</p>';
+    if (m.why) body += '<p class="panel__p">' + esc(m.why) + '</p>';
+    if (m.lead) body += '<p class="panel__p">' + esc(m.lead) + '</p>';
+    if (m.intro) body += '<p class="panel__p">' + esc(m.intro) + '</p>';
+    let kv = '';
+    if (m.question) kv += '<dt>回答什麼</dt><dd>' + esc(m.question) + '</dd>';
+    if (m.answers) kv += '<dt>回答什麼</dt><dd>' + esc(m.answers) + '</dd>';
+    if (m.good) kv += '<dt>好處</dt><dd>' + esc(m.good) + '</dd>';
+    if (m.bad) kv += '<dt>代價</dt><dd>' + esc(m.bad) + '</dd>';
+    if (m.when) kv += '<dt>什麼情況選它</dt><dd>' + esc(m.when) + '</dd>';
+    if (m.where) kv += '<dt>落點</dt><dd>' + esc(m.where) + '</dd>';
+    if (m.risk) kv += '<dt>風險</dt><dd>' + esc(Array.isArray(m.risk) ? m.risk.join('、') : m.risk) + '</dd>';
+    if (m.verdict) kv += '<dt>判定</dt><dd>' + esc({ pick: '這條軸線的推薦', sub: '前提成立時的最佳解', do: '值得做', maybe: '有空再做', no: '對照組 · 不選' }[m.verdict]) + (m.effort ? ' · 工作量 ' + esc(m.effort) : '') + '</dd>';
+    if (m.target) kv += '<dt>目標</dt><dd>可按 ≤ ' + m.target.taps + ' · 到達 ≤ ' + m.target.steps + ' 步</dd>';
+    if (l) kv += '<dt>功能數</dt><dd>可按 ' + l.taps + ' · 文字塊 ' + l.blocks + ' · 到達 ' + (l.steps == null ? '—' : l.steps + ' 步') + '</dd>';
+    if (m.proves) kv += '<dt>要證明的</dt><dd>' + m.proves.map(esc).join('、') + '</dd>';
+    if (m.stateTag) kv += '<dt>這是</dt><dd>' + esc(m.stateTag) + '：' + esc(m.blurb || '') + '</dd>';
+    if (n.href) kv += '<dt>檔案</dt><dd><code>' + esc(n.href) + '</code></dd>';
+    const flows = C.flowsOf(n.id);
+    if (flows.length) kv += '<dt>在流程上</dt><dd>' + flows.map(function (f) { return FLOW_NAME[f.flow] + ' 第 ' + f.step + ' 步'; }).join('、') + '</dd>';
+    const vs = C.variantsOf(n.id);
+    const rel = vs.length ? '<div class="sec-t">動到這張畫面的變體（' + vs.length + '）</div><div class="rel">' +
+      vs.map(function (v) { return '<button type="button" data-tree-open="' + esc(v.id) + '">' + esc(v.name) + '</button>'; }).join('') + '</div>' : '';
+    let steps = '';
+    if (n.type === 'flow') {
+      steps = '<div class="sec-t">步驟</div><ol class="kv" style="grid-template-columns:24px 1fr">' + m.steps.map(function (id, i) {
+        const s = id ? T.nodes[id] : null;
+        return '<dt>' + (i + 1) + '</dt><dd>' + (s ? '<a data-tree-open="' + esc(id) + '" style="text-decoration:underline">' + esc(s.name) + '</a>' : '—') + '　<span style="color:var(--yoxi-slate)">' + esc(m.says[i]) + '</span></dd>';
+      }).join('') + '</ol>';
+    }
+    panelEl.innerHTML =
+      '<div class="crumbs">' + crumbs + '</div>' +
+      '<div class="panel__head">' +
+        '<div class="panel__hero"><div class="fr">' +
+          (n.thumb ? '<img src="' + n.thumb + '" alt="" onerror="this.remove()">' : '') +
+          '<span>' + (n.thumb ? (n.kind === 'planned' ? '尚未建檔' : '') : '沒有畫面') + '</span>' +
+          (n.href ? '<a href="' + n.href + '" target="_blank"></a>' : '') +
+        '</div></div>' +
+        '<div style="flex:1; min-width:0">' +
+          '<div class="panel__t">' + esc(n.name) + '</div>' +
+          '<div class="panel__meta"><span class="thumb__k k-' + (n.kind || 'built') + '">' + (KIND_LABEL[n.kind] || n.type) + '</span>' +
+            '<code>' + esc(n.id) + '</code>' + (n.axis ? '<span class="tag--var">軸線 ' + esc(n.axis) + '</span>' : '') + '</div>' +
+          '<div class="panel__acts">' +
+            (n.href ? '<a class="go" href="' + n.href + '" target="_blank">開新分頁</a>' : '') +
+            '<button type="button" data-copy>複製節點連結</button>' +
+            flowLinks(n.id) +
+            (n.type === 'variant' ? '<a href="variants.html?open=' + esc(m.key) + '">在變體頁展開</a>' : '') +
+          '</div>' +
+          body + (kv ? '<dl class="kv">' + kv + '</dl>' : '') +
+        '</div>' +
+      '</div>' +
+      steps + rel + kidCards(n) + reviewBox(n.id);
+  }
+
+  function select(id, opts) {
+    opts = opts || {};
+    if (!T.nodes[id]) return;
+    sel = id;
+    treeEl.querySelectorAll('.tnode.is-sel').forEach(function (e) { e.classList.remove('is-sel'); });
+    C.ancestors(id).forEach(function (a) {
+      open[a.id] = true;
+      const ae = treeEl.querySelector('.tnode[data-id="' + cssq(a.id) + '"]');
+      if (ae) { ae.classList.remove('is-closed'); ae.querySelector('.tnode__twist').textContent = '▾'; }
+    });
+    const el = treeEl.querySelector('.tnode[data-id="' + cssq(id) + '"]');
+    if (el) { el.classList.add('is-sel'); if (!opts.noScroll) el.querySelector('.tnode__row').scrollIntoView({ block: 'nearest' }); }
+    renderPanel();
+    const u = new URL(location.href); u.searchParams.set('node', id); history.replaceState(null, '', u);
+  }
+
+  function toggle(id, force) {
+    open[id] = force != null ? force : !open[id];
+    const el = treeEl.querySelector('.tnode[data-id="' + cssq(id) + '"]');
+    if (!el) return;
+    el.classList.toggle('is-closed', !open[id]);
+    el.querySelector('.tnode__twist').textContent = open[id] ? '▾' : '▸';
+    if (open[id]) lazyMini();
+  }
+
+  /* --- 進度環：主線畫面與變體、願景裡評過的比例 ------------------------- */
+  function renderProg() {
+    const ids = T.order.filter(function (id) { const t = T.nodes[id].type; return t === 'screen' || t === 'variant' || t === 'vision'; });
+    const st = REVIEW.stats(ids);
+    const done = st.ok + st.todo + st.bug;
+    const pct = ids.length ? done / ids.length : 0;
+    document.getElementById('prog').innerHTML =
+      '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="var(--yoxi-line)" stroke-width="4"/>' +
+      '<circle cx="14" cy="14" r="11" fill="none" stroke="var(--yoxi-navy)" stroke-width="4" stroke-dasharray="' + (69.1 * pct).toFixed(1) + ' 69.1" transform="rotate(-90 14 14)"/></svg>' +
+      '<span>評過 ' + done + '／' + ids.length + '　好 ' + st.ok + ' · 待議 ' + st.todo + ' · 有問題 ' + st.bug + (st.orphans ? ' · 孤兒 ' + st.orphans : '') + '</span>';
+  }
+
+  /* --- 牆視圖（原本的全景圖） ------------------------------------------ */
+  function renderWall() {
+    document.getElementById('wall').innerHTML = '<p class="tv__wallnote">依分頁分組的縮圖牆。點任一張開新分頁；要寫評語請切回「樹」。</p>' +
+      C.GROUPS.map(function (g, i) {
+        return '<section class="group"><div class="group__h"><h2 class="group__t">' + g[0] + '</h2><span class="group__d">' + g[1] + '</span></div>' +
+          '<div class="wall">' + g[2].map(function (k) {
+            const s = C.screen(k);
+            return '<div class="thumb"><div class="thumb__frame"><img src="' + s.thumb + '" alt="' + esc(s.name) + '" loading="lazy">' +
+              '<a class="thumb__hit" href="screens/' + s.href + '" target="_blank" aria-label="' + esc(s.name) + '"></a></div>' +
+              '<div class="thumb__cap"><div class="thumb__id">' + s.id + '</div><div class="thumb__n">' + esc(s.name) + '</div>' +
+              '<span class="thumb__k k-' + s.kind + '">' + s.kindLabel + '</span></div></div>';
+          }).join('') + '</div></section>';
+      }).join('');
+  }
+
+  /* --- 事件（全部委派） -------------------------------------------- */
+  document.addEventListener('click', function (e) {
+    const t = e.target;
+    const tog = t.closest('[data-tree-toggle]');
+    if (tog) { e.stopPropagation(); toggle(tog.dataset.treeToggle); return; }
+    const op = t.closest('[data-tree-open]');
+    if (op) { select(op.dataset.treeOpen); return; }
+    const v = t.closest('[data-view]');
+    if (v && v.closest('#viewSeg')) {
+      tv.dataset.view = v.dataset.view;
+      document.querySelectorAll('#viewSeg button').forEach(function (b) { b.classList.toggle('is-on', b === v); });
+      const u = new URL(location.href); if (v.dataset.view === 'wall') u.searchParams.set('view', 'wall'); else u.searchParams.delete('view'); history.replaceState(null, '', u);
+      return;
+    }
+    const f = t.closest('[data-filter]');
+    if (f) { filter = f.dataset.filter; document.querySelectorAll('#filters .chipb').forEach(function (b) { b.classList.toggle('is-on', b === f); }); applyVisibility(); return; }
+    const fl = t.closest('[data-flow]');
+    if (fl && fl.closest('#flowChips')) {
+      flowOn = flowOn === fl.dataset.flow ? null : fl.dataset.flow;
+      document.querySelectorAll('#flowChips .chipb').forEach(function (b) { b.classList.toggle('is-on', b.dataset.flow === flowOn); });
+      applyFlow(); return;
+    }
+    const ex = t.closest('[data-expand]');
+    if (ex) { T.order.forEach(function (id) { if (T.nodes[id].children.length) toggle(id, ex.dataset.expand === 'all'); }); return; }
+    if (t.closest('[data-review-export]')) { REVIEW.download(); return; }
+    if (t.closest('[data-review-import]')) { document.getElementById('imp').classList.add('is-on'); return; }
+    const imp = t.closest('[data-imp]');
+    if (imp) { doImport(imp.dataset.imp); return; }
+    if (t.closest('[data-copy]')) {
+      const u = new URL(location.href); u.searchParams.set('node', sel);
+      navigator.clipboard && navigator.clipboard.writeText(u.href);
+      t.textContent = '已複製'; setTimeout(function () { t.textContent = '複製節點連結'; }, 1200); return;
+    }
+    const rv = t.closest('.rv');
+    if (rv) {
+      const id = rv.dataset.rv;
+      const vb = t.closest('.rv__v');
+      if (vb) { const cur = REVIEW.get(id); REVIEW.set(id, { verdict: cur && cur.verdict === vb.dataset.v ? null : vb.dataset.v }); afterReview(id); return; }
+      const sb = t.closest('.rv__score button');
+      if (sb) { const cur = REVIEW.get(id); const s = Number(sb.dataset.s); REVIEW.set(id, { score: cur && cur.score === s ? null : s }); afterReview(id); return; }
+      if (t.closest('[data-rv-clear]')) { REVIEW.clear(id); afterReview(id); return; }
+    }
   });
-  document.getElementById('nScreens').textContent = Object.keys(files).length;
+  function afterReview(id) { refreshRow(id); renderProg(); const y = panelEl.scrollTop; renderPanel(); panelEl.scrollTop = y; }
+
+  let noteTimer = null;
+  panelEl.addEventListener('input', function (e) {
+    const ta = e.target.closest('.rv textarea');
+    if (!ta) return;
+    const id = ta.closest('.rv').dataset.rv;
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(function () {
+      REVIEW.set(id, { note: ta.value });
+      refreshRow(id); renderProg();
+      const st = ta.closest('.rv').querySelector('.rv__stamp span');
+      if (st) st.textContent = '已存 ' + new Date().toISOString().replace('T', ' ').slice(0, 16);
+    }, 400);
+  });
+
+  const qEl = document.getElementById('q');
+  qEl.addEventListener('input', function () { query = qEl.value.trim().toLowerCase(); applyVisibility(); });
+
+  /* 匯入：選檔或貼上 → 預覽 → 套用 */
+  let pending = null;
+  document.getElementById('impFile').addEventListener('change', function (e) {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = function () { document.getElementById('impText').value = rd.result; };
+    rd.readAsText(f);
+  });
+  function doImport(mode) {
+    const box = document.getElementById('imp');
+    if (mode === 'close') { box.classList.remove('is-on'); return; }
+    const text = document.getElementById('impText').value;
+    const pv = document.getElementById('impPreview');
+    try {
+      pending = REVIEW.importJSON(text, mode, T.order);
+      pv.textContent = (mode === 'merge' ? '合併' : '覆蓋') + '：新增 ' + pending.add.length + ' · 覆蓋 ' + pending.overwrite.length +
+        ' · 保留 ' + pending.keep.length + ' · 孤兒 ' + pending.orphans.length + (pending.orphans.length ? '（' + pending.orphans.slice(0, 5).join('、') + (pending.orphans.length > 5 ? '…' : '') + '）' : '') +
+        '　再按一次同一顆套用。';
+      if (pending.confirm) { pending.apply(); pv.textContent = '已套用。'; pending = null; renderTree(); renderPanel(); renderProg(); }
+      else { pending.confirm = true; pending.mode = mode; }
+    } catch (err) { pv.textContent = '匯入失敗：' + err.message; pending = null; }
+  }
+  /* 第二次按同一顆才真的套用：上面用 pending.confirm 記；換模式就重算 */
+  document.getElementById('imp').addEventListener('click', function (e) {
+    const b = e.target.closest('[data-imp]');
+    if (b && pending && pending.mode && b.dataset.imp !== pending.mode && b.dataset.imp !== 'close') pending = null;
+  }, true);
+
+  /* 鍵盤 */
+  document.addEventListener('keydown', function (e) {
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') { if (e.key === 'Escape') { e.target.blur(); if (e.target === qEl) { qEl.value = ''; query = ''; applyVisibility(); } } return; }
+    if (e.key === '/') { e.preventDefault(); qEl.focus(); return; }
+    const rows = Array.from(treeEl.querySelectorAll('.tnode')).filter(function (el) {
+      if (el.classList.contains('is-hidden')) return false;
+      let p = el.parentElement; while (p && p !== treeEl) { if (p.classList && p.classList.contains('is-closed')) return false; p = p.parentElement; }
+      return true;
+    });
+    const i = rows.findIndex(function (el) { return el.dataset.id === sel; });
+    if (e.key === 'ArrowDown') { e.preventDefault(); const n = rows[Math.min(rows.length - 1, i + 1)]; if (n) select(n.dataset.id); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); const n = rows[Math.max(0, i - 1)]; if (n) select(n.dataset.id); }
+    else if (e.key === 'ArrowRight' && sel) { toggle(sel, true); }
+    else if (e.key === 'ArrowLeft' && sel) { if (open[sel] && T.nodes[sel].children.length) toggle(sel, false); else if (T.nodes[sel].parent) select(T.nodes[sel].parent); }
+    else if (e.key === 'Enter' && sel && T.nodes[sel].href) { window.open(T.nodes[sel].href, '_blank'); }
+    else if ((e.key === '1' || e.key === '2' || e.key === '3') && sel) {
+      const v = ['ok', 'todo', 'bug'][Number(e.key) - 1];
+      const cur = REVIEW.get(sel); REVIEW.set(sel, { verdict: cur && cur.verdict === v ? null : v }); afterReview(sel);
+    }
+  });
+
+  /* --- 啟動 --------------------------------------------------------- */
+  renderTree();
+  renderWall();
+  renderProg();
+  if (q.get('view') === 'wall') { tv.dataset.view = 'wall'; document.querelectorAll && 0; document.querySelectorAll('#viewSeg button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.view === 'wall'); }); }
+  if (q.get('filter')) { filter = q.get('filter'); document.querySelectorAll('#filters .chipb').forEach(function (b) { b.classList.toggle('is-on', b.dataset.filter === filter); }); applyVisibility(); }
+  if (q.get('flow')) { flowOn = q.get('flow'); document.querySelectorAll('#flowChips .chipb').forEach(function (b) { b.classList.toggle('is-on', b.dataset.flow === flowOn); }); applyFlow(); }
+  if (q.get('node') && T.nodes[q.get('node')]) select(q.get('node')); else renderPanel();
 })();
 </script>
 </body>
