@@ -58,7 +58,7 @@
             </div>
           </div>
 
-          <a class="fab" id="backBtn" href="explore.html"
+          <a class="fab" id="backBtn" data-back href="explore.html"
              style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
              aria-label="返回">
             <span class="arrow arrow--left"></span>
@@ -217,11 +217,15 @@
   /* 頁尾：28 km 走不到，主要動作自動變成叫車 */
   document.getElementById('foot').innerHTML = !hasDist
     ? `<div style="display:grid; grid-template-columns:1fr auto; gap:8px">
-         <a class="btn-primary" href="going.html">走路前往</a>
+         <a class="btn-primary" href="going.html?id=${P.id}">走路前往</a>
          <a class="btn-ghost" href="home.html" style="width:auto; padding:0 20px">用 yoxi</a>
        </div>`
     : far
-    ? `<a class="btn-primary" href="ride.html">用 yoxi 前往</a>
+    ? (P.id === 'neiwan'
+        ? `<a class="btn-primary" href="ride.html">用 yoxi 前往</a>`
+        /* 行程中那一頁只做了內灣這一段。其他遠地按下去不能把人載去內灣。 */
+        : `<a class="btn-primary" href="#" data-toast="這份原型的行程只做了內灣那一段；正式版這裡會直接帶入下車點">用 yoxi 前往</a>`) +
+      `
        <div style="margin-top:10px; display:flex; align-items:center; justify-content:center;
                    gap:8px; font-size:12px">
          <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px;
@@ -235,7 +239,7 @@
          ${km} 公里 —— 這一段搭車比較合理，走路要五個小時以上
        </div>`
     : `<div style="display:grid; grid-template-columns:1fr auto; gap:8px">
-         <a class="btn-primary" href="going.html">走路前往</a>
+         <a class="btn-primary" href="going.html?id=${P.id}">走路前往</a>
          <a class="btn-ghost" href="home.html" style="width:auto; padding:0 20px">用 yoxi</a>
        </div>
        <div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">

@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="../css/chengshi.css">
 </head>
 
-<body>
+<body data-status="light" data-time="8:10">
 <div class="stage">
   <div class="device">
     <div class="device__screen">
@@ -61,6 +61,7 @@
   const night = new URLSearchParams(location.search).get('when') === 'night';
 
   document.getElementById('clock').textContent = night ? '21:30' : '8:10';
+  if (night) document.body.dataset.time = '21:30';   /* 狀態列在 DOMContentLoaded 才畫，來得及 */
   document.getElementById('card').href = night ? 'lookback.html' : 'explore.html';
   document.getElementById('body').textContent = night
     ? '今天走了 6,240 步，經過 3 個地方。來看看今天。'

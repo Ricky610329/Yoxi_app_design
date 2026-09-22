@@ -26,10 +26,10 @@
     <div class="device__screen" style="background:var(--yoxi-mist)">
 
       <header class="hdr-plain" style="padding-bottom:12px">
-        <a href="home.html" style="display:block; padding:4px">
+        <a data-back href="home.html" style="display:block; padding:4px">
           <span class="arrow arrow--left"></span>
         </a>
-        <span class="hdr-plain__title">設定上車地點</span>
+        <span class="hdr-plain__title" id="pkTitle">設定上車地點</span>
       </header>
 
       <!-- 搜尋框 -->
@@ -49,8 +49,7 @@
       <div class="scroll" style="background:var(--yoxi-white)">
         <a class="row-nav" href="home.html">
           <span class="tile-icon tile-icon--red tile-icon--lg tile-icon--round">
-            <span data-icon="place"
-                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="place" style="width:26px; height:26px; display:block"></span>
           </span>
           <span class="row-nav__body">
             <span class="row-nav__title">水利路 46 巷 58 號</span>
@@ -61,8 +60,7 @@
 
         <a class="row-nav" href="home.html">
           <span class="tile-icon tile-icon--red tile-icon--lg tile-icon--round">
-            <span data-icon="place"
-                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="place" style="width:26px; height:26px; display:block"></span>
           </span>
           <span class="row-nav__body">
             <span class="row-nav__title">水利路 46 巷 2 號</span>
@@ -73,8 +71,7 @@
 
         <a class="row-nav" href="home.html">
           <span class="tile-icon tile-icon--red tile-icon--lg tile-icon--round">
-            <span data-icon="place"
-                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="place" style="width:26px; height:26px; display:block"></span>
           </span>
           <span class="row-nav__body">
             <span class="row-nav__title">水利路 44 巷 2 號</span>
@@ -92,8 +89,7 @@
         <a class="row-nav" href="home.html">
           <span class="tile-icon tile-icon--lg tile-icon--round" style="
                 background:var(--yoxi-navy)">
-            <span data-icon="place"
-                  style="width:26px; height:26px; display:block; filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="place" style="width:26px; height:26px; display:block"></span>
           </span>
           <span class="row-nav__body">
             <span class="row-nav__title">在地圖上設定地點</span>
@@ -110,5 +106,12 @@
 <script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
 <script src="../js/interact.js"></script>
+<script>
+  /* 同一張畫面兼下車點設定：叫車首頁的下車點欄位帶 ?to=1 進來 */
+  if (new URLSearchParams(location.search).has('to')) {
+    document.getElementById('pkTitle').textContent = '設定下車地點';
+    document.title = '設定下車地點 — yoxi 城事';
+  }
+</script>
 </body>
 </html>

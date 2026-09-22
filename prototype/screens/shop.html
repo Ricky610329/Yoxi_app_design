@@ -67,8 +67,8 @@
     const can = pts >= g[1];
     return '<div class="card" style="overflow:hidden">' +
       '<div style="height:92px; background:' + g[3] + '; display:grid; place-items:center">' +
-        '<span data-icon="' + g[2] + '" style="width:40px; height:40px; display:block;' +
-        (g[2] === 'pointLight' ? '' : ' filter:brightness(0) invert(1)') + '"></span>' +
+        '<span class="' + (g[2] === 'pointLight' ? '' : 'ic-ondark') + '" data-icon="' + g[2] +
+        '" style="width:40px; height:40px; display:block"></span>' +
       '</div>' +
       '<div style="padding:12px">' +
         '<div style="font-weight:800; font-size:14px; line-height:1.4">' + g[0] + '</div>' +

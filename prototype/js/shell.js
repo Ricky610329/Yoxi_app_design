@@ -226,9 +226,15 @@ const MOTIFS = {
  * @param {string} key   ART 的鍵（glass / market / moat …）
  * @param {object} [opt] { seed } 微調光源位置，讓同風格的卡片不完全一樣
  */
+/* 每一張的漸層 id 都要全頁唯一。以前是 g + 風格 + seed，同一頁只要有兩張
+   同風格同 seed 的卡（抵達解鎖的幕 2 與幕 3、回顧完成卡與幕 2），
+   後面那張的 url(#id) 會取到第一份定義；而第一份藏在 display:none 裡，
+   沒有 layout，天空就整片不上色 —— 產品高潮那張卡是灰白的。 */
+let artSeq = 0;
+
 function postcardArt(key, opt = {}) {
   const a = ARTS[key] || ARTS.glass;
-  const id = `g${key}${opt.seed || 0}${opt.wide ? 'w' : ''}`;
+  const id = `g${key}${opt.seed || 0}${opt.wide ? 'w' : ''}_${artSeq++}`;
   const sunX = 26 + ((opt.seed || 0) * 17) % 48;
 
   /* 橫式與直式是兩套構圖，不是同一張圖硬裁。
@@ -569,11 +575,111 @@ function yieldTabbar(on) {
   document.getElementById('tabbar')?.classList.toggle('is-yield', on);
 }
 
-/* 程式化跳頁。有導覽列時把 flow 參數帶著走，否則就是 location.href。
+/* --------------------------------------------------------------------------
+   連結改寫
+   兩件事，都在點擊的瞬間做，畫面裡的 href 照舊寫最自然的那個目標：
+
+   1. 返回鍵知道自己從哪來。每個站內連結帶上 ?from=<現在這一頁>，
+      目標頁上標了 data-back 的返回鍵就改指回去。地方詳情從叫車首頁的
+      banner 進、從地圖小卡進、從探索進，返回都回得到原本那一張。
+      以前返回是寫死的常數，三個入口只有一個回得對。
+   2. 變體不掉回現況。在變體裡（body data-tabs 或 ?v=）點到主線的
+      home / explore / album / map，改指到那個變體自己的那一張；
+      其餘共用頁（地方詳情、前往中、抽屜、上車點……）把 ?v= 帶著走，
+      它們的 tab bar 與返回鍵才知道自己在哪個變體。以前圍牆只蓋到
+      tab bar，按一下漢堡或返回就掉回現況，變體等於沒做。
+   -------------------------------------------------------------------------- */
+
+/* 每個變體的三個根與地圖分別是哪一張。主線的檔名 → 變體的檔名。 */
+const ROOTS = {
+  a: { 'home.html': 'home.html',           'explore.html': 'variant-a-explore.html',
+       'album.html': 'variant-a-album.html', 'map.html': 'variant-a-map.html' },
+  b: { 'home.html': 'home.html',           'explore.html': 'variant-b-explore.html',
+       'album.html': 'variant-b-album.html', 'map.html': 'variant-b-explore.html' },
+  c: { 'home.html': 'home.html',           'explore.html': 'variant-c-explore.html',
+       'album.html': 'variant-c-album.html', 'map.html': 'variant-c-map.html' },
+  d: { 'home.html': 'variant-d-home.html', 'explore.html': 'variant-d-explore.html',
+       'album.html': 'variant-d-album.html', 'map.html': 'variant-d-home.html?layer=on' },
+  e: { 'home.html': 'variant-e-home.html', 'explore.html': 'variant-e-explore.html',
+       'album.html': 'variant-e-album.html', 'map.html': 'variant-e-home.html' },
+  f: { 'home.html': 'variant-f-home.html', 'explore.html': 'variant-f-home.html?mode=today',
+       'album.html': 'variant-f-album.html', 'map.html': 'variant-f-home.html?mode=today' },
+};
+
+/* 導覽、變體與工具自己的參數，不算在「這是哪一頁」裡 */
+const CARRY = ['flow', 'step', 'still', 'from', 'v'];
+
+/* 'place.html?id=neiwan' 這種寫法：檔名 + 內容參數 */
+function pageKey(href) {
+  const u = new URL(href, location.href);
+  const p = new URLSearchParams(u.search);
+  CARRY.forEach(function (k) { p.delete(k); });
+  const base = u.pathname.split('/').pop();
+  const qs = decodeURIComponent(p.toString());
+  return qs ? base + '?' + qs : base;
+}
+
+function variantKey() {
+  return document.body.dataset.tabs ||
+         new URLSearchParams(location.search).get('v') || '';
+}
+
+/**
+ * 站內連結點下去實際會去哪。
+ * @param {string} raw   href 原文
+ * @param {object} opt   back＝這是返回鍵（不加 from）；tab＝這是 tab bar（不加 from）
+ */
+function rewriteHref(raw, opt) {
+  opt = opt || {};
+  if (!raw || raw[0] === '#' || /^[a-z]+:/i.test(raw)) return raw;
+  let u = new URL(raw, location.href);
+  if (!/\.html$/.test(u.pathname)) return raw;
+
+  const v = variantKey();
+  if (v && ROOTS[v]) {
+    const to = ROOTS[v][u.pathname.split('/').pop()];
+    if (to) {
+      const t = new URL(to, location.href);
+      u.searchParams.forEach(function (val, k) {
+        if (!t.searchParams.has(k)) t.searchParams.set(k, val);
+      });
+      u = t;
+    }
+    u.searchParams.set('v', v);
+  }
+  if (!opt.back && !opt.tab && !u.searchParams.has('from')) {
+    u.searchParams.set('from', pageKey(location.href));
+  }
+  return u.pathname.split('/').pop() + u.search + u.hash;
+}
+
+/* 標了 data-back 的返回鍵：有 ?from= 就指回去 */
+function applyBack(root) {
+  const from = new URLSearchParams(location.search).get('from');
+  if (!from || !/^[a-z0-9-]+\.html(\?[\w=&.%-]*)?$/i.test(from)) return;
+  (root || document).querySelectorAll('a[data-back]').forEach(function (a) {
+    a.setAttribute('href', from);
+  });
+}
+
+/* 用 capture，搶在畫面自己的 handler 之前把 href 換掉 */
+document.addEventListener('click', function (e) {
+  const a = e.target.closest('a[href]');
+  if (!a || !a.closest('.device')) return;
+  if (a.hasAttribute('data-toast') || a.hasAttribute('data-share')) return;
+  a.setAttribute('href', rewriteHref(a.getAttribute('href'), {
+    back: a.hasAttribute('data-back'),
+    tab:  !!a.closest('.tabbar'),
+  }));
+}, true);
+
+/* 程式化跳頁。跟點 <a> 一樣會帶 from／v，有導覽列時再帶 flow 參數。
    抵達解鎖的「收進收藏」與每日回顧的「看收藏」都是用 JS 跳的，
-   不經過 <a>，導覽列攔不到 —— 走到這裡就會掉出流程。 */
+   不經過 <a>，上面那個 click 攔不到 —— 走到這裡就會掉出流程。 */
 function go(href) {
-  location.href = window.TOUR ? TOUR.href(href) : href;
+  let h = rewriteHref(href);
+  if (window.TOUR) h = TOUR.href(h);
+  location.href = h;
 }
 
 /* --------------------------------------------------------------------------
@@ -606,6 +712,9 @@ function mount() {
 
   injectArt();
   injectIcons();
+  applyBack();
+  /* 頁內腳本在 DOMContentLoaded 之後才長出來的返回鍵也要接 */
+  ready(function () { applyBack(); });
 }
 
 if (document.readyState === 'loading') {
@@ -618,6 +727,9 @@ window.SHELL = {
     nearSpots: nearSpots,
     ready: ready,
     go: go,
+    rewriteHref: rewriteHref,
+    pageKey: pageKey,
+    ROOTS: ROOTS,
     toast: toast,
     shareSheet: shareSheet,
   injectIcons, injectArt, postcardArt, showPush, yieldTabbar,

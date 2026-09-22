@@ -45,11 +45,11 @@
         <div style="padding:16px">
           <div class="statbar">
             <span class="statbar__cell">
-              <span class="statbar__n" id="nPlaces">12</span>
+              <span class="statbar__n" id="nPlaces">8</span>
               <span class="statbar__k">去過的地方</span>
             </span>
             <span class="statbar__cell">
-              <span class="statbar__n" id="nBadges">3</span>
+              <span class="statbar__n" id="nBadges">2</span>
               <span class="statbar__k">獎章</span>
             </span>
             <span class="statbar__cell">
@@ -65,7 +65,7 @@
              style="padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
             <span class="tile-icon tile-icon--md" style="
                   background:rgba(255,255,255,.14)">
-              <span data-icon="steps" style="width:24px;height:24px;display:block"></span>
+              <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
             </span>
             <span class="u-fill">
               <span style="display:block; font-weight:800">今天的回顧</span>
@@ -114,23 +114,9 @@
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
         </section>
 
-        <!-- ===== 週回顧入口 ===== -->
-        <div style="padding:0 16px 16px" id="weekEntry">
-          <a class="card u-row u-gap4" href="week.html" style="padding:14px 16px">
-            <span class="tile-icon tile-icon--md">
-              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
-            </span>
-            <span class="u-fill">
-              <span style="display:block; font-weight:800">這一週</span>
-              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
-                唯一可以分享的匯總
-              </span>
-            </span>
-            <span class="arrow"></span>
-          </a>
-        </div>
-
-        <!-- ===== 日誌 ===== -->
+        <!-- ===== 日誌 =====
+             私密的日誌與唯一可分享的週回顧並排在同一個分頁：
+             隱私分軌就是在這裡一眼看出來的。 -->
         <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
           <div class="card">
             <div style="padding:16px">
@@ -149,6 +135,20 @@
               只有你看得到
             </div>
           </div>
+
+          <!-- 週回顧入口 -->
+          <a class="card u-row u-gap4" href="week.html" style="margin-top:12px; padding:14px 16px" id="weekEntry">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總 · 不含心情與日誌
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
         </section>
 
       </div>

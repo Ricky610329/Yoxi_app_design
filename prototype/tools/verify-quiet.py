@@ -18,6 +18,8 @@
   全站            跑 tools/audit-app.html，掃 49 個畫面的「看起來可按但沒有
                   行為」的元素，以及同一個數字在不同畫面一不一致。
                   這兩類都不會讓 console 變紅，只會在評審手上安靜地出錯。
+  圍牆            跑 tools/audit-walls.html，從每個變體的三張入口頁走兩層連結，
+                  看會不會掉回現況的叫車／探索／收藏。以前圍牆只蓋到 tab bar。
 
 需要 Chrome 或 Edge。不依賴 tools/shoot.py 的成品。
 """
@@ -177,7 +179,9 @@ def strip_layer(html):
     html = re.sub(r'<title>.*?</title>', '', html, flags=re.S)
     p = StripLayer()
     p.feed(html)
-    return p.out
+    # 明信片漸層的 id 帶全頁流水號（g風格seed_N），變體多畫幾張卡號碼就不同。
+    # 那不是畫面差異，比對前拿掉。
+    return [re.sub(r'(g[a-z]+\d+w?)_\d+', r'\1', l) for l in p.out]
 
 
 def domdiff():
@@ -316,12 +320,14 @@ def main():
     show(run_page('smoke-variants.html', 15000))
     print('\n── 全站：死按鈕與數字矛盾 ' + '─' * 30)
     show(run_page('audit-app.html', 90000))
+    print('\n── 圍牆：變體會不會掉回現況 ' + '─' * 26)
+    show(run_page('audit-walls.html', 150000))
     print()
     print('═' * 64)
     if bad[0]:
         print('未通過 %d 條。' % bad[0])
     else:
-        print('六條防護承諾、互動測試與全站一致性全部通過。')
+        print('六條防護承諾、互動測試、全站一致性與變體圍牆全部通過。')
     print('═' * 64)
     print()
     return 1 if bad[0] else 0

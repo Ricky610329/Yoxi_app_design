@@ -28,11 +28,11 @@
 
       <header class="hdr-red">
         <div class="hdr-red__bar">
-          <a class="hdr-red__close" href="drawer.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__close" data-back href="drawer.html"><span data-icon="close"></span></a>
         </div>
         <h1 class="hdr-red__title">和泰 Points</h1>
         <p class="hdr-red__sub" style="font-size:16px; margin-top:6px">
-          累積總點數 <span class="num" style="font-size:26px" id="pts">50</span> 點
+          累積總點數 <span class="num" style="font-size:26px" id="pts">162</span> 點
         </p>
       </header>
 
@@ -66,26 +66,35 @@
   /* 明細由狀態產生：搭車抵達才有 +50，走路的不進點數頁。
      這樣標題的總點數與明細加起來才會一致。 */
   const arrow = '<i class="arrow" style="width:16px;vertical-align:-2px"></i>';
-  const ROWS = [];
+
+  /* 一般搭車的點數當對照組。沒有它們，這一頁看起來像城事自己的帳本，
+     「只在既有明細裡多一種來源標記」的克制就看不出來。
+     總點數＝所有列相加，標題不另外寫一個數字。 */
+  const BASE = [
+    ['新竹市 → 內灣老街 · 搭乘', '搭車回饋', 34, '09/21', false],
+    ['東區 → 竹北 · 搭乘',      '搭車回饋', 12, '09/18', false],
+    ['新竹市 → 南寮漁港 · 搭乘', '搭車回饋', 16, '09/12', false],
+  ];
+  const ROWS = BASE.slice();
 
   MOCK.POSTCARDS.forEach(function (p) {
     const c = STATE.card(p.id);
     if (c && c.by === 'ride') {
-      ROWS.push([p.name + ' · 抵達解鎖', '城事解鎖回饋', '+50', c.date.replace('.', '/'), true]);
+      ROWS.push([p.name + ' · 抵達解鎖', '城事解鎖回饋', 50, c.date.replace('.', '/'), true]);
     }
   });
   ROWS.sort(function (a, b) { return a[3] < b[3] ? 1 : -1; });
 
-  document.getElementById('pts').textContent = STATE.points;
+  document.getElementById('pts').textContent =
+    ROWS.reduce(function (t, r) { return t + r[2]; }, 0);
 
   document.getElementById('rows').innerHTML = ROWS.map(function (r) {
     const name = r[0], src = r[1], n = r[2], date = r[3], isNew = r[4];
     return '<div class="row-nav">' +
       '<span class="tile-icon tile-icon--md"' +
         (isNew ? ' style="background:var(--yoxi-navy)"' : '') + '>' +
-        '<span data-icon="' + (isNew ? 'postcard' : 'tabRide') + '"' +
-        ' style="width:24px;height:24px;display:block' +
-        (isNew ? ';filter:brightness(0) invert(1)' : '') + '"></span>' +
+        '<span class="' + (isNew ? 'ic-ondark' : '') + '" data-icon="' + (isNew ? 'postcard' : 'tabRide') + '"' +
+        ' style="width:24px;height:24px;display:block"></span>' +
       '</span>' +
       '<span class="row-nav__body">' +
         '<span class="row-nav__title" style="font-size:16px">' + name + '</span>' +
@@ -94,7 +103,7 @@
           src + '</span> · ' + date +
         '</span>' +
       '</span>' +
-      '<span class="num" style="font-size:18px">' + n + '</span>' +
+      '<span class="num" data-amt="' + n + '" style="font-size:18px">+' + n + '</span>' +
     '</div>';
   }).join('');
 

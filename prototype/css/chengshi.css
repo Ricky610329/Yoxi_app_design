@@ -253,6 +253,17 @@
 .peek__acts .btn-ghost,
 .peek__acts .btn-primary { min-height: 42px; font-size: var(--fs-sm); }
 
+/* 疊在叫車地圖上的小卡（變體 D／E／F）。
+   地圖只有 404px 高，上車點 pin 底緣到定位鈕之間塞不下探索那張卡：
+   稽核量到它壓住 pin 392 px²、定位鈕 2,704 px²。承諾⑤量的是幾何，
+   所以卡本身要改 —— 矮一號（一行文字、沒有 hook）、右邊留 72px 給定位鈕。 */
+.peek--ride { right: 72px; padding: var(--sp-2) var(--sp-3); gap: var(--sp-2); }
+.peek--ride .peek__img { width: 40px; height: 52px; }
+.peek--ride [data-peek-hook] { display: none !important; }
+.peek--ride.peek--stack { display: flex; align-items: center; }
+.peek--ride .peek__acts { display: block; margin-top: 0; flex: none; }
+.peek--ride .peek__acts .btn-primary { width: auto; padding: 0 12px; min-height: 40px; }
+
 /* 設好下車點之後，叫車按鈕才是可按的樣子 */
 .btn-primary:not(.is-ready)#goBtn { background: var(--yoxi-line); color: var(--yoxi-slate); }
 
@@ -926,12 +937,13 @@
 }
 .statbar__cell { flex: 1; text-align: center; }
 .statbar__n {
+  display: block;
   font-size: var(--fs-title);
   font-weight: var(--fw-heavy);
   font-style: italic;
   line-height: 1.1;
 }
-.statbar__k { font-size: var(--fs-xs); color: var(--yoxi-slate); margin-top: 2px; }
+.statbar__k { display: block; font-size: var(--fs-xs); color: var(--yoxi-slate); margin-top: 2px; }
 
 /* ==========================================================================
    區塊標題
@@ -1014,8 +1026,8 @@
   font-style: italic;
   font-size: var(--fs-lead);
 }
-.pushmock__t { font-size: var(--fs-sm); font-weight: var(--fw-heavy); }
-.pushmock__b { font-size: var(--fs-sm); line-height: 1.45; margin-top: 2px; }
+.pushmock__t { display: block; font-size: var(--fs-sm); font-weight: var(--fw-heavy); }
+.pushmock__b { display: block; font-size: var(--fs-sm); line-height: 1.45; margin-top: 2px; }
 
 /* ==========================================================================
    demo 輔助：模擬按鈕（現場操作用，正式版不存在）

@@ -30,6 +30,12 @@ const CASES = [
   ['變體 D（圖層開）', '../screens/variant-d-home.html?layer=on'],
   ['變體 E',          '../screens/variant-e-home.html'],
   ['變體 F（今天）',   '../screens/variant-f-home.html?mode=today'],
+  /* 小卡那一半一定要有案例是開著卡的。三個變體都不自動彈卡，
+     所以各帶 ?peek=1 再量一次；沒有這幾列，⑤ 的 .peek.is-on 永遠是空集合、永遠 PASS。 */
+  /* still=1 把轉場關掉：小卡有 240ms 的滑入動畫，不關的話量到的是半路上的位置。 */
+  ['變體 D（點景點，小卡開）', '../screens/variant-d-home.html?layer=on&peek=1&still=1'],
+  ['變體 E（點景點，小卡開）', '../screens/variant-e-home.html?peek=1&still=1'],
+  ['變體 F（點景點，小卡開）', '../screens/variant-f-home.html?mode=today&peek=1&still=1'],
 ];
 
 /* 兩個矩形有沒有重疊，回傳重疊面積（px²）。0 = 沒碰到。 */
@@ -84,7 +90,11 @@ function audit(name, doc) {
 
   /* 小卡也要算。它是圖層打開後自動浮出、面積最大的那一塊，
      只量圖釘不量小卡，等於避開了這條承諾真正要防的東西。 */
-  const covers = spots.concat(Array.from(doc.querySelectorAll('.peek.is-on')));
+  const peeks = Array.from(doc.querySelectorAll('.peek.is-on'));
+  if (/peek=1/.test(doc.location.search) && !peeks.length) {
+    fail.push('⑤ 這個案例應該有小卡開著，卻沒量到 —— 這條沒有驗到，不是通過');
+  }
+  const covers = spots.concat(peeks);
 
   let hits = 0;
   guarded.forEach(function (g) {

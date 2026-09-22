@@ -128,8 +128,9 @@ const PROBES = [
   ['fogmap.html', function (d) { return { 覆蓋率: num(d.getElementById('cov')) }; }],
   ['variant-b-explore.html', function (d) { return { 覆蓋率: num(d.getElementById('cov')) }; }],
   ['points.html', function (d) {
-    const rows = d.querySelectorAll('#rows .row-nav').length;
-    return { 點數: num(d.getElementById('pts')), 明細合計: String(rows * 50) };
+    let sum = 0;
+    d.querySelectorAll('#rows [data-amt]').forEach(function (e) { sum += Number(e.dataset.amt); });
+    return { 點數: num(d.getElementById('pts')), 明細合計: String(sum) };
   }],
   ['place.html?id=neiwan', function (d) {
     return { 內灣獎章: (d.getElementById('ringLabel').textContent || '').trim() };

@@ -63,6 +63,10 @@
   const PLACE_TO_CARD = {
     'glass-kiln': 'p11',
     'neiwan':     'p9',
+    'moat':       'p19',
+    'brick':      'p20',
+    'hill':       'p21',
+    'lake':       'p22',
   };
 
   const STATE = {

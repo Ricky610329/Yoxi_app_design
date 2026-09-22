@@ -142,10 +142,10 @@
     '</section>';
   }).join('');
 
-  /* 主線畫面張數：同一個檔案帶不同參數只算一張 */
+  /* 主線畫面張數：只算分組裡的，同一個檔案帶不同參數只算一張 */
   const files = {};
-  Object.keys(CATALOG.SCREENS).forEach(function (k) {
-    files[CATALOG.SCREENS[k][3].replace(/\?.*$/, '')] = 1;
+  CATALOG.GROUPS.forEach(function (g) {
+    g[2].forEach(function (k) { files[CATALOG.screen(k).href.replace(/\?.*$/, '')] = 1; });
   });
   document.getElementById('nScreens').textContent = Object.keys(files).length;
 })();

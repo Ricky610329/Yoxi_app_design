@@ -26,13 +26,13 @@
 
       <header class="hdr-red">
         <div class="hdr-red__bar">
-          <a class="hdr-red__close" href="home.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__close" data-back href="home.html"><span data-icon="close"></span></a>
         </div>
         <h1 class="hdr-red__title">通知中心</h1>
         <div class="hdr-red__pills">
           <div class="pill-group" data-pills>
-            <button class="pill is-active" data-tab="news">最新消息</button>
-            <button class="pill" data-tab="mine">個人通知</button>
+            <button class="pill" data-tab="news">最新消息</button>
+            <button class="pill is-active" data-tab="mine">個人通知</button>
           </div>
         </div>
       </header>
@@ -41,7 +41,7 @@
 
         <!-- 城事的通知都是「你的」，所以歸在個人通知；
              yoxi 原本的活動推播留在最新消息。兩顆 pill 以前沒有接任何東西。 -->
-        <div data-panel="mine" class="u-hidden">
+        <div data-panel="mine">
         <a class="row-nav" href="explore.html">
           <span class="tile-icon"><span data-icon="place"></span></span>
           <span class="row-nav__body">
@@ -71,10 +71,10 @@
 
         </div>
 
-        <div data-panel="news">
+        <div data-panel="news" class="u-hidden">
         <a class="row-nav" href="#" data-toast="這是 yoxi 現有的活動推播，原型沒有做這一段">
           <span class="tile-icon tile-icon--red">
-            <span data-icon="bell" style="filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="bell" style=""></span>
           </span>
           <span class="row-nav__body">
             <span class="row-nav__title" style="font-size:16px">點從天降</span>
@@ -85,7 +85,7 @@
 
         <a class="row-nav" href="#" data-toast="這是 yoxi 現有的活動推播，原型沒有做這一段">
           <span class="tile-icon tile-icon--red">
-            <span data-icon="bell" style="filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="bell" style=""></span>
           </span>
           <span class="row-nav__body">
             <span class="row-nav__title" style="font-size:16px">月來月好運</span>

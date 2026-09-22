@@ -54,6 +54,7 @@
           </div>
           <h2 class="unlock__title" style="font-size:22px">正在畫下今天的這裡</h2>
           <p class="unlock__sub">依這個地方的樣子、今天的天氣與光線生成</p>
+          <p class="unlock__sub" style="margin-top:18px; font-size:12px; opacity:.55">點一下畫面直接看結果</p>
         </div>
 
         <!-- ===== 幕 3：明信片成品 ===== -->
@@ -74,7 +75,7 @@
             <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
                         border-radius:999px; background:rgba(201,162,39,.22); color:var(--gold-lite);
                         font-size:13px; font-weight:800">
-              <span data-icon="badge" style="width:16px;height:16px;display:block"></span>
+              <span class="ic-ondark" data-icon="badge" style="width:16px;height:16px;display:block"></span>
               司機 陳先生 帶你走完了這一段
             </div>
           </div>
@@ -116,67 +117,86 @@
 <script src="../js/interact.js"></script>
 <script>
 (function () {
-  const isRide = new URLSearchParams(location.search).has('ride');
+  const q = new URLSearchParams(location.search);
+  const isRide = q.has('ride');
+
+  /* 解鎖哪一個地方由 ?id= 決定（搭車固定是內灣）。以前寫死玻璃窯：
+     從「還沒去的地方」走到護城河，收下的卻是玻璃窯那張卡。 */
+  const P      = MOCK.findPlace(isRide ? 'neiwan' : (q.get('id') || 'glass-kiln'));
+  const cardId = MOCK.cardIdOf(P.id);
+  const card   = MOCK.POSTCARDS.filter(function (p) { return p.id === cardId; })[0];
+  const art    = card ? card.art  : P.art;
+  const name   = card ? card.name : P.name;
+
+  /* 視覺與文字一起換，收藏牆是用同一張 art 重繪的，兩邊才會是同一張卡 */
+  document.querySelector('#act2 .gen__layer').innerHTML = SHELL.postcardArt(art, { seed: 1 });
+  document.querySelector('#act3 [data-art]').innerHTML  = SHELL.postcardArt(art, { seed: 1 });
+  document.querySelector('#act1 .unlock__title').innerHTML = '你到了<br>' + name;
+  document.querySelector('#act2 .unlock__title').textContent =
+    '正在畫下今天的' + (isRide ? '內灣' : '這裡');
+  const fc = document.getElementById('finalCard');
+  fc.querySelector('.postcard__name').textContent = name;
+  fc.querySelector('.postcard__date').textContent =
+    '2026.09.21 · 晴 · ' + (isRide ? '內灣' : (P.area || '新竹市'));
+
+  /* 步數跟明信片詳情用同一條公式（1,450 步／公里），不再寫死 2,140 */
+  const dist = P.distance;
+  document.getElementById('arriveBy').textContent = isRide
+    ? '搭 yoxi 抵達 · ' + Math.round(dist / 1000) + ' 公里'
+    : (dist != null ? '走了 ' + Math.round(dist / 1000 * 1450).toLocaleString() + ' 步抵達'
+                    : '走路抵達');
 
   /* yoxi 限定版：金框、角標、司機同行紀念、點數回饋 */
   if (isRide) {
-    /* 限定版要換的不只是文字 —— 視覺也得換，
-       否則「內灣老街」這張卡上會畫著玻璃窯的煙囪，
-       而且收藏牆是用 p9 的 art 重繪的，同一張卡兩個樣子。 */
-    const P9 = MOCK.POSTCARDS.find(function (p) { return p.id === 'p9'; });
-    const art = P9 ? P9.art : 'oldst';
-    document.querySelector('#act2 .gen__layer').innerHTML = SHELL.postcardArt(art, { seed: 1 });
-    document.querySelector('#act3 [data-art]').innerHTML  = SHELL.postcardArt(art, { seed: 1 });
-
-    const card = document.getElementById('finalCard');
-    card.classList.add('postcard--gold');
-    card.insertAdjacentHTML('afterbegin',
-      '<span class="postcard__ribbon">yoxi 限定版</span>');
-    card.querySelector('.postcard__date').textContent = '2026.09.21 · 晴 · 內灣';
-    card.querySelector('.postcard__name').textContent = '內灣老街';
+    fc.classList.add('postcard--gold');
+    fc.insertAdjacentHTML('afterbegin', '<span class="postcard__ribbon">yoxi 限定版</span>');
     document.getElementById('goldNote').classList.remove('u-hidden');
-    document.getElementById('arriveBy').textContent = '搭 yoxi 抵達 · 28 公里';
-    document.querySelector('#act1 .unlock__title').innerHTML = '你到了<br>內灣老街';
-    document.querySelector('#act2 .unlock__title').textContent = '正在畫下今天的內灣';
   }
 
-  /* 三幕依序播放。刻意慢 —— 這是產品的情緒高點，不該一閃而過。 */
+  /* 三幕依序播放。刻意慢 —— 這是產品的情緒高點，不該一閃而過。
+     但現場講的人要有台詞可對，也要能點過去：生成中的標籤會換兩次字，
+     點一下畫面就直接到成品。 */
   const show = id => {
     document.querySelectorAll('.unlock__scene').forEach(s => s.classList.remove('is-on'));
     document.getElementById(id).classList.add('is-on');
   };
-
-  /* 收進收藏：寫入狀態，收藏頁才會真的多一張 */
-  document.getElementById('keepBtn').onclick = function () {
-    /* km 一定要帶。state.js 的預設值是「搭車算 12 公里」，
-       所以搭 28 公里去內灣，收藏頁的公里數只會加 12。 */
-    const place  = MOCK.findPlace(isRide ? 'neiwan' : 'glass-kiln');
-    const gained = STATE.collect(isRide ? 'neiwan' : 'glass-kiln', {
-      km:   place.distance != null ? place.distance / 1000 : undefined,
-      by:   isRide ? 'ride' : 'walk',
-      date: '09.21',
-      note: (document.getElementById('oneLine').value || '').slice(0, 10),
-    });
-    /* 搭車那條線的重點是點數回流和泰生態系，終點該是點數頁 */
-    SHELL.go(isRide ? 'points.html' : 'album.html');
-  };
-
-  /* ?still=1 直接跳到成品那一幕。縮圖若抓到生成動畫的中途，
-     全景圖上看到的會是「正在畫…」而不是明信片本身。 */
-  if (new URLSearchParams(location.search).has('still')) {
-    show('act3');
-    return;
-  }
-
-  setTimeout(() => show('act2'), 1600);
-  setTimeout(() => {
+  const tag = document.querySelector('.gen__tag');
+  const timers = [];
+  const finish = function () {
+    timers.forEach(clearTimeout);
     show('act3');
     if (isRide && !STATE.has('p9')) {
       const t = document.getElementById('pointsToast');
       t.classList.remove('u-hidden');
       setTimeout(() => t.classList.add('u-hidden'), 4000);
     }
-  }, 5000);
+  };
+
+  /* 收進收藏：寫入狀態，收藏頁才會真的多一張 */
+  document.getElementById('keepBtn').onclick = function () {
+    /* km 一定要帶。state.js 的預設值是「搭車算 12 公里」，
+       所以搭 28 公里去內灣，收藏頁的公里數只會加 12。 */
+    STATE.collect(P.id, {
+      km:   dist != null ? dist / 1000 : undefined,
+      by:   isRide ? 'ride' : 'walk',
+      date: '09.21',
+      note: (document.getElementById('oneLine').value || '').slice(0, 10),
+    });
+    /* 搭車那條線的重點是點數回流和泰生態系，終點該是點數頁；
+       點數頁的 ✕ 則回收藏，不要把人丟進抽屜選單。 */
+    SHELL.go(isRide ? 'points.html?from=album.html' : 'album.html');
+  };
+
+  /* ?still=1 直接跳到成品那一幕。縮圖若抓到生成動畫的中途，
+     全景圖上看到的會是「正在畫…」而不是明信片本身。 */
+  if (q.has('still')) { show('act3'); return; }
+
+  timers.push(setTimeout(() => { show('act2'); tag.textContent = '讀取今天的天氣與光線'; }, 1600));
+  timers.push(setTimeout(() => { tag.textContent = '鎖定風格 · yoxi ✕ AI'; }, 3300));
+  timers.push(setTimeout(finish, 5000));
+  document.getElementById('unlock').addEventListener('click', function () {
+    if (!document.getElementById('act3').classList.contains('is-on')) finish();
+  });
 })();
 </script>
 </body>

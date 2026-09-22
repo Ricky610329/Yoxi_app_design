@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>變體圍牆 — 稽核</title>
+<!--
+  變體會不會掉回現況？
+
+  以前圍牆只蓋到 tab bar：地方詳情的返回、前往中的取消、漢堡抽屜的 ✕、
+  上車點的每一列，全部通回主線的 home / explore / album。變體按一下就沒了，
+  而三份稽核沒有一條檢查這件事。
+
+  這一份從每個變體的三張入口頁出發走兩層：把畫面裡每一個連結
+  「點下去實際會去哪」（用畫面自己的 SHELL.rewriteHref 算，跟真的點一樣）
+  都追過去，看有沒有任何一條落到主線的叫車／探索／收藏／地圖；
+  也檢查沿途每一頁的 tab bar 是不是那個變體自己的。
+
+    chrome --headless=new --allow-file-access-from-files \
+           --virtual-time-budget=120000 --dump-dom tools/audit-walls.html
+-->
+<style>
+  body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
+  iframe { width: 390px; height: 844px; border: 0; position: absolute; left: -9999px; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<pre id="out">跑中…</pre>
+<div id="frames"></div>
+
+<script>
+const BASE = '../screens/';
+const VARIANTS = ['a', 'b', 'c', 'd', 'e', 'f'];
+const MAIN = ['home.html', 'explore.html', 'album.html', 'map.html'];
+const DEPTH = 2;
+
+function whenReady(doc, fn) {
+  const t0 = Date.now();
+  (function poll() {
+    if (doc.documentElement.hasAttribute('data-shell-ready') || Date.now() - t0 > 5000) fn();
+    else setTimeout(poll, 60);
+  })();
+}
+
+function load(url, fn) {
+  const fr = document.createElement('iframe');
+  fr.src = BASE + url;
+  fr.onload = function () {
+    whenReady(fr.contentDocument, function () {
+      try { fn(fr.contentDocument, fr.contentWindow); }
+      catch (e) { fn(null, null, e); }
+      fr.remove();
+    });
+  };
+  document.getElementById('frames').appendChild(fr);
+}
+
+/* 'place.html?id=neiwan&v=b'：檔名 + 內容參數 + v。from／flow／step 不算。 */
+function norm(href) {
+  const u = new URL(href, location.href + '/../screens/');
+  const p = new URLSearchParams(u.search);
+  ['from', 'flow', 'step', 'still'].forEach(function (k) { p.delete(k); });
+  p.sort();
+  const base = u.pathname.split('/').pop();
+  const qs = decodeURIComponent(p.toString());
+  return qs ? base + '?' + qs : base;
+}
+function baseOf(k) { return k.split('?')[0]; }
+function hasV(k, v) { return new RegExp('[?&]v=' + v + '(&|$)').test(k); }
+
+/* 這一頁對變體 v 來說算不算「掉回現況」 */
+function isLeak(k, v, roots) {
+  const b = baseOf(k);
+  if (MAIN.indexOf(b) < 0) return false;
+  const own = Object.keys(roots).map(function (m) { return baseOf(roots[m]); });
+  if (own.indexOf(b) < 0) return true;                 /* 主線的檔，且不是這個變體自己的 */
+  if (b === 'home.html' && !hasV(k, v)) return true;   /* a／b／c 共用 home.html，沒帶 v 就掉了 */
+  return false;
+}
+
+const report = {};
+let vi = 0;
+
+function runVariant(v, done) {
+  const seen = {};
+  const queue = [];
+  const leaks = [];
+  const tabbad = [];
+  let roots = null;
+  let pages = 0;
+
+  function visit(k, depth, via) {
+    if (seen[k]) return;
+    seen[k] = true;
+    queue.push([k, depth, via]);
+  }
+
+  function next() {
+    if (!queue.length) { done({ pages: pages, leaks: leaks, tabbad: tabbad }); return; }
+    const item = queue.shift();
+    const k = item[0], depth = item[1], via = item[2];
+    load(k, function (doc, win, err) {
+      pages++;
+      if (err || !doc || !win || !win.SHELL) {
+        leaks.push(via + ' → ' + k + '（讀不到：' + (err && err.message || 'SHELL 不在') + '）');
+        return next();
+      }
+      if (!roots) roots = win.SHELL.ROOTS[v];
+      if (isLeak(k, v, roots)) {
+        leaks.push(via + ' → ' + k);
+        return next();                                  /* 已經掉出去了，不再往下追 */
+      }
+      /* tab bar 必須是這個變體自己的 */
+      doc.querySelectorAll('#tabbar a').forEach(function (a) {
+        const t = norm(a.getAttribute('href'));
+        if (isLeak(t, v, roots)) tabbad.push(k + ' 的分頁列 → ' + t);
+      });
+      if (depth >= DEPTH) return next();
+      doc.querySelectorAll('.device a[href]').forEach(function (a) {
+        const raw = a.getAttribute('href');
+        if (!raw || raw[0] === '#' || /^[a-z]+:/i.test(raw)) return;
+        if (a.hasAttribute('data-toast') || a.hasAttribute('data-share')) return;
+        if (a.closest('.tour')) return;
+        const real = win.SHELL.rewriteHref(raw, {
+          back: a.hasAttribute('data-back'),
+          tab:  !!a.closest('.tabbar'),
+        });
+        const label = (a.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 14) ||
+                      a.getAttribute('aria-label') || raw;
+        visit(norm(real), depth + 1, k + '「' + label + '」');
+      });
+      next();
+    });
+  }
+
+  /* 入口：三個根。a／b／c 的叫車頁是共用的 home.html，要帶 v。 */
+  load('variant-' + v + '-album.html', function (doc, win) {
+    roots = win.SHELL.ROOTS[v];
+    ['home.html', 'explore.html', 'album.html'].forEach(function (m) {
+      let k = roots[m];
+      if (baseOf(k) === 'home.html') k += (k.indexOf('?') >= 0 ? '&' : '?') + 'v=' + v;
+      visit(norm(k), 0, '入口');
+    });
+    next();
+  });
+}
+
+function runNext() {
+  if (vi >= VARIANTS.length) return finish();
+  const v = VARIANTS[vi++];
+  runVariant(v, function (r) { report[v] = r; runNext(); });
+}
+
+function finish() {
+  const L = [];
+  let bad = 0;
+  VARIANTS.forEach(function (v) {
+    const r = report[v];
+    const n = r.leaks.length + r.tabbad.length;
+    if (!n) {
+      L.push('  PASS  變體 ' + v.toUpperCase() + '：走了 ' + r.pages + ' 頁、兩層連結，沒有一條掉回現況');
+    } else {
+      bad++;
+      L.push('  FAIL  變體 ' + v.toUpperCase() + '：' + r.pages + ' 頁裡有 ' + n + ' 條掉回現況');
+      r.leaks.slice(0, 12).forEach(function (t) { L.push('          ' + t); });
+      r.tabbad.slice(0, 6).forEach(function (t) { L.push('          ' + t); });
+      if (n > 18) L.push('          …還有 ' + (n - 18) + ' 條');
+    }
+  });
+  L.push('');
+  L.push(bad ? '共 ' + bad + ' 個變體有洞。' : '全部通過。');
+  document.getElementById('out').textContent = L.join('\n');
+}
+
+runNext();
+</script>
+</body>
+</html>

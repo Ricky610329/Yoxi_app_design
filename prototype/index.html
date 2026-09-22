@@ -158,7 +158,9 @@
   <h2 class="sec-h" id="flows">三條 demo 流程</h2>
   <p class="sec-p">
     每條都可以完整點完。按「開始導覽」，手機旁邊會多一條給講的人看的列：這一步要講什麼、下一步是哪一張，
-    鍵盤 <kbd>←</kbd> <kbd>→</kbd> 翻頁。在 app 裡照著點也會留在流程上。
+    鍵盤 <kbd>←</kbd> <kbd>→</kbd> 翻頁。在 app 裡照著點也會留在流程上。<br>
+    主線是<b>保守落地版</b>（探索自帶地圖，叫車首頁只多一個入口）；「把地圖併進叫車」的合一提案是變體 D／E／F，
+    兩者共用同一套資料與元件，只差地圖歸誰。流程 B 的最後一步就是 E 的對照。
   </p>
   <div id="flowList"></div>
 
@@ -252,10 +254,10 @@
     '</section>';
   }).join('');
 
-  /* 主線畫面張數：同一個檔案帶不同參數只算一張 */
+  /* 主線畫面張數：只算分組裡的，同一個檔案帶不同參數只算一張 */
   const files = {};
-  Object.keys(CATALOG.SCREENS).forEach(function (k) {
-    files[CATALOG.SCREENS[k][3].replace(/\?.*$/, '')] = 1;
+  CATALOG.GROUPS.forEach(function (g) {
+    g[2].forEach(function (k) { files[CATALOG.screen(k).href.replace(/\?.*$/, '')] = 1; });
   });
   document.getElementById('nScreens').textContent = Object.keys(files).length;
 })();

@@ -56,13 +56,13 @@
 
         <!-- 目的地 -->
         <div class="pin pin--red" style="left:67%; top:45%">
-          <span class="pin__label">水利路的老玻璃窯</span>
+          <span class="pin__label" id="pinName">水利路的老玻璃窯</span>
           <span class="pin__drop"><span data-icon="place"></span></span>
         </div>
       </div>
 
       <!-- 底部：三行字，一個取消 -->
-      <div class="sheet sheet--drag is-collapsed" data-drag>
+      <div class="sheet sheet--drag is-collapsed" data-drag style="--sheet-min:372px">
         <div class="sheet__handle"></div>
 
         <div class="u-row u-gap4" style="margin-bottom:16px">
@@ -71,10 +71,10 @@
           </span>
           <span class="u-fill">
             <span style="display:block; font-size:22px; font-weight:800; line-height:1.2">
-              還有 <span class="num">700</span> 公尺
+              還有 <span class="num" id="remain">700</span> 公尺
             </span>
             <span style="display:block; font-size:14px; color:var(--yoxi-slate); margin-top:2px">
-              往水利路的老玻璃窯
+              往<span id="toName">水利路的老玻璃窯</span>
             </span>
           </span>
         </div>
@@ -85,7 +85,7 @@
         <div class="card card--pad u-row u-gap3" style="background:var(--yoxi-cream); border:0">
           <span data-icon="bell" style="width:22px;height:22px;flex:none"></span>
           <span style="font-size:14px; line-height:1.6">
-            <b>這 12 分鐘我們不打擾你。</b>到了才響 ——
+            <b>這 <span id="mins">9</span> 分鐘我們不打擾你。</b>到了才響 ——
             路上不用一直看手機，這段路本來就不是拿來滑的。
           </span>
         </div>
@@ -102,8 +102,8 @@
 
         <div style="display:grid; gap:8px; margin-top:16px">
           <!-- demo 專用：正式版由定位自動觸發 -->
-          <a class="demo-btn" href="unlock.html">我到了（模擬抵達）</a>
-          <a class="btn-link" href="explore.html" style="justify-content:center">取消</a>
+          <a class="demo-btn" id="arrive" href="unlock.html">我到了（模擬抵達）</a>
+          <a class="btn-link" data-back href="explore.html" style="justify-content:center">取消</a>
         </div>
       </div>
 
@@ -116,5 +116,22 @@
 <script src="../js/state.js"></script>
 <script src="../js/shell.js"></script>
 <script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 目的地由 ?id= 決定，預設是今天的地方。以前三處寫死「水利路的老玻璃窯」：
+     從「還沒去的地方」點護城河再按「走路前往」，前往頁說的是另一個地方。 */
+  const id = new URLSearchParams(location.search).get('id') || 'glass-kiln';
+  const P  = MOCK.findPlace(id);
+  document.title = '前往 ' + P.name + ' — yoxi 城事';
+  document.getElementById('pinName').textContent = P.name;
+  document.getElementById('toName').textContent  = P.name;
+  /* 8:10 出發、現在 8:14：走了大約 200 公尺。剩下的距離與分鐘數用同一個速度算，
+     不然「還有 700 公尺」旁邊寫「這 12 分鐘」，兩個數字對不起來。 */
+  const remain = P.distance != null ? Math.max(200, P.distance - 200) : 700;
+  document.getElementById('remain').textContent = remain;
+  document.getElementById('mins').textContent   = Math.max(1, Math.round(remain / 75));
+  document.getElementById('arrive').href = 'unlock.html?id=' + encodeURIComponent(P.id);
+})();
+</script>
 </body>
 </html>

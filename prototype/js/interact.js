@@ -201,13 +201,34 @@
   /* 重設                                                                */
   /* ------------------------------------------------------------------ */
 
+  /* data-confirm="訊息" 的重設先問一次。設定頁的「清除我的足跡」是破壞性動作，
+     評審好奇按一下，現場的八張明信片、點數、獎章進度全部歸零。
+     demo 首頁的「重設」沒有 data-confirm，那顆本來就是要立刻清。 */
   function initReset() {
     document.querySelectorAll('[data-reset]').forEach(function (el) {
-      el.addEventListener('click', function (e) {
-        e.preventDefault();
+      const doReset = function () {
         if (window.STATE) STATE.reset();
         el.textContent = '已重設 ✓';
         setTimeout(function () { location.reload(); }, 500);
+      };
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        const msg = el.dataset.confirm;
+        if (!msg) return doReset();
+        const host = document.querySelector('.device') || document.body;
+        const scrim = document.createElement('div');
+        scrim.className = 'scrim';
+        scrim.innerHTML =
+          '<div class="modal" style="border-radius:var(--r-card)">' +
+            '<p class="modal__text">' + msg + '</p>' +
+            '<div style="display:grid; gap:8px">' +
+              '<button class="btn-primary" data-yes>清除</button>' +
+              '<button class="btn-ghost" data-no>先不要</button>' +
+            '</div></div>';
+        scrim.querySelector('[data-yes]').onclick = function () { scrim.remove(); doReset(); };
+        scrim.querySelector('[data-no]').onclick  = function () { scrim.remove(); };
+        scrim.addEventListener('click', function (ev) { if (ev.target === scrim) scrim.remove(); });
+        host.appendChild(scrim);
       });
     });
   }

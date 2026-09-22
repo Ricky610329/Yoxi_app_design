@@ -193,8 +193,9 @@
     acts.forEach((id, n) =>
       document.getElementById(id).classList.toggle('is-on', n === i));
     const btn = document.getElementById('nextBtn');
-    btn.textContent = i === acts.length - 1 ? '看收藏' : '繼續';
-    btn.style.visibility = (i === 2 || i === 3) ? 'hidden' : 'visible';
+    /* 幕 3 自己有「跳過」；幕 4 以前是全流程唯一非選不可的一幕，現在可以先不選 */
+    btn.textContent = i === acts.length - 1 ? '看收藏' : (i === 3 ? '先不選' : '繼續');
+    btn.style.visibility = i === 2 ? 'hidden' : 'visible';
   };
 
   /* 幕 1：步數往上跳。刻意慢 —— 這是回顧不是載入條。 */
@@ -216,7 +217,8 @@
   }
 
   document.getElementById('nextBtn').onclick = e => {
-    if (idx < acts.length - 1) { e.preventDefault(); show(idx + 1); }
+    if (idx === 3)               { e.preventDefault(); STATE.setToday({ done: true }); paintDone(); show(4); }
+    else if (idx < acts.length - 1) { e.preventDefault(); show(idx + 1); }
     else SHELL.go('album.html');
   };
 
@@ -242,6 +244,7 @@
     const T = STATE.all.today;
     document.getElementById('doneMood').dataset.icon =
       { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[T.mood] || 'moodGood';
+    document.getElementById('doneMood').style.display = T.mood ? '' : 'none';
     const arts = ['glass', 'market', 'moat'];
     const picked = T.photo != null ? arts[T.photo] : null;
     document.getElementById('donePics').innerHTML =

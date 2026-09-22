@@ -108,7 +108,7 @@
         <!-- 點景點浮出的小卡。不能沿用探索地圖的 bottom:88px（那是為了避開
              tab bar 算的），但也不能貼到地圖下緣 —— 那會蓋掉左下角的城事開關，
              變成「開得起來、關不掉」。所以停在開關上方。 -->
-        <a class="peek" id="peek" href="place.html" style="bottom:66px">
+        <a class="peek peek--ride" id="peek" href="place.html" style="bottom:66px">
           <span class="peek__img"></span>
           <span class="u-fill" style="min-width:0">
             <span data-peek-name style="display:block; font-weight:800; line-height:1.3"></span>
@@ -192,7 +192,7 @@
                         fill="var(--yoxi-navy)"/>
                 </svg>
               </a>
-              <a class="route-input__field" href="pickup.html">
+              <a class="route-input__field" href="pickup.html?to=1">
                 <span class="route-input__value route-input__value--ph">請輸入下車點可預估車資</span>
               </a>
             </div>
@@ -278,7 +278,13 @@
     if (!on) pk.close();
   }
   btn.onclick = function () { setLayer(!btn.classList.contains('is-on')); };
-  setLayer(new URLSearchParams(location.search).get('layer') === 'on');
+  const q = new URLSearchParams(location.search);
+  setLayer(q.get('layer') === 'on');
+  /* ?peek=1：開著小卡，給稽核量「小卡不遮住 pin 與浮動鈕」用 */
+  if (q.has('peek')) {
+    const t = spots.findIndex(function (s) { return s.state === 'today'; });
+    if (t >= 0) pk.show(t);
+  }
 })();
 </script>
 </body>

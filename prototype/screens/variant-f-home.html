@@ -109,7 +109,7 @@
         <!-- 小卡用單行版。F 的地圖因為多了一排模式 pill 只剩 344px，
              換成 E 那種兩顆按鈕的堆疊卡會直接蓋掉整片景點。
              「設為下車點」是變體 E 的主張，F 的主張是模式切換，各留一個就好。 -->
-        <a class="peek" id="peek" href="place.html" style="bottom:var(--sp-3)">
+        <a class="peek peek--ride" id="peek" href="place.html" style="bottom:var(--sp-3)">
           <span class="peek__img"></span>
           <span class="u-fill" style="min-width:0">
             <span data-peek-name style="display:block; font-weight:800; line-height:1.3"></span>
@@ -195,7 +195,7 @@
                         fill="var(--yoxi-navy)"/>
                 </svg>
               </a>
-              <a class="route-input__field" href="pickup.html">
+              <a class="route-input__field" href="pickup.html?to=1">
                 <span class="route-input__value route-input__value--ph">請輸入下車點可預估車資</span>
               </a>
             </div>
@@ -363,6 +363,11 @@
   if (new URLSearchParams(location.search).get('mode') === 'today') {
     SHELL.ready(function () {
       modes.querySelector('.pill[data-tab="today"]').click();
+      /* ?peek=1：開著小卡，給稽核量「小卡不遮住 pin 與浮動鈕」用 */
+      if (new URLSearchParams(location.search).has('peek')) {
+        const t = spots.findIndex(function (s) { return s.state === 'today'; });
+        if (t >= 0) pk2.show(t);
+      }
     });
   }
 

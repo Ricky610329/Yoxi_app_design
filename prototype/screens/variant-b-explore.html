@@ -76,7 +76,7 @@
              style="position:absolute; left:16px; top:calc(var(--statusbar-h) + 50px); z-index:12;
                     padding:10px 14px; border-radius:var(--r-card);
                     background:rgba(255,255,255,.96); box-shadow:var(--sh-card)">
-          <div id="cov" style="font-size:22px; font-weight:800; font-style:italic; line-height:1">14%</div>
+          <div id="cov" style="font-size:22px; font-weight:800; font-style:italic; line-height:1">28%</div>
           <div style="font-size:11px; color:var(--yoxi-slate); margin-top:2px">
             的新竹被你點亮了
           </div>
@@ -87,9 +87,10 @@
       <!-- ===== 底部 sheet ===== -->
       <div class="sheet sheet--drag is-collapsed" data-drag style="--sheet-min:310px; --sheet-max:64%">
         <div class="sheet__handle"></div>
-        <p class="ai-note" style="margin:0 -16px 12px; background:none; padding:0 0 0 2px">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
 
-        <!-- 收合態就看得到的：今天的地方 -->
+        <!-- 收合態就看得到的：今天的地方。
+             AI 免責聲明以前放在這裡的第一行 —— 這張畫面最貴的一行給了免責聲明，
+             等於自己製造了「今天的地方份量變小」那個代價。移到展開態。 -->
         <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
                     color:var(--yoxi-slate); margin-bottom:8px">今天的地方</div>
 
@@ -119,6 +120,7 @@
 
         <!-- 往上拉才看得到的 -->
         <div class="divider" style="margin:20px 0"></div>
+        <p class="ai-note" data-expand-only style="margin:-8px -16px 12px; background:none; padding:0 0 0 2px">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
 
         <div class="sec" style="margin-bottom:10px">
           <h2 class="sec__t sec__t--sm">這個月的路線</h2>

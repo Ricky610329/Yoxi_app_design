@@ -28,10 +28,9 @@
 
       <header class="hdr-red hdr-red--compact">
         <div class="hdr-red__bar">
-          <a class="hdr-red__close" href="album.html"><span data-icon="close"></span></a>
+          <a class="hdr-red__close" data-back href="album.html"><span data-icon="close"></span></a>
           <a class="hdr-red__action u-row u-gap2" href="#" data-share="分享這張明信片">
-            <span data-icon="share" style="width:18px;height:18px;display:block;
-                  filter:brightness(0) invert(1)"></span>
+            <span class="ic-ondark" data-icon="share" style="width:18px;height:18px;display:block"></span>
             分享
           </a>
         </div>
@@ -61,8 +60,8 @@
         <div style="padding:20px 16px 0">
           <div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>
           <a class="card card--pad u-row u-gap4" id="badgeLink" href="badge.html">
-            <span class="badge badge--locked" style="width:auto">
-              <span class="badge__disc"><span data-icon="badge"></span></span>
+            <span class="badge badge--locked" style="width:auto" id="badgeWrap">
+              <span class="badge__disc"><span data-icon="badge" id="badgeIcon"></span></span>
             </span>
             <span class="u-fill">
               <span id="badgeName" style="display:block; font-weight:800"></span>
@@ -181,7 +180,10 @@
   if (owner) {
     const pr = STATE.badge(owner.id);
     document.getElementById('badgeName').textContent = '〈' + pr.name + '〉';
-    document.getElementById('badgeProg').textContent = '收集 ' + pr.done + '/' + pr.total;
+    document.getElementById('badgeProg').textContent = pr.got ? '已收集' : '收集 ' + pr.done + '/' + pr.total;
+    /* 圖示與灰階以前是靜態的：集滿的〈老車站〉也畫成未獲得 */
+    document.getElementById('badgeWrap').classList.toggle('badge--locked', !pr.got);
+    document.getElementById('badgeIcon').dataset.icon = pr.icon;
     if (badgeLink) badgeLink.href = 'badge.html?id=' + owner.id;
   } else {
     document.getElementById('badgeName').textContent = '還沒歸到任何一枚獎章';
