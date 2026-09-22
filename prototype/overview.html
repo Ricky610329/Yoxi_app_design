@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>全景圖 — yoxi 城事</title>
 <!--
-  全景圖：一次看到所有畫面。
+  全景圖：一次看到所有主線畫面，依所屬分頁分組。
 
-  縮圖是「活的」—— 直接用 iframe 縮放真實畫面，不是預先截圖。
-  畫面改了這裡自動跟著更新，不會過期。
+  三條 demo 流程（附縮圖與講稿）在 index.html，這裡不再重複一份。
+  畫面清單來自 js/catalog.js；縮圖由 tools/shoot.py 產生，改了畫面重跑一次即可。
 
-  兩個區塊：
-  1. 三條流程：橫向排列，可以直接看出每條路徑走過哪些畫面。
-     這一段直接就是簡報裡的流程圖素材。
-  2. 全部畫面：依所屬分頁分組的牆。
+  不用 iframe 的原因：這頁有數十格，iframe 會變成數百個子資源請求，
+  載入慢而且常常有幾格還沒畫完就被看到空白 —— 在比賽現場的筆電上更不可靠。
 
   直接雙擊開啟即可，不需要伺服器。
 -->
@@ -26,18 +24,27 @@
   .wrap { max-width: 1440px; margin: 0 auto; padding: 40px 24px 96px; }
 
   .top { display: flex; align-items: flex-end; justify-content: space-between;
-         gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+         gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
   .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
   .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; }
   .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+
+  /* 分頁式目錄：點一下跳到那一組 */
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 8px; }
+  .toc a {
+    display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px;
+    border-radius: 999px; background: #fff; border: 1px solid var(--yoxi-line);
+    font-size: 13px; font-weight: 800;
+  }
+  .toc a:hover { border-color: var(--yoxi-navy); }
+  .toc a i { font-style: italic; color: var(--yoxi-slate); font-weight: 800; }
 
   /* --- 縮圖 --------------------------------------------------------
      寬度抽成 --tw，高度由圖的長寬比（430:912）算出來，
      不手填才不會因為差幾個像素而把手機底部裁掉。 */
   :root { --tw: 198px; }
-  .flowrow { --tw: 168px; }                    /* 流程列一次要排 6 格，小一號 */
-  @media (max-width: 1440px) { :root { --tw: 180px; } .flowrow { --tw: 156px; } }
-  @media (max-width: 1180px) { :root { --tw: 164px; } .flowrow { --tw: 140px; } }
+  @media (max-width: 1440px) { :root { --tw: 180px; } }
+  @media (max-width: 1180px) { :root { --tw: 164px; } }
 
   .thumb { width: var(--tw); flex: none; }
   .thumb__frame {
@@ -62,23 +69,9 @@
   .k-mod  { background: var(--yoxi-cream); color: #8A5A1E; }
   .k-new  { background: var(--yoxi-red);   color: #fff; }
 
-  /* --- 流程 -------------------------------------------------------- */
-  .flowrow {
-    background: #fff; border-radius: var(--r-card); border: 1px solid var(--yoxi-line);
-    padding: 20px; margin-bottom: 16px;
-  }
-  .flowrow__h { margin-bottom: 16px; }
-  .flowrow__tag { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
-  .flowrow__n { font-size: 20px; font-weight: 800; margin-top: 3px; }
-  .flowrow__w { font-size: 14px; color: var(--yoxi-slate); margin-top: 5px; line-height: 1.6; }
-  .strip { display: flex; align-items: flex-start; gap: 2px; overflow-x: auto; padding-bottom: 6px; }
-  .strip::-webkit-scrollbar { height: 8px; }
-  .strip::-webkit-scrollbar-thumb { background: var(--yoxi-slate-lite); border-radius: 999px; }
-  .hop { flex: none; align-self: center; padding: 0 4px; margin-top: -40px; }
-
   /* --- 分組牆 ------------------------------------------------------ */
-  .group { margin-top: 40px; }
-  .group__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .group { margin-top: 36px; scroll-margin-top: 16px; }
+  .group__h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   .group__t { font-size: 20px; font-weight: 800; }
   .group__d { font-size: 14px; color: var(--yoxi-slate); }
   .wall { display: flex; flex-wrap: wrap; gap: 20px; }
@@ -95,12 +88,15 @@
     <div>
       <h1>全景圖</h1>
       <p>
-        全部 33 張主線畫面（另有 16 張變體畫面在變體比較頁），以及三條 demo 流程各自走過哪些畫面。<br>
-        點任一張開新分頁看實際畫面。<br>縮圖由 <code>tools/shoot.py</code> 產生，改了畫面重跑一次即可。
+        全部 <span id="nScreens">33</span> 張主線畫面（另有 16 張變體畫面在變體比較頁）。<br>
+        點任一張開新分頁看實際畫面。三條 demo 流程與講稿在 demo 首頁。
       </p>
     </div>
     <div style="display:grid; gap:10px; justify-items:end">
-      <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> 回到 demo 首頁</a>
+      <div style="display:flex; gap:18px">
+        <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
+        <a class="backlink" href="variants.html">變體比較 <span class="arrow"></span></a>
+      </div>
       <div class="legend">
         <span><i class="thumb__k k-keep">沿用</i> 原封不動</span>
         <span><i class="thumb__k k-mod">改造</i> 小幅修改</span>
@@ -109,139 +105,50 @@
     </div>
   </header>
 
-  <div id="flows"></div>
+  <nav class="toc" id="toc"></nav>
   <div id="groups"></div>
 
 </div>
 
+<script src="js/catalog.js"></script>
 <script>
-/* id, 名稱, 類型, 路徑 */
-const S = {
-  home:     ['R1',  '叫車首頁',       'mod',  'screens/home.html'],
-  drawer:   ['R2',  '側邊抽屜',       'mod',  'screens/drawer.html'],
-  pickup:   ['R3',  '設定上車地點',   'keep', 'screens/pickup.html'],
-  ride:     ['R5',  '行程中',         'mod',  'screens/ride.html'],
-  done:     ['R6',  '行程完成',       'mod',  'screens/ride-done.html'],
-  notify:   ['R7',  '通知中心',       'mod',  'screens/notify.html'],
-  points:   ['R9',  '和泰 Points',    'mod',  'screens/points.html'],
+(function () {
+  function thumb(key) {
+    const s = CATALOG.screen(key);
+    return '<div class="thumb">' +
+      '<div class="thumb__frame">' +
+        '<img src="' + s.thumb + '" alt="' + s.name + '" loading="lazy">' +
+        '<a class="thumb__hit" href="screens/' + s.href + '" target="_blank" aria-label="' + s.name + '"></a>' +
+      '</div>' +
+      '<div class="thumb__cap">' +
+        '<div class="thumb__id">' + s.id + '</div>' +
+        '<div class="thumb__n">' + s.name + '</div>' +
+        '<span class="thumb__k k-' + s.kind + '">' + s.kindLabel + '</span>' +
+      '</div>' +
+    '</div>';
+  }
 
-  explore:  ['N1',  '探索 · 卡片',    'new',  'screens/explore.html'],
-  place:    ['N2',  '地方詳情',       'new',  'screens/place.html'],
-  placefar: ['N2',  '地方詳情（遠）',  'new',  'screens/place.html?id=neiwan'],
-  map:      ['N3',  '探索 · 地圖',    'new',  'screens/map.html'],
-  going:    ['N4',  '前往中',         'new',  'screens/going.html'],
-  routes:   ['N5',  '路線列表',       'new',  'screens/routes.html'],
-  route:    ['N6',  '路線詳情',       'new',  'screens/route.html'],
-  fogmap:   ['N7',  '城市足跡',       'new',  'screens/fogmap.html'],
+  document.getElementById('toc').innerHTML = CATALOG.GROUPS.map(function (g, i) {
+    return '<a href="#g' + i + '">' + g[0] + ' <i>' + g[2].length + '</i></a>';
+  }).join('');
 
-  album:    ['N8',  '收藏首頁',       'new',  'screens/album.html'],
-  unlock:   ['N9',  '抵達解鎖',       'new',  'screens/unlock.html'],
-  unlockR:  ['N9',  '解鎖（限定版）',  'new',  'screens/unlock.html?ride=1'],
-  lookback: ['N12', '每日回顧',       'new',  'screens/lookback.html'],
-  elder:    ['N14', '長輩圖',         'new',  'screens/elder.html'],
+  document.getElementById('groups').innerHTML = CATALOG.GROUPS.map(function (g, i) {
+    return '<section class="group" id="g' + i + '">' +
+      '<div class="group__h">' +
+        '<h2 class="group__t">' + g[0] + '</h2>' +
+        '<span class="group__d">' + g[1] + '</span>' +
+      '</div>' +
+      '<div class="wall">' + g[2].map(thumb).join('') + '</div>' +
+    '</section>';
+  }).join('');
 
-  settings: ['N15', '城事設定',       'new',  'screens/settings.html'],
-  push:     ['N16', '模擬推播（早）',  'new',  'screens/push.html'],
-  pushN:    ['N16', '模擬推播（晚）',  'new',  'screens/push.html?when=night'],
-  trips:    ['—',   '行程紀錄',       'keep', 'screens/trips.html'],
-  export:   ['—',   '匯出行程',       'keep', 'screens/export.html'],
-  payment:  ['—',   '付款設定',       'keep', 'screens/payment.html'],
-  coupon:   ['—',   '優惠券',         'keep', 'screens/coupon.html'],
-  tasks:    ['—',   '好康任務',       'keep', 'screens/tasks.html'],
-  support:  ['—',   '客服中心',       'keep', 'screens/support.html'],
-  shop:     ['—',   '點數商城',       'keep', 'screens/shop.html'],
-  invite:   ['—',   '邀請好友',       'keep', 'screens/invite.html'],
-  outarea:  ['R4',  '非服務範圍',     'keep', 'screens/outofarea.html'],
-  rideset:  ['R8',  '乘車設定',       'mod',  'screens/ridesettings.html'],
-  postcard: ['N10', '明信片詳情',     'new',  'screens/postcard.html'],
-  badge:    ['N11', '獎章詳情',       'new',  'screens/badge.html'],
-  week:     ['N13', '週回顧',         'new',  'screens/week.html'],
-};
-
-
-/* href → 預先產生的縮圖檔名。
-   縮圖用 prototype/tools/shoot.sh 產生；改了畫面就重跑一次。
-   不用 iframe 的原因：這頁有數十格，iframe 會變成數百個子資源請求，
-   載入慢而且常常有幾格還沒畫完就被看到空白 —— 在比賽現場的筆電上更不可靠。 */
-const THUMB_ALIAS = {
-  'screens/place.html?id=neiwan':            'place-far',
-  'screens/unlock.html?ride=1':              'unlock-ride',
-  'screens/push.html?when=night':            'push-night',
-  'screens/variant-a-map.html?mode=been':    'variant-a-map-been',
-};
-function thumbSrc(href) {
-  const key = THUMB_ALIAS[href] ||
-    href.replace('screens/', '').replace(/\.html.*$/, '');
-  return 'assets/thumbs/' + key + '.png';
-}
-
-const LABEL = { keep: '沿用', mod: '改造', new: '新增' };
-
-function thumb(key) {
-  const [id, name, kind, href] = S[key];
-  return `
-    <div class="thumb">
-      <div class="thumb__frame">
-        <img src="${thumbSrc(href)}" alt="${name}" loading="lazy">
-        <a class="thumb__hit" href="${href}" target="_blank" aria-label="${name}"></a>
-      </div>
-      <div class="thumb__cap">
-        <div class="thumb__id">${id}</div>
-        <div class="thumb__n">${name}</div>
-        <span class="thumb__k k-${kind}">${LABEL[kind]}</span>
-      </div>
-    </div>`;
-}
-
-const hop = '<span class="hop arrow"></span>';
-
-/* ---- 三條流程 ---- */
-const FLOWS = [
-  ['流程 A', '不搭車的日常',
-   '要證明的：不搭車也玩得下去、AI 推薦有個人化依據、動機來自內容而不是獎勵。',
-   ['push', 'explore', 'place', 'going', 'unlock', 'album']],
-  ['流程 B', '搭車的轉換',
-   '要證明的：探索會直接產生訂單、走不到的地方靠叫車才到得了、點數回流和泰生態系。',
-   ['route', 'placefar', 'ride', 'done', 'unlockR', 'points']],
-  ['流程 C', '晚上的回顧',
-   '要證明的：90% 自動 + 10% 人工的低負擔儀式、隱私分軌、移動自動沉澱成資產。',
-   ['pushN', 'lookback', 'album']],
-];
-
-document.getElementById('flows').innerHTML =
-  '<h2 class="group__t" style="margin-bottom:16px">三條 demo 流程</h2>' +
-  FLOWS.map(([tag, name, why, keys]) => `
-    <section class="flowrow">
-      <div class="flowrow__h">
-        <div class="flowrow__tag">${tag}</div>
-        <div class="flowrow__n">${name}</div>
-        <p class="flowrow__w">${why}</p>
-      </div>
-      <div class="strip">${keys.map(thumb).join(hop)}</div>
-    </section>`).join('');
-
-/* ---- 依分頁分組的牆 ---- */
-const GROUPS = [
-  ['叫車', '既有的叫車流程。除了首頁多一條 tab bar 與一個入口，其餘沒動。',
-   ['home', 'drawer', 'pickup', 'outarea', 'ride', 'done', 'notify']],
-  ['探索', '「接下來去哪」。卡片與地圖是同一批資料的兩種檢視。',
-   ['explore', 'map', 'place', 'placefar', 'route', 'routes', 'going', 'fogmap']],
-  ['收藏', '「去過哪裡」。情感高點與長期價值的載體。',
-   ['album', 'unlock', 'unlockR', 'postcard', 'badge', 'lookback', 'week', 'elder']],
-  ['原封不動的既有畫面', '這些完全沒有為了城事而改動 —— 這本身就是「不破壞既有體驗」的證據。',
-   ['trips', 'export', 'payment', 'coupon', 'tasks', 'support', 'points', 'rideset', 'shop', 'invite']],
-  ['設定與 demo 工具', '資料與隱私講清楚；推播浮層是 demo 用的，不是產品畫面。',
-   ['settings', 'push', 'pushN']],
-];
-
-document.getElementById('groups').innerHTML = GROUPS.map(([t, d, keys]) => `
-  <section class="group">
-    <div class="group__h">
-      <h2 class="group__t">${t}</h2>
-      <span class="group__d">${d}</span>
-    </div>
-    <div class="wall">${keys.map(thumb).join('')}</div>
-  </section>`).join('');
+  /* 主線畫面張數：同一個檔案帶不同參數只算一張 */
+  const files = {};
+  Object.keys(CATALOG.SCREENS).forEach(function (k) {
+    files[CATALOG.SCREENS[k][3].replace(/\?.*$/, '')] = 1;
+  });
+  document.getElementById('nScreens').textContent = Object.keys(files).length;
+})();
 </script>
 </body>
 </html>

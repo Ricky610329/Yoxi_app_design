@@ -3,9 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>yoxi 城事 — UI 原型</title>
+<title>yoxi 城事 — demo 首頁</title>
 <!--
-  原型總覽。決賽 demo 的入口。
+  Demo 首頁。決賽現場從這裡開始。
+
+  這一頁只做一件事：讓講的人在 10 秒內找到「現在要走哪一條流程、第一張是什麼」。
+  三條流程各有一顆「開始導覽」，按下去手機旁邊會出現導覽列（js/tour.js）：
+  這一步要講什麼、下一步是哪一張、鍵盤 ← → 翻頁。
+
+  畫面清單與流程定義在 js/catalog.js，這裡不再另抄一份。
+  全部畫面的牆在 overview.html，變體的並排比較在 variants.html。
 
   直接用瀏覽器開啟即可，不需要起伺服器。
 -->
@@ -15,75 +22,114 @@
 <link rel="stylesheet" href="css/chengshi.css">
 <style>
   body { background: var(--yoxi-mist); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 44px 24px 96px; }
 
-  .wrap { max-width: 900px; margin: 0 auto; padding: 48px 20px 80px; }
-
-  .masthead { margin-bottom: 40px; }
+  /* --- 頁首 -------------------------------------------------------- */
+  .masthead { display: grid; grid-template-columns: 1fr auto; gap: 24px 40px;
+              align-items: end; margin-bottom: 28px; }
   .masthead__kicker {
     display: inline-block; padding: 5px 12px; border-radius: 999px;
     background: var(--yoxi-red); color: #fff;
     font-size: 12px; font-weight: 800; letter-spacing: .06em;
   }
-  .masthead__title {
-    font-size: 40px; font-weight: 800; line-height: 1.15; margin-top: 16px;
+  .masthead__title { font-size: 40px; font-weight: 800; line-height: 1.15; margin-top: 14px; }
+  .masthead__sub { margin-top: 10px; font-size: 16px; color: var(--yoxi-slate);
+                   line-height: 1.7; max-width: 44em; }
+  .masthead__claim { font-weight: 800; color: var(--yoxi-navy); }
+
+  /* demo 狀態 */
+  .state {
+    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+    background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
+    font-size: 13px; color: var(--yoxi-slate); line-height: 1.6; max-width: 360px;
   }
-  .masthead__sub {
-    margin-top: 12px; font-size: 17px; color: var(--yoxi-slate);
-    line-height: 1.7; max-width: 46em;
-  }
+  .state b { color: var(--yoxi-navy); display: block; }
+  .state .btn-ghost { min-height: 40px; font-size: 13px; width: auto; padding: 0 14px; flex: none; }
+
+  /* --- 流程 -------------------------------------------------------- */
+  .sec-h { font-size: 22px; font-weight: 800; margin: 36px 0 4px; }
+  .sec-p { color: var(--yoxi-slate); margin-bottom: 16px; line-height: 1.7; }
 
   .flow {
-    background: #fff; border-radius: var(--r-card);
-    border: 1px solid var(--yoxi-line); overflow: hidden; margin-bottom: 16px;
+    background: #fff; border-radius: var(--r-card); border: 1px solid var(--yoxi-line);
+    padding: 20px 20px 18px; margin-bottom: 16px;
   }
-  .flow__head { padding: 18px 20px 14px; }
-  .flow__tag {
-    font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red);
+  .flow__head { display: flex; align-items: flex-start; justify-content: space-between;
+                gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  .flow__tag { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
+  .flow__name { font-size: 22px; font-weight: 800; margin-top: 3px; }
+  .flow__why { font-size: 14px; color: var(--yoxi-slate); margin-top: 5px; line-height: 1.65;
+               max-width: 52em; }
+  .flow__go {
+    display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px;
+    border-radius: 4px; background: var(--yoxi-navy); color: #fff;
+    font-size: 14px; font-weight: 800; white-space: nowrap; flex: none;
   }
-  .flow__name { font-size: 20px; font-weight: 800; margin-top: 4px; }
-  .flow__why { font-size: 14px; color: var(--yoxi-slate); margin-top: 6px; line-height: 1.65; }
-  .flow__steps {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-    padding: 0 20px 18px;
-  }
-  .step {
-    display: inline-flex; align-items: center; height: 36px; padding: 0 14px;
-    border-radius: 999px; background: var(--yoxi-mist);
-    font-size: 13px; font-weight: 700; white-space: nowrap;
-  }
-  .step:hover { background: var(--yoxi-navy); color: #fff; }
-  .step--go { background: var(--yoxi-navy); color: #fff; }
+  .flow__go:hover { background: var(--yoxi-navy-soft); }
+  .flow__go small { font-weight: 700; opacity: .7; }
 
-  .grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;
+  /* 縮圖列：寬度抽成 --tw，高度由 430:912 算出來 */
+  .flow { --tw: 150px; }
+  @media (max-width: 1180px) { .flow { --tw: 132px; } }
+  .strip { display: flex; align-items: flex-start; gap: 2px; overflow-x: auto; padding-bottom: 6px; }
+  .strip::-webkit-scrollbar { height: 8px; }
+  .strip::-webkit-scrollbar-thumb { background: var(--yoxi-slate-lite); border-radius: 999px; }
+  .hop { flex: none; align-self: center; padding: 0 4px; margin-top: -48px; }
+
+  .thumb { width: var(--tw); flex: none; }
+  .thumb__frame {
+    position: relative; width: var(--tw); height: calc(var(--tw) * 912 / 430);
+    border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 2px 10px rgba(6,32,64,.14);
+    transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
   }
-  .tile {
-    display: block; padding: 14px 16px; border-radius: var(--r-card);
+  .thumb:hover .thumb__frame { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(6,32,64,.24); }
+  .thumb__frame img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .thumb__hit { position: absolute; inset: 0; }
+  .thumb__no {
+    position: absolute; top: 8px; left: 8px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--yoxi-navy); color: #fff; font-size: 12px; font-weight: 800;
+    display: grid; place-items: center; font-style: italic;
+  }
+  .thumb__cap { margin-top: 8px; font-size: 13px; font-weight: 800; line-height: 1.3; }
+  .thumb__id  { font-size: 11px; font-weight: 800; font-style: italic; color: var(--yoxi-slate); }
+
+  /* 講稿 */
+  .script { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-top: 14px;
+            padding-top: 14px; border-top: 1px solid var(--yoxi-line); }
+  @media (max-width: 860px) { .script { grid-template-columns: 1fr; } }
+  .script li { display: flex; gap: 10px; font-size: 13px; line-height: 1.6; color: var(--yoxi-navy); }
+  .script i {
+    flex: none; width: 20px; height: 20px; border-radius: 50%; margin-top: 1px;
+    background: var(--yoxi-mist); color: var(--yoxi-navy);
+    font-size: 11px; font-weight: 800; font-style: italic; display: grid; place-items: center;
+  }
+  .script b { font-weight: 800; }
+
+  /* --- 入口卡 ------------------------------------------------------ */
+  .doors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
+  @media (max-width: 860px) { .doors { grid-template-columns: 1fr; } }
+  .door {
+    display: block; padding: 18px 20px; border-radius: var(--r-card);
     background: #fff; border: 1px solid var(--yoxi-line);
   }
-  .tile:hover { border-color: var(--yoxi-navy); }
-  .tile__id { font-size: 11px; font-weight: 800; color: var(--yoxi-slate); font-style: italic; }
-  .tile__n { font-weight: 800; margin-top: 2px; }
-  .tile__k {
-    display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 3px;
-    font-size: 11px; font-weight: 800;
-  }
-  .k-keep { background: var(--yoxi-mist);  color: var(--yoxi-slate); }
-  .k-mod  { background: var(--yoxi-cream); color: #8A5A1E; }
-  .k-new  { background: var(--yoxi-red);   color: #fff; }
+  .door:hover { border-color: var(--yoxi-navy); }
+  .door__t { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .door__d { font-size: 13px; color: var(--yoxi-slate); margin-top: 6px; line-height: 1.65; }
+  .door code { display: inline-block; margin-top: 8px; padding: 3px 8px; border-radius: 4px;
+               background: var(--yoxi-mist); font-size: 12px; white-space: nowrap; }
 
-  .sec-h { font-size: 22px; font-weight: 800; margin: 40px 0 6px; }
-  .sec-p { color: var(--yoxi-slate); margin-bottom: 18px; line-height: 1.7; }
-
+  /* --- 設計立場 ---------------------------------------------------- */
   .note {
-    margin-top: 40px; padding: 20px; border-radius: var(--r-card);
+    margin-top: 36px; padding: 20px 24px; border-radius: var(--r-card);
     background: #fff; border: 1px solid var(--yoxi-line);
-    font-size: 14px; line-height: 1.85;
+    font-size: 14px; line-height: 1.85; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px;
   }
-  .note b { display: block; margin-bottom: 6px; }
-  .swatches { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
-  .sw { width: 52px; text-align: center; font-size: 10px; color: var(--yoxi-slate); }
-  .sw i { display: block; height: 40px; border-radius: 4px; border: 1px solid rgba(0,0,0,.08); }
+  @media (max-width: 860px) { .note { grid-template-columns: 1fr; } }
+  .note b { display: block; margin-bottom: 4px; }
+  .swatches { display: flex; gap: 8px; margin: 10px 0 8px; flex-wrap: wrap; }
+  .sw { width: 48px; text-align: center; font-size: 10px; color: var(--yoxi-slate); }
+  .sw i { display: block; height: 34px; border-radius: 4px; border: 1px solid rgba(0,0,0,.08); }
 </style>
 </head>
 
@@ -91,177 +137,128 @@
 <div class="wrap">
 
   <header class="masthead">
-    <span class="masthead__kicker">2026 和泰 AI 黑客松 · yoxi</span>
-    <h1 class="masthead__title">yoxi 城事</h1>
-    <p class="masthead__sub">
-      把散落的在地資訊與活動，經 AI 整理成有敘事的地方內容，再轉成探索的動機。
-      使用者不是在 app 上「看資訊」，而是被動機推著去現場。走過的地方沉澱成明信片與獎章。
-      <br><br>
-      <b>不搭車，也打開 yoxi。</b>
-    </p>
+    <div>
+      <span class="masthead__kicker">2026 和泰 AI 黑客松 · yoxi</span>
+      <h1 class="masthead__title">yoxi 城事</h1>
+      <p class="masthead__sub">
+        把散落的在地資訊與活動，經 AI 整理成有敘事的地方內容，再轉成探索的動機。
+        走過的地方沉澱成明信片與獎章。
+        <span class="masthead__claim">不搭車，也打開 yoxi。</span>
+      </p>
+    </div>
+    <div class="state">
+      <span>
+        <b>這不是一疊靜態畫面</b>
+        收下一張明信片，收藏會多一張、獎章會動、點數會入帳。狀態存在瀏覽器裡，跑完一輪按這裡再跑。
+      </span>
+      <button class="btn-ghost" data-reset>重設</button>
+    </div>
   </header>
 
-  <div class="note" style="margin:0 0 28px">
-    <b>這不是一疊靜態畫面</b>
-    收下一張明信片之後，收藏頁真的會多一張、統計會加一、獎章進度會動、
-    路線會前進一站、和泰 Points 會入帳 —— 狀態存在瀏覽器裡，跨畫面都在。
-    底部 sheet 可以拉、地圖可以拖、明信片可以點一下翻面看背面的敘事。
-    <div style="margin-top:14px">
-      <button class="btn-ghost" data-reset style="max-width:220px">重設 demo 狀態</button>
-    </div>
-  </div>
-
-  <h2 class="sec-h">三條 demo 流程</h2>
-  <p class="sec-p">每一條都可以完整點完，中途不會斷。</p>
-
-  <div class="flow">
-    <div class="flow__head">
-      <div class="flow__tag">流程 A</div>
-      <div class="flow__name">不搭車的日常</div>
-      <p class="flow__why">
-        要證明的：不搭車也玩得下去、AI 推薦有個人化依據、動機來自內容而不是獎勵。
-      </p>
-    </div>
-    <div class="flow__steps">
-      <a class="step step--go" href="screens/push.html">▶ 從早上的推播開始</a>
-      <a class="step" href="screens/explore.html">探索首頁</a>
-      <a class="step" href="screens/map.html">地圖檢視</a>
-      <a class="step" href="screens/place.html">地方詳情</a>
-      <a class="step" href="screens/going.html">前往中</a>
-      <a class="step" href="screens/unlock.html">抵達解鎖</a>
-      <a class="step" href="screens/album.html">收藏</a>
-    </div>
-  </div>
-
-  <div class="flow">
-    <div class="flow__head">
-      <div class="flow__tag">流程 B</div>
-      <div class="flow__name">搭車的轉換</div>
-      <p class="flow__why">
-        要證明的：探索會直接產生訂單、走不到的地方靠叫車才到得了、點數回流和泰生態系。
-      </p>
-    </div>
-    <div class="flow__steps">
-      <a class="step step--go" href="screens/route.html">▶ 從路線詳情開始</a>
-      <a class="step" href="screens/place.html?id=neiwan">內灣（28km，走不到）</a>
-      <a class="step" href="screens/ride.html">行程中</a>
-      <a class="step" href="screens/ride-done.html">行程完成</a>
-      <a class="step" href="screens/unlock.html?ride=1">限定版解鎖</a>
-    </div>
-  </div>
-
-  <div class="flow">
-    <div class="flow__head">
-      <div class="flow__tag">流程 C</div>
-      <div class="flow__name">晚上的回顧</div>
-      <p class="flow__why">
-        要證明的：90% 自動 + 10% 人工的低負擔儀式、隱私分軌、移動自動沉澱成資產。
-      </p>
-    </div>
-    <div class="flow__steps">
-      <a class="step step--go" href="screens/push.html?when=night">▶ 從晚上的推播開始</a>
-      <a class="step" href="screens/lookback.html">每日回顧四幕</a>
-      <a class="step" href="screens/album.html">收藏</a>
-    </div>
-  </div>
-
-  <div style="margin:36px 0 8px">
-    <div style="display:flex; gap:12px; flex-wrap:wrap">
-      <a class="btn-primary" href="overview.html" style="max-width:300px">
-        全景圖 —— 一次看到所有畫面
-      </a>
-      <a class="btn-ghost" href="variants.html" style="max-width:300px">
-        變體比較 —— 兩個問題、七個變體
-      </a>
-    </div>
-    <p class="sec-p" style="margin-top:10px">
-      第二個問題是「探索的地圖能不能就用叫車那一張」。三個合一變體都帶可驗收的防護承諾，
-      跑 <code>python prototype/tools/verify-quiet.py</code> 會把六條承諾的實測數字、互動測試、以及全站的死按鈕與數字矛盾一次印出來。
-    </p>
-  </div>
-
-  <h2 class="sec-h">全部畫面</h2>
+  <h2 class="sec-h" id="flows">三條 demo 流程</h2>
   <p class="sec-p">
-    <span class="tile__k k-keep">沿用</span> 原封不動 ·
-    <span class="tile__k k-mod">改造</span> 既有畫面的小幅修改 ·
-    <span class="tile__k k-new">新增</span> 全新畫面
+    每條都可以完整點完。按「開始導覽」，手機旁邊會多一條給講的人看的列：這一步要講什麼、下一步是哪一張，
+    鍵盤 <kbd>←</kbd> <kbd>→</kbd> 翻頁。在 app 裡照著點也會留在流程上。
   </p>
+  <div id="flowList"></div>
 
-  <div class="grid" id="grid"></div>
+  <h2 class="sec-h">其他頁面</h2>
+  <div class="doors">
+    <a class="door" href="overview.html">
+      <span class="door__t">全景圖 <span class="arrow"></span></span>
+      <span class="door__d">全部 <span id="nScreens">33</span> 張主線畫面依分頁分組的牆，標示沿用／改造／新增。</span>
+    </a>
+    <a class="door" href="variants.html">
+      <span class="door__t">變體比較 <span class="arrow"></span></span>
+      <span class="door__d">地圖該歸誰？兩個問題、七個變體並排。第二題把探索的地圖併進叫車那一張，附可驗收的防護承諾。</span>
+    </a>
+    <div class="door">
+      <span class="door__t">驗收</span>
+      <span class="door__d">六條防護承諾的實測數字、互動測試、全站死按鈕與數字矛盾，一個指令印出來：
+        <code>python prototype/tools/verify-quiet.py</code></span>
+    </div>
+  </div>
 
   <div class="note">
-    <b>設計立場</b>
-    尊重 yoxi 原有設計，在上面疊加，只在他們的設計確實有問題時才改動。
-    叫車主畫面的收合態 sheet 一個像素都沒動，叫車關鍵路徑的 tap 數與現況相同。
-    唯一的結構性改動是新增底部 tab bar —— yoxi 是少數還在用漢堡抽屜當主導覽的大型叫車 App
-    （Uber、55688、LINE GO 都已是 bottom tab），這也是「找不到優惠券」等抱怨的來源。
-
-    <div class="swatches" style="margin-top:16px">
-      <span class="sw"><i style="background:#FF2E1A"></i>主紅</span>
-      <span class="sw"><i style="background:#F14A42"></i>logo 紅</span>
-      <span class="sw"><i style="background:#062040"></i>墨藍</span>
-      <span class="sw"><i style="background:#FBEBDF"></i>奶油</span>
-      <span class="sw"><i style="background:#EAF1F5"></i>霧</span>
-      <span class="sw"><i style="background:#778AA4"></i>次要</span>
-      <span class="sw"><i style="background:#C9A227"></i>限定金</span>
+    <div>
+      <b>設計立場</b>
+      尊重 yoxi 原有設計，在上面疊加，只在他們的設計確實有問題時才改動。
+      叫車主畫面的收合態 sheet 一個像素都沒動，叫車關鍵路徑的 tap 數與現況相同。
+      唯一的結構性改動是新增底部 tab bar —— yoxi 是少數還在用漢堡抽屜當主導覽的大型叫車 App
+      （Uber、55688、LINE GO 都已是 bottom tab），這也是「找不到優惠券」等抱怨的來源。
     </div>
-    色值取自 yoxi 官方 logo SVG 原始碼、App icon 與官方截圖的像素分析。
-    <b style="margin-top:12px">顏色紀律</b>
-    紅色只負責品牌情緒（頁首、抽屜、地圖 pin），海軍藍只負責「你要按的東西」。
-    這是 yoxi 現有設計的核心分工，新畫面不得破壞。
+    <div>
+      <b>顏色紀律</b>
+      紅色只負責品牌情緒（頁首、抽屜、地圖 pin），海軍藍只負責「你要按的東西」。
+      這是 yoxi 現有設計的核心分工，新畫面不得破壞。
+      <div class="swatches">
+        <span class="sw"><i style="background:#FF2E1A"></i>主紅</span>
+        <span class="sw"><i style="background:#F14A42"></i>logo 紅</span>
+        <span class="sw"><i style="background:#062040"></i>墨藍</span>
+        <span class="sw"><i style="background:#FBEBDF"></i>奶油</span>
+        <span class="sw"><i style="background:#EAF1F5"></i>霧</span>
+        <span class="sw"><i style="background:#778AA4"></i>次要</span>
+        <span class="sw"><i style="background:#C9A227"></i>限定金</span>
+      </div>
+      色值取自 yoxi 官方 logo SVG 原始碼、App icon 與官方截圖的像素分析。
+    </div>
   </div>
 
 </div>
 
+<script src="js/catalog.js"></script>
 <script src="js/state.js"></script>
 <script src="js/interact.js"></script>
 <script>
-const SCREENS = [
-  ['R1', '叫車首頁',      'mod',  'screens/home.html'],
-  ['R2', '側邊抽屜',      'mod',  'screens/drawer.html'],
-  ['R3', '設定上車地點',  'keep', 'screens/pickup.html'],
-  ['R4', '非服務範圍',    'keep', 'screens/outofarea.html'],
-  ['R5', '行程中',        'mod',  'screens/ride.html'],
-  ['R6', '行程完成',      'mod',  'screens/ride-done.html'],
-  ['R7', '通知中心',      'mod',  'screens/notify.html'],
-  ['R8', '乘車設定',      'mod',  'screens/ridesettings.html'],
-  ['R9', '和泰 Points',   'mod',  'screens/points.html'],
-  ['—',  '行程紀錄',      'keep', 'screens/trips.html'],
-  ['—',  '匯出行程',      'keep', 'screens/export.html'],
-  ['—',  '付款設定',      'keep', 'screens/payment.html'],
-  ['—',  '優惠券',        'keep', 'screens/coupon.html'],
-  ['—',  '好康任務',      'keep', 'screens/tasks.html'],
-  ['—',  '客服中心',      'keep', 'screens/support.html'],
-  ['—',  '點數商城',      'keep', 'screens/shop.html'],
-  ['—',  '邀請好友',      'keep', 'screens/invite.html'],
-  ['N1', '探索 · 卡片',   'new',  'screens/explore.html'],
-  ['N2', '地方詳情',      'new',  'screens/place.html'],
-  ['N2', '地方詳情（遠）', 'new',  'screens/place.html?id=neiwan'],
-  ['N3', '探索 · 地圖',   'new',  'screens/map.html'],
-  ['N4', '前往中',        'new',  'screens/going.html'],
-  ['N5', '路線列表',      'new',  'screens/routes.html'],
-  ['N6', '路線詳情',      'new',  'screens/route.html'],
-  ['N7', '城市足跡',      'new',  'screens/fogmap.html'],
-  ['N8', '收藏首頁',      'new',  'screens/album.html'],
-  ['N9', '抵達解鎖',      'new',  'screens/unlock.html'],
-  ['N9', '解鎖（限定版）', 'new',  'screens/unlock.html?ride=1'],
-  ['N10','明信片詳情',    'new',  'screens/postcard.html'],
-  ['N11','獎章詳情',      'new',  'screens/badge.html'],
-  ['N12','每日回顧',      'new',  'screens/lookback.html'],
-  ['N13','週回顧',        'new',  'screens/week.html'],
-  ['N14','長輩圖',        'new',  'screens/elder.html'],
-  ['N15','城事設定',      'new',  'screens/settings.html'],
-  ['N16','模擬推播',      'new',  'screens/push.html'],
-];
+(function () {
+  const tour = function (href, key, i) {
+    return 'screens/' + href + (href.indexOf('?') >= 0 ? '&' : '?') + 'flow=' + key + '&step=' + i;
+  };
 
-const LABEL = { keep: '沿用', mod: '改造', new: '新增' };
+  const thumb = function (st, key, i) {
+    const s = CATALOG.screen(st.s);
+    return '<div class="thumb">' +
+      '<div class="thumb__frame">' +
+        '<img src="' + s.thumb + '" alt="' + s.name + '" loading="lazy">' +
+        '<a class="thumb__hit" href="' + tour(s.href, key, i) + '" aria-label="' + s.name + '"></a>' +
+        '<span class="thumb__no">' + i + '</span>' +
+      '</div>' +
+      '<div class="thumb__cap"><span class="thumb__id">' + s.id + '</span><br>' + s.name + '</div>' +
+    '</div>';
+  };
 
-document.getElementById('grid').innerHTML = SCREENS.map(([id, name, kind, href]) => `
-  <a class="tile" href="${href}">
-    <div class="tile__id">${id}</div>
-    <div class="tile__n">${name}</div>
-    <span class="tile__k k-${kind}">${LABEL[kind]}</span>
-  </a>`).join('');
+  document.getElementById('flowList').innerHTML = CATALOG.FLOWS.map(function (f) {
+    const first = CATALOG.screen(f.steps[0].s);
+    return '<section class="flow" id="flow-' + f.key + '">' +
+      '<div class="flow__head">' +
+        '<div>' +
+          '<div class="flow__tag">' + f.tag + '</div>' +
+          '<div class="flow__name">' + f.name + '</div>' +
+          '<p class="flow__why">' + f.why + '</p>' +
+        '</div>' +
+        '<a class="flow__go" href="' + tour(first.href, f.key, 1) + '">▶ 開始導覽 <small>' +
+          f.steps.length + ' 步</small></a>' +
+      '</div>' +
+      '<div class="strip">' +
+        f.steps.map(function (st, i) { return thumb(st, f.key, i + 1); })
+              .join('<span class="hop arrow"></span>') +
+      '</div>' +
+      '<ol class="script">' +
+        f.steps.map(function (st, i) {
+          return '<li><i>' + (i + 1) + '</i><span><b>' + CATALOG.screen(st.s).name + '</b>　' +
+                 st.say + '</span></li>';
+        }).join('') +
+      '</ol>' +
+    '</section>';
+  }).join('');
+
+  /* 主線畫面張數：同一個檔案帶不同參數只算一張 */
+  const files = {};
+  Object.keys(CATALOG.SCREENS).forEach(function (k) {
+    files[CATALOG.SCREENS[k][3].replace(/\?.*$/, '')] = 1;
+  });
+  document.getElementById('nScreens').textContent = Object.keys(files).length;
+})();
 </script>
 </body>
 </html>

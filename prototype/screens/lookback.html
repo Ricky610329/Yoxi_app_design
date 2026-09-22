@@ -217,7 +217,7 @@
 
   document.getElementById('nextBtn').onclick = e => {
     if (idx < acts.length - 1) { e.preventDefault(); show(idx + 1); }
-    else location.href = 'album.html';
+    else SHELL.go('album.html');
   };
 
   /* 幕 3：選照片或跳過，兩者都能走完 */
@@ -235,7 +235,7 @@
     setTimeout(() => { paintDone(); show(4); }, 500);
   });
 
-  document.getElementById('skipBtn').onclick = () => location.href = 'album.html';
+  document.getElementById('skipBtn').onclick = () => SHELL.go('album.html');
 
   /* 完成卡依實際選擇渲染 */
   function paintDone() {

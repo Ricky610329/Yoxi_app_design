@@ -69,6 +69,20 @@ if (new URLSearchParams(location.search).has('still')) {
   document.documentElement.setAttribute('data-still', '');
 }
 
+/* ?flow=a：demo 導覽列（js/tour.js）。只在帶參數時才載入 catalog 與 tour，
+   平常打開畫面一個位元組都不多，49 張畫面也不用各自加 script 標籤。
+   async=false 讓兩支照順序執行：tour 需要 catalog 先在。 */
+if (new URLSearchParams(location.search).has('flow')) {
+  const base = ((document.currentScript && document.currentScript.src) || '')
+    .replace(/[^\/]*$/, '');
+  ['catalog.js', 'tour.js'].forEach(function (f) {
+    const s = document.createElement('script');
+    s.src = base + f;
+    s.async = false;
+    document.head.appendChild(s);
+  });
+}
+
 const TABSETS = {
   default: [
     { id: 'ride',    label: '叫車', icon: 'tabRide',    href: 'home.html' },
@@ -555,6 +569,13 @@ function yieldTabbar(on) {
   document.getElementById('tabbar')?.classList.toggle('is-yield', on);
 }
 
+/* 程式化跳頁。有導覽列時把 flow 參數帶著走，否則就是 location.href。
+   抵達解鎖的「收進收藏」與每日回顧的「看收藏」都是用 JS 跳的，
+   不經過 <a>，導覽列攔不到 —— 走到這裡就會掉出流程。 */
+function go(href) {
+  location.href = window.TOUR ? TOUR.href(href) : href;
+}
+
 /* --------------------------------------------------------------------------
    啟動
    -------------------------------------------------------------------------- */
@@ -596,6 +617,7 @@ if (document.readyState === 'loading') {
 window.SHELL = {
     nearSpots: nearSpots,
     ready: ready,
+    go: go,
     toast: toast,
     shareSheet: shareSheet,
   injectIcons, injectArt, postcardArt, showPush, yieldTabbar,

@@ -158,7 +158,7 @@
       note: (document.getElementById('oneLine').value || '').slice(0, 10),
     });
     /* 搭車那條線的重點是點數回流和泰生態系，終點該是點數頁 */
-    location.href = isRide ? 'points.html' : 'album.html';
+    SHELL.go(isRide ? 'points.html' : 'album.html');
   };
 
   /* ?still=1 直接跳到成品那一幕。縮圖若抓到生成動畫的中途，
