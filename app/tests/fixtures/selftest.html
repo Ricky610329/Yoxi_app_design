@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>harness 自我測試</title>
+<!--
+  驗 harness.js 本身：對 mini-app.html 跑一組「有的該過、有的該掛」的測試，
+  再逐條比對 harness 判得對不對（timeout、例外變 FAIL、軟斷言、死按鈕、禁用詞、
+  可按數、hex、錯誤攔截、reset／reload、only 過濾、找不到的 spec 檔）。
+
+    python app/tests/run.py --selftest
+-->
+<style>
+  body { font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; margin: 16px; }
+  #app-frame { width: 390px; height: 844px; position: absolute; left: -9999px; top: 0; border: 0; }
+  tr.fail td { background: #fdecec; }
+</style>
+</head>
+<body>
+<h1 id="status">跑中…</h1>
+<div id="table"></div>
+<iframe id="app-frame"></iframe>
+<pre id="result"></pre>
+<script>history.replaceState(null, '', location.pathname + '?app=mini-app.html');</script>
+<script src="../harness.js"></script>
+<script src="does-not-exist.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script>
+/* 期望：test 名 → [應該通過?, 訊息要符合的 regex, 訊息不該出現的 regex] */
+const EXPECT = {};
+function spec(t, name, ok, re, not, fn, opt) { EXPECT[name] = [ok, re, not]; t.test(name, fn, opt); }
+
+T.spec('alpha', function (t) {
+  spec(t, 'go／click／at 走一圈', true, null, null, async function (app) {
+    await app.go('/ride');
+    await app.click('[data-act="go-place"]');
+    await app.at('/place/glass-kiln');
+    await app.click('[data-act="set-dropoff"]');
+    await app.at('/ride');
+    t.eq(app.APP.store.get('dropoff').id, 'glass-kiln', 'dropoff');
+    t.eq(app.storage('store').dropoff.id, 'glass-kiln', '寫進 localStorage');
+  });
+  spec(t, 'data-back 回來處', true, null, null, async function (app) {
+    await app.go('/explore');
+    await app.go('/place/neiwan');
+    await app.click('[data-back]');
+    await app.at('/explore');
+  });
+  spec(t, 'route() 與 params', true, null, null, async function (app) {
+    await app.go('/place/abc');
+    t.eq(app.route().params.id, 'abc');
+    t.eq(app.doc.body.getAttribute('data-route'), '/place/:id');
+  });
+  spec(t, 'timeout 變 FAIL', false, /逾時 300ms/, null, function () {
+    return new Promise(function () {});
+  }, { timeout: 300 });
+  spec(t, '例外變 FAIL 並附 stack', false, /例外：故意丟的.*（at /, null, async function () {
+    throw new Error('故意丟的');
+  });
+  spec(t, '軟斷言全部記下', false, /x：得到 1，預期 2.*y：\[1\] 不含 2/, null, async function () {
+    t.eq(1, 2, 'x');
+    t.ok(true);
+    t.includes([1], 2, 'y');
+  });
+  spec(t, '死按鈕抓得到', false, /死按鈕 3 個.*沒反應.*#\/nowhere 不是已註冊的 route.*假返回（data-back 要放在 <a> 上/, /好的連結/, async function (app) {
+    await app.go('/dead');
+    t.noDeadButtons(app);
+  });
+  spec(t, '禁用詞抓得到（文字＋placeholder；白名單不算）', false, /每日.*挑戰.*placeholder/, /任務/, async function (app) {
+    await app.go('/banned');
+    t.noBannedWords(app);
+  });
+  spec(t, '乾淨的畫面兩個都過', true, null, null, async function (app) {
+    await app.go('/ride');
+    t.noDeadButtons(app);
+    t.noBannedWords(app);
+  });
+  spec(t, 'countTappables 不算隱藏的', true, null, null, async function (app) {
+    await app.go('/many');
+    t.eq(t.countTappables(app), 11);
+    await app.go('/ride');
+    t.eq(t.countTappables(app), 2);
+  });
+  spec(t, 'hex 只抓宣告值', false, /hex 色碼 1 處：a\.css:2 color: #fff/, /tabbar|#fab/, async function () {
+    t.noHardcodedHex('#tabbar, #fab { background: var(--x); }\n.a { color: #fff; }\n/* #000 */ .b{background:url(#abc)}', 'a.css');
+  });
+  spec(t, 'iframe 的錯誤收得到', true, null, null, async function (app) {
+    await app.go('/boom');
+    await app.tick(50);
+    t.ok(app.errors.some(function (e) { return /boom 故意丟的/.test(e); }), '錯誤：' + app.errors.join('；'));
+  });
+  spec(t, 'reset 清 store 並略過 onboarding', true, null, null, async function (app) {
+    app.APP.store.set('dropoff', { id: 'x' });
+    await app.reset();
+    t.eq(app.APP.store.get('dropoff'), null);
+    t.eq(app.APP.store.get('onboarded'), true);
+    await app.at('/ride');
+    t.ok(app.readyMs != null, 'readyMs=' + app.readyMs);
+  });
+  spec(t, 'reload 保留 store', true, null, null, async function (app) {
+    app.APP.store.set('dropoff', { id: 'y' });
+    await app.reload();
+    t.eq(app.APP.store.get('dropoff').id, 'y');
+  });
+  spec(t, 'reset({onboarded:false}) 到 welcome', true, null, null, async function (app) {
+    await app.reset({ onboarded: false });
+    await app.at('/welcome');
+  });
+  spec(t, 'waitFor 逾時訊息', false, /等待逾時 100ms：永遠不會/, null, async function (app) {
+    await app.waitFor(function () { return false; }, 100, '永遠不會');
+  });
+  spec(t, 'click 找不到元素', false, /click 找不到 #nope/, null, async function (app) {
+    await app.click('#nope', 100);
+  });
+});
+
+T.spec('beta', function (t) {
+  spec(t, 'beta 唯一的一條', true, null, null, async function () { t.ok(true); });
+});
+
+window.addEventListener('load', async function () {
+  const checks = [];
+  function check(name, ok, msg) { checks.push({ name: name, ok: !!ok, msg: msg || '', ms: 0 }); }
+
+  const full = await T.run();
+  const got = {};
+  full.specs.forEach(function (s) { s.tests.forEach(function (x) { got[x.name] = x; }); });
+  Object.keys(EXPECT).forEach(function (n) {
+    const e = EXPECT[n], g = got[n];
+    if (!g) return check(n, false, '沒有跑到');
+    let ok = g.ok === e[0];
+    if (e[1] && !e[1].test(g.msg)) ok = false;
+    if (e[2] && e[2].test(g.msg)) ok = false;
+    check(n, ok, (e[0] ? '應 PASS' : '應 FAIL') + '，實際 ' + (g.ok ? 'PASS' : 'FAIL') + '：' + g.msg);
+  });
+  check('找不到的 spec 檔列出來', full.missing.indexOf('does-not-exist.spec.js') >= 0, JSON.stringify(full.missing));
+  check('summary 對得上', full.summary.total === Object.keys(EXPECT).length &&
+    full.summary.fail === Object.keys(EXPECT).filter(function (n) { return !EXPECT[n][0]; }).length,
+    JSON.stringify(full.summary));
+
+  const onlyB = await T.run({ only: 'beta' });
+  check('only=beta 只跑 beta', onlyB.specs.length === 1 && onlyB.specs[0].name === 'beta' && onlyB.summary.ok,
+    JSON.stringify(onlyB.specs.map(function (s) { return s.name; })));
+  const onlyX = await T.run({ only: 'nope' });
+  check('only=不存在 的 spec 報 FAIL', !onlyX.summary.ok && /找不到這個 spec/.test(onlyX.specs[0].tests[0].name),
+    JSON.stringify(onlyX.specs));
+
+  const fail = checks.filter(function (c) { return !c.ok; }).length;
+  const out = { specs: [{ name: 'harness-selftest', tests: checks }], missing: [],
+    summary: { pass: checks.length - fail, fail: fail, total: checks.length, ok: fail === 0 } };
+  document.getElementById('status').textContent = fail ? '自我測試未通過 ' + fail : '自我測試全部通過 ' + checks.length;
+  document.getElementById('result').textContent = JSON.stringify(out);
+  document.documentElement.setAttribute('data-selftest-done', '1');
+});
+</script>
+</body>
+</html>

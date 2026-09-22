@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>mini app — yoxi 城事</title>
+<!--
+  極小的假 app：只實作 ARCHITECTURE.md §4 的 DOM 契約與 APP.nav／resolve／store，
+  用來驗 harness 本身（fixtures/selftest.html），不依賴真的 app.js 有沒有寫完。
+  /dead 刻意有一顆死按鈕、/banned 刻意有禁用詞、/boom 的 render 會丟例外。
+-->
+<style>
+  body { margin: 0; }
+  .tabbar[hidden] { display: none; }
+  .x-hide { display: none; }
+</style>
+</head>
+<body>
+<div id="app"><div class="stage"><div class="device"><div class="device__screen"><div id="view"></div></div>
+<nav class="tabbar" id="tabbar" hidden></nav></div></div></div>
+<script>
+(function () {
+  const KEY = 'yoxi-chengshi-app-v1';
+  let S = {};
+  try { S = Object.assign({ onboarded: false, dropoff: null }, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  const V = {
+    ride:    { path: '/ride', tab: 'ride', html: '<h1>叫車</h1><a href="#/place/glass-kiln" data-act="go-place">去地方</a><button data-toast="好">吐司</button>' },
+    explore: { path: '/explore', tab: 'explore', html: '<h1>探索</h1><a href="#/place/neiwan">內灣</a>' },
+    album:   { path: '/album', tab: 'album', html: '<h1>收藏</h1>' },
+    place:   { path: '/place/:id', tab: 'explore', html: '<a href="#" data-back="/explore">返回</a><h1>地方</h1><button class="go" data-act="set-dropoff">設為下車點</button>' },
+    settings:{ path: '/settings', tab: null, html: '<a href="#" data-back="/ride">返回</a><h1>設定</h1>' },
+    welcome: { path: '/welcome', tab: null, html: '<h1>歡迎</h1>' },
+    dead:    { path: '/dead', tab: null, html: '<button>沒反應</button><a href="#/nowhere">亂連</a><a href="#/ride">好的連結</a><button data-back="/ride">假返回</button>' },
+    banned:  { path: '/banned', tab: null, html: '<p>每日打卡</p><input placeholder="挑戰一下"><p>好康任務不算</p>' },
+    many:    { path: '/many', tab: null, html: new Array(12).join('<button data-toast="x">b</button>') + '<button class="x-hide" data-toast="x">h</button>' },
+    boom:    { path: '/boom', tab: null, html: null },
+  };
+  const R = Object.keys(V).map(function (n) {
+    const keys = [];
+    const re = new RegExp('^' + V[n].path.replace(/:(\w+)/g, function (_, k) { keys.push(k); return '([^/]+)'; }) + '$');
+    return { name: n, re: re, keys: keys, pattern: V[n].path };
+  });
+  function resolve(path) {
+    for (let i = 0; i < R.length; i++) {
+      const m = R[i].re.exec(path);
+      if (m) { const p = {}; R[i].keys.forEach(function (k, j) { p[k] = m[j + 1]; }); return { name: R[i].name, pattern: R[i].pattern, params: p }; }
+    }
+    return { name: '_404', pattern: '/*', params: {} };
+  }
+  let cur = null, idx = 0;
+  function render() {
+    let h = location.hash.replace(/^#/, '') || '/';
+    const path = h.split('?')[0];
+    if (path === '/') { go(S.onboarded ? '/ride' : '/welcome', { replace: true }); return; }
+    document.documentElement.removeAttribute('data-view-ready');
+    const r = resolve(path);
+    const def = V[r.name] || { tab: null, html: '<h1>找不到</h1><a href="#/ride">回叫車</a>' };
+    cur = { path: path, pattern: r.pattern, params: r.params, tab: def.tab };
+    const main = document.createElement('main');
+    main.className = 'view';
+    main.setAttribute('data-view', r.name);
+    if (r.name === 'boom') { setTimeout(function () { throw new Error('boom 故意丟的'); }, 0); main.innerHTML = '<p>boom</p>'; }
+    else main.innerHTML = def.html;
+    const host = document.getElementById('view');
+    host.innerHTML = '';
+    host.appendChild(main);
+    main.querySelectorAll('[data-toast]').forEach(function (b) { b.onclick = function () {}; });
+    const sd = main.querySelector('[data-act="set-dropoff"]');
+    if (sd) sd.onclick = function () { S.dropoff = { id: r.params.id }; save(); go('/ride'); };
+    document.body.setAttribute('data-view', r.name);
+    document.body.setAttribute('data-route', r.pattern);
+    if (def.tab) document.body.setAttribute('data-tab', def.tab); else document.body.removeAttribute('data-tab');
+    document.title = r.name + ' — yoxi 城事';
+    const tb = document.getElementById('tabbar');
+    tb.hidden = !def.tab;
+    tb.innerHTML = ['ride', 'explore', 'album'].map(function (t) { return '<a class="tabbar__item" href="#/' + t + '">' + t + '</a>'; }).join('');
+    setTimeout(function () {
+      document.documentElement.setAttribute('data-view-ready', '1');
+      document.documentElement.setAttribute('data-app-ready', '1');
+    }, 30);
+  }
+  function go(path, opt) {
+    opt = opt || {};
+    if (opt.replace) history.replaceState({ i: idx }, '', '#' + path);
+    else { idx++; history.pushState({ i: idx }, '', '#' + path); }
+    render();
+  }
+  window.addEventListener('popstate', function (e) { idx = (e.state && e.state.i) || 0; render(); });
+  document.addEventListener('click', function (e) {
+    const a = e.target.closest('a[data-back]');
+    if (a) { e.preventDefault(); APP.nav.back(a.getAttribute('data-back')); }
+  });
+  window.addEventListener('hashchange', function () { if (!history.state) { idx++; history.replaceState({ i: idx }, ''); } render(); });
+  window.APP = {
+    resolve: resolve,
+    nav: {
+      go: go,
+      back: function (fb) { if (idx > 0) history.back(); else go(fb || '/ride', { replace: true }); },
+      current: function () { return cur && { path: cur.path, pattern: cur.pattern, params: cur.params }; },
+    },
+    store: {
+      get: function (k) { return S[k]; },
+      set: function (k, v) { S[k] = v; save(); },
+      reset: function () { S = { onboarded: false, dropoff: null }; save(); },
+    },
+    fmt: { todayMMDD: function () { const d = new Date(); return ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + d.getDate()).slice(-2); } },
+  };
+  history.replaceState({ i: 0 }, '');
+  render();
+})();
+</script>
+</body>
+</html>
