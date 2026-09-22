@@ -778,7 +778,8 @@ function buildTree() {
     add({ id: 'vis:' + th.theme, type: 'theme', parent: 'visions', name: th.title, kind: null, href: 'vision.html#' + th.theme,
           file: null, thumb: null, mini: null, axis: 'vision', meta: { lead: th.lead } });
     th.dirs.forEach(function (d) {
-      add({ id: 'vis:' + th.theme + '-' + d.code, type: 'vision', parent: 'vis:' + th.theme, name: d.name, kind: 'planned',
+      /* 12 張探索稿都建檔了：state 沒寫就是 built，要標「尚未建檔」的才寫 state:'planned' */
+      add({ id: 'vis:' + th.theme + '-' + d.code, type: 'vision', parent: 'vis:' + th.theme, name: d.name, kind: d.state || 'built',
             href: d.href || null, file: d.href ? fileOf(d.href) : null,
             thumb: d.href ? thumbOf(d.href) : null, mini: d.href ? miniOf(d.href) : null, axis: 'vision',
             meta: { one: d.one, answers: d.answers, where: d.where, risk: d.risk, theme: th.theme, code: d.code } });
@@ -798,14 +799,14 @@ function buildTree() {
           axis: 'concept', meta: { lead: g.lead } });
     boardsOf(g).forEach(function (b) {
       add({ id: 'con:board-' + b.href.replace(/^boards\/board-/, '').replace(/\.html$/, ''),
-            type: 'vision', parent: gid, name: b.name, kind: 'planned',
+            type: 'vision', parent: gid, name: b.name, kind: b.state || 'built',
             href: b.href, file: b.href.replace(/^boards\//, ''),
             thumb: b.png, mini: b.mini, axis: 'concept', meta: { one: b.one, board: true } });
     });
     g.items.forEach(function (it) {
       const id = 'con:' + g.group + '-' + it.code;
       const dark = it.thumb === null || !!it.needsNet;      /* 拍不出縮圖的 */
-      add({ id: id, type: 'vision', parent: gid, name: it.name, kind: 'planned',
+      add({ id: id, type: 'vision', parent: gid, name: it.name, kind: it.state || 'built',
             href: it.href, file: fileOf(it.href).replace(/\?.*$/, ''),
             thumb: dark ? null : thumbOf(it.href), mini: dark ? null : miniOf(it.href),
             axis: 'concept',
@@ -815,7 +816,7 @@ function buildTree() {
       (it.phones || []).forEach(function (p) {
         if (p.href === it.href) return;
         const net = !!it.needsNet || !!p.needsNet;
-        add({ id: id + '/' + p.href, type: 'state', parent: id, name: p.label, kind: 'planned',
+        add({ id: id + '/' + p.href, type: 'state', parent: id, name: p.label, kind: it.state || 'built',
               href: p.href, file: fileOf(p.href).replace(/\?.*$/, ''),
               thumb: net ? null : thumbOf(p.href), mini: net ? null : miniOf(p.href),
               axis: 'concept', meta: { group: g.group, code: it.code, needsNet: net } });
