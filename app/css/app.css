@@ -235,6 +235,12 @@ main.view[data-leaving] { pointer-events: none; }
 }
 .photo__credit a { text-decoration: underline; }
 
+/* 圖示磚裡的 <span data-icon>：components.css 的 `.tile-icon svg { 54% }` 是相對於外層 span，
+   而 injectIcons 產生的 span 是 inline、沒有尺寸，svg 就縮成十幾 px 的一小點（設定、分享、前往中、日誌都中）。
+   給 span 本身 54%，svg 填滿它。各區塊自己定尺寸的（.ride-list .tile-icon [data-icon] 等）選擇器較具體，照舊。 */
+.tile-icon > [data-icon] { display: block; width: 54%; height: 54%; }
+.tile-icon > [data-icon] > svg { display: block; width: 100%; height: 100%; }
+
 /* --------------------------------------------------------------------------
    手機（< 560px）：滿版、無圓角、無瀏海、無原型狀態列、無 demo 面板
    --statusbar-h 改成安全區高度：紅色頁首照樣延伸到最上緣，內容避開瀏海。

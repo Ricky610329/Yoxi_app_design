@@ -28,6 +28,17 @@
 - 返回鍵用 `data-back`；`shell.js` 的 `rewriteHref` 會帶 `?from=`，`../` 開頭的路徑會保留。
 - 縮圖：`python prototype/tools/shoot.py`（全部）／`--only a,b`／`--mini`／`--board`。要拍固定狀態就在 URL 帶參數並在 `THUMB_ALIAS` 登記別名。
 
+## `app/`（web app）的規矩
+
+- **契約在 `app/ARCHITECTURE.md`**：API、DOM、測試、分工、路由總表都在那裡；改契約先改那份。人看的在 `app/README.md`。
+- **改 app 不動 `prototype/`**：app 只從 `../prototype` 讀共用檔；需要的新邏輯寫在 `app/`。
+- **四個區塊各自一支檔**：`js/views/{ride,explore,album,system}.js`＋同名的 `css/views/X.css`＋`tests/specs/X.spec.js`；跨區塊的動作走 `APP.ride.setDropoff`、`APP.explore.collect`、`APP.ui.push`、`APP.ui.share`，不改 `js/app.js`。
+- **按鈕用 `element.onclick`＋`data-act="動詞-名詞"`**：測試靠 `data-act` 點；返回鍵是 `<a href="#" data-back="/x">`。
+- **新 CSS 不寫 hex**：顏色、字級、圓角、動畫時間全用 `tokens.css` 的變數（測試會掃）。數字一律走 `APP.fmt`／`STATE`／`MOCK`。
+- **每條 route 要有 spec**：render、死按鈕、禁用詞、可按數（一般 ≤ 10，`/explore`、`/album` ≤ 12）、數字對公式、返回鍵。
+- **收工前**：`python app/tests/run.py` 全綠，而且 `python prototype/tools/verify-quiet.py` 八段 PASS、六條承諾數字與基準相同。
+- **新增檔案**：加進 `app/sw.js` 的 `PRECACHE`、`VERSION` 加一，跑 `python app/tools/check-sw.py`（清單與檔案對不上就 exit 1；`cache.addAll` 全有全無，一個 404 整個安裝失敗）。
+
 ## 常見坑（都踩過）
 
 - Windows 顯示縮放會讓 Chrome 用 1.25 倍出圖：shoot.py 已鎖 `--force-device-scale-factor=1`，自己寫截圖腳本也要帶。

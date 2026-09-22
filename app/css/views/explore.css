@@ -301,6 +301,9 @@
   font-weight: var(--fw-heavy);
 }
 .ex-unlock__goldrow .num { color: var(--gold-lite); }
+/* 深底上的獎章圖示：icons.js 的 badge 把海軍藍寫死在 fill，壓在深底上看不見；外圈與緞帶換成淺金，中間紅點照舊 */
+.ex-unlock__goldrow [data-icon] svg > circle:first-of-type,
+.ex-unlock__goldrow [data-icon] svg > path { fill: var(--gold-lite); }
 
 /* 幕二的三層筆觸（原型 inline 的 rgba 換成 tokens 混色） */
 .ex-gen__l2 { background: linear-gradient(200deg, color-mix(in srgb, var(--yoxi-white) 28%, transparent), transparent 60%); }

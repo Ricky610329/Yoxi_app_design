@@ -6,7 +6,7 @@
 
 /* ---- 共用 ---- */
 .alb { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-.alb-scroll { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-4)); }
+.alb-scroll { padding-bottom: var(--sp-6); }   /* tab bar 的高度 .device__screen.has-tabbar 已經讓過 */
 body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-pad { padding: var(--sp-4) var(--gutter) 0; }
 .alb-pad--stat { padding-top: var(--sp-1); padding-bottom: var(--sp-3); }
@@ -260,8 +260,8 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
   position: relative;
   z-index: 9;
   flex: none;
-  margin-top: calc(var(--r-sheet) * -1);
-  padding: var(--sp-4) var(--gutter) calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-3));
+  /* 不往上疊：地圖底邊是 ODbL 署名。tab bar 的高度 .device__screen.has-tabbar 已經讓過了，不再加一次 */
+  padding: var(--sp-4) var(--gutter) var(--sp-4);
   border-radius: var(--r-sheet) var(--r-sheet) 0 0;
   background: var(--yoxi-white);
   box-shadow: var(--sh-sheet);

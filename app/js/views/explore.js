@@ -118,7 +118,8 @@ function rideOf(p) {
   return { km: km, fare: fmt.fare(km), min: fmt.rideMin(km) };
 }
 
-/* 設為下車點：ride 提供 APP.ride.setDropoff；還沒載入時用同形的內嵌實作 */
+/* 設為下車點：一律走 ride 提供的 APP.ride.setDropoff（契約 §7）。
+   ride.js 在 explore.js 之前載入，正常情況永遠走第一行；內嵌實作只是 ride 沒載到時的保底。 */
 function setDropoff(id, via) {
   if (APP.ride && typeof APP.ride.setDropoff === 'function') return APP.ride.setDropoff(id, via);
   const p = APP.place(id);
@@ -150,6 +151,9 @@ function collect(placeId, opt) {
   if (trip && (trip.placeId === pid || trip.placeId === placeId)) APP.store.set('trip', null);
   const drop = APP.store.get('dropoff');
   if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
+  /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
+  const arrived = APP.store.get('arrivedDemo');
+  if (arrived && (arrived === pid || arrived === placeId)) APP.store.set('arrivedDemo', null);
   APP.emit('state:change');
   return isNew;
 }
@@ -421,12 +425,62 @@ function mountMap(root) {
   });
   placeMe(m, root.querySelector('[data-ex-me]'));
   SHELL.injectIcons(wrap);
+  spreadSpots(m);
 
   /* 一打開就有一個明確的答案：先開今天的地方 */
   const today = m.spots.filter(function (s) { return s.state === 'today'; })[0] || m.spots[0];
   if (today) show(today);
 
   return function () { m.destroy(); };
+}
+
+/* 市中心的景點（舊城區一帶）真實座標只差一兩百公尺，縮圖會疊成一團。
+   mount 後量每顆 .spot 的實際大小，兩兩重疊就沿著圓心連線各推開一半，反覆幾輪；
+   推的時候夾在地圖框內（頂部留給頁首）。跟 ride.js 的 keepClear 同一個想法：寧可離真實位置遠一點，也不要疊。 */
+function spreadSpots(m) {
+  const layer = m.spotsEl;
+  const box = layer.getBoundingClientRect();
+  if (!box.width || !box.height) return;
+  const els = Array.prototype.slice.call(layer.querySelectorAll('.spot'));
+  const it = els.map(function (el) {
+    const r = el.getBoundingClientRect();
+    return { el: el, w: r.width, h: r.height,
+             x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2,
+             dx: 0, dy: 0 };
+  });
+  const GAP = 4;
+  for (let round = 0; round < 60; round++) {
+    let moved = false;
+    for (let i = 0; i < it.length; i++) for (let j = i + 1; j < it.length; j++) {
+      const a = it[i], b = it[j];
+      const ox = (a.w + b.w) / 2 + GAP - Math.abs(a.x - b.x);
+      const oy = (a.h + b.h) / 2 + GAP - Math.abs(a.y - b.y);
+      if (ox <= 0 || oy <= 0) continue;
+      moved = true;
+      /* 沿重疊較小的軸推開（位移最少）；完全同點時往左右分 */
+      if (ox < oy) {
+        const sx = (a.x < b.x || (a.x === b.x && i < j)) ? -1 : 1;
+        a.x += sx * ox / 2; b.x -= sx * ox / 2;
+      } else {
+        const sy = (a.y < b.y || (a.y === b.y && i < j)) ? -1 : 1;
+        a.y += sy * oy / 2; b.y -= sy * oy / 2;
+      }
+    }
+    it.forEach(function (s) {
+      s.x = Math.max(s.w / 2 + 4, Math.min(box.width - s.w / 2 - 4, s.x));
+      s.y = Math.max(s.h / 2 + 64, Math.min(box.height - s.h / 2 - 4, s.y));
+    });
+    if (!moved) break;
+  }
+  it.forEach(function (s) {
+    const r = s.el.getBoundingClientRect();
+    const cx = r.left - box.left + r.width / 2, cy = r.top - box.top + r.height / 2;
+    const dx = s.x - cx, dy = s.y - cy;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    const L = parseFloat(s.el.style.left) || 0, T = parseFloat(s.el.style.top) || 0;
+    s.el.style.left = (L + dx / box.width * 100).toFixed(2) + '%';
+    s.el.style.top = (T + dy / box.height * 100).toFixed(2) + '%';
+  });
 }
 
 /* 你的位置：投影到地圖上；出框或壓在某顆景點上（HOME 跟玻璃窯幾乎同一點）就不畫 */
@@ -583,7 +637,7 @@ function renderGoing(params) {
           num(ARRIVE_STAY_MIN) + ' 分鐘才算數。明信片是走到現場才拿得到的東西，所以這一關不能只靠按鈕。</span>' +
       '</div>' +
       '<div class="ex-going__acts">' +
-        '<button class="demo-btn ex-demo" type="button" data-act="arrive">（demo）模擬抵達</button>' +
+        '<button class="demo-btn ex-demo" type="button" data-act="arrive">模擬抵達</button>' +
         '<button class="btn-link ex-center" type="button" data-act="cancel-going">先不去了</button>' +
       '</div>' +
     '</div>';
@@ -751,9 +805,14 @@ function mountUnlock(root, params, ctx) {
   };
 
   const btn = box.querySelector('[data-act="collect"]');
+  let collecting = false;
   if (btn) {
     btn.onclick = function (e) {
       if (e) e.stopPropagation();
+      /* 連點兩下只收一次、只導一次（第二下常落在轉場中還沒拆掉的舊畫面上） */
+      if (collecting) return;
+      collecting = true;
+      btn.disabled = true;
       const input = box.querySelector('[data-one-line]');
       const note = input ? String(input.value || '').trim().slice(0, 40) : '';
       const trip = APP.store.get('trip');

@@ -171,14 +171,16 @@ T.spec('ride', function (t) {
     t.ok(!app.$('[data-gold]').hidden, '重載後金色橫幅還在');
     t.eq(app.$$('.ride-star.is-on').length, 4, '重載後星數還在');
 
-    /* 直接回首頁：trip 清掉、toast、不自動收 */
+    /* 直接回首頁：限定版不消失 —— trip 留著、不 toast、不自動收，收合態有金色入口（產品決定） */
     const before = app.STATE.count();
     await app.click('[data-act="go-home"]');
     await app.at('/ride');
-    t.eq(app.APP.store.get('trip'), null, '回首頁後 trip 清掉');
+    t.ok(app.APP.store.get('trip') && app.APP.store.get('trip').phase === 'done', '回首頁後 trip 還在');
     t.eq(app.STATE.count(), before, '沒有自動 collect');
     const toast = app.$('.device .toast');
-    t.ok(toast && toast.textContent.indexOf('限定明信片還在收藏等你') >= 0, 'toast 限定明信片還在收藏等你');
+    t.ok(!toast || toast.textContent.indexOf('限定明信片還在收藏等你') < 0, '不再 toast');
+    const u = app.$('[data-act="unlock-ride"]');
+    t.ok(u && u.getAttribute('href').indexOf('/unlock/neiwan?ride=1') >= 0, '金色入口 → /unlock/neiwan?ride=1');
   }, { timeout: 20000 });
 
   t.test('取消行程 → confirm → 回 /ride、trip 清掉', async function (app) {

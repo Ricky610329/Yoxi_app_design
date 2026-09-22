@@ -17,11 +17,13 @@
   'use strict';
 
   /* runner.html?app=fixtures/mini-app.html 可以換掉受測頁（驗 harness 本身用） */
-  const APP_URL = (function () {
+  const APP_BASE = (function () {
     const a = new URLSearchParams(location.search).get('app');
-    const base = a && /^[\w./-]+\.html$/.test(a) ? a : '../index.html';
-    return base + '?still=1';
+    return a && /^[\w./-]+\.html$/.test(a) ? a : '../index.html';
   })();
+  const APP_URL = APP_BASE + '?still=1';
+  /* reset({ still:false })／reload(hash, { still:false })：不帶 ?still=1，動畫與 setTimeout 路徑照真的跑 */
+  let stillMode = true;
   const KEYS = { state: 'yoxi-chengshi-v1-2', store: 'yoxi-chengshi-app-v1' };
   const DEFAULT_TIMEOUT = 8000;
   const READY_TIMEOUT = 6000;
@@ -160,7 +162,7 @@
       errors = [];
       errOffset = 0;
       readyMs = null;
-      fr.src = APP_URL + '&_=' + seq + (hash ? '#' + hash : '');
+      fr.src = (stillMode ? APP_URL + '&' : APP_BASE + '?') + '_=' + seq + (hash ? '#' + hash : '');
       hookErrors(seq);
     });
   }
@@ -251,6 +253,7 @@
        opt.onboarded=false 可測 welcome；opt.store 會合併進 app store 的初值。 */
     reset: function (opt) {
       opt = opt || {};
+      stillMode = opt.still !== false;
       return blank().then(function () {
         try {
           localStorage.removeItem(KEYS.state);
@@ -263,7 +266,11 @@
     },
 
     /* 延伸：不清狀態只重載（測持久化用） */
-    reload: function (hash) { return blank().then(function () { return load(hash); }); },
+    reload: function (hash, opt) {
+      if (opt && opt.still != null) stillMode = opt.still !== false;
+      return blank().then(function () { return load(hash); });
+    },
+    get still() { return stillMode; },
     storage: function (key) {
       try { return JSON.parse(localStorage.getItem(KEYS[key] || key)); } catch (e) { return null; }
     },

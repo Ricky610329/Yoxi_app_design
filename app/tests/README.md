@@ -30,6 +30,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | `harness.js` | `T`、`app`、`t` |
 | `specs/app.spec.js` | 跨區塊：§8 每條 route、tab bar、返回、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder |
 | `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫 |
+| `specs/flows.spec.js` | QA：三條 demo 流程端到端、跨區塊縫合、全站兩種狀態掃描、非 still 模式 |
 | `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined） |
 | `fixtures/mini-app.html`、`fixtures/selftest.html` | 驗 harness 本身 |
 
@@ -81,8 +82,8 @@ T.spec('ride', function (t) {
 | `click(sel \| el, ms)` | 等元素出現（預設 2 s）後 `el.click()`，再等 30 ms |
 | `waitFor(fn, ms, label)` | 每 20 ms 輪詢到 truthy，逾時丟 `等待逾時 …：label` |
 | `tick(ms)` | 等一下（預設 50 ms，virtual time） |
-| `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁 |
-| `reload(hash)` | 不清狀態重載（測持久化） |
+| `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁；`opt.still:false` 不帶 `?still=1`（動畫與 setTimeout 照真的跑，之後的 reload 也沿用，直到下一次 reset） |
+| `reload(hash, opt)` | 不清狀態重載（測持久化）；`opt.still` 可切換 still 模式 |
 | `storage('state' \| 'store')` | 直接讀 localStorage 的 JSON |
 | `errors` | iframe 的 `window.onerror`／`unhandledrejection`／資源載入失敗＋app 自己的 `#app-errors`；每次 `go`／`reset` 清空 |
 | `readyMs` | 上次載入到 `data-app-ready` 花的毫秒 |

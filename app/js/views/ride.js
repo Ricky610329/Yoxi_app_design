@@ -104,11 +104,30 @@ function tripNow() {
   return t && t.placeId ? t : null;
 }
 function tripPlace(t) { return (t && APP.place(t.placeId)) || null; }
+/* 抵達了、限定明信片還沒收的那一趟：它一直留在 store.trip，直到 APP.explore.collect 收卡才清。
+   按「回首頁」不能讓限定版消失（產品決定），所以 /ride 與明信片頁都有一個回去解鎖的入口。 */
+function pendingUnlock() {
+  const t = tripNow();
+  if (!t || t.phase !== 'done') return null;
+  const p = tripPlace(t);
+  if (!p) return null;
+  const card = M().cardIdOf(p.id);
+  if (S().has(card)) return null;
+  return { trip: t, place: p, card: card, href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1' };
+}
 
 /* ---------------------------------------------------------------- 跨區塊 API */
+let lastSet = { id: null, at: 0 };
 function setDropoff(placeId, via) {
   const p = APP.place(placeId);
   if (!p) { APP.ui.toast('找不到這個地方'); return false; }
+  /* 連點兩下（第二下常落在轉場中的舊畫面上）：同一個地方、剛設過、人已經在 /ride → 不再寫、不再導 */
+  const here = APP.nav.current();
+  const d0 = store().get('dropoff');
+  if (here && here.path === '/ride' && d0 && d0.id === p.id && lastSet.id === p.id && Date.now() - lastSet.at < 1000) {
+    return true;
+  }
+  lastSet = { id: p.id, at: Date.now() };
   store().set('dropoff', {
     id: p.id, name: p.name, km: F.km(p.dist), setAt: new Date().toISOString(), via: via || 'e',
   });
@@ -137,10 +156,30 @@ function arrive() {
 }
 
 function callRide() {
+  const here = APP.nav.current();
+  if (here && here.path === '/trip') return;     /* 連點：第一下已經到行程頁了 */
   const t = tripNow();
   if (t && t.phase !== 'done') { APP.nav.go('/trip'); return; }
   const d = store().get('dropoff');
   if (!d || !d.id) { APP.ui.toast('先選一個下車點'); return; }
+  /* 上一趟的限定版還沒收：先問一次。先去解鎖 → 不建新 trip；直接叫車 → 新行程覆蓋舊的（契約 §3.3 只有一筆 trip） */
+  const pend = pendingUnlock();
+  if (pend) {
+    if (asking) return;
+    asking = true;
+    APP.ui.confirm({ text: '上一趟的限定明信片還沒收，要先去解鎖嗎？', yes: '先去解鎖', no: '直接叫車' })
+      .then(function (yes) {
+        asking = false;
+        if (yes) APP.nav.go(pend.href.slice(1));
+        else startTrip(d);
+      });
+    return;
+  }
+  startTrip(d);
+}
+
+let asking = false;
+function startTrip(d) {
   const p = APP.place(d.id);
   store().set('trip', {
     placeId: d.id, phase: 'matching', startedAt: new Date().toISOString(), rated: false,
@@ -189,6 +228,7 @@ APP.ride = Object.assign(APP.ride || {}, {
   pointsRows: pointsRows,
   pointsTotal: pointsTotal,
   pastTrips: pastTrips,
+  pendingUnlock: pendingUnlock,
 });
 
 /* ==========================================================================
@@ -290,7 +330,8 @@ function rideRender() {
   const d = store().get('dropoff');
   const dp = d && d.id ? APP.place(d.id) : null;
   let trip = tripNow();
-  if (trip && trip.phase === 'done') trip = null;      /* mount 會把它清掉 */
+  const pend = pendingUnlock();
+  if (trip && trip.phase === 'done') trip = null;      /* 已抵達：不是「回到行程」；限定版另有金色入口 */
   const km = dp ? F.km(dp.dist) : (d ? d.km : 0);
 
 
@@ -357,6 +398,21 @@ function rideRender() {
       '<button class="btn-primary ride-call' + (dp || trip ? ' is-ready' : '') + '" type="button" data-act="call-ride"' +
         (dp || trip ? '' : ' data-expand-only') + '>' +
         esc(callText) + '</button>' +
+      /* 評分完直接回首頁的人：限定明信片還沒收，收合態就看得到回去解鎖的入口 */
+      (pend
+        ? '<a class="banner--gold ride-unlock" href="' + pend.href + '" data-act="unlock-ride">' +
+            '<span class="banner--gold__shine"></span>' +
+            '<span class="banner--gold__in">' +
+              '<span class="banner--gold__art" data-art="' + esc(pend.place.art) + '" data-seed="7"></span>' +
+              '<span class="banner--gold__txt">' +
+                '<span class="banner--gold__eyebrow">yoxi 限定版</span>' +
+                '<span class="banner--gold__t">限定明信片還沒收 · 去解鎖</span>' +
+                '<span class="banner--gold__p">你抵達了' + esc(pend.place.name) + '</span>' +
+              '</span>' +
+              '<span class="arrow arrow--onred"></span>' +
+            '</span>' +
+          '</a>'
+        : '') +
     '</div>';
 }
 
@@ -365,13 +421,10 @@ function rideMount(root) {
   const offs = [];
   const tb = document.getElementById('tabbar');
 
-  /* 評分完直接回首頁的人：行程收掉，限定明信片不自動收 */
+  /* 評分完直接回首頁的人：限定明信片還沒收 → trip 留著（render 畫了金色入口）；
+     已經收過（別的路收的）→ 這趟沒有東西要等了，安靜收掉 */
   const t0 = store().get('trip');
-  if (t0 && t0.phase === 'done') {
-    store().set('trip', null);
-    const card = m.cardIdOf(t0.placeId);
-    if (!S().has(card)) APP.ui.toast('限定明信片還在收藏等你');
-  }
+  if (t0 && t0.phase === 'done' && !pendingUnlock()) store().set('trip', null);
 
   /* ---- 地圖 ---- */
   const host = root.querySelector('[data-ride-map]');

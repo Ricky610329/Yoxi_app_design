@@ -362,7 +362,7 @@ APP.view('album', {
             '<span class="statbar__k">公里</span></span>' +
           '<span class="statbar__cell"><span class="statbar__n" data-stat="badges">' + bc.got +
             '<small class="alb-stat__of">/' + bc.total + '</small></span>' +
-            '<span class="statbar__k">獎章 · 收集 ' + bc.got + '/' + bc.total + '</span></span>' +
+            '<span class="statbar__k">獎章</span></span>' +
         '</div></div>' +
         '<div class="alb-pad alb-pad--pills"><div class="pill-group pill-group--onwhite" data-pills>' +
           TABS.map(function (k) {
@@ -402,10 +402,11 @@ APP.view('album', {
 
     const group = root.querySelector('[data-pills]');
     INTERACT.initPills(group);
-    /* pill 狀態寫回網址（不觸發路由）：從明信片返回時停在同一段 */
+    /* pill 狀態寫回網址（不重畫、經 router）：從明信片返回、切 tab 再回來都停在同一段 */
     group.querySelectorAll('.pill').forEach(function (p) {
       p.onclick = function () {
-        try { history.replaceState(history.state, '', '#/album?tab=' + p.dataset.tab); } catch (e) { /* ignore */ }
+        if (APP.nav.replaceQuery) APP.nav.replaceQuery('tab=' + p.dataset.tab);
+        else { try { history.replaceState(history.state, '', '#/album?tab=' + p.dataset.tab); } catch (e) { /* ignore */ } }
       };
     });
 
@@ -443,6 +444,9 @@ APP.view('postcard', {
     if (!got) {
       const pid = placeOfCard(P.id) || P.id;
       const canGo = !!APP.place(pid);
+      /* 搭車抵達了、評分後直接回首頁的那一趟：這張卡就是它的限定版 → 回去解鎖的入口 */
+      const pu = APP.ride && APP.ride.pendingUnlock ? APP.ride.pendingUnlock() : null;
+      const pend = pu && pu.card === P.id ? pu : null;
       return header({ title: '明信片', back: '/album' }) +
         '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
           '<div class="alb-big">' +
@@ -456,9 +460,12 @@ APP.view('postcard', {
           '<div class="alb-pad">' +
             '<h1 class="alb-h1">' + esc(P.name) + '</h1>' +
             '<p class="alb-sub" data-notyet>還沒去 · 到了就會上色</p>' +
+            (pend
+              ? '<a class="btn-primary alb-gap" href="' + pend.href + '" data-act="unlock-ride">解鎖限定版</a>'
+              : '') +
             (canGo
-              ? '<a class="btn-primary alb-gap" href="#/place/' + esc(pid) + '" data-act="go-place">看看這個地方</a>'
-              : '<button class="btn-primary alb-gap" type="button" data-act="go-place" data-toast="這個地方的介紹還在寫">看看這個地方</button>') +
+              ? '<a class="' + (pend ? 'btn-ghost' : 'btn-primary') + ' alb-gap" href="#/place/' + esc(pid) + '" data-act="go-place">看看這個地方</a>'
+              : '<button class="' + (pend ? 'btn-ghost' : 'btn-primary') + ' alb-gap" type="button" data-act="go-place" data-toast="這個地方的介紹還在寫">看看這個地方</button>') +
           '</div>' +
           '<div class="alb-pad">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
         '</div>';
@@ -623,13 +630,35 @@ APP.view('footprint', {
       style: 'fog', center: 'station', spanM: FP_SPAN, spots: false, fog: fog, pan: true,
     });
     tintSeen(m, fog);
-    const cov = m.handle.coverage(fog);
+    /* 覆蓋率用固定範圍算（以車站為中心、FP_SPAN 見方），不看畫面大小：
+       hsmap 的 coverage() 取樣的是可視範圍，版面一變數字就跟著變。算一次，這一頁的生命週期內不重算。 */
+    const cov = fixedCoverage(fog);
     root.querySelector('[data-coverage]').textContent = String(cov);
     host.setAttribute('data-seen', fs.seen.join(','));
     host.setAttribute('data-missing', fs.missing.join(','));
     return function () { m.destroy(); };
   },
 });
+
+/* 固定範圍的覆蓋率：公尺座標、FP_SPAN × FP_SPAN、60×60 取樣格；
+   門檻與 hsmap coverage() 相同（去過 R×0.78、變淡 R×0.6 算半格，R＝FP_SPAN×0.16） */
+function fixedCoverage(fog) {
+  const P = window.HSINCHU_PLACES || {};
+  const c = P.station || { x: 0, y: 0 };
+  const R = (fog.radiusM || FP_SPAN * 0.16);
+  const at = function (id) { const g = P[id]; return g ? [g.x, g.y] : null; };
+  const pts = (fog.seen || []).map(at).filter(Boolean);
+  const fd = (fog.fade || []).map(at).filter(Boolean);
+  let hit = 0, N = 0;
+  for (let i = 0; i < 60; i++) for (let j = 0; j < 60; j++) {
+    const X = c.x + ((i + 0.5) / 60 - 0.5) * FP_SPAN;
+    const Y = c.y + ((j + 0.5) / 60 - 0.5) * FP_SPAN;
+    N++;
+    if (pts.some(function (p) { return Math.hypot(p[0] - X, p[1] - Y) < R * 0.78; })) hit++;
+    else if (fd.some(function (p) { return Math.hypot(p[0] - X, p[1] - Y) < R * 0.6; })) hit += 0.5;
+  }
+  return Math.round(hit / N * 100);
+}
 
 /* hsmap 的 fog 只挖洞不上色：在霧那一層底下補一組柔邊奶油圓（同圓心、同半徑） */
 function tintSeen(m, fog) {
@@ -981,6 +1010,7 @@ APP.view('elder', {
 });
 
 /* 給別的區塊／測試用 */
-APP.album = { placeOfCard: placeOfCard, footprintSeen: footprintSeen, weekStats: weekStats };
+APP.album = { placeOfCard: placeOfCard, footprintSeen: footprintSeen, weekStats: weekStats,
+              coverage: function () { return fixedCoverage({ seen: footprintSeen().seen, fade: [] }); } };
 
 })();

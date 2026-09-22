@@ -394,6 +394,21 @@ const nav = {
              query: new URLSearchParams(cur.qs), name: cur.name, tab: cur.tab };
   },
   href: function (path) { return '#' + path; },
+  /* 只換目前這一頁的 query（不重畫、不新增歷史）：pill 之類的頁內狀態寫回網址用。
+     同步 current()、tabPaths，切 tab 再回來會停在同一段。qs 可以是 'tab=journal' 或 URLSearchParams。 */
+  replaceQuery: function (qs) {
+    if (!cur) return;
+    qs = String(qs == null ? '' : qs).replace(/^\?/, '');
+    cur.qs = qs;
+    cur.query = new URLSearchParams(qs);
+    const full = fullPath(cur);
+    try { history.replaceState(Object.assign({}, history.state || {}, { yoxiApp: 1, i: curIdx }), '', '#' + full); }
+    catch (e) { /* ignore */ }
+    if (cur.tab && TABS.indexOf(cur.tab) >= 0) {
+      S.tabPaths = Object.assign({}, S.tabPaths, { [cur.tab]: full });
+      save();
+    }
+  },
 };
 
 /* ---- 路由主流程 ---- */
@@ -497,15 +512,23 @@ function route(dir) {
     });
   } catch (e) { reportError(e, 'decorate ' + r.name); }
 
-  /* 5. mount */
+  /* 5. mount：mount 期間掛在 window／document 上的 listener 記下來，離開這一頁時拆掉
+     （INTERACT.initSheet／initPan 每次都在 window 上掛 pointermove／pointerup，不拆會越積越多） */
   if (ok && def.mount) {
+    const tracked = trackListeners();
+    let c = null;
     try {
-      const c = def.mount(main, r.params, ctx);
-      if (typeof c === 'function') cleanup = c;
+      c = def.mount(main, r.params, ctx);
     } catch (e) {
       reportError(e, 'mount ' + r.name);
       main.innerHTML = errorCard(e);
+    } finally {
+      tracked.stop();
     }
+    cleanup = function () {
+      try { if (typeof c === 'function') c(); }
+      finally { tracked.remove(); }
+    };
   }
 
   /* 6. 轉場 → ready */
@@ -524,6 +547,36 @@ function route(dir) {
   olds.forEach(function (o) { o.classList.add('view--out-' + dir); });
   finishPending = done;
   finishTimer = setTimeout(function () { finishTimer = null; finishPending = null; done(); }, durationMs() + 40);
+}
+
+/* 暫時包住 window／document 的 addEventListener，記下 mount 期間掛上去的 listener。
+   只在 mount 同步執行的那一段有效；stop() 還原，remove() 拆掉記到的那些。 */
+function trackListeners() {
+  const added = [];
+  const targets = [W, document];
+  const saved = targets.map(function (tg) {
+    const own = Object.prototype.hasOwnProperty.call(tg, 'addEventListener');
+    const orig = tg.addEventListener;
+    tg.addEventListener = function (type, fn, opt) {
+      added.push([tg, type, fn, opt]);
+      return orig.call(tg, type, fn, opt);
+    };
+    return { tg: tg, own: own, orig: orig };
+  });
+  return {
+    added: added,
+    stop: function () {
+      saved.forEach(function (x) {
+        if (x.own) x.tg.addEventListener = x.orig;
+        else delete x.tg.addEventListener;
+      });
+    },
+    remove: function () {
+      added.splice(0).forEach(function (a) {
+        try { a[0].removeEventListener(a[1], a[2], a[3]); } catch (e) { /* ignore */ }
+      });
+    },
+  };
 }
 
 function errorCard(e) {

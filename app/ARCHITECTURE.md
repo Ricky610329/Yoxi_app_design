@@ -113,6 +113,8 @@ APP.nav.go('/trip', { dir:'back' });        // dir 可覆寫轉場：'push'|'bac
 `nav.tab(id)`：已經在該 tab 時回到該 tab 的根，否則回到 `tabPaths[id]`。除錯用：`APP.resolve(path)`、`APP.routes()`、`APP.PLANNED`。
 連結寫 `<a href="#/place/glass-kiln">` 就會走 router；返回鍵寫 `<a href="#" data-back="/explore">`（router 攔 data-back）。
 tab 切換：`APP.nav.tab('album')` 記住各 tab 最後停的 path（切回來還在同一頁）。
+頁內狀態（例：收藏的 pill）要寫回網址時用 `APP.nav.replaceQuery('tab=journal')`：只換目前這頁的 query，不重畫、不新增歷史，同步 `current()` 與 `tabPaths`（切 tab 再回來停在同一段）。不要自己呼叫 `history.replaceState`，router 看不到。
+mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initSheet／initPan`）由 router 記下，離開該頁時自動移除。
 轉場：push 從右滑入、back 從左滑回、tab 切換淡入；`html[data-still]` 或 `?still=1` 時關動畫。
 
 ### 3.3 狀態

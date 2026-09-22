@@ -30,7 +30,7 @@
 /* 小卡：變體 E 的 peek，兩顆動作（看看這個地方／設為下車點）；右邊讓出定位鈕 */
 .ride-peek {
   right: 76px;
-  bottom: var(--sp-3);
+  bottom: var(--sp-6);             /* 讓出右下角的 ODbL 署名（hsmap 畫在 svg 底邊上方 6px） */
   display: block;
   padding: var(--sp-2) var(--sp-3) var(--sp-3);
 }
@@ -223,8 +223,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ride-map--trip { min-height: 160px; }
-.ride-trip-sheet { flex: none; max-height: 64%; overflow-y: auto; scrollbar-width: none; }
+.ride-map--trip { flex: none; height: 46%; min-height: 160px; }
+/* 地圖高度固定、sheet 吃剩下的：配對中 → 行程中、展開「這條路上」時 sheet 變高，
+   地圖若跟著縮，hsmap 的 viewBox 是 slice，署名與兩顆 pin 會被裁掉或偏移 */
+.ride-trip-sheet { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; }
 .ride-trip-sheet::-webkit-scrollbar { display: none; }
 .ride-trip__match { padding: var(--sp-2) 0 var(--sp-4); }
 .ride-trip__driver { padding-bottom: var(--sp-3); }
@@ -380,3 +382,9 @@
 .ride-sheet-top .tile-icon [data-icon] svg,
 .ride-pts__row .tile-icon [data-icon] svg,
 .ride-list .tile-icon [data-icon] svg { width: 100%; height: 100%; }
+
+/* 評分完直接回首頁、限定明信片還沒收：收合態就看得到的金色入口。
+   跟上面的叫車鈕（或機場接送那一列）隔 --sp-3；收合態 sheet 的 max-height 是 inline 的 --sheet-min:420px，
+   多了這一塊就會被裁掉，所以有它的時候收合態改成「內容多高就多高」（data-expand-only 的東西仍然隱藏）。 */
+.ride-unlock { margin-top: var(--sp-3); }
+.ride-sheet.is-collapsed:has(.ride-unlock) { max-height: none; }
