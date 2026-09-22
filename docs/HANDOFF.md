@@ -1,0 +1,108 @@
+# 交接文件 — yoxi 城事設計原型
+
+最後更新：2026-09-22（main `424a079`）。這份文件給接手的人或 AI agent：專案是什麼、做到哪裡、東西放哪裡、怎麼驗、哪些還沒決定。
+人看的導覽在 `README.md`，agent 的規矩在 `AGENTS.md`，時間線在 `docs/WORKLOG.md`。
+
+## 1. 專案一句話
+
+把 yoxi（和泰叫車）變成一個**不搭車也會打開**的城市探索與收藏工具，再把「發現一個地方 → 叫車去那裡」接回本業。
+提案的高階版本在 `prototype/proposal.html`（五步 roadmap、一軸一行的決策矩陣）；demo 在 `prototype/index.html`。
+
+## 2. 做到哪裡（四輪）
+
+| 輪 | 內容 | 入口 |
+|---|---|---|
+| 第一輪 | 三條 demo 流程（A 不搭車的日常、B 搭車的轉換、C 晚上的回顧）共 33 張主線畫面檔（登記表 37 個節點，含參數狀態）；地圖歸屬變體 0／A–F；六條防護承諾與一鍵驗收 | `index.html`、`variants.html#axis-map` |
+| 第二輪 | 層級樹＋評語（`overview.html`）、變體註冊表、收藏 S1–S5、探索 X1–X5、T1、低認知負擔 L1–L6（可按數／到達步數自動量測）、願景探索稿 12 張 | `overview.html`、`variants.html`、`vision.html` |
+| 第三輪 | 真實 OSM 地圖引擎與六種底圖、單／雙地圖、微 3D、實景照片、好友系統六頁＋AI 鄰居、五張概念板；轉換點 K1–K7 | `concept.html`、`variants.html#axis-conv` |
+| 提案 | 提案總覽頁、README、本交接 | `proposal.html` |
+
+規模：102 張畫面檔（33 主線＋43 變體＋12 願景稿＋14 概念稿，含 `variant-k-ride` 落點頁）、10 條設計軸線 36 個變體、5 張概念板、10 張 CC 照片。
+
+## 3. 檔案地圖
+
+```
+prototype/
+  index.html       demo 首頁：三條流程＋講稿（tour.js 的字幕列）＋六扇門
+  proposal.html    提案總覽（從 catalog 的 ROADMAP／AXES 渲染）
+  overview.html    層級樹＋評語（localStorage key yoxi-chengshi-review-v1，與 demo 狀態分開；可匯出／匯入 JSON）
+  variants.html    變體卡牆（依 AXES 分區；六條承諾晶片）
+  vision.html      願景探索稿目錄        concept.html   概念稿目錄（含五張板）
+  screens/         102 張畫面：主線｜variant-<key>-<頁>｜vision-<主題>-<abc>｜concept-map-*｜concept-friend-*
+  js/
+    catalog.js     單一登記表：SCREENS／GROUPS／FLOWS／TABS／STATES／AXES／VARIANTS／VISIONS／CONCEPTS／ROADMAP／THUMB_ALIAS＋buildTree()
+    mock.js        假資料（地點、明信片、路線、獎章、FAMILY／EVENTS／PLANS／HEALTH）；findPlace()
+    state.js       進度（localStorage key yoxi-chengshi-v1-2）：收過的卡、note、路線、獎章、設定
+    shell.js       共用零件：TABSETS／ROOTS、rewriteHref、postcardArt／injectArt、renderSpots／bindPeek、postcardWall／badgeGrid、toast、shareSheet、ready
+    interact.js    互動：sheet 拖曳、平移、data-toast／data-switch／data-pills／data-flip／data-cap
+    tour.js        導覽字幕列（?flow=&step=）    review.js   評語層
+    hsmap.js       地圖引擎（五種 preset、傾斜、霧化、iso）  photos.js  站位→實景照片   mock-friends.js  好友資料
+  css/             tokens（色票、字級、六種圓角、動畫）｜base｜components（yoxi 既有）｜chengshi（城事新增）｜concept（只有概念稿載）
+  assets/          thumbs/（430×912 與 mini 86×182）、boards/（1600×1000 PNG）、map/（hs-core／hs-wide／hs-places）、photos/（＋credits.js）、vendor/leaflet、load.js／load.json（功能數量測）
+  boards/          五張概念板的 HTML（board.css／board.js 共用）
+  tools/           verify-quiet.py（總驗收）、shoot.py（縮圖）、audit-app／audit-load／audit-quiet／audit-tree／audit-walls／smoke-variants（瀏覽器稽核）、fetch-map.py、fetch-photos.py
+docs/              本交接、工作時間線
+brain_strom.png    最初的腦力激盪圖      Yoxi_app截圖.zip  yoxi 現有 app 截圖（還原用）
+```
+
+資料流：`catalog.js` 是唯一真相 → 五個總覽頁與 `tools/audit-tree.html` 都從它渲染／對帳；`shoot.py` 的 `SHOTS` 與 `catalog.js` 的 `THUMB_ALIAS` 必須逐條對得上（樹的第 5 關會查縮圖存在）。
+
+## 4. 設計紀律（改任何畫面前先讀）
+
+- 紅色＝品牌情緒（頁首、抽屜、地圖 pin、強調數字、logo）；海軍藍＝可按。`css/tokens.css` 檔尾。
+- 禁用詞：任務／完成／達成／挑戰／每日；沒有 streak、倒數、限量、排名、未讀數字。
+- 六條防護承諾（`variants.html` 晶片；`tools/verify-quiet.py` 重跑）：圖層關閉時 464 個節點逐節點相同／叫車關鍵路徑 4 tap 不變／收合態 sheet 0 像素改動／叫車地圖同時最多 4 個景點／與六個受保護元素 0 px² 重疊／pin 與景點兩套標記 class 交集為空。第七顆「E 的足跡上色」還沒量，故意寫在頁上。
+- 隱私分軌：只有你（日誌、心情、照片、走過的路線）／你可分享（明信片、獎章、週回顧、長輩圖）。
+- 好友系統四道圍牆：沒有聊天、沒有已讀、沒有數量、AI 有標示可關。
+- 推播一天最多兩則；探索地圖最多 10 個景點；抵達驗證 80 公尺內停 1 分鐘。
+
+## 5. 怎麼驗、怎麼拍
+
+```bash
+python prototype/tools/verify-quiet.py            # 八段：幾何③④⑤⑥、DOM①、結構②、互動、全站、圍牆、樹、功能數（寫 assets/load.json）
+python prototype/tools/shoot.py                   # 全部縮圖；--only a,b 只拍幾張；--mini 小圖；--board 五張板
+python prototype/tools/fetch-map.py --from-cache  # 重新塑形地圖資料（快取在 tools/.cache，不進版控；沒快取才會連 Overpass）
+python prototype/tools/fetch-photos.py --list     # Commons 候選照片；--only id,id 下載
+```
+瀏覽器可直接開 `tools/audit-app.html`（`?scope=vision`／`?scope=concept`）、`audit-walls.html`、`audit-tree.html`、`audit-load.html`。
+截圖用的 Chrome 旗標：`--headless=new --disable-gpu --hide-scrollbars --allow-file-access-from-files --force-device-scale-factor=1 --virtual-time-budget=N`；頁面帶 `?still=1` 關動畫。
+
+## 6. 各軸線目前的決定（細節在 proposal.html 的矩陣）
+
+| 軸線 | 我們選 | 未定的 |
+|---|---|---|
+| 地圖該歸誰 | E 景點常駐＋一鍵設為下車點（D 是預設關的降落傘） | |
+| 轉換點在哪 | K1 內容頁設為下車點（允許動叫車首頁後升級 E） | K1 的 3 km 門檻 vs 主線 10 km |
+| 城事從哪裡進 | — | 候選 G 抽屜 vs 三分頁 tab bar |
+| 收藏怎麼組織 | S3 路線書架 | |
+| 探索主敘事 | X2 缺口導向 | |
+| 獎章呈現 | X4 勳章牆 | |
+| 好康任務同頁 | 不同頁（T1 是對照組） | |
+| 畫面功能數 | L1 一屏一事 | |
+| 儀式長度 | — | 三幕 vs 候選 I 一秒版 |
+| 家人 | — | 分享選項 vs 候選 L 模式 |
+
+## 7. 已知問題與限制
+
+- `screens/concept-map-tiles.html` 需要網路（CARTO／Esri 圖磚）；其他全部離線。
+- 微 3D 的建物高度七成八是推的（OSM 只有 21.7% 有樓層數）。
+- 明信片與插圖是程式生成示意（`postcardArt`），標「AI 生成示意」；十張實景照片只覆蓋十個地點。
+- `unlock.html` 的 `?when=night` 時間寫進 DOM 但被 `.unlock` 的 z-index 蓋住（主線既有行為）。
+- 好友系統與 AI 鄰居是概念稿，沒接主線；五個未決寫在 `boards/board-friends.html`。
+- 車資、時間、里程都是公式或示意值（`75＋22×km`、`3＋2.2×km` 分、走路 `m/75`）。
+
+## 8. 下一步（建議順序）
+
+1. **入口決定**（G 抽屜 vs tab bar）：影響第 1 步能不能上；先用 G 拿開啟數據的論述在 `variants.html#axis-entry`。
+2. **量 E 的足跡上色**：補第七條承諾的判準（叫車模式下地圖非道路著色面積上限），寫進 `tools/audit-quiet.html`。
+3. **K1 門檻重談**：3 km／10 km 統一到一個地方（`place.html`、`variant-k1-place.html`、`variant-k-ride.html`）。
+4. **好友五問**：AI 該不該回信、能不能寄給不在 app 的人、回一張、20 字、入口。
+5. **內容供給**：城市景點與活動誰整理、多久更新（brainstorm 的但書）；`routes.html` 主張每月由 AI 從官方活動與熱點重生。
+6. 如果要做正式版：把 `postcardArt` 換成真的生成資產、把 `hsmap` 的資料改成線上更新、把 `state.js` 換成後端。
+
+## 9. 交給 Codex 的最短路徑
+
+1. 讀 `AGENTS.md` → 本文件 §3、§4、§5。
+2. 跑 `python prototype/tools/verify-quiet.py` 拿基準。
+3. 從 §8 挑一項，開分支，照 `AGENTS.md` 的慣例做，做完再跑一次驗收，commit。
+4. 需要背景時：`docs/WORKLOG.md` 有每一筆 commit 做了什麼；每張畫面的檔頭註解有「為什麼這樣做」。
