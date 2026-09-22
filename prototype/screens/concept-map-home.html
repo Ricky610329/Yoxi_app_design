@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 單地圖（E 型）的真實幾何 — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（叫車首頁．單地圖 E 型）【不在 demo 流程】
+
+  這張回答什麼：把變體 E 的「一張地圖、景點常駐、一鍵設為下車點」原封不動搬過來，
+  只把手繪的 inline SVG 換成新竹的真實地理資料，看叫車主畫面撐不撐得住真地圖。
+
+  怎麼看：?style=paper|navy|illus（預設 paper），&peek=1 直接打開「今天的地方」那張小卡。
+  夜間底圖會一起把狀態列與問候語換成晚上 —— 底圖的時間感要跟畫面的時間感對得上。
+  上面那條切換列在 sheet 裡，標了 data-concept-ui，是鷹架不是產品。
+
+  跟 variant-e-home.html 差在哪：只差底圖與落點。
+  收合態 sheet、廣告條、四顆浮動鈕、peek--ride、設為下車點、tab bar 全部沿用。
+  · 上車點 pin 落在 m.project(24.7990, 120.9800)（東區水利路，原型設定的家）。
+  · 景點用 m.spotsAt() 的真實經緯度，再被「受保護矩形」推開（見下面的量測）。
+
+  真實幾何逼出來的四件事（這一頁最有價值的部分）：
+  ① 視野要 2.4 km，不是 1.5 km。以家為中心的 1.5 km 裡只有玻璃窯與十八尖山，
+     東門市場（1.3 km）與護城河（1.2 km）都在框外。中心也往市區挪了
+     （車站東 440 公尺、北 60 公尺），家與市區才同時進得來 ——
+     上車點 pin 因此落在 66.7% / 65.9%，跟變體 E 的 50% / 62% 位階相同。
+  ② hs-places.js 把 glass-kiln 釘在 24.7990/120.9800，跟「家」是同一個座標，
+     但 mock.js 說它離你 900 公尺。兩者對不起來，它會整個壓在上車點 pin 上。
+     keepClear 把它推開 320 公尺 —— 推完反而比資料本身更接近 mock 的 900 公尺。
+     這是 hs-places 要修的一筆，不是版面問題。
+  ③ 東門市場與護城河實際只差 143 公尺，在 2.4 km 的視野裡兩個圖釘會疊在一起。
+  ④ 四個景點被「受保護矩形」推開的距離：玻璃窯 320 m、東門市場 148 m、
+     護城河 320 m、十八尖山 443 m（十八尖山的真實落點在地圖下緣外 4 px，
+     先用 spotsAt 的 clamp 夾進來再推）。平均 308 公尺 ——
+     這就是「叫車主畫面 ＋ 真地圖」的代價，也是這張概念稿要回答的問題：
+     手繪地圖可以把景點畫在淨空區，真地圖不行。
+
+  受保護矩形不是抄百分比，是當場量的：四顆浮動鈕、上車點 pin（含地址標籤）、
+  小卡展開後的範圍，全部用 getBoundingClientRect 取真框再避讓 ——
+  地圖高度一變（這一頁的 sheet 多了一條鷹架列）百分比就不準了。
+
+  刻意沒有的東西：沒有街名、沒有商家圖釘、沒有即時路況、沒有第五顆浮動鈕；
+  景點同時最多 4 個、比探索地圖小一號（spot--compact），沒去過的是灰階。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL），右下角每一張都有署名。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<style>
+  /* 鷹架列搬進 sheet：地圖上緣已經被四顆浮動鈕與地址標籤佔滿了，
+     切換列再擠進去就會壓到產品本身。頁內 style，不動 concept.css。 */
+  .sheet .styleswitch {
+    position: static;
+    margin: 0 0 12px;
+  }
+</style>
+</head>
+
+<body data-vision="concept-map-home" data-tab="ride" data-status="dark" data-time="8:10">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark" id="vmark" style="right:auto; left:16px; top:calc(var(--statusbar-h) + 76px)">概念稿 · 質感探索</span>
+
+      <!-- ===== 地圖：手繪 SVG 換成 HSMAP ===== -->
+      <div class="map map--layered" data-pan id="mapArea">
+        <svg class="map__svg" id="mapSvg"></svg>
+
+        <!-- 浮動圓鈕（四顆，位置與變體 E 一模一樣） -->
+        <a class="fab fab--navy" href="drawer.html"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
+          <span data-icon="menu"></span>
+        </a>
+        <button class="fab" data-toast="這是 yoxi 現有的掃碼叫車，原型沒有做這一段"
+                style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+          <span data-icon="scan"></span>
+        </button>
+        <a class="fab" href="notify.html"
+           style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
+          <span data-icon="bell"></span>
+        </a>
+        <button class="fab" data-recenter style="bottom:20px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 景點（常駐、compact、最多 4 個） -->
+        <div id="spots"></div>
+
+        <!-- 點景點浮出的小卡（貼齊地圖下緣，右邊留 72px 給定位鈕） -->
+        <div class="peek peek--stack peek--ride" id="peek" style="bottom:var(--sp-3)">
+          <a class="u-row u-gap2 u-fill" id="peekGo" href="concept-map-place.html" style="min-width:0">
+            <span class="peek__img"></span>
+            <span class="u-fill" style="min-width:0">
+              <span data-peek-name style="display:block; font-weight:800; font-size:14px; line-height:1.3;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis"></span>
+              <span data-peek-meta style="display:block; font-size:12px;
+                    color:var(--yoxi-slate); margin-top:2px"></span>
+              <span data-peek-hook></span>
+            </span>
+          </a>
+          <div class="peek__acts">
+            <button class="btn-primary" id="setDrop">設為下車點</button>
+          </div>
+        </div>
+
+        <!-- 上車點 pin：落在真實經緯度上 -->
+        <div class="pin" id="mePin" style="left:50%; top:50%">
+          <span class="pin__label">
+            東區水利路 46 巷 58 號
+            <svg width="14" height="14" viewBox="0 0 24 24">
+              <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                    fill="var(--yoxi-red)"/>
+            </svg>
+          </span>
+          <span class="pin__drop"><span data-icon="hail"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+      </div>
+
+      <!-- ===== 廣告輪播條（第 1 格是今天的地方） ===== -->
+      <div class="banner">
+        <a class="banner__item" href="concept-map-place.html?id=glass-kiln" style="background:var(--yoxi-navy)">
+          <span style="width:52px;height:52px;border-radius:4px;overflow:hidden;position:relative;flex:none"
+                data-art="glass" data-seed="1" data-wide></span>
+          <span style="flex:1;min-width:0;color: var(--yoxi-white)">
+            <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.8">
+              今天的地方 · 離你 900m
+            </span>
+            <span style="display:block;font-size:14px;font-weight:800;margin-top:2px">
+              這條巷子 1970 年代是全街最亮的地方
+            </span>
+          </span>
+          <span class="arrow arrow--onred"></span>
+        </a>
+
+        <div class="banner__item">
+          <span style="flex:1;font-size:15px;font-weight:800;color:var(--yoxi-navy)">
+            <span style="color:var(--yoxi-red)">點</span>從天降 ·
+            趟趟送最高 <span class="num" style="color:var(--yoxi-red);font-size:19px">99</span> 點
+          </span>
+        </div>
+      </div>
+
+      <!-- ===== 底部 sheet（收合態內容與變體 E 相同，只多一條鷹架列） ===== -->
+      <div class="sheet sheet--drag is-collapsed" data-drag id="sheet" style="--sheet-min:450px">
+        <div class="sheet__handle"></div>
+
+        <!-- 鷹架：切換底圖（不是產品） -->
+        <div class="styleswitch" data-concept-ui id="styleswitch"></div>
+
+        <h1 class="sheet__greet" id="greet">早安，Rick 今天要去哪?</h1>
+
+        <div class="card">
+          <div class="route-input">
+            <div class="route-input__rail">
+              <span class="route-input__dot"></span>
+              <span class="route-input__line"></span>
+              <span class="route-input__dot route-input__dot--to"></span>
+            </div>
+            <div class="route-input__fields">
+              <a class="route-input__field" href="pickup.html">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">上車點</span>
+                  <span class="route-input__value" style="display:block">東區水利路 46 巷 58 號</span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none">
+                  <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                        fill="var(--yoxi-navy)"/>
+                </svg>
+              </a>
+              <a class="route-input__field" href="pickup.html?to=1">
+                <span class="route-input__value route-input__value--ph">請輸入下車點可預估車資</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="divider" data-expand-only></div>
+          <a class="row-nav" data-expand-only href="concept-map-place.html?id=glass-kiln" style="padding:12px 16px">
+            <span class="tile-icon tile-icon--sm">
+              <span data-icon="place" style="width:22px;height:22px;display:block"></span>
+            </span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:15px">今天的地方 · 900m</span>
+              <span class="row-nav__sub">水利路的老玻璃窯</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <div class="u-row" style="justify-content:space-between; margin-top:16px">
+          <a class="btn-pill" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它">
+            <span data-icon="plane" style="width:18px;height:18px;display:block"></span>
+            機場接送
+          </a>
+          <a class="btn-link" href="pickup.html">
+            略過下車地點，繼續叫車
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <a class="btn-primary" id="goBtn" data-expand-only href="concept-map-ride.html?style=navy"
+           style="margin-top:16px">選好下車點就可以叫車</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const OK = ['paper', 'navy', 'illus'];
+  const style = OK.indexOf(q.get('style')) >= 0 ? q.get('style') : 'paper';
+
+  /* 夜間底圖要配夜間的畫面：狀態列與問候語一起換。
+     這段一定要跑在 shell.js 的 mount() 之前 —— 頁內 script 在 DOMContentLoaded
+     之前執行，mount 等 DOMContentLoaded，所以改 body 的 dataset 還來得及。 */
+  /* base.css 的命名是「字的顏色」：dark ＝ 深色字（給亮底圖），light ＝ 白字（給夜色底圖）。 */
+  if (style === 'navy') {
+    document.body.dataset.status = 'light';
+    document.body.dataset.time = '21:35';
+  }
+
+  /* ---- 鷹架：切換列 ------------------------------------------------ */
+  const NAMES = { paper: '紙感', navy: '夜間', illus: '插畫' };
+  const sw = document.getElementById('styleswitch');
+  sw.innerHTML = '<span class="styleswitch__k">底圖</span>' +
+    OK.map(function (s) {
+      return '<button class="styleswitch__b' + (s === style ? ' is-on' : '') +
+             '" type="button" data-s="' + s + '">' + NAMES[s] + '</button>';
+    }).join('');
+  sw.querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () { location.search = '?style=' + b.dataset.s + (q.has('peek') ? '&peek=1' : ''); };
+  });
+
+  /* ---- 地圖與景點：等 shell 掛完狀態列與 tab bar 再量尺寸 -------------- */
+  SHELL.ready(function () {
+    if (style === 'navy') document.getElementById('greet').textContent = '晚安，Rick 今天要去哪?';
+
+    const mapEl = document.getElementById('mapArea');
+    const m = HSMAP.render(document.getElementById('mapSvg'), {
+      style: style,
+      center: [24.80217, 120.97604], /* 新竹車站東北 440 m；家與市區的中點，見檔頭 ① */
+      spanM: 2400,
+      layers: { label: true },
+    });
+
+    /* 上車點 pin：真實經緯度 → 百分比 */
+    const me = m.project(24.7990, 120.9800);
+    const pin = document.getElementById('mePin');
+    pin.style.left = (me[0] / m.width * 100).toFixed(1) + '%';
+    pin.style.top  = (me[1] / m.height * 100).toFixed(1) + '%';
+
+    /* ---- 受保護矩形：當場量，不抄百分比 ----------------------------- */
+    const box = mapEl.getBoundingClientRect();
+    const rel = function (el) {
+      const r = el.getBoundingClientRect();
+      return [r.left - box.left, r.top - box.top, r.right - box.left, r.bottom - box.top];
+    };
+    const rects = [];
+    mapEl.querySelectorAll('.fab').forEach(function (f) { rects.push(rel(f)); });
+    rects.push(rel(pin));                                   /* 上車點 pin */
+    rects.push(rel(pin.querySelector('.pin__label')));      /* 地址標籤：它是絕對定位，不會撐開 .pin */
+    const pk = document.getElementById('peek');             /* 小卡：用版面框，不受 transform 影響 */
+    rects.push([pk.offsetLeft, pk.offsetTop, pk.offsetLeft + pk.offsetWidth, pk.offsetTop + pk.offsetHeight]);
+    rects.push(rel(document.getElementById('vmark')));       /* 概念稿角標 */
+    /* 狀態列：整條頂端都不准放 */
+    rects.push([0, 0, m.width, 58]);
+
+    const hit = function (a, b, pad) {
+      return !(a[2] + pad < b[0] || a[0] - pad > b[2] || a[3] + pad < b[1] || a[1] - pad > b[3]);
+    };
+
+    /* 真實落點 → 最近的淨空位置。半徑由小到大搜，所以位移一定是最小的那一個。 */
+    function keepClear(list) {
+      const placed = [];
+      const moved = [];
+      list.forEach(function (s) {
+        const w = s.state === 'today' ? 50 : 38;
+        let best = null;
+        for (let r = 0; r <= 240 && !best; r += 4) {
+          for (let a = 0; a < 360; a += 10) {
+            const X = s.px + r * Math.cos(a * Math.PI / 180);
+            const Y = s.py + r * Math.sin(a * Math.PI / 180);
+            const bx = [X - w / 2, Y - w - 8, X + w / 2, Y + 8];
+            if (bx[0] < 8 || bx[2] > m.width - 8 || bx[1] < 2 || bx[3] > m.height - 6) continue;
+            if (rects.some(function (R) { return hit(bx, R, 4); })) continue;
+            if (placed.some(function (P) { return hit(bx, P, 4); })) continue;
+            best = [X, Y, bx];
+            break;
+          }
+        }
+        if (!best) { s.hide = true; return; }
+        placed.push(best[2]);
+        moved.push(s.id + ' 位移 ' + Math.round(Math.hypot(best[0] - s.px, best[1] - s.py) /
+                   (m.width / m.spanM)) + ' m');
+        s.x = +(best[0] / m.width * 100).toFixed(1);
+        s.y = +(best[1] / m.height * 100).toFixed(1);
+      });
+      return moved;
+    }
+
+    /* 變體 E 的四個地方，順序＝重要性（今天的地方先佔位） */
+    const IDS = ['glass-kiln', 'market', 'moat', 'hill'];
+    const byId = {};
+    /* clamp:true —— 十八尖山的真實落點只差地圖下緣 4 px，夾進來再交給 keepClear，
+       不然它會被當成「框外」整個不見。 */
+    m.spotsAt(MOCK.SPOTS, { clamp: true }).forEach(function (s) { byId[s.id] = s; });
+    const four = IDS.map(function (id) { return byId[id]; })
+                    .filter(function (s) { return s && !s.offMap; });
+    const moved = keepClear(four);
+    const list = four.filter(function (s) { return !s.hide; });
+
+    const spots = SHELL.renderSpots(document.getElementById('spots'),
+      { spots: list, compact: true });
+
+    mapEl.classList.add('layer-on');
+
+    /* ---- 小卡與「設為下車點」（行為與變體 E 相同） -------------------- */
+    const peek = document.getElementById('peek');
+    const drop = document.getElementById('setDrop');
+    const field = document.querySelectorAll('.route-input__value')[1];
+    let current = null;
+
+    const pk2 = SHELL.bindPeek(peek, spots, {
+      onOpen: function (s) {
+        document.getElementById('peekGo').href = 'concept-map-place.html?id=' + s.id;
+        current = s;
+      },
+    });
+
+    drop.onclick = function () {
+      if (!current) return;
+      field.textContent = current.name;
+      field.classList.remove('route-input__value--ph');
+      pk2.close();
+      document.getElementById('sheet').classList.remove('is-collapsed');
+      SHELL.yieldTabbar(true);
+      const go = document.getElementById('goBtn');
+      go.textContent = '前往 ' + current.name;
+      go.classList.add('is-ready');
+    };
+
+    if (q.has('peek')) {
+      const t = spots.findIndex(function (s) { return s.state === 'today'; });
+      if (t >= 0) pk2.show(t);
+    }
+
+    /* 量測用：?dbg=1 印出地圖尺寸、受保護矩形與每個景點的位移 */
+    if (q.has('dbg')) {
+      const d = document.createElement('pre');
+      d.id = 'dbg';
+      d.style.cssText = 'position:fixed;left:0;top:0;z-index:999;font-size:9px;background:#fff';
+      /* 真的量一次：畫出來的圖釘有沒有壓到任何一個受保護矩形 */
+      const b2 = mapEl.getBoundingClientRect();
+      const clash = [];
+      document.querySelectorAll('#spots .spot').forEach(function (el, n) {
+        const r = el.getBoundingClientRect();
+        const bx = [r.left - b2.left, r.top - b2.top, r.right - b2.left, r.bottom - b2.top];
+        rects.forEach(function (R, j) { if (hit(bx, R, 0)) clash.push(list[n].id + '×rect' + j); });
+      });
+      d.textContent = 'map ' + Math.round(box.width) + 'x' + Math.round(box.height) +
+        '\nrects ' + rects.map(function (r) { return r.map(Math.round).join(','); }).join(' | ') +
+        '\nmoved ' + moved.join(' / ') +
+        '\nspots ' + list.map(function (s) { return s.id + '@' + s.x + ',' + s.y; }).join(' ') +
+        '\nclash ' + (clash.length ? clash.join(' ') : 'none');
+      document.body.appendChild(d);
+    }
+  });
+})();
+</script>
+</body>
+</html>

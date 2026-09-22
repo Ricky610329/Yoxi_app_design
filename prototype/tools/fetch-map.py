@@ -281,8 +281,8 @@ def poi_label(L, tags, pts, core):
     KEEP = ('公園', '市場', '博物館', '綠園道', '溪', '園林', '故居', '宅第', '迎曦門', '車站', '圖書館', '美術館')
     if not tags.get('historic') and not any(name.endswith(k) or k in name for k in KEEP):
         return
-    if any(k in name for k in ('公墓', '生態池', '練習場', '停車場')):
-        return
+    if any(k in name for k in ('公墓', '生態池', '練習場', '停車場', '星巴克', '麥當勞', '7-Eleven', '全家')):
+        return                                             # 連鎖商店掛 historic 也不放：地圖不是商家目錄
     if any(l['t'] == name for l in L['label']):          # 同名（護城河公園拆成七段）只放一個
         return
     cx, cy = centroid(pts)

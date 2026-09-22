@@ -1,6 +1,6 @@
 /* 由 tools/verify-quiet.py 產生，不要手改。同 assets/load.json —— file:// 底下 fetch 讀不到 json，所以多這一份。 */
 window.LOAD = {
-  "generatedAt": "2026-09-22T06:48:25.165Z",
+  "generatedAt": "2026-09-22T08:05:04.601Z",
   "screens": {
     "album.html": {
       "blocks": 59,

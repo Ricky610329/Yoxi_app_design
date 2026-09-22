@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 城市足跡（霧化底圖） — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（城市足跡）【不在 demo 流程】
+
+  這張回答什麼：雙地圖的第二張 —— 拉遠到整座新竹，看「去過的地方」怎麼在
+  真實的路網上長出顏色。fogmap.html 用的是 8×10 的格子，這一張用 SVG mask
+  ＋ 柔邊圓把霧挖洞，底下是 WIDE 資料集的真實幾何（海岸線、頭前溪、內灣線）。
+
+  怎麼看：?style=fog|paper。
+  · fog ＝ 霧化底圖 ＋ 去過的地方是洞；右上「全部／這個月」切換褪色的那兩個。
+  · paper ＝ 同一份幾何、同一個中心與縮放，但不蓋霧 —— 給人對照「霧到底蓋掉了什麼」。
+  覆蓋率的數字不是寫死的，是 m.coverage() 用 60×60 取樣格當場算的，
+  切「這個月」會整張重畫再重算。
+
+  跟 fogmap.html 差在哪：sheet 一模一樣（覆蓋率、城市顏色色帶、褪色說明卡、
+  去過／還沒圖例、全部／這個月 pills）。只有地圖換成真的。
+
+  真實地理逼出來的兩個調整（跟原本的規劃不同，記在這裡）：
+  ① 視野 12 km，不是 7 km。南寮漁港到竹中站東西相距 10.6 km，
+     7 km 的框裝不下 —— 而那兩個正好是「褪色中」的地方，框外的話
+     「全部／這個月」按下去畫面完全不會變，那顆 pill 就等於沒接。
+  ② 洞的半徑 1500 m，不是 420 m。在城市尺度上 420 公尺只有 14 px，
+     看起來像四個點，不像「你走過的範圍」。
+  ③ hsmap 的 fog 只把去過的地方「不蓋霧」，沒有 fogmap.html 那塊奶油色，
+     霧色與底色又幾乎同一個白，所以洞看不出來。這一頁自己在霧之下補一層
+     奶油色柔邊圓（tintSeen），圓心與半徑跟 hsmap 的洞完全一樣。
+     建議 hsmap 的 fog 加一個 tint 選項，不然每一頁都要補這段。
+
+  刻意沒有的東西：沒有景點圖釘（fogmap.html 本來就沒有，這裡照舊）、
+  沒有百分比進度條、沒有排名、沒有「還差幾 % 解鎖」。
+  褪色的規則照原稿：90 天沒回去顏色轉淡，但明信片不會消失。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL），右下角每一張都有署名。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+</head>
+
+<body data-vision="concept-map-footprint" data-status="light" data-time="21:36">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="album.html">
+            <span data-icon="close"></span>
+          </a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">城市足跡</h1>
+          <a class="hdr-red__action u-row u-gap2" href="concept-map-explore.html">
+            回到附近
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+        <div class="hdr-red__pills" style="margin-top:12px">
+          <!-- 全部＝含九十天前開始褪色的；這個月＝只算還亮著的 -->
+          <div class="pill-group" id="span">
+            <button class="pill is-active" data-span="all">全部</button>
+            <button class="pill" data-span="month">這個月</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===== 地圖 ===== -->
+      <div class="fogmap u-fill" id="mapArea"
+           style="position:relative; min-height:0; overflow:hidden">
+        <svg class="map__svg" id="mapSvg"></svg>
+        <span class="vision-mark" style="right:auto; left:16px; top:12px">概念稿 · 質感探索</span>
+
+        <div class="pin" id="mePin" style="left:50%; top:60%; z-index:7">
+          <span class="pin__label" style="white-space:nowrap">你的位置</span>
+          <span class="pin__drop" style="width:38px; height:38px">
+            <span data-icon="hail" style="width:20px;height:20px;display:block"></span>
+          </span>
+        </div>
+
+        <!-- 鷹架：切換底圖（不是產品） -->
+        <div class="styleswitch" data-concept-ui id="styleswitch"
+             style="top:auto; bottom:12px; left:16px; right:16px"></div>
+      </div>
+
+      <!-- ===== 底部 sheet（與 fogmap.html 相同） ===== -->
+      <div class="sheet sheet--drag is-collapsed" data-drag style="--sheet-min:210px; --sheet-max:70%">
+        <div class="sheet__handle"></div>
+
+        <div class="u-row" style="justify-content:space-between; align-items:flex-end">
+          <span>
+            <span id="cov" style="display:block; font-size:32px; font-weight:800;
+                         font-style:italic; line-height:1">—</span>
+            <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+              <span id="covNote">的新竹被你點亮了</span>
+            </span>
+          </span>
+          <span class="fogmap__legend">
+            <span class="fogmap__key">
+              <i class="fogmap__swatch" style="background:var(--map-explored)"></i>去過
+            </span>
+            <span class="fogmap__key">
+              <i class="fogmap__swatch" style="background:var(--map-fog)"></i>還沒
+            </span>
+          </span>
+        </div>
+
+        <!-- 你的城市顏色 -->
+        <div style="margin-top:18px">
+          <div class="sec" style="margin-bottom:8px">
+            <h2 class="sec__t sec__t--sm">你的城市顏色</h2>
+            <span class="sec__m">由你去過的地方決定</span>
+          </div>
+          <div class="citycolor" id="colors"></div>
+          <p style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            偏暖，偏舊。你去的地方多半是老房子、市場與河岸。
+          </p>
+        </div>
+
+        <!-- 褪色規則 -->
+        <div class="card card--pad" style="margin-top:18px; background:var(--yoxi-cream); border:0">
+          <div class="u-row u-gap3">
+            <span data-icon="postcard" style="width:22px; height:22px; flex:none"></span>
+            <span style="font-size:13px; line-height:1.7">
+              超過 90 天沒回去的地方，顏色會慢慢變淡。
+              但明信片不會消失 —— 地圖是活的，收藏是永久的。
+            </span>
+          </div>
+        </div>
+
+        <p class="concept-note" style="margin:18px -16px 0">
+          這一張的地圖是 OpenStreetMap 的真實地理資料（ODbL）重新上色，不是截圖；
+          霧是 SVG 的遮罩，去過的地方是挖掉的洞，覆蓋率由取樣格當場算。
+        </p>
+
+        <div style="height:24px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const OK = ['fog', 'paper'];
+  const style = OK.indexOf(q.get('style')) >= 0 ? q.get('style') : 'fog';
+
+  /* 去過的地方＝SPOTS 裡 state 是 seen／today 的；
+     其中南寮與竹中是九十天前那一趟，歸到「褪色中」。 */
+  const FADE = ['harbour', 'rail'];
+  const SEEN = MOCK.SPOTS
+    .filter(function (s) { return s.state === 'seen' || s.state === 'today'; })
+    .map(function (s) { return s.id; })
+    .filter(function (id) { return FADE.indexOf(id) < 0; });
+
+  const CENTER = [24.8100, 120.9770];   /* 南寮（西北）到竹中（東南）的中間 */
+  const SPAN = 12000;                   /* 12 km：兩頭都要在框裡，見檔頭 ① */
+  const RADIUS = 1500;                  /* 見檔頭 ② */
+
+  /* ---- 鷹架：切換列 ------------------------------------------------ */
+  const NAMES = { fog: '霧化', paper: '紙感（不蓋霧）' };
+  const sw = document.getElementById('styleswitch');
+  sw.innerHTML = '<span class="styleswitch__k">底圖</span>' +
+    OK.map(function (s) {
+      return '<button class="styleswitch__b' + (s === style ? ' is-on' : '') +
+             '" type="button" data-s="' + s + '">' + NAMES[s] + '</button>';
+    }).join('');
+  sw.querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () { location.search = '?style=' + b.dataset.s; };
+  });
+
+  document.getElementById('colors').innerHTML = MOCK.CITY_COLORS
+    .map(function (c) { return '<span class="citycolor__band" style="background:' + c + '"></span>'; })
+    .join('');
+
+  SHELL.ready(function () {
+    const covEl = document.getElementById('cov');
+    const covNote = document.getElementById('covNote');
+    const pin = document.getElementById('mePin');
+
+    function draw(withFade) {
+      const fog = { seen: SEEN, fade: withFade ? FADE : [], radiusM: RADIUS };
+      const m = HSMAP.render(document.getElementById('mapSvg'), {
+        style: style,
+        center: CENTER,
+        spanM: SPAN,
+        dataset: 'wide',
+        fog: style === 'fog' ? fog : false,
+      });
+      /* 去過的地方要是奶油色（跟 sheet 的圖例同一塊色）。
+         hsmap 的 fog 只做「不蓋霧」的洞，沒有著色 —— 所以這一層自己補：
+         在霧那張 rect 之前插一組柔邊奶油圓，霧才蓋得住它以外的地方。 */
+      if (style === 'fog') tintSeen(m, fog);
+
+      /* 覆蓋率：paper 也算得出來，因為 coverage() 吃得到傳進去的 fog 設定 */
+      covEl.textContent = m.coverage(fog) + '%';
+      covNote.textContent = withFade ? '的新竹被你點亮了' : '是這個月點亮的';
+
+      const me = m.project(24.7990, 120.9800);
+      pin.style.left = (me[0] / m.width * 100).toFixed(1) + '%';
+      pin.style.top  = (me[1] / m.height * 100).toFixed(1) + '%';
+      return m;
+    }
+
+    /* 奶油色的「去過」。幾何與 hsmap 的洞同一組圓心、同一個半徑。 */
+    function tintSeen(m, fog) {
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = m.svg;
+      const fogRect = svg.querySelector('[data-layer="fog"]');
+      if (!fogRect) return;
+      const defs = document.createElementNS(NS, 'defs');
+      const grad = document.createElementNS(NS, 'radialGradient');
+      grad.setAttribute('id', 'seenTint');
+      [['.5', '1'], ['1', '0']].forEach(function (st) {
+        const s2 = document.createElementNS(NS, 'stop');
+        s2.setAttribute('offset', st[0]);
+        s2.setAttribute('stop-color', 'var(--yoxi-cream)');
+        s2.setAttribute('stop-opacity', st[1]);
+        grad.appendChild(s2);
+      });
+      defs.appendChild(grad);
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('data-layer', 'seenTint');
+      g.appendChild(defs);
+      const R = (fog.radiusM || 420) * (m.width / m.spanM);
+      const add = function (id, op, k) {
+        const p = m.place(id);
+        if (!p) return;
+        const c = document.createElementNS(NS, 'circle');
+        c.setAttribute('cx', p.px.toFixed(1));
+        c.setAttribute('cy', p.py.toFixed(1));
+        c.setAttribute('r', (R * k).toFixed(1));
+        c.setAttribute('fill', 'url(#seenTint)');
+        c.setAttribute('opacity', op);
+        g.appendChild(c);
+      };
+      (fog.seen || []).forEach(function (id) { add(id, '.85', 1); });
+      (fog.fade || []).forEach(function (id) { add(id, '.55', 0.85); });
+      svg.insertBefore(g, fogRect);
+    }
+
+    /* ?span=month 讓截圖也拍得到「這個月」那一態（點不到 pill 的場合） */
+    const startAll = q.get('span') !== 'month';
+    document.querySelectorAll('#span .pill').forEach(function (b) {
+      b.classList.toggle('is-active', (b.dataset.span === 'all') === startAll);
+      b.addEventListener('click', function () {
+        document.querySelectorAll('#span .pill').forEach(function (x) { x.classList.remove('is-active'); });
+        b.classList.add('is-active');
+        draw(b.dataset.span === 'all');
+      });
+    });
+    draw(startAll);
+
+    if (q.has('dbg')) {
+      const el = document.createElement('pre');
+      el.id = 'dbg';
+      el.style.cssText = 'position:fixed;left:0;top:0;z-index:999;font-size:9px;background:#fff';
+      const box = document.getElementById('mapArea').getBoundingClientRect();
+      el.textContent = 'map ' + Math.round(box.width) + 'x' + Math.round(box.height) +
+        '\ncovAll ' + covEl.textContent + '\npin ' + pin.style.left + ' ' + pin.style.top;
+      document.body.appendChild(el);
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 微 3D 近景（白天／黃昏／傾斜） — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（微 3D 近景）【不在 demo 流程】
+
+  這張回答什麼：立體感要不要做、做到哪裡。同一段路（城隍廟 → 東門市場 → 護城河）
+  用兩種「3D」畫：
+  · iso ＝ 真的把建物擠出來（純 SVG 的 dimetric 投影，頂面＋兩面牆三階明度）。
+  · tilt ＝ 平面底圖用 CSS rotateX 傾斜，便宜很多，但路會被壓扁。
+  兩個都拍得到、都不用 WebGL、都不需要網路。
+
+  怎麼看：
+  · ?hour=day|dusk —— 黃昏在 svg 最上層蓋一張 #1B2A44 .28 的薄片，狀態列跟著換成 18:10。
+    它不是另一個 preset，是「同一張圖的時間」：色票沒有變多。
+  · ?tilt=1 —— iso 本來就是 3D，所以傾斜這個參數在這一頁不疊加在 iso 上，
+    而是換成「紙感底圖 ＋ .hsmap-tilt（--tilt:52）」，讓兩種立體感並排比較。
+  頁面上那條切換列是鷹架（data-concept-ui），不是產品。
+
+  幾何：iso 的 rotate 用 -60 而不是預設的 -22。dimetric 的橫軸是 0.866×(rx−ry)，
+  東西向會被拉長將近一倍 —— -22 度時東門市場與護城河都被推出畫面外。
+  中心也從城隍廟挪到三個地方的外接框中心（車站西 450 公尺、北 50 公尺），
+  三個點才排得成一條看得懂的路。傾斜那一態用 rotate 0、spanM 1250 ——
+  .hsmap-tilt 的 scale(1.22) ＋ 透視會把畫面往外撐，700 公尺的框會讓兩頭掉出畫面。
+
+  刻意沒有的東西：iso 沒有新增任何可按元素（景點圖釘還是原本那顆，連到地方詳情）；
+  沒有陰影特效、沒有貼圖、沒有天空盒、沒有相機動畫。
+  卡片上的「走路 14 分鐘」是示意數字 —— 這份原型沒有做路徑規劃。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL）。這一頁的署名不在地圖右下角 ——
+  地圖滿版到機身圓角，右下角會被切掉，傾斜那一態文字還會跟著歪，所以改畫在底下那張卡裡。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<style>
+  /* 路線線：海軍藍虛線，跟 ride.html 的行程線同一個語言（線不是可按的東西，
+     但它屬於「使用者的路徑」，所以用海軍藍，不用紅） */
+  .route-line { fill: none; stroke: var(--yoxi-navy); stroke-width: 3;
+                stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round; }
+  .route-dot  { fill: var(--yoxi-navy); }
+  .route-card { position: absolute; left: var(--gutter); right: var(--gutter);
+                bottom: 24px; z-index: 30; }
+</style>
+</head>
+
+<body data-vision="concept-map-iso" data-status="dark" data-time="15:40">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark" style="right:auto; left:16px; top:calc(var(--statusbar-h) + 76px)">概念稿 · 質感探索</span>
+
+      <div class="map u-fill" data-pan id="mapArea">
+
+        <div class="hsmap-tilt" data-panlayer id="plane" style="--tilt:0; --tilt-scale:1">
+          <div class="hsmap-tilt__plane">
+            <svg class="map__svg" id="mapSvg"></svg>
+            <div id="spots"></div>
+          </div>
+        </div>
+
+        <a class="fab" href="concept-map-explore.html?style=iso"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="關閉">
+          <span data-icon="close"></span>
+        </a>
+        <button class="fab" data-recenter
+                style="top:calc(var(--statusbar-h) + 12px); right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 鷹架：白天／黃昏／換成傾斜 -->
+        <div class="styleswitch" data-concept-ui id="styleswitch"
+             style="top:calc(var(--statusbar-h) + 118px)"></div>
+
+        <!-- 這段路（數字是示意） -->
+        <div class="card card--pad route-card">
+          <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                      color:var(--yoxi-slate); margin-bottom:4px" id="routeKind">微 3D · 近景</div>
+          <div style="font-weight:800; line-height:1.5">
+            城隍廟 → 東門市場 → 護城河：走路 <span class="num">14</span> 分鐘
+          </div>
+          <div style="margin-top:6px; font-size:12px; color:var(--yoxi-slate); line-height:1.6">
+            三個點是真實經緯度，線是直接連起來的 —— 這份原型沒有做路徑規劃，分鐘數是示意。
+          </div>
+          <!-- 署名畫在卡片裡，不用 hsmap 預設的右下角：這一頁的地圖滿版到機身圓角，
+               右下角會被圓角切掉；傾斜那一態連文字都會跟著歪。 -->
+          <div style="margin-top:8px; text-align:right; font-size:10px; color:var(--yoxi-slate)">
+            地圖資料 © OpenStreetMap 貢獻者（ODbL）
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const dusk = q.get('hour') === 'dusk';
+  const tilt = q.get('tilt') === '1';
+  const STOPS = ['temple', 'market', 'moat'];
+
+  /* 黃昏只是一張 .28 的薄片，底圖還是亮的 —— 狀態列改成深字才看得見，
+     所以這裡只換時間，不換 tone。 */
+  if (dusk) document.body.dataset.time = '18:10';
+
+  /* ---- 鷹架：切換列 ------------------------------------------------ */
+  const sw = document.getElementById('styleswitch');
+  const link = function (o) {
+    const p = new URLSearchParams();
+    if (o.hour) p.set('hour', o.hour);
+    if (o.tilt) p.set('tilt', '1');
+    return '?' + p.toString();
+  };
+  sw.innerHTML = '<span class="styleswitch__k">立體感</span>' +
+    '<button class="styleswitch__b' + (!tilt && !dusk ? ' is-on' : '') + '" type="button" data-go="' + link({}) + '">微 3D · 白天</button>' +
+    '<button class="styleswitch__b' + (!tilt && dusk ? ' is-on' : '') + '" type="button" data-go="' + link({ hour: 'dusk' }) + '">微 3D · 黃昏</button>' +
+    '<button class="styleswitch__b' + (tilt ? ' is-on' : '') + '" type="button" data-go="' + link({ tilt: 1 }) + '">傾斜的紙感</button>';
+  sw.querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () { location.search = b.dataset.go; };
+  });
+
+  document.getElementById('routeKind').textContent = tilt
+    ? '傾斜的紙感 · 同一段路' : (dusk ? '微 3D · 近景 · 黃昏' : '微 3D · 近景 · 白天');
+
+  SHELL.ready(function () {
+    const plane = document.getElementById('plane');
+    if (tilt) { plane.style.setProperty('--tilt', '52'); plane.style.setProperty('--tilt-scale', '1.22'); }
+
+    const m = HSMAP.render(document.getElementById('mapSvg'), tilt
+      ? { style: 'paper', center: [24.80449, 120.96824], spanM: 1250, rotate: 0, credit: false }
+      : { style: 'iso',   center: [24.80205, 120.96725], spanM: 650, rotate: -60, credit: false });
+
+    /* 傾斜的平面比地圖框小（scale ＋ translateY），上緣會露出 .map 的預設灰底。
+       把地圖框的底色換成同一張色票的地色，接縫就不見了 —— 不新增顏色。 */
+    document.getElementById('mapArea').style.background = HSMAP.PALETTE[m.style].land;
+
+    /* ---- 黃昏：在最上層蓋一張薄片。不是新的 preset，是同一張圖的時間 ---- */
+    if (dusk) {
+      const NS = 'http://www.w3.org/2000/svg';
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('width', m.width);
+      r.setAttribute('height', m.height);
+      r.setAttribute('fill', '#1B2A44');
+      r.setAttribute('opacity', '.28');
+      r.setAttribute('data-layer', 'dusk');
+      m.svg.appendChild(r);
+    }
+
+    /* ---- 路線：三個真實座標直接連起來 ---------------------------------- */
+    const NS = 'http://www.w3.org/2000/svg';
+    const pts = STOPS.map(function (id) {
+      const p = HSMAP.places()[id];
+      return m.projectM(p.x, p.y);
+    });
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('data-layer', 'route');
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('class', 'route-line');
+    path.setAttribute('d', pts.map(function (p, i) {
+      return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+    }).join(''));
+    g.appendChild(path);
+    pts.forEach(function (p) {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('class', 'route-dot');
+      c.setAttribute('cx', p[0].toFixed(1));
+      c.setAttribute('cy', p[1].toFixed(1));
+      c.setAttribute('r', '4');
+      g.appendChild(c);
+    });
+    m.svg.appendChild(g);
+
+    /* ---- 景點：只畫在框裡的。iso 不新增可按元素 ——
+           圖釘本來就會點，這裡直接做成連結，不另外長出小卡。 -------------- */
+    const list = m.spotsAt(MOCK.SPOTS).filter(function (s) { return !s.offMap; });
+    SHELL.renderSpots(document.getElementById('spots'), {
+      spots: list,
+      href: function (s) { return 'concept-map-place.html?id=' + s.id; },
+    });
+
+    if (q.has('dbg')) {
+      const d = document.createElement('pre');
+      d.id = 'dbg';
+      d.style.cssText = 'position:fixed;left:0;top:0;z-index:999;font-size:9px;background:#fff';
+      d.textContent = 'map ' + m.width + 'x' + m.height + ' style ' + m.style +
+        '\nroute ' + pts.map(function (p) { return p.map(Math.round).join(','); }).join(' → ') +
+        '\nspots ' + list.map(function (s) { return s.id + '@' + s.x + ',' + s.y; }).join(' ');
+      document.body.appendChild(d);
+    }
+  });
+})();
+</script>
+</body>
+</html>

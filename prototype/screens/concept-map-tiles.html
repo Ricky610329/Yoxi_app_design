@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 現成圖磚（需要網路） — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（現成圖磚）【不在 demo 流程、不進 SHOTS、需要網路】
+
+  這張回答什麼：如果不自己畫底圖，直接用市面上的圖磚（CARTO Voyager／Positron／
+  Dark Matter、Esri World Imagery），畫面會長怎樣？我們的景點圖釘擺上去還成立嗎？
+  答案是成立 —— 圖釘、小卡、紅／海軍藍的紀律全部照舊，換的還是紙。
+  代價寫在下面那張卡裡：要網路、要金鑰與配額、樣式不是我們的、離線 demo 會開天窗。
+
+  怎麼看：?base=osm|voyager|positron|dark|satellite。上面那條切換列是鷹架（data-concept-ui）。
+  · 預設從 voyager 改成 osm：實測 CARTO 的三組（Voyager／Positron／Dark Matter）
+    現在沒有金鑰會在整張圖上印「API KEY REQUIRED」浮水印。那不是壞掉，那正好是這一頁的論證，
+    所以三組都留著讓人切過去看，只是預設不用它 —— 預設要是一張真的畫得出來的圖。
+    Esri 的衛星影像目前不用金鑰。
+  · **?still=1 完全不建立任何圖磚圖層** —— 稽核與截圖永遠不會發出網路請求，
+    畫面會直接說「圖磚需要網路，截圖時不載入」。這是這一頁唯一的硬規則。
+  · Leaflet 1.9.4 已經落地在 assets/vendor/leaflet/（含 LICENSE，BSD-2），
+    所以「程式」不需要網路，只有「圖磚」需要。
+
+  跟其他概念頁差在哪：其他六張都是 HSMAP 自己畫的 SVG，離線、可截圖、可進 demo；
+  這一張是唯一一張依賴外部服務的。任何 demo 流程都不准走到這裡。
+
+  景點圖釘：用 SHELL.renderSpots 產生的**同一段 markup**包進 L.divIcon，
+  座標來自 assets/map/hs-places.js 的真實經緯度。點下去直接到地方詳情，不開小卡。
+
+  刻意沒有的東西：沒有縮放按鈕（zoomControl:false，跟其他頁一致）、沒有圖層清單、
+  沒有把圖磚服務的名字當成品牌、沒有把任何圖磚存進 repo。
+
+  資料與署名：OpenStreetMap 貢獻者（ODbL）＋ CARTO；衛星影像 © Esri、Maxar、
+  Earthstar Geographics。署名由 Leaflet 的 attributionControl 顯示在右下角。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
+<style>
+  /* Leaflet 的容器要自己撐開：.map 是 flex 子項，沒有明確高度的話
+     .leaflet-container 會量到 0，整張圖不會畫。 */
+  #leaf { position: absolute; inset: 0; background: var(--map-land); }
+  .leaflet-container { font-family: var(--font-sans); background: var(--map-land); }
+  .leaflet-control-attribution {
+    font-size: 9px;
+    background: rgba(255, 255, 255, .82);
+  }
+  .netchip {
+    position: absolute;
+    left: var(--gutter);
+    bottom: 16px;
+    z-index: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: var(--r-pill);
+    background: rgba(252, 253, 255, .94);
+    box-shadow: var(--sh-card);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    color: var(--yoxi-slate);
+  }
+  .netchip i {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--yoxi-slate-lite);
+  }
+  .stillnote {
+    position: absolute;
+    left: var(--gutter); right: var(--gutter);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 500;
+    text-align: center;
+    font-size: var(--fs-cap);
+    font-weight: var(--fw-bold);
+    color: var(--yoxi-slate);
+    line-height: 1.8;
+  }
+</style>
+</head>
+
+<body data-vision="concept-map-tiles" data-needs-net="1" data-status="light" data-time="8:10">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="concept-map-explore.html">
+            <span data-icon="close"></span>
+          </a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">現成圖磚</h1>
+          <span class="vision-mark" style="position:static; background:rgba(255,255,255,.22);
+                color:var(--yoxi-white)">概念稿 · 質感探索</span>
+        </div>
+      </header>
+
+      <div class="map u-fill" id="mapArea">
+        <div id="leaf"></div>
+
+        <!-- 鷹架：切換圖磚（不是產品） -->
+        <!-- z-index 要壓過 Leaflet 的 pane（400）與 control（800），不然切換列會被圖磚蓋住 -->
+        <div class="styleswitch" data-concept-ui id="styleswitch" style="top:12px; z-index:900"></div>
+
+        <span class="netchip"><i></i>需要網路 · 圖磚不在 repo</span>
+
+        <div class="stillnote u-hidden" id="stillnote"></div>
+      </div>
+
+      <div class="sheet" style="--sheet-min:none">
+        <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+          <div style="font-weight:800; margin-bottom:6px">用現成圖磚的代價</div>
+          <div style="font-size:13px; line-height:1.7; color:var(--yoxi-slate)">
+            要網路、要金鑰與配額、樣式不是我們的（別人改版我們就跟著變）、
+            離線 demo 會開天窗。景點圖釘與小卡照樣成立 —— 差別只在那張紙是誰的。
+            <br><br>
+            <b style="color:var(--yoxi-navy)">現場證據：</b>切到彩色／淺灰／深色（CARTO）看一眼 ——
+            整張圖會印滿「API KEY REQUIRED」。那三組圖磚現在要金鑰了。
+            標準（OSM）與衛星（Esri）目前不用，但兩邊的使用條款都不允許當成產品的圖磚來源。
+          </div>
+        </div>
+        <p class="concept-note" style="margin:12px -16px 0">
+          這一頁的圖磚來自 CARTO 與 Esri，地理資料仍然是 OpenStreetMap 貢獻者（ODbL）；
+          署名在地圖右下角。其他六張概念稿的底圖是我們自己用同一份 OSM 資料畫的 SVG，
+          離線、可截圖、可進 demo。
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../assets/vendor/leaflet/leaflet.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const still = q.has('still');
+
+  const OSM = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  const CARTO = OSM + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  const BASES = {
+    /* 不用金鑰的那一個放第一個：CARTO 的三組現在會在圖上印浮水印（見檔頭與下面那張卡） */
+    osm:       { name: '標準（OSM）', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attr: OSM, sub: 'abc' },
+    voyager:   { name: '彩色（Voyager）', url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', attr: CARTO },
+    positron:  { name: '淺灰（Positron）', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr: CARTO },
+    dark:      { name: '深色（Dark Matter）', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: CARTO },
+    satellite: { name: '衛星（Esri）', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics' },
+  };
+  const base = BASES[q.get('base')] ? q.get('base') : 'osm';
+
+  /* ---- 鷹架：切換列 ------------------------------------------------ */
+  const sw = document.getElementById('styleswitch');
+  sw.innerHTML = '<span class="styleswitch__k">圖磚</span>' +
+    Object.keys(BASES).map(function (k) {
+      return '<button class="styleswitch__b' + (k === base ? ' is-on' : '') +
+             '" type="button" data-b="' + k + '">' + BASES[k].name + '</button>';
+    }).join('');
+  sw.querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () { location.search = '?base=' + b.dataset.b; };
+  });
+
+  SHELL.ready(function () {
+    if (typeof L === 'undefined') {
+      document.getElementById('stillnote').classList.remove('u-hidden');
+      document.getElementById('stillnote').textContent =
+        'assets/vendor/leaflet/leaflet.js 沒有載入。';
+      return;
+    }
+
+    const map = L.map('leaf', {
+      zoomControl: false,
+      attributionControl: true,
+      dragging: !still,
+      scrollWheelZoom: !still,
+    }).setView([24.8030, 120.9700], 15);
+
+    /* ---- 唯一的硬規則：?still=1 一塊圖磚都不載 ------------------------ */
+    if (still) {
+      const n = document.getElementById('stillnote');
+      n.classList.remove('u-hidden');
+      n.innerHTML = '圖磚需要網路，截圖時不載入。<br>' +
+        '<span style="font-weight:400">這一頁的圖磚來自 CARTO／Esri，地理資料是 OpenStreetMap 貢獻者（ODbL）。</span>';
+      map.attributionControl.addAttribution('OpenStreetMap contributors（ODbL）· CARTO · Esri');
+    } else {
+      L.tileLayer(BASES[base].url, {
+        attribution: BASES[base].attr,
+        maxZoom: 19,
+        subdomains: BASES[base].sub || 'abcd',
+      }).addTo(map);
+    }
+
+    /* ---- 景點：用 renderSpots 產生的同一段 markup 包進 divIcon ---------- */
+    const hidden = document.createElement('div');
+    hidden.style.display = 'none';
+    document.body.appendChild(hidden);
+    const list = MOCK.SPOTS.filter(function (s) {
+      const p = HSMAP_PLACE(s.id);
+      return p && !p.offMap;
+    });
+    SHELL.renderSpots(hidden, {
+      spots: list,
+      compact: true,
+      href: function (s) { return 'concept-map-place.html?id=' + s.id; },
+    });
+
+    Array.prototype.forEach.call(hidden.children, function (el, i) {
+      const s = list[i];
+      const p = HSMAP_PLACE(s.id);
+      el.style.left = '';
+      el.style.top = '';
+      L.marker([p.lat, p.lon], {
+        icon: L.divIcon({ className: '', html: el.outerHTML, iconSize: [0, 0], iconAnchor: [0, 0] }),
+        keyboard: false,
+      }).addTo(map);
+    });
+    hidden.remove();
+
+    /* 明信片縮圖是 <div data-art> 注入的，marker 是後來才進 DOM 的 —— 補一次 */
+    SHELL.injectArt(document.getElementById('leaf'));
+    SHELL.injectIcons(document.getElementById('leaf'));
+
+    function HSMAP_PLACE(id) { return (window.HSINCHU_PLACES || {})[id]; }
+
+    if (q.has('dbg')) {
+      const d = document.createElement('pre');
+      d.id = 'dbg';
+      d.style.cssText = 'position:fixed;left:0;top:0;z-index:999;font-size:9px;background:#fff';
+      d.textContent = 'base ' + (still ? '(none: still)' : base) +
+        ' markers ' + document.querySelectorAll('#leaf .spot').length +
+        ' tiles ' + document.querySelectorAll('#leaf img.leaflet-tile').length;
+      document.body.appendChild(d);
+    }
+  });
+})();
+</script>
+</body>
+</html>

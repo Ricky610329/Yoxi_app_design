@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 地方詳情（實景照片＋定位圖） — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（地方詳情）【不在 demo 流程】
+
+  這張回答什麼：一頁裡同時放三種圖，看它們並排時會不會打架 ——
+  ① 實景照片（Wikimedia Commons，CC 授權，作者標在圖旁）
+  ② 一張 420 公尺見方的小定位圖（OpenStreetMap 真實幾何，一根紅 pin）
+  ③ 程式生成的明信片示意圖（頁尾「到了會得到」那一張，維持主線的樣子）
+
+  怎麼看：?id=station|temple|brick|market|moat|hill|lake|harbour|rail|neiwan|glass-kiln。
+  有照片的 id 會長出照片；沒有的維持斜紋站位 .ph —— 站位不是失敗畫面，
+  是這份概念稿的立場：**沒有就說沒有**，不用 AI 生圖冒充實景。
+
+  跟 place.html 差在哪：
+  · 大圖從「灰階明信片＋到了就會上色」換成實景照片（或站位）。
+    收集的灰階語言留在頁尾「到了會得到」那一格，沒有消失。
+  · 多一條 120 px 的定位圖：spanM 420，只有路與建物、沒有地名（小於 200 px 不放標籤）。
+  · 主線的 .ai-note／.ai-mark 一字不動；這一頁改用 .concept-note 講三種圖的來源。
+  敘事三段、推薦依據、現場提示、頁尾 CTA 的版型與文案全部沿用 MOCK.findPlace()。
+
+  刻意沒有的東西：沒有評分、沒有評論、沒有「多少人來過」、沒有營業中紅點、
+  沒有把照片說成 AI 生的、也沒有把 AI 生的說成照片。
+
+  資料：照片 © 各作者 / Wikimedia Commons（授權標在圖旁）；
+  地圖資料 © OpenStreetMap 貢獻者（ODbL），定位圖右下角有署名。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<style>
+  .place-foot {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
+    padding: var(--sp-3) var(--gutter) var(--sp-5);
+    background: var(--yoxi-white);
+    border-top: 1px solid var(--yoxi-line);
+    box-shadow: var(--sh-sheet);
+  }
+  /* 定位圖：整條貼齊左右，高度固定 120px。小於 200px 的地圖不放地名。 */
+  .locmap {
+    position: relative;
+    height: 120px;
+    overflow: hidden;
+    background: var(--map-land);
+  }
+  .locmap .pin { z-index: 4; }
+  /* 照片角標預設貼在圖的左上角，這一頁的圖從畫面最上緣開始，會壓到狀態列的時間。
+     幾何照 place.html 的 .ai-mark：往下讓出狀態列。 */
+  #hero .photo-mark { top: calc(var(--statusbar-h) + 22px); left: 72px; }
+  #hero .ph__chip { top: calc(var(--statusbar-h) + 22px); }
+</style>
+</head>
+
+<body data-vision="concept-map-place" data-status="dark" data-time="8:11">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll" style="padding-bottom:172px">
+
+        <!-- ===== 實景照片（沒有就維持站位） ===== -->
+        <div style="position:relative; background:var(--yoxi-mist)">
+          <div class="ph ph--16x9" id="hero" data-photo="" data-photo-mark data-photo-credit data-ph="">
+            <span class="ph__chip">照片</span>
+          </div>
+
+          <a class="fab" data-back href="concept-map-explore.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+          <span class="vision-mark" style="right:16px; top:calc(var(--statusbar-h) + 62px)">概念稿 · 質感探索</span>
+        </div>
+        <!-- 照片沒有的時候這一行是空的，版面不會跳 -->
+        <div id="heroCredit" style="padding:0 16px"></div>
+
+        <!-- ===== 定位圖：420 公尺見方，一根紅 pin ===== -->
+        <div class="locmap" id="locmap">
+          <svg class="map__svg" id="locSvg"></svg>
+          <div class="pin pin--red" id="locPin" style="left:50%; top:50%; display:none">
+            <span class="pin__drop" style="width:36px; height:36px">
+              <span data-icon="place" style="width:19px;height:19px;display:block"></span>
+            </span>
+          </div>
+          <div id="locNote" class="u-hidden"
+               style="position:absolute; left:0; right:0; bottom:22px; text-align:center;
+                      font-size:13px; font-weight:800; color:var(--yoxi-slate)"></div>
+        </div>
+        <div id="locCap" style="padding:6px 16px 0; font-size:11px; color:var(--yoxi-slate)"></div>
+
+        <!-- ===== 地點名 ===== -->
+        <div style="padding:16px 16px 0">
+          <span id="eyebrow" style="display:inline-block; padding:3px 10px; border-radius:999px;
+                       background:var(--yoxi-cream); font-size:12px; font-weight:800"></span>
+          <h1 id="name" style="font-size:28px; font-weight:800; line-height:1.25; margin-top:10px"></h1>
+          <div id="meta" class="u-row u-gap3"
+               style="margin-top:8px; color:var(--yoxi-slate); font-size:14px"></div>
+        </div>
+
+        <!-- ===== 敘事三段 ===== -->
+        <div class="story" style="padding:24px 16px" id="story"></div>
+
+        <!-- ===== 推薦依據 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="why">
+            <div class="why__head" style="border-bottom:1px solid var(--yoxi-line)">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px; height:18px; display:block"></span>
+                為什麼今天推薦這裡給你
+              </span>
+            </div>
+            <div class="why__list" id="whyList" style="padding-top:12px"></div>
+          </div>
+        </div>
+
+        <!-- ===== 現場提示 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                        color:var(--yoxi-red); margin-bottom:6px">到了記得看</div>
+            <div id="tip" style="line-height:1.7"></div>
+            <div id="hours" style="margin-top:10px; font-size:13px; color:var(--yoxi-slate)"></div>
+          </div>
+        </div>
+
+        <!-- ===== 到了會得到（主線的灰階明信片語言，原封不動） ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="sec"><h2 class="sec__t">到了會得到</h2></div>
+          <div class="card card--pad u-row u-gap4">
+            <span id="rewardThumb"
+                  style="width:60px; height:80px; border-radius:4px; overflow:hidden;
+                         position:relative; flex:none;
+                         filter:grayscale(1) contrast(.72) brightness(1.16)"></span>
+            <span class="u-fill">
+              <span id="rewardTitle" style="display:block; font-weight:800"></span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                這個地方獨有，由 AI 依當天的光線與季節生成
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 三種圖的誠實句（取代主線的 .ai-note；主線那句一字不動） ===== -->
+        <p class="concept-note">
+          這一頁有三種圖：實景照片來自 Wikimedia Commons，作者與授權標在圖旁；
+          明信片與插圖是程式生成的示意圖，正式版才會換成 AI 依地點生成；
+          地圖是 OpenStreetMap 的真實地理資料（ODbL）重新上色，不是截圖。
+        </p>
+
+      </div>
+
+      <!-- ===== 頁尾 CTA ===== -->
+      <div class="place-foot" id="foot"></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<!-- 照片：這兩支由另一位負責，可能還不存在。缺了就維持 .ph 站位。 -->
+<script src="../assets/photos/credits.js" onerror="void 0"></script>
+<script src="../js/photos.js" onerror="void 0"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const qid = q.get('id');
+  const P = MOCK.findPlace(qid);
+  const far = P.distance != null && P.distance > 10000;
+
+  document.title = '概念稿 · ' + P.name + ' — yoxi 城事';
+
+  /* ---- 照片（有就換成 <img>，沒有就維持斜紋站位）------------------- */
+  const hero = document.getElementById('hero');
+  hero.setAttribute('data-photo', P.id);
+  hero.setAttribute('data-ph', P.name);
+
+  /* ---- 文字：全部來自 MOCK.findPlace() ------------------------------ */
+  document.getElementById('eyebrow').textContent = far ? P.eyebrow : P.type;
+  document.getElementById('name').textContent = P.name;
+
+  const hasDist = P.distance != null;
+  const km = hasDist ? (P.distance / 1000).toFixed(1) : null;
+  const mins = !hasDist ? null
+             : far ? Math.round(P.distance / 670) : Math.round(P.distance / 75);
+  document.getElementById('meta').innerHTML = !hasDist
+    ? '<span>距離待確認</span>'
+    : far
+    ? '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + km + '</span> km</span>' +
+      '<span>·</span><span>搭車 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>'
+    : '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + P.distance + '</span> m</span>' +
+      '<span>·</span><span>走路 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>';
+
+  document.getElementById('story').innerHTML = P.story.map(function (s) {
+    return '<div class="story__block"><div class="story__label">' + s.label +
+           '</div><p class="story__text">' + s.text + '</p></div>';
+  }).join('');
+
+  document.getElementById('whyList').innerHTML = P.why.map(function (w) {
+    return '<div class="why__item"><span class="why__src">' + w.src + '</span>' + w.text + '</div>';
+  }).join('');
+
+  document.getElementById('tip').textContent = P.tip;
+  /* MOCK 的城隍廟寫「每日 06:00–22:00」。「每日」在概念稿的禁用詞清單裡
+     （它是任務語言），但這是主線資料、不該改 mock.js —— 所以只在顯示時換成「每天」。 */
+  document.getElementById('hours').textContent = String(P.hours).replace('每日', '每天');
+  document.getElementById('rewardTitle').textContent = '一張〈' + P.name + '〉';
+  document.getElementById('rewardThumb').innerHTML = SHELL.postcardArt(P.art, { seed: 1 });
+
+  /* ---- 頁尾：與 place.html 同一套判斷（28 km 走不到就換成叫車）------- */
+  document.getElementById('foot').innerHTML = far
+    ? (P.id === 'neiwan'
+        ? '<a class="btn-primary" href="ride.html">用 yoxi 前往</a>'
+        : '<a class="btn-primary" href="#" data-toast="這份原型的行程只做了內灣那一段；正式版這裡會直接帶入下車點">用 yoxi 前往</a>') +
+      '<div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">' +
+      km + ' 公里 —— 這一段搭車比較合理，走路要五個小時以上</div>'
+    : '<div style="display:grid; grid-template-columns:1fr auto; gap:8px">' +
+      '<a class="btn-primary" href="going.html?id=' + P.id + '">走路前往</a>' +
+      '<a class="btn-ghost" href="concept-map-home.html" style="width:auto; padding:0 20px">用 yoxi</a>' +
+      '</div>' +
+      (hasDist
+        ? '<div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">' +
+          P.distance + ' 公尺，走過去大概 ' + mins + ' 分鐘</div>'
+        : '');
+
+  SHELL.injectIcons();
+
+  /* ---- 定位圖與照片注入：等版面量得到尺寸再做 ---------------------- */
+  SHELL.ready(function () {
+    if (window.PHOTOS && PHOTOS.inject) PHOTOS.inject(document);
+
+    const place = HSMAP.places()[P.id];
+    const note = document.getElementById('locNote');
+    const cap = document.getElementById('locCap');
+
+    if (!place) {
+      note.classList.remove('u-hidden');
+      note.textContent = 'hs-places.js 裡沒有這個地點的座標';
+      cap.textContent = '';
+      return;
+    }
+
+    /* 哪一份離線資料畫得到這裡：CORE 是 3×3 km 的市中心，WIDE 是 11×12 km 的大範圍。
+       兩個 bbox 都寫在 tools/fetch-map.py 裡，這裡照抄，不用猜。
+       竹中站（lon 121.0312）其實落在 WIDE 的東邊界外 1.1 km —— 那是資料的洞，說出來。 */
+    const CORE = [24.7881, 120.9568, 24.8151, 120.9866];
+    const WIDE = [24.7600, 120.9000, 24.8600, 121.0200];
+    const inBox = function (b) {
+      return place.lat > b[0] && place.lat < b[2] && place.lon > b[1] && place.lon < b[3];
+    };
+    const set = inBox(CORE) ? 'core' : (inBox(WIDE) ? 'wide' : null);
+
+    const m = HSMAP.render(document.getElementById('locSvg'), {
+      style: 'paper',
+      center: P.id,
+      spanM: 420,
+      dataset: set || 'core',
+      layers: { label: false, building: true },
+      credit: true,
+    });
+    /* 「這張圖上到底有沒有東西」：數路徑資料的長度，不是數 <path> 的個數 ——
+       hsmap 把一整層的折線併成一條 path，個數量不出疏密。 */
+    const geom = function (h) {
+      let n = 0;
+      h.svg.querySelectorAll('path').forEach(function (e) { n += (e.getAttribute('d') || '').length; });
+      return n;
+    };
+    const p = m.place(P.id);
+    const pin = document.getElementById('locPin');
+    pin.style.display = '';
+    pin.style.left = (p.px / m.width * 100).toFixed(1) + '%';
+    pin.style.top = (p.py / m.height * 100).toFixed(1) + '%';
+
+    /* 資料畫不到這裡就說出來，不要讓人以為那裡真的什麼都沒有 */
+    if (!set) {
+      note.classList.remove('u-hidden');
+      note.textContent = place.offMap
+        ? '這裡在離線資料範圍外（28 公里），只有座標'
+        : '這裡在離線資料範圍外，只有座標';
+    }
+    cap.textContent = '定位圖 · 每格約 420 公尺見方 · ' +
+      (place.real === false ? '這個地點是原型虛構的，座標錨在真實的鄰近地點上' : '座標來自 OpenStreetMap');
+
+    if (q.has('dbg')) {
+      const d = document.createElement('pre');
+      d.id = 'dbg';
+      d.style.cssText = 'position:fixed;left:0;top:0;z-index:999;font-size:9px;background:#fff';
+      d.textContent = 'id ' + P.id + ' map ' + m.width + 'x' + m.height +
+        ' pin ' + pin.style.left + ' ' + pin.style.top +
+        ' set ' + m.dataset + ' geom ' + geom(m) +
+        ' photo ' + (hero.classList.contains('has-photo') ? 'yes' : 'no') +
+        ' PHOTOS ' + (window.PHOTOS ? 'loaded' : 'missing');
+      document.body.appendChild(d);
+    }
+  });
+})();
+</script>
+</body>
+</html>

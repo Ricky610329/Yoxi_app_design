@@ -70,7 +70,7 @@ const PALETTE = {
            roadCase: '#F0E2D4', roadFill: '#FFFFFF', roadMinor: '#FFFDF9', roadMinorCase: null, roadService: null,
            rail: '#C6CBD2', railDash: '#FFFFFF', coast: '#CBDAEB', boundary: '#E3E8EE',
            bldFill: null, bldEdge: null, bldTop: null, bldWallA: null, bldWallB: null,
-           label: '#9AA3AE', labelHalo: '#F7F9FB', fog: '#F7F9FB', credit: '#9AA3AE' }
+           label: '#9AA3AE', labelHalo: '#F7F9FB', fog: '#ECF1F6', credit: '#9AA3AE' }
 };
 PALETTE.iso = PALETTE.paper;
 

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 六種底圖同場對照 — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（六種底圖）【不在 demo 流程】
+
+  這張回答什麼：六種底圖擺在同一支手機裡，同一個中心、同一個縮放、同一份幾何、
+  同樣三個景點 —— 差別只剩「紙」。這是受控實驗，不是拼貼，所以它是這一批裡
+  最有用的一張：要選哪一種，看這一張就夠了。
+
+  怎麼看：由上到下 紙感／夜間／插畫／微 3D／傾斜／霧化，每一格下面一句取捨。
+  六格都關掉地名（每一格只有 171 px 寬，小於 200 px 的地圖不放標籤），
+  署名也關掉，改成整個格子下面一行 —— 一張圖印六次署名只是噪音。
+
+  幾何：中心是城隍廟、東門市場、新竹州廳三個點的中心（車站西 368 公尺、北 424 公尺），
+  spanM 600。原本規劃的「車站與城隍廟之間、spanM 1000」在 171 px 的格子裡
+  放不下城隍廟（它在中心西邊 704 公尺，半個框只有 500 公尺）；
+  而東門市場與新竹州廳實際只差 194 公尺，框拉大它們就疊在一起。
+  600 公尺是「三個都在框裡、而且不互相壓」的那個值。
+
+  刻意沒有的東西：沒有第七種底圖、沒有滑桿、沒有可切換的圖層清單。
+  六格是給人比較用的，不是產品裡的設定頁。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL）—— 六格共用格子下面那一行署名。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<style>
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 171px);
+    gap: var(--sp-4);
+    justify-content: center;
+    padding: var(--sp-4) var(--gutter) 0;
+  }
+  .tile { width: 171px; }
+  .tile__box {
+    position: relative;
+    width: 171px;
+    height: 200px;
+    overflow: hidden;
+    border-radius: var(--r-img);
+    background: var(--map-land);
+    box-shadow: var(--sh-card);
+  }
+  .tile__box .map__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .tile__name {
+    display: block;
+    margin-top: 6px;
+    font-size: var(--fs-cap);
+    font-weight: var(--fw-heavy);
+  }
+  .tile__note {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+    color: var(--yoxi-slate);
+  }
+  .tiles-credit {
+    padding: var(--sp-3) var(--gutter) 0;
+    text-align: right;
+    font-size: 10px;
+    color: var(--yoxi-slate);
+  }
+</style>
+</head>
+
+<body data-vision="concept-map-styles" data-status="light" data-time="8:10">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" href="concept-map-explore.html">
+            <span data-icon="close"></span>
+          </a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">六種底圖</h1>
+          <span class="vision-mark" style="position:static; background:rgba(255,255,255,.22);
+                color:var(--yoxi-white)">概念稿 · 質感探索</span>
+        </div>
+      </header>
+
+      <div class="scroll">
+        <p style="padding:14px 16px 0; font-size:13px; line-height:1.7; color:var(--yoxi-slate)">
+          同一個中心、同一個縮放、同一份 OpenStreetMap 幾何、同樣三個景點。
+          六格之間只換一件事：紙。
+        </p>
+
+        <div class="tiles" id="tiles"></div>
+
+        <div class="tiles-credit">地圖資料 © OpenStreetMap 貢獻者（ODbL）</div>
+
+        <div style="padding:20px 16px 0">
+          <div class="card card--pad">
+            <div style="font-weight:800; margin-bottom:10px">和諧的三個機制</div>
+            <div style="font-size:13px; line-height:1.7; color:var(--yoxi-slate)">
+              <p style="margin-bottom:10px">
+                <b style="color:var(--yoxi-navy)">一張色票。</b>
+                地、水、公園、路、鐵路、建物、標籤各只有一個顏色來源，六種底圖是同一張表的六個欄位。
+                表以外的顏色不准出現 —— 插畫風的公園綠是唯一的例外，而且只准待在地圖表面。
+              </p>
+              <p style="margin-bottom:10px">
+                <b style="color:var(--yoxi-navy)">一組零件。</b>
+                景點圖釘、上下車 pin、地名、署名小字在六格裡完全一樣，而且全部來自既有的 CSS。
+                換的是紙，不是零件。
+              </p>
+              <p>
+                <b style="color:var(--yoxi-navy)">一份幾何。</b>
+                六格同一個中心、同一個縮放、同一份資料。看起來像同一座城市，
+                是因為它真的就是同一座城市。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="concept-note" style="margin-top:20px">
+          六張底圖都是把 OpenStreetMap 的真實地理資料（ODbL）重新上色畫出來的，不是截圖，
+          也不是任何一家圖磚服務的樣式。
+        </p>
+
+        <div style="height:32px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script>
+(function () {
+  const CENTER = [24.80544, 120.96806];   /* 城隍廟／東門市場／州廳三點的中心 */
+  const SPAN = 600;
+  const IDS = ['temple', 'market', 'brick'];
+
+  const TILES = [
+    { k: 'paper', name: '紙感', note: '最像地圖、最不搶戲。叫車主畫面的預設。' },
+    { k: 'navy',  name: '夜間', note: '晚上的回顧與推播。紅色在深底上最有力氣。' },
+    { k: 'illus', name: '插畫', note: '最像遊戲，也多了一個色相 —— 只准待在地圖表面。' },
+    { k: 'iso',   name: '微 3D', note: '好看，但建物擠出來就吃掉路，只適合近景。' },
+    { k: 'tilt',  name: '傾斜', note: '便宜的立體感：同一張平面底圖，CSS 轉一下就有。' },
+    { k: 'fog',   name: '霧化', note: '足跡的語言。它不是底圖，是「還沒去過」的說法。' },
+  ];
+
+  const seen = MOCK.SPOTS
+    .filter(function (s) { return s.state === 'seen' || s.state === 'today'; })
+    .map(function (s) { return s.id; });
+
+  const host = document.getElementById('tiles');
+  host.innerHTML = TILES.map(function (t) {
+    const inner = t.k === 'tilt'
+      ? '<div class="hsmap-tilt" style="--tilt:52; --tilt-scale:1.22"><div class="hsmap-tilt__plane">' +
+        '<svg class="map__svg" id="svg-' + t.k + '"></svg><div id="spots-' + t.k + '"></div>' +
+        '</div></div>'
+      : '<svg class="map__svg" id="svg-' + t.k + '"></svg><div id="spots-' + t.k + '"></div>';
+    return '<figure class="tile">' +
+      '<div class="tile__box" id="box-' + t.k + '">' + inner + '</div>' +
+      '<figcaption><span class="tile__name">' + t.name + '</span>' +
+      '<span class="tile__note">' + t.note + '</span></figcaption></figure>';
+  }).join('');
+
+  SHELL.ready(function () {
+    TILES.forEach(function (t) {
+      const m = HSMAP.render(document.getElementById('svg-' + t.k), {
+        style: t.k === 'tilt' ? 'paper' : t.k,
+        center: CENTER,
+        spanM: SPAN,
+        rotate: 0,                       /* 六格同一份幾何：iso 也不另外轉 */
+        layers: { label: false },        /* 171 px 的格子放不下地名 */
+        credit: false,                   /* 六格共用下面那一行署名 */
+        fog: t.k === 'fog' ? { seen: seen, fade: ['harbour'], radiusM: 260 } : false,
+      });
+      /* 傾斜的平面比格子小，邊緣會露出預設灰底 —— 換成同一張色票的地色 */
+      document.getElementById('box-' + t.k).style.background = HSMAP.PALETTE[m.style].land;
+
+      const list = m.spotsAt(MOCK.SPOTS, { clamp: true })
+        .filter(function (s) { return IDS.indexOf(s.id) >= 0; });
+      SHELL.renderSpots(document.getElementById('spots-' + t.k), {
+        spots: list,
+        compact: true,
+        href: function (s) { return 'concept-map-place.html?id=' + s.id; },
+      });
+    });
+
+    const dq = new URLSearchParams(location.search);
+    /* 量測用：?to=700 把內容捲到指定位置，截圖才看得到下半頁 */
+    if (dq.get('to')) document.querySelector('.scroll').scrollTop = +dq.get('to');
+    if (dq.has('dbg')) {
+      const d = document.createElement('pre');
+      d.id = 'dbg';
+      d.style.cssText = 'position:fixed;left:0;top:0;z-index:999;font-size:9px;background:#fff';
+      d.textContent = TILES.map(function (t) {
+        const box = document.getElementById('box-' + t.k).getBoundingClientRect();
+        const sp = document.getElementById('spots-' + t.k).children;
+        return t.k + ' ' + Math.round(box.width) + 'x' + Math.round(box.height) + ' spots ' + sp.length;
+      }).join('\n');
+      document.body.appendChild(d);
+    }
+  });
+})();
+</script>
+</body>
+</html>
