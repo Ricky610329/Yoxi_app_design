@@ -1,0 +1,560 @@
+/* ==========================================================================
+   yoxi 城事 web app — 瀏覽器端測試框架（harness）
+   規格：app/ARCHITECTURE.md §6.2
+
+   runner.html 載入這支 → 各 specs/*.spec.js 用 T.spec() 登記 → window.onload 之後 T.run()。
+   一個 iframe 載 ../index.html?still=1（關動畫），所有測試共用它；
+   app.reset() 會清兩把 localStorage、略過 onboarding、重載 iframe。
+
+   設計取捨：
+   - 斷言是「軟」的：失敗記下來、測試繼續跑到底（一條 route 掃出三個死按鈕就列三個），
+     只要有一條失敗整個 test 就是 FAIL。例外與 timeout 也是 FAIL。
+   - app.click() 一律派一個真的 click 事件：element.onclick、href 導覽、
+     router 的 data-back 攔截都會照真實順序發生。直接呼叫 el.onclick() 會跳過 href。
+   - 每個 spec 開跑前自動 reset 一次，spec 之間不互相污染；spec 內的 test 要自己 reset。
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  /* runner.html?app=fixtures/mini-app.html 可以換掉受測頁（驗 harness 本身用） */
+  const APP_BASE = (function () {
+    const a = new URLSearchParams(location.search).get('app');
+    return a && /^[\w./-]+\.html$/.test(a) ? a : '../index.html';
+  })();
+  const APP_URL = APP_BASE + '?still=1';
+  /* reset({ still:false })／reload(hash, { still:false })：不帶 ?still=1，動畫與 setTimeout 路徑照真的跑 */
+  let stillMode = true;
+  const KEYS = { state: 'yoxi-chengshi-v1-2', store: 'yoxi-chengshi-app-v1' };
+  const DEFAULT_TIMEOUT = 8000;
+  const READY_TIMEOUT = 6000;
+
+  /* 禁用詞與白名單（沿用 prototype/tools/audit-app.html 的 BANNED／WORD_OK） */
+  const BANNED = ['任務', '完成', '達成', '挑戰', '每日'];
+  /* yoxi 既有的文案，不是城事寫的：抽屜的「好康任務」、行程結束頁的「行程完成」。
+     比對前先把整個片語拿掉；要加白名單請加在這裡並說明理由。 */
+  const WORD_OK = ['好康任務', '行程完成'];
+
+  /* 死按鈕：有這些屬性之一就算有行為（audit-app 的判準＋app 的 data-back／data-pills） */
+  /* data-back 另外判：app.js 只攔 a[data-back]，<button data-back> 按了沒反應 */
+  const BEHAVIOR_ATTRS = ['data-toast', 'data-switch', 'data-pills', 'data-flip',
+    'data-share', 'data-reset', 'data-recenter', 'data-tab', 'data-i'];
+
+  const specs = [];
+  const missing = [];
+  let current = null;           /* 正在跑的 test 紀錄；斷言寫進這裡 */
+  let frame = null;
+  let errors = [];              /* iframe 裡的 window.onerror／unhandledrejection */
+  let readyMs = null;
+  let loadSeq = 0;
+  let errOffset = 0;            /* app 自己的 <pre id="app-errors">（render／mount 丟的例外）已讀到哪 */
+
+  function appErrText() {
+    try { const pre = frame && frame.contentDocument.getElementById('app-errors'); return pre ? pre.textContent : ''; }
+    catch (e) { return ''; }
+  }
+  function appErrors() {
+    return appErrText().slice(errOffset).split('\n').filter(function (l) { return /^\[/.test(l); })
+      .map(function (l) { return 'app：' + l.slice(0, 200); });
+  }
+
+  /* ------------------------------------------------------------ 小工具 */
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function stack2(e) {
+    if (!e) return '';
+    const lines = String(e.stack || '').split('\n').map(function (s) { return s.trim(); })
+      .filter(function (s) { return /^at /.test(s); });
+    return lines.slice(0, 2).join(' | ');
+  }
+
+  function short(v) {
+    let s;
+    try { s = typeof v === 'string' ? JSON.stringify(v) : JSON.stringify(v); } catch (e) { s = String(v); }
+    if (s === undefined) s = String(v);
+    return s.length > 80 ? s.slice(0, 77) + '…' : s;
+  }
+
+  function waitFor(fn, ms, label) {
+    ms = ms == null ? 3000 : ms;
+    const t0 = Date.now();
+    return new Promise(function (resolve, reject) {
+      (function poll() {
+        let v;
+        try { v = fn(); } catch (e) { v = false; }
+        if (v) return resolve(v);
+        if (Date.now() - t0 >= ms) {
+          return reject(new Error('等待逾時 ' + ms + 'ms：' + (label || String(fn).slice(0, 80))));
+        }
+        setTimeout(poll, 20);
+      })();
+    });
+  }
+
+  function stripQuery(p) { return String(p || '').split('?')[0].split('#')[0]; }
+
+  /* ------------------------------------------------------------ iframe */
+  function ensureFrame() {
+    if (frame) return frame;
+    frame = document.getElementById('app-frame');
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = 'app-frame';
+      document.body.appendChild(frame);
+    }
+    return frame;
+  }
+
+  function win() { try { return ensureFrame().contentWindow; } catch (e) { return null; } }
+  function doc() { try { return ensureFrame().contentDocument; } catch (e) { return null; } }
+
+  /* 盡早把錯誤攔截器裝進新文件：導覽一 commit（location 變了、readyState=loading）就裝，
+     這樣連 app.js 載入時丟的例外都抓得到。 */
+  function hookErrors(seq) {
+    let lastWin = null;
+    (function poll() {
+      if (seq !== loadSeq) return;
+      let w = null, d = null;
+      try { w = frame.contentWindow; d = frame.contentDocument; } catch (e) {}
+      if (w && d && w !== lastWin && String(w.location.href) !== 'about:blank' && !w.__harnessHooked) {
+        lastWin = w;
+        try {
+          w.__harnessHooked = true;
+          w.addEventListener('error', function (ev) {
+            if (ev && ev.target && ev.target !== w && ev.target.tagName) {
+              errors.push('資源載不到：' + (ev.target.src || ev.target.href || ev.target.tagName));
+            } else {
+              errors.push((ev.message || 'error') + (ev.filename ? ' @' + ev.filename.split('/').pop() + ':' + ev.lineno : ''));
+            }
+          }, true);
+          w.addEventListener('unhandledrejection', function (ev) {
+            const r = ev.reason;
+            errors.push('unhandledrejection：' + (r && r.message ? r.message : String(r)));
+          });
+        } catch (e) { /* 跨來源：手動用瀏覽器開而沒有 --allow-file-access-from-files */ }
+      }
+      if (d && d.readyState === 'complete' && w && w.__harnessHooked) return;
+      setTimeout(poll, 2);
+    })();
+  }
+
+  function load(hash) {
+    const fr = ensureFrame();
+    loadSeq++;
+    const seq = loadSeq;
+    return new Promise(function (resolve, reject) {
+      const t0 = performance.now();
+      fr.onload = function () {
+        fr.onload = null;
+        let d = null;
+        try { d = fr.contentDocument; } catch (e) {}
+        if (!d || !d.documentElement) {
+          return reject(new Error('iframe 讀不到 contentDocument（手動開請用 Chrome --allow-file-access-from-files 或 app/tools/serve.py）'));
+        }
+        waitFor(function () { return d.documentElement.getAttribute('data-app-ready') === '1'; },
+          READY_TIMEOUT, 'html[data-app-ready="1"]')
+          .then(function () { readyMs = Math.round(performance.now() - t0); resolve(); })
+          .catch(function (e) {
+            const w = win();
+            const why = !w || !w.APP ? '（window.APP 不存在：app/js/app.js 沒載到或載入時丟例外）' : '';
+            reject(new Error(e.message + why + (errors.length ? '；錯誤：' + errors.slice(0, 2).join('；') : '')));
+          });
+      };
+      errors = [];
+      errOffset = 0;
+      readyMs = null;
+      fr.src = (stillMode ? APP_URL + '&' : APP_BASE + '?') + '_=' + seq + (hash ? '#' + hash : '');
+      hookErrors(seq);
+    });
+  }
+
+  function blank() {
+    const fr = ensureFrame();
+    loadSeq++;
+    return new Promise(function (resolve) {
+      fr.onload = function () { fr.onload = null; resolve(); };
+      fr.src = 'about:blank';
+      setTimeout(resolve, 1000);
+    });
+  }
+
+  /* ------------------------------------------------------------ app 物件（§6.2） */
+  const app = {
+    get win() { return win(); },
+    get doc() { return doc(); },
+    get APP() { const w = win(); return w && w.APP; },
+    get STATE() { const w = win(); return w && w.STATE; },
+    get MOCK() { const w = win(); return w && w.MOCK; },
+    /* 延伸：iframe 裡記到的錯誤（每次 go／reset／reload 前清空）與上次載入到 app-ready 的毫秒數 */
+    get errors() { return errors.concat(appErrors()); },
+    get readyMs() { return readyMs; },
+    clearErrors: function () { errors = []; errOffset = appErrText().length; },
+
+    $: function (sel) { const d = doc(); return d ? d.querySelector(sel) : null; },
+    $$: function (sel) { const d = doc(); return d ? Array.prototype.slice.call(d.querySelectorAll(sel)) : []; },
+    text: function (sel) {
+      const el = app.$(sel);
+      return el ? (el.textContent || '').replace(/\s+/g, ' ').trim() : null;
+    },
+    view: function () { return app.$('main.view[data-view]'); },
+
+    route: function () {
+      const A = app.APP;
+      if (!A || !A.nav || !A.nav.current) return { path: null };
+      const r = A.nav.current() || {};
+      return r;
+    },
+
+    waitFor: waitFor,
+    tick: function (ms) { return sleep(ms == null ? 50 : ms); },
+
+    /* 導覽並等 data-view-ready 且 route().path 相符。
+       opt.expect：預期落地的 path（例 go('/') 會導到 '/ride'）
+       opt.redirectOk：落在任何 path 都算（有狀態前提的流程頁用），回傳落地 path */
+    go: function (path, opt) {
+      opt = opt || {};
+      const A = app.APP;
+      if (!A || !A.nav || !A.nav.go) return Promise.reject(new Error('APP.nav.go 不存在'));
+      app.clearErrors();
+      const want = stripQuery(opt.expect || path);
+      const before = stripQuery(app.route().path);
+      const t0 = Date.now();
+      A.nav.go(path);
+      return waitFor(function () {
+        const d = doc();
+        if (!d || d.documentElement.getAttribute('data-view-ready') !== '1') return false;
+        const now = stripQuery(app.route().path);
+        if (now === want) return now;
+        if (opt.redirectOk && Date.now() - t0 > 300 && (now !== before || before === want)) return now;
+        return false;
+      }, opt.ms || 4000, 'go(' + path + ') 落在 ' + want + ' 且 data-view-ready');
+    },
+
+    at: function (path, ms) {
+      const want = stripQuery(path);
+      return waitFor(function () {
+        const d = doc();
+        return d && d.documentElement.getAttribute('data-view-ready') === '1' &&
+          stripQuery(app.route().path) === want;
+      }, ms || 4000, 'at(' + path + ')，目前 ' + stripQuery(app.route().path));
+    },
+
+    click: function (sel, ms) {
+      return waitFor(function () { return typeof sel === 'string' ? app.$(sel) : sel; },
+        ms || 2000, 'click 找不到 ' + sel)
+        .then(function (el) {
+          const w = win();
+          if (typeof el.click === 'function') el.click();
+          else el.dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true, view: w }));
+          return sleep(30).then(function () { return el; });
+        });
+    },
+
+    /* 清兩把 localStorage、預設略過 onboarding、重載、等 app-ready。
+       opt.onboarded=false 可測 welcome；opt.store 會合併進 app store 的初值。 */
+    reset: function (opt) {
+      opt = opt || {};
+      stillMode = opt.still !== false;
+      return blank().then(function () {
+        try {
+          localStorage.removeItem(KEYS.state);
+          localStorage.removeItem(KEYS.store);
+          const s = Object.assign({ onboarded: opt.onboarded !== false }, opt.store || {});
+          localStorage.setItem(KEYS.store, JSON.stringify(s));
+        } catch (e) { /* 私密視窗 */ }
+        return load(opt.hash);
+      });
+    },
+
+    /* 延伸：不清狀態只重載（測持久化用） */
+    reload: function (hash, opt) {
+      if (opt && opt.still != null) stillMode = opt.still !== false;
+      return blank().then(function () { return load(hash); });
+    },
+    get still() { return stillMode; },
+    storage: function (key) {
+      try { return JSON.parse(localStorage.getItem(KEYS[key] || key)); } catch (e) { return null; }
+    },
+    KEYS: KEYS,
+  };
+
+  /* ------------------------------------------------------------ 斷言 */
+  function record(ok, msg) {
+    if (!current) return ok;
+    current.asserts++;
+    if (!ok) current.fails.push(msg);
+    return ok;
+  }
+
+  /* href="#/…" 要指到「已註冊」的 route：用 APP.resolve（app.js 提供）比對，
+     落到 _404（catch-all）或 _placeholder（§8 有列但還沒有區塊註冊）都不算。 */
+  function routeKnown(A, path) {
+    path = stripQuery(path);
+    let m = null;
+    try {
+      if (A && typeof A.resolve === 'function') m = A.resolve(path);
+      else if (A && A.nav && typeof A.nav.match === 'function') m = A.nav.match(path);
+      else return true; /* 沒有匹配函式：無從判斷，放行 */
+    } catch (e) { return false; }
+    if (!m) return false;
+    const name = m.name || m.view || '';
+    return !/^(_404|404|notfound|_placeholder)$/i.test(name) && m.pattern !== '/*';
+  }
+
+  function hasBehavior(el, A) {
+    if (el.onclick) return true;
+    if (el.hasAttribute('data-back')) return el.tagName === 'A' ? true : 'back-not-a';
+    for (let i = 0; i < BEHAVIOR_ATTRS.length; i++) if (el.hasAttribute(BEHAVIOR_ATTRS[i])) return true;
+    const href = el.getAttribute('href');
+    if (href && href.indexOf('#/') === 0) return routeKnown(A, href.slice(1)) ? true : 'unknown-route';
+    return false;
+  }
+
+  function label(el) {
+    return (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 18) ||
+      el.getAttribute('aria-label') || el.getAttribute('data-act') || el.className || el.tagName;
+  }
+
+  const t = {
+    ok: function (cond, msg) { return record(!!cond, msg || 'ok 失敗'); },
+    eq: function (a, b, msg) {
+      return record(a === b, (msg ? msg + '：' : '') + '得到 ' + short(a) + '，預期 ' + short(b));
+    },
+    includes: function (hay, needle, msg) {
+      const ok = hay != null && (typeof hay === 'string' || Array.isArray(hay)) && hay.indexOf(needle) >= 0;
+      return record(ok, (msg ? msg + '：' : '') + short(hay) + ' 不含 ' + short(needle));
+    },
+    fail: function (msg) { return record(false, msg || 'fail'); },
+
+    /* 死按鈕：main.view 與 #tabbar 內的 a／button／[role=button] 都要有行為 */
+    noDeadButtons: function (appObj, msg) {
+      appObj = appObj || app;
+      const A = appObj.APP;
+      const roots = [appObj.$('main.view[data-view]'), appObj.$('#tabbar')].filter(Boolean);
+      const dead = [];
+      const seen = new Set();
+      roots.forEach(function (root) {
+        root.querySelectorAll('a, button, [role="button"]').forEach(function (el) {
+          if (seen.has(el)) return;
+          seen.add(el);
+          let b = hasBehavior(el, A);
+          if (b === true) return;
+          /* 祖先可按也算（整列是一個連結） */
+          let p = el.parentElement;
+          while (p && p !== root.parentElement) {
+            if (hasBehavior(p, A) === true) return;
+            p = p.parentElement;
+          }
+          dead.push(label(el) + (b === 'unknown-route' ? '（' + el.getAttribute('href') + ' 不是已註冊的 route）' :
+            b === 'back-not-a' ? '（data-back 要放在 <a> 上，router 只攔 a[data-back]）' : ''));
+        });
+      });
+      return record(dead.length === 0, (msg ? msg + '：' : '') + '死按鈕 ' + dead.length + ' 個：' + dead.join('、'));
+    },
+
+    /* 禁用詞：main.view 的文字節點＋title／aria-label／placeholder 屬性＋document.title */
+    noBannedWords: function (appObj, opt) {
+      appObj = appObj || app;
+      opt = opt || {};
+      const allow = WORD_OK.concat(opt.allow || []);
+      const root = appObj.$('main.view[data-view]');
+      const d = appObj.doc;
+      const hits = [];
+      function scan(txt, where) {
+        if (!txt) return;
+        allow.forEach(function (w) { txt = txt.split(w).join('　'); });
+        BANNED.forEach(function (w) {
+          const i = txt.indexOf(w);
+          if (i >= 0) hits.push(w + '「' + txt.slice(Math.max(0, i - 8), i + w.length + 8).replace(/\s+/g, ' ').trim() + '」' + where);
+        });
+      }
+      if (root && d) {
+        const walker = d.createTreeWalker(root, 4 /* SHOW_TEXT */, null);
+        let n;
+        while ((n = walker.nextNode())) {
+          const par = n.parentElement;
+          if (par && par.closest('script, style, template, noscript')) continue;
+          scan(n.nodeValue, '');
+        }
+        root.querySelectorAll('[title], [aria-label], [placeholder]').forEach(function (el) {
+          ['title', 'aria-label', 'placeholder'].forEach(function (a) {
+            if (el.hasAttribute(a)) scan(el.getAttribute(a), '（' + a + '）');
+          });
+        });
+      }
+      if (d) scan(d.title, '（document.title）');
+      return record(hits.length === 0, (opt.msg ? opt.msg + '：' : '') + '禁用詞 ' + hits.join('、'));
+    },
+
+    /* CSS 不准寫 hex 色碼：只看宣告值（selector 的 #id 不算），註解與 url() 不算 */
+    noHardcodedHex: function (cssText, name) {
+      const src = String(cssText || '').replace(/\/\*[\s\S]*?\*\//g, function (m) {
+        return m.replace(/[^\n]/g, ' ');
+      });
+      const hits = [];
+      const re = /([-\w]+)\s*:\s*([^;{}]+)(?=[;}])/g;
+      let m;
+      while ((m = re.exec(src))) {
+        const val = m[2].replace(/url\([^)]*\)/g, '');
+        const h = val.match(/#[0-9a-fA-F]{3,8}\b/g);
+        if (h) {
+          const line = src.slice(0, m.index).split('\n').length;
+          hits.push((name ? name + ':' : '') + line + ' ' + m[1] + ': ' + h.join(' '));
+        }
+      }
+      return record(hits.length === 0, 'hex 色碼 ' + hits.length + ' 處：' + hits.slice(0, 8).join('、'));
+    },
+
+    /* 可按數（沿用 prototype/tools/audit-load.html 的量法；地圖景點 .spot 與 tab bar 不算） */
+    countTappables: function (appObj) {
+      appObj = appObj || app;
+      const w = appObj.win;
+      const root = appObj.$('main.view[data-view]');
+      if (!root || !w) return 0;
+      function shown(el) {
+        const r = el.getBoundingClientRect();
+        if (!(r.width > 0 && r.height > 0)) return false;
+        const s = w.getComputedStyle(el);
+        return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) > 0;
+      }
+      const all = Array.prototype.slice.call(root.querySelectorAll('a[href], button, [role=button], .pill, .sw-toggle'));
+      const keep = all.filter(function (el) {
+        if (!shown(el)) return false;
+        if (el.closest('.spot, .tabbar, .statusbar, [data-expand-only]')) return false;
+        const href = el.getAttribute('href');
+        if (href === '#' && !el.onclick && !el.hasAttribute('data-toast') &&
+            !el.hasAttribute('data-share') && !el.hasAttribute('data-back')) return false;
+        return true;
+      });
+      const set = new Set(keep);
+      return keep.filter(function (el) {
+        let p = el.parentElement;
+        while (p && p !== root.parentElement) { if (set.has(p)) return false; p = p.parentElement; }
+        return true;
+      }).length;
+    },
+  };
+
+  /* ------------------------------------------------------------ 登記與執行 */
+  function spec(name, fn) {
+    const s = { name: name, tests: [] };
+    const tt = Object.create(t);
+    tt.test = function (tname, tfn, opt) {
+      s.tests.push({ name: tname, fn: tfn, timeout: (opt && opt.timeout) || (typeof opt === 'number' ? opt : DEFAULT_TIMEOUT) });
+    };
+    try { fn(tt); } catch (e) {
+      s.tests.push({ name: '（spec 登記時丟例外）', fn: function () { throw e; }, timeout: 1000 });
+    }
+    specs.push(s);
+  }
+
+  function runTest(tc) {
+    const rec = { name: tc.name, ok: false, msg: '', ms: 0, asserts: 0, fails: [] };
+    current = rec;
+    const t0 = performance.now();
+    let timer;
+    const timeout = new Promise(function (_, reject) {
+      timer = setTimeout(function () { reject(new Error('逾時 ' + tc.timeout + 'ms')); }, tc.timeout);
+    });
+    let p;
+    try { p = Promise.resolve(tc.fn(app)); } catch (e) { p = Promise.reject(e); }
+    return Promise.race([p, timeout]).then(function () {
+      rec.ok = rec.fails.length === 0;
+    }, function (e) {
+      rec.ok = false;
+      const s = stack2(e);
+      rec.fails.push('例外：' + (e && e.message ? e.message : String(e)) + (s ? '（' + s + '）' : ''));
+    }).then(function () {
+      clearTimeout(timer);
+      current = null;
+      rec.ms = Math.round(performance.now() - t0);
+      rec.msg = rec.ok ? rec.asserts + ' 個斷言' : rec.fails.join('；');
+      delete rec.fails;
+      return rec;
+    });
+  }
+
+  function onlyFilter() {
+    const q = new URLSearchParams(location.search);
+    const only = q.get('only');
+    return only ? only.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : null;
+  }
+
+  /* opt.only：['ride'] 或 'ride,album'；沒給就讀網址的 ?only= */
+  async function run(opt) {
+    opt = opt || {};
+    let only = opt.only || onlyFilter();
+    if (typeof only === 'string') only = only.split(',');
+    const out = { specs: [], missing: missing.slice(), only: only, summary: {} };
+    const list = specs.filter(function (s) { return !only || only.indexOf(s.name) >= 0; });
+    if (only) {
+      only.forEach(function (n) {
+        if (!specs.some(function (s) { return s.name === n; })) {
+          out.specs.push({ name: n, tests: [{ name: '（找不到這個 spec）', ok: false, msg: 'only=' + n + ' 沒有對應的 T.spec', ms: 0 }] });
+        }
+      });
+    }
+    const status = document.getElementById('status');
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i];
+      const res = { name: s.name, tests: [] };
+      if (status) status.textContent = '跑 ' + s.name + '…';
+      /* spec 之間自動 reset 一次 */
+      let setupErr = null;
+      try { await app.reset(); } catch (e) { setupErr = e; }
+      if (setupErr) {
+        res.tests.push({ name: '（spec 開跑前 reset）', ok: false, msg: setupErr.message, ms: 0 });
+        /* app 起不來就不用逐條等 timeout 了 */
+        s.tests.forEach(function (tc) { res.tests.push({ name: tc.name, ok: false, msg: '略過：app 沒有就緒', ms: 0 }); });
+      } else {
+        for (let j = 0; j < s.tests.length; j++) {
+          res.tests.push(await runTest(s.tests[j]));
+        }
+      }
+      out.specs.push(res);
+      render(out, false);
+    }
+    let pass = 0, fail = 0;
+    out.specs.forEach(function (s) { s.tests.forEach(function (x) { if (x.ok) pass++; else fail++; }); });
+    out.summary = { pass: pass, fail: fail, total: pass + fail, missing: missing.length, ok: fail === 0 };
+    render(out, true);
+    return out;
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function render(out, done) {
+    const table = document.getElementById('table');
+    if (table) {
+      let h = '<table><tr><th>spec</th><th>test</th><th>結果</th><th>ms</th><th>訊息</th></tr>';
+      out.specs.forEach(function (s) {
+        s.tests.forEach(function (x) {
+          h += '<tr class="' + (x.ok ? 'pass' : 'fail') + '"><td>' + esc(s.name) + '</td><td>' + esc(x.name) +
+            '</td><td>' + (x.ok ? 'PASS' : 'FAIL') + '</td><td>' + x.ms + '</td><td>' + esc(x.msg) + '</td></tr>';
+        });
+      });
+      h += '</table>';
+      if (out.missing.length) h += '<p class="warn">找不到的 spec 檔：' + esc(out.missing.join('、')) + '</p>';
+      table.innerHTML = h;
+    }
+    if (done) {
+      const pre = document.getElementById('result');
+      if (pre) pre.textContent = JSON.stringify(out);
+      const st = document.getElementById('status');
+      if (st) st.textContent = out.summary.ok ? '全部通過 ' + out.summary.pass + '/' + out.summary.total
+        : '未通過 ' + out.summary.fail + '/' + out.summary.total;
+      document.documentElement.setAttribute('data-tests-done', '1');
+    }
+  }
+
+  window.T = {
+    spec: spec,
+    run: run,
+    missing: function (src) { if (missing.indexOf(src) < 0) missing.push(src); },
+    app: app,
+    t: t,
+    BANNED: BANNED,
+    WORD_OK: WORD_OK,
+    KEYS: KEYS,
+    _specs: specs,
+  };
+})();

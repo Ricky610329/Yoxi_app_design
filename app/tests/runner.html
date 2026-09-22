@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>yoxi 城事 app 測試</title>
+<!--
+  瀏覽器端測試跑者。規格：app/ARCHITECTURE.md §6。
+
+    python app/tests/run.py --browser            # headless Chrome 跑完印表格
+    runner.html?only=ride                        # 只跑一個 spec（逗號分隔可多個）
+    runner.html?app=fixtures/mini-app.html       # 換受測頁（驗 harness 本身）
+
+  手動開：file:// 下 iframe 要同源才讀得到，請用
+    chrome --allow-file-access-from-files app/tests/runner.html
+  或 python app/tools/serve.py 之後開 http://localhost:…/tests/runner.html。
+
+  新增 spec：在下面加一行 <script src="specs/xxx.spec.js" onerror="T.missing(this.getAttribute('src'))">。
+  檔案不存在時 onerror 會把它記成「找不到的 spec 檔」，不會擋住其他 spec。
+-->
+<style>
+  body { font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; margin: 16px; color: #222; background: #fff; }
+  table { border-collapse: collapse; width: 100%; max-width: 1200px; }
+  th, td { border-bottom: 1px solid #ddd; padding: 3px 8px; text-align: left; vertical-align: top; }
+  tr.pass td:nth-child(3) { color: #0a7a2f; font-weight: bold; }
+  tr.fail td { background: #fdecec; }
+  tr.fail td:nth-child(3) { color: #c0121f; font-weight: bold; }
+  .warn { color: #a15c00; }
+  #app-frame { width: 390px; height: 844px; border: 1px solid #ccc; position: absolute; left: -9999px; top: 0; }
+  body.show-frame #app-frame { position: static; display: block; margin-top: 16px; }
+  pre#result { white-space: pre-wrap; word-break: break-all; font-size: 11px; color: #888; }
+</style>
+</head>
+<body>
+<h1 id="status">跑中…</h1>
+<div id="table"></div>
+<iframe id="app-frame" title="受測 app"></iframe>
+<details><summary>JSON</summary><pre id="result"></pre></details>
+
+<script src="harness.js"></script>
+<script src="specs/app.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script src="specs/system.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script src="specs/ride.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script src="specs/explore.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script src="specs/album.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script src="specs/flows.spec.js" onerror="T.missing(this.getAttribute('src'))"></script>
+<script>
+  if (/[?&]frame=1/.test(location.search)) document.body.classList.add('show-frame');
+  window.addEventListener('load', function () {
+    T.run().catch(function (e) {
+      document.getElementById('result').textContent = JSON.stringify({
+        specs: [], missing: [], summary: { pass: 0, fail: 1, total: 1, ok: false, crash: String(e && e.stack || e) }
+      });
+      document.documentElement.setAttribute('data-tests-done', '1');
+    });
+  });
+</script>
+</body>
+</html>

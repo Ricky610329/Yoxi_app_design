@@ -1,0 +1,390 @@
+/* ==========================================================================
+   yoxi 城事 web app — ride 區塊樣式
+   規則：不寫 hex；顏色、圓角、間距、動畫時間只用 tokens.css 的變數。
+   紅色只給頁首／抽屜／pin／強調數字（.ride-em）；可按的東西是海軍藍。
+   ========================================================================== */
+
+.ride-ic { display: block; width: 24px; height: 24px; flex: none; }
+
+/* --------------------------------------------------------------------------
+   /ride：地圖＋廣告條＋sheet
+   -------------------------------------------------------------------------- */
+.ride-map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--map-land);
+}
+
+.ride-fab--menu { top: calc(var(--statusbar-h) + 12px); left: var(--gutter); }
+.ride-fab--scan { top: calc(var(--statusbar-h) + 16px); right: 76px; }
+.ride-fab--bell { top: calc(var(--statusbar-h) + 16px); right: var(--gutter); }
+.ride-fab--loc  { bottom: 20px; right: var(--gutter); }
+
+.ride-pin .pin__drop svg { width: 24px; height: 24px; }
+.ride-pin .pin__drop .ride-ic { width: 24px; height: 24px; position: relative; z-index: 1; }
+.ride-pin .pin__label { font-size: var(--fs-cap); }
+.ride-pin--edge { opacity: .9; }
+.pin--red .pin__drop .ride-ic { color: var(--yoxi-white); }
+
+/* 小卡：變體 E 的 peek，兩顆動作（看看這個地方／設為下車點）；右邊讓出定位鈕 */
+.ride-peek {
+  right: 76px;
+  bottom: var(--sp-6);             /* 讓出右下角的 ODbL 署名（hsmap 畫在 svg 底邊上方 6px） */
+  display: block;
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+.ride-peek:not(.is-on) { visibility: hidden; }
+.ride-peek__top { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.ride-peek__img { width: 40px; height: 52px; }
+.ride-peek__img.is-gray > * { filter: grayscale(1) contrast(.72) brightness(1.16); }
+.ride-peek__txt { flex: 1; min-width: 0; }
+.ride-peek__name {
+  display: block;
+  font-weight: var(--fw-heavy);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ride-peek__meta { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.ride-peek__acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.ride-peek__acts .btn-ghost,
+.ride-peek__acts .btn-primary {
+  min-height: 38px;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-cap);
+  white-space: nowrap;
+}
+
+/* 廣告條：第一格是今天的地方 */
+.ride-banner__today { background: var(--yoxi-navy); }
+.ride-banner__art {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: var(--r-btn);
+}
+.ride-banner__txt { flex: 1; min-width: 0; color: var(--yoxi-white); }
+.ride-banner__eyebrow {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .08em;
+  opacity: .8;
+}
+.ride-banner__hook {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ride-banner__promo { font-size: 15px; font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
+.ride-banner__big { font-size: 19px; }
+
+/* 強調數字：紅色（品牌情緒） */
+.ride-em { color: var(--yoxi-red); }
+
+.ride-field__body { flex: 1; min-width: 0; }
+.ride-field__body .route-input__label,
+.ride-field__body .route-input__value { display: block; }
+
+/* 下車點已填：左邊整塊可按（換地方），右邊一顆清除 */
+.ride-drop { align-items: stretch; }
+.ride-drop__main { flex: 1; min-width: 0; display: block; padding: var(--sp-1) 0; }
+.ride-drop__main .route-input__label,
+.ride-drop__main .route-input__value { display: block; }
+.ride-drop__meta {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-cap);
+  color: var(--yoxi-slate);
+  line-height: 1.5;
+}
+.ride-drop__meta .num { font-size: var(--fs-sm); }
+.ride-drop__clear {
+  flex: none;
+  align-self: center;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-btn);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+  background: var(--yoxi-mist);
+}
+
+.ride-today-row { padding: var(--sp-3) var(--sp-4); }
+.ride-today-row .row-nav__title { font-size: 15px; }
+
+.ride-sheet__row { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-4); }
+.ride-call { margin-top: var(--sp-4); }
+.ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--yoxi-slate); }
+
+/* --------------------------------------------------------------------------
+   /dropoff、/pickup：白色頁首＋搜尋框＋清單
+   -------------------------------------------------------------------------- */
+.ride-hdr-plain { padding-bottom: var(--sp-3); }
+.ride-back { display: block; width: 32px; padding: var(--sp-1); flex: none; }
+.ride-back--ghost { visibility: hidden; }
+
+.ride-search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--gutter) var(--sp-4);
+  background: var(--yoxi-white);
+}
+.ride-search__box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-3) 14px;
+  border-radius: var(--r-btn);
+  background: var(--yoxi-mist);
+}
+.ride-search__box input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font: inherit;
+  font-size: 17px;
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+}
+.ride-search__box input::placeholder { color: var(--yoxi-slate); font-weight: var(--fw-med); }
+.ride-search__cam { display: block; width: 24px; height: 24px; flex: none; }
+
+.ride-list { background: var(--yoxi-white); }
+.ride-gap { height: var(--sp-2); background: var(--yoxi-mist); }
+.ride-list .tile-icon .ic-ondark,
+.ride-list .tile-icon [data-icon] { display: block; width: 26px; height: 26px; }
+.ride-tile--navy { background: var(--yoxi-navy); }
+.ride-tile--navy [data-icon] { color: var(--yoxi-white); }
+
+.ride-row { width: 100%; text-align: left; background: none; }
+.ride-list .ride-row + .ride-row,
+.ride-list [data-drop-list] > .ride-row + .ride-row { border-top: 1px solid var(--yoxi-line); }
+.ride-row__art {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: var(--r-img);
+}
+
+.ride-tag {
+  flex: none;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  white-space: nowrap;
+}
+.ride-tag--walk { background: var(--yoxi-mist); color: var(--yoxi-navy); }
+.ride-tag--ride { background: var(--yoxi-navy); color: var(--yoxi-white); }
+
+.ride-more-wrap { border-top: 1px solid var(--yoxi-line); }
+.ride-more {
+  display: block;
+  width: 100%;
+  padding: var(--sp-4);
+  text-align: center;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-navy);
+  background: none;
+  border-top: 1px solid var(--yoxi-line);
+}
+.ride-more-wrap .ride-more { border-top: 0; font-size: var(--fs-lead); }
+.ride-list__none { padding: var(--sp-5) var(--gutter); font-size: var(--fs-sm); color: var(--yoxi-slate); line-height: 1.7; }
+
+/* --------------------------------------------------------------------------
+   /trip：配對中 → 行程中
+   -------------------------------------------------------------------------- */
+.ride-trip-hdr .hdr-red__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ride-map--trip { flex: none; height: 46%; min-height: 160px; }
+/* 地圖高度固定、sheet 吃剩下的：配對中 → 行程中、展開「這條路上」時 sheet 變高，
+   地圖若跟著縮，hsmap 的 viewBox 是 slice，署名與兩顆 pin 會被裁掉或偏移 */
+.ride-trip-sheet { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.ride-trip-sheet::-webkit-scrollbar { display: none; }
+.ride-trip__match { padding: var(--sp-2) 0 var(--sp-4); }
+.ride-trip__driver { padding-bottom: var(--sp-3); }
+.ride-trip__big { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+.ride-trip__sub { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ride-trip__eta { flex: none; text-align: right; }
+.ride-trip__eta .num { display: block; font-size: var(--fs-title); line-height: 1; }
+.ride-trip__eta > span:last-child { display: block; font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.ride-trip__fare { margin-bottom: var(--sp-3); font-size: var(--fs-sm); color: var(--yoxi-slate); }
+.ride-trip__fare .num { font-size: var(--fs-body); }
+.ride-trip__acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-3); }
+.ride-trip__cancel { display: block; margin: var(--sp-3) auto 0; }
+.ride-trip__match .tile-icon .ride-ic { width: 26px; height: 26px; }
+
+.ride-pulse { animation: ride-pulse var(--t-scene) var(--ease) infinite alternate; }
+@keyframes ride-pulse { from { transform: scale(.94); } to { transform: scale(1.04); } }
+
+.ride-story { background: var(--yoxi-cream); border: 0; }
+.ride-story__head { padding: 14px var(--gutter); }
+.ride-story__eyebrow { display: block; font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--yoxi-slate); }
+.ride-story__t { display: block; margin-top: 1px; }
+.ride-story__arrow { transition: transform var(--t-fast) var(--ease); }
+.ride-story__head.is-open .ride-story__arrow { transform: rotate(90deg); }
+.ride-story__body { padding: 0 var(--gutter) var(--gutter); }
+.ride-story__body .story__text { font-size: 15px; }
+.ride-story__body .story__text + .story__text { margin-top: var(--sp-2); }
+
+/* --------------------------------------------------------------------------
+   /trip/done：結算、星星、評分之後才出現的金色橫幅
+   -------------------------------------------------------------------------- */
+.ride-done { background: var(--yoxi-mist); }
+.ride-done__pad { padding: var(--sp-4) var(--gutter) 0; }
+.ride-done__end { padding-bottom: var(--sp-6); }
+.ride-done__sum { overflow: hidden; }
+.ride-done__art { position: relative; height: 110px; overflow: hidden; }
+.ride-done__body { padding: var(--sp-4); }
+.ride-done__line { justify-content: space-between; gap: var(--sp-3); }
+.ride-done__fare { font-size: var(--fs-title); }
+.ride-done__meta { margin-top: 6px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+
+.ride-stars { display: flex; justify-content: center; gap: var(--sp-2); margin-top: 14px; }
+.ride-star { width: 40px; height: 40px; padding: 1px; background: none; }
+.ride-star svg { width: 100%; height: 100%; display: block; }
+.ride-star path { fill: var(--yoxi-slate-lite); transition: fill var(--t-fast) var(--ease); }
+.ride-star.is-on path { fill: var(--gold); }
+
+.banner--gold {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  background: linear-gradient(120deg, var(--yoxi-navy-soft), var(--yoxi-navy));
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+.banner--gold__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 42%, color-mix(in srgb, var(--gold) 24%, transparent) 50%, transparent 58%);
+  pointer-events: none;
+}
+.banner--gold__in { position: relative; display: flex; align-items: center; gap: 14px; padding: var(--sp-4); }
+.banner--gold__art {
+  position: relative;
+  flex: none;
+  width: 54px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: var(--r-btn);
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.banner--gold__txt { flex: 1; min-width: 0; color: var(--yoxi-white); }
+.banner--gold__eyebrow { display: block; font-size: var(--fs-xs); font-weight: var(--fw-heavy); letter-spacing: .08em; color: var(--gold-lite); }
+.banner--gold__t { display: block; margin-top: 3px; font-size: var(--fs-body); font-weight: var(--fw-heavy); line-height: 1.35; }
+.banner--gold__p { display: block; margin-top: 2px; font-size: var(--fs-cap); opacity: .8; }
+
+/* --------------------------------------------------------------------------
+   /drawer
+   -------------------------------------------------------------------------- */
+.ride-drawer__bg { position: absolute; inset: 0; background: var(--map-land); }
+.ride-drawer__scrim { position: absolute; inset: 0; background: var(--yoxi-navy-60); cursor: pointer; }
+.ride-drawer { padding-top: calc(var(--statusbar-h) + var(--sp-2)); }
+.ride-drawer__top { justify-content: flex-end; }
+.ride-drawer__close { display: block; padding: 6px; color: var(--yoxi-white); }
+.ride-drawer__close [data-icon] { display: block; width: 22px; height: 22px; }
+.ride-drawer__user { margin: var(--sp-1) 0 14px; }
+.ride-drawer__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border-radius: var(--r-tile);
+  background: var(--yoxi-slate-lite);
+}
+.ride-drawer__avatar [data-icon] { display: block; width: 44px; height: 44px; color: var(--yoxi-white); }
+.ride-drawer__name { font-size: 26px; font-weight: var(--fw-heavy); color: var(--yoxi-white); }
+.ride-drawer__note {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: var(--sp-3);
+  padding: 14px;
+  border-radius: var(--r-img);
+  background: rgba(0, 0, 0, .12);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.ride-drawer__note .ride-ic { color: var(--yoxi-white); }
+.ride-drawer__new { display: flex; align-items: center; gap: 10px; }
+.ride-drawer__badge {
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-btn);
+  background: rgba(255, 255, 255, .22);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+}
+.ride-drawer__pts { padding: var(--sp-1) 0 var(--sp-4); }
+.ride-drawer__pts-t { font-size: 23px; font-weight: var(--fw-heavy); }
+.ride-drawer__pts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: 10px;
+  padding: 6px var(--sp-4);
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(255, 255, 255, .7);
+  color: var(--yoxi-white);
+  font-weight: var(--fw-bold);
+}
+
+/* --------------------------------------------------------------------------
+   /points、/notify、/trips
+   -------------------------------------------------------------------------- */
+.ride-col { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.ride-sheet-top { margin-top: calc(var(--sp-4) * -1); }
+.ride-sheet-top .row-nav__title { font-size: var(--fs-body); }
+.ride-sheet-top .tile-icon [data-icon] { display: block; width: 26px; height: 26px; }
+
+.ride-pts { background: var(--yoxi-mist); padding-bottom: var(--sp-6); }
+.ride-pts__sub { font-size: var(--fs-body); margin-top: 6px; }
+.ride-pts__total { font-size: 26px; }
+.ride-pts__row .row-nav__title { font-size: var(--fs-body); }
+.ride-pts__row .tile-icon [data-icon] { display: block; width: 24px; height: 24px; }
+.ride-pts__amt { font-size: var(--fs-lead); }
+.ride-pts__src--city { color: var(--yoxi-navy); font-weight: var(--fw-heavy); }
+.ride-pts__note { background: var(--yoxi-cream); border: 0; font-size: var(--fs-cap); line-height: 1.75; }
+
+.ride-trips__fare { font-size: 17px; }
+
+/* 圖示磚裡的圖示：components.css 的 .tile-icon svg 是 54%（相對於外層 span），
+   這裡的圖示外面多包一層有尺寸的 span，所以 svg 要填滿它 */
+.ride-ic svg,
+.ride-sheet-top .tile-icon [data-icon] svg,
+.ride-pts__row .tile-icon [data-icon] svg,
+.ride-list .tile-icon [data-icon] svg { width: 100%; height: 100%; }
+
+/* 評分完直接回首頁、限定明信片還沒收：收合態就看得到的金色入口。
+   跟上面的叫車鈕（或機場接送那一列）隔 --sp-3；收合態 sheet 的 max-height 是 inline 的 --sheet-min:420px，
+   多了這一塊就會被裁掉，所以有它的時候收合態改成「內容多高就多高」（data-expand-only 的東西仍然隱藏）。 */
+.ride-unlock { margin-top: var(--sp-3); }
+.ride-sheet.is-collapsed:has(.ride-unlock) { max-height: none; }

@@ -1,6 +1,6 @@
 # 交接文件 — yoxi 城事設計原型
 
-最後更新：2026-09-22（main `424a079`）。這份文件給接手的人或 AI agent：專案是什麼、做到哪裡、東西放哪裡、怎麼驗、哪些還沒決定。
+最後更新：2026-09-23（branch `feat/webapp`，`26c8e4d` 之後）。這份文件給接手的人或 AI agent：專案是什麼、做到哪裡、東西放哪裡、怎麼驗、哪些還沒決定。
 人看的導覽在 `README.md`，agent 的規矩在 `AGENTS.md`，時間線在 `docs/WORKLOG.md`。
 
 ## 1. 專案一句話
@@ -8,7 +8,7 @@
 把 yoxi（和泰叫車）變成一個**不搭車也會打開**的城市探索與收藏工具，再把「發現一個地方 → 叫車去那裡」接回本業。
 提案的高階版本在 `prototype/proposal.html`（五步 roadmap、一軸一行的決策矩陣）；demo 在 `prototype/index.html`。
 
-## 2. 做到哪裡（四輪）
+## 2. 做到哪裡（五輪）
 
 | 輪 | 內容 | 入口 |
 |---|---|---|
@@ -16,6 +16,7 @@
 | 第二輪 | 層級樹＋評語（`overview.html`）、變體註冊表、收藏 S1–S5、探索 X1–X5、T1、低認知負擔 L1–L6（可按數／到達步數自動量測）、願景探索稿 12 張 | `overview.html`、`variants.html`、`vision.html` |
 | 第三輪 | 真實 OSM 地圖引擎與六種底圖、單／雙地圖、微 3D、實景照片、好友系統六頁＋AI 鄰居、五張概念板；轉換點 K1–K7 | `concept.html`、`variants.html#axis-conv` |
 | 提案 | 提案總覽頁、README、本交接 | `proposal.html` |
+| web app | 合一版做成單頁 web app：25 條 route、hash 路由、localStorage 狀態、PWA；瀏覽器測試 159 條＋node 單元測試 32 條。見 §10 | `app/index.html`、`app/README.md` |
 
 規模：102 張畫面檔（33 主線＋43 變體＋12 願景稿＋14 概念稿，含 `variant-k-ride` 落點頁）、10 條設計軸線 36 個變體、5 張概念板、10 張 CC 照片。
 
@@ -41,6 +42,14 @@ prototype/
   assets/          thumbs/（430×912 與 mini 86×182）、boards/（1600×1000 PNG）、map/（hs-core／hs-wide／hs-places）、photos/（＋credits.js）、vendor/leaflet、load.js／load.json（功能數量測）
   boards/          五張概念板的 HTML（board.css／board.js 共用）
   tools/           verify-quiet.py（總驗收）、shoot.py（縮圖）、audit-app／audit-load／audit-quiet／audit-tree／audit-walls／smoke-variants（瀏覽器稽核）、fetch-map.py、fetch-photos.py
+app/               web app（合一版）；只讀 ../prototype，原型一個字沒動
+  index.html       單一入口        ARCHITECTURE.md  契約（選版、API、DOM、測試、分工、路由總表）        README.md  人看的
+  js/app.js        核心 window.APP：router、store、fmt 公式、nav、ui、map.mount
+  js/views/        ride.js｜explore.js｜album.js｜system.js（四個區塊，各自註冊 view）
+  css/             app.css（外框、轉場、tab bar、demo 面板）＋ views/{ride,explore,album,system}.css
+  tests/           run.py 總入口｜harness.js｜runner.html｜specs/*.spec.js（瀏覽器）｜unit/*.test.mjs（node）
+  sw.js、manifest.webmanifest、assets/icons/   PWA
+  tools/           serve.py（本機／區網伺服器）｜make-icons.py｜check-sw.py（快取清單對帳）｜shoot-app.py（每條 route 的截圖）
 docs/              本交接、工作時間線
 brain_strom.png    最初的腦力激盪圖      Yoxi_app截圖.zip  yoxi 現有 app 截圖（還原用）
 ```
@@ -63,6 +72,7 @@ python prototype/tools/verify-quiet.py            # 八段：幾何③④⑤⑥�
 python prototype/tools/shoot.py                   # 全部縮圖；--only a,b 只拍幾張；--mini 小圖；--board 五張板
 python prototype/tools/fetch-map.py --from-cache  # 重新塑形地圖資料（快取在 tools/.cache，不進版控；沒快取才會連 Overpass）
 python prototype/tools/fetch-photos.py --list     # Commons 候選照片；--only id,id 下載
+python app/tests/run.py                           # web app：node 單元＋headless Chrome；--only ride 只跑一個 spec、--unit 只跑 node
 ```
 瀏覽器可直接開 `tools/audit-app.html`（`?scope=vision`／`?scope=concept`）、`audit-walls.html`、`audit-tree.html`、`audit-load.html`。
 截圖用的 Chrome 旗標：`--headless=new --disable-gpu --hide-scrollbars --allow-file-access-from-files --force-device-scale-factor=1 --virtual-time-budget=N`；頁面帶 `?still=1` 關動畫。
@@ -99,6 +109,10 @@ python prototype/tools/fetch-photos.py --list     # Commons 候選照片；--onl
 4. **好友五問**：AI 該不該回信、能不能寄給不在 app 的人、回一張、20 字、入口。
 5. **內容供給**：城市景點與活動誰整理、多久更新（brainstorm 的但書）；`routes.html` 主張每月由 AI 從官方活動與熱點重生。
 6. 如果要做正式版：把 `postcardArt` 換成真的生成資產、把 `hsmap` 的資料改成線上更新、把 `state.js` 換成後端。
+7. **web app 上 https**：`app/` 放上 GitHub Pages 或任何 https 靜態主機（連同 `prototype/` 一起，app 用 `../prototype` 載共用檔），手機就能「加到主畫面」安裝。
+8. **web app 換真資產**：`postcardArt` 換成真的生成圖；八張對不到座標的卡補座標（或擴大底圖）。
+9. **web app 換真抵達**：geolocation（80 公尺內停 1 分鐘）取代 demo 的「模擬抵達」。
+10. **web app 換後端**：`STATE` 與 `APP.store` 的 localStorage 換成帳號＋後端，才能跨裝置。
 
 ## 9. 交給 Codex 的最短路徑
 
@@ -106,3 +120,35 @@ python prototype/tools/fetch-photos.py --list     # Commons 候選照片；--onl
 2. 跑 `python prototype/tools/verify-quiet.py` 拿基準。
 3. 從 §8 挑一項，開分支，照 `AGENTS.md` 的慣例做，做完再跑一次驗收，commit。
 4. 需要背景時：`docs/WORKLOG.md` 有每一筆 commit 做了什麼；每張畫面的檔頭註解有「為什麼這樣做」。
+
+## 10. web app（合一版）
+
+**結論**：`app/` 是提案推薦那一組決定的可用版本；契約在 `app/ARCHITECTURE.md`，測試在 `app/tests/`，原型一個字沒動。
+
+選版（`ARCHITECTURE.md` §0）：tab bar 三分頁、E 景點常駐（叫車地圖 ≤ 4）、K1 內容頁設為下車點、S3 路線書架、X4 勳章牆、X2 缺口導向、L1 一屏一事、三幕解鎖、家人＝分享選項、好康任務不同頁、好友不做。
+§6 裡原本未決、在 app 拍板的：
+
+| 未決 | app 的選擇 |
+|---|---|
+| 城事從哪裡進（G 抽屜 vs tab bar） | tab bar 三分頁 |
+| K1 門檻 3 km vs 10 km | 統一 3 km（`APP.fmt.WALK_MAX_M`） |
+| 家人（分享選項 vs 候選 L 模式） | 分享選項：分享面板第一格是長輩圖 |
+| 儀式長度 | 三幕（點畫面可跳到成品） |
+
+跟原型的關係：只從 `../prototype` 讀 tokens／components／chengshi／mock／state／shell／interact／hsmap／photos，不改。
+所以 `python prototype/tools/verify-quiet.py` 的八段與六條承諾數字應與基準相同；變了就是有人碰了 `prototype/`。
+
+| 要找 | 在哪 |
+|---|---|
+| 契約（API、DOM、測試、分工、路由總表） | `app/ARCHITECTURE.md` |
+| 怎麼開、三條 demo 怎麼走、已知限制 | `app/README.md` |
+| 測試操作手冊 | `app/tests/README.md`；`python app/tests/run.py` |
+| 每個畫面為什麼這樣做 | `app/js/views/*.js` 檔頭（回答什麼／從哪張原型來／刻意沒有的東西） |
+
+已知問題：
+
+- **brick 的距離兩處不一致**：`MOCK.PENDING` 是 2400 m、`MOCK.SPOTS` 是 1500 m。app 統一走 `APP.place(id).dist`（以 `findPlace` 為準，取 2400），不要直接讀 SPOTS 的 dist。
+- **`interact.js` 的 listener 不會自己解除**：`initSheet／initPan` 用 `addEventListener` 掛在 `window` 上。原型不能改，所以由 app 的 router 在 mount 期間記下、離開該頁時移除（第三波加的，`ARCHITECTURE.md` §3.2）；自己在 mount 外呼叫 `INTERACT.init*` 就不受這個保護。
+- **內灣在底圖外**：底圖只有新竹 11×12 km，內灣在 28 km 外，行程與路線上會夾到地圖邊緣（`.spot--edge`）。
+- **城市足跡少算八張卡**：22 張明信片裡 8 張（p10 合興、p12 九讚頭、p13 橫山、p14 玻璃工藝博物館、p15 春池玻璃、p16 舊社的矽砂場、p17 水源地的窯口、p18 頭前溪河口）對不到地圖座標，收了也不進覆蓋率（`album.js` 的 `placeOfCard`）。
+- 叫車、抵達、推播都是模擬；PWA 只能在 localhost 或 https 安裝。

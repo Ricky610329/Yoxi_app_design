@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>shot-frame</title>
+<!--
+  截圖用的外框頁（app/tools/shoot-app.py 用；不是 app 的一部分，sw 不快取）
+
+  為什麼要它：headless Chrome 在 Windows 的視窗最窄約 500 px，--window-size=390 拍不到真的手機寬度。
+  所以開一個 600×900 的頁，左上放 390×844 的 iframe：iframe 內 viewport 就是 390，
+  會走 app.css 的 @media (max-width:559px) 手機滿版樣式；腳本再用 Pillow 裁出 390×844。
+
+  參數（都在 ?query）：
+    r     要拍的 route（例 /ride、/unlock/neiwan?ride=1）
+    s     寫進 localStorage yoxi-chengshi-v1-2（STATE）的 JSON；沒給就清掉，用 STATE 的初始狀態
+    a     寫進 localStorage yoxi-chengshi-app-v1（APP.store）的 JSON；一律先併入 {onboarded:true}
+    run   iframe 第一次 data-view-ready 之後，在 iframe 內 eval 的一小段 JS（推播、分享、點景點）
+    w, h  iframe 尺寸（預設 390×844）
+  完成時 html[data-shot-ready="1"]（錯誤寫進 #shot-err）。
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
+  iframe { position: absolute; left: 0; top: 0; border: 0; display: block; }
+  #shot-err { display: none; }
+</style>
+</head>
+<body>
+<pre id="shot-err"></pre>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var route = q.get('r') || '/ride';
+  var w = +q.get('w') || 390, h = +q.get('h') || 844;
+  var err = document.getElementById('shot-err');
+  function fail(m) { err.textContent += m + '\n'; }
+
+  try {
+    localStorage.removeItem('yoxi-chengshi-v1-2');
+    localStorage.removeItem('yoxi-chengshi-app-v1');
+    if (q.get('s')) localStorage.setItem('yoxi-chengshi-v1-2', JSON.stringify(JSON.parse(q.get('s'))));
+    var a = Object.assign({ onboarded: true }, q.get('a') ? JSON.parse(q.get('a')) : {});
+    localStorage.setItem('yoxi-chengshi-app-v1', JSON.stringify(a));
+  } catch (e) { fail('state: ' + e); }
+
+  var f = document.createElement('iframe');
+  f.width = w; f.height = h;
+  f.style.width = w + 'px'; f.style.height = h + 'px';
+  f.src = '../../index.html?still=1#' + route;
+  document.body.appendChild(f);
+
+  var ran = false, t0 = Date.now();
+  (function wait() {
+    var d = null;
+    try { d = f.contentDocument; } catch (e) { /* 還沒載 */ }
+    var ready = d && d.documentElement && d.documentElement.getAttribute('data-view-ready') === '1';
+    if (!ready && Date.now() - t0 < 6000) { setTimeout(wait, 50); return; }
+    if (!ready) fail('timeout: data-view-ready');
+    if (!ran && q.get('run')) {
+      ran = true;
+      try { f.contentWindow.eval(q.get('run')); } catch (e) { fail('run: ' + e); }
+    }
+    setTimeout(function () { document.documentElement.setAttribute('data-shot-ready', '1'); }, 300);
+  })();
+})();
+</script>
+</body>
+</html>

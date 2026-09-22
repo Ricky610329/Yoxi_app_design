@@ -1,0 +1,257 @@
+/* ==========================================================================
+   yoxi 城事 web app — system 區塊樣式
+   /welcome、/settings、推播浮層與分享面板的補丁（主樣式沿用 chengshi.css 的 .pushmock／.sharesheet）。
+   規則：只用 tokens.css 的變數，不寫 hex；避開狀態列一律 var(--statusbar-h)。
+   ========================================================================== */
+
+.sys-ico { display: block; width: 24px; height: 24px; }
+.sys-ico--navy { color: var(--yoxi-navy); width: 22px; height: 22px; flex: none; }
+
+/* --------------------------------------------------------------------------
+   /welcome
+   -------------------------------------------------------------------------- */
+.sys-welcome {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--yoxi-paper);
+}
+.sys-welcome__bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--statusbar-h) var(--gutter) 0;
+  min-height: calc(var(--statusbar-h) + 44px);
+  color: var(--yoxi-white);
+}
+.sys-welcome__brand { font-weight: var(--fw-heavy); font-size: var(--fs-body); letter-spacing: .02em; }
+.sys-welcome__skip {
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  color: var(--yoxi-white);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-med);
+}
+
+.sys-welcome__track {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.sys-welcome__track::-webkit-scrollbar { display: none; }
+
+.sys-welcome__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+.sys-welcome__art {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 200px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--yoxi-red);
+}
+.sys-welcome__art .postcard__art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sys-welcome__art::after {           /* 頁首的白字（品牌、略過）壓在淺色插畫上也讀得到 */
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: calc(var(--statusbar-h) + 88px);
+  z-index: 1;
+  background: linear-gradient(var(--yoxi-navy-60), transparent);
+  pointer-events: none;
+}
+.sys-welcome__art .ai-mark { top: auto; bottom: var(--sp-3); left: var(--gutter); }
+
+.sys-welcome__text {
+  flex: none;
+  padding: var(--sp-5) var(--gutter) var(--sp-2);
+  background: var(--yoxi-paper);
+}
+.sys-welcome__t {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-heavy);
+  line-height: var(--lh-tight);
+  color: var(--yoxi-navy);
+}
+.sys-welcome__p {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--yoxi-slate);
+}
+
+.sys-welcome__foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--gutter) calc(var(--sp-5) + var(--safe-bottom, 0px));
+  background: var(--yoxi-paper);
+}
+.sys-welcome__foot [hidden] { display: none; }
+.sys-welcome__dots { display: flex; justify-content: center; gap: var(--sp-1); }
+.sys-welcome__dot {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+}
+.sys-welcome__dot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--yoxi-slate-lite);
+  transition: width var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.sys-welcome__dot.is-on::after { width: 22px; background: var(--yoxi-navy); }
+
+/* --------------------------------------------------------------------------
+   /settings
+   -------------------------------------------------------------------------- */
+.sys-set { background: var(--yoxi-mist); }
+.sys-set__sec { padding: var(--sp-4) var(--gutter) 0; }
+.sys-set__sec--last { padding-bottom: var(--sp-6); }
+.sys-set__name { font-size: var(--fs-body); }
+.sys-set__row .row-nav__sub { line-height: 1.5; }
+
+.sys-set__note {
+  margin-top: var(--sp-2);
+  border: 0;
+  background: var(--yoxi-cream);
+  font-size: var(--fs-cap);
+  line-height: 1.75;
+}
+
+.sys-set__privhd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.sys-set__priv {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.sys-set__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+  border-radius: var(--r-card);
+  background: var(--yoxi-mist);
+}
+.sys-set__who { font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
+.sys-set__who--me { color: var(--yoxi-red); }    /* 強調：只有你 */
+
+.sys-set__small {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-cap);
+  line-height: 1.7;
+  color: var(--yoxi-slate);
+}
+
+.sys-set__wipe,
+.sys-set__danger { border-color: var(--yoxi-red); color: var(--yoxi-red); }
+
+.sys-set__more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  border: 1px solid var(--yoxi-line);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+}
+.sys-set__chev {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform var(--t-fast) var(--ease);
+}
+.sys-set__more[aria-expanded="true"] .sys-set__chev { transform: rotate(-135deg) translateY(-3px); }
+
+.sys-set__morebox { padding-top: var(--sp-4); }
+.sys-set__morebox[hidden] { display: none; }
+.sys-set__demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+.sys-set__demo .btn-ghost { min-height: 44px; font-size: var(--fs-sm); }
+.sys-set__demo .btn-ghost.is-off { border-color: var(--yoxi-slate-lite); color: var(--yoxi-slate); }
+.sys-set__demo .sys-set__danger { grid-column: 1 / -1; }
+
+.sys-set__abouthd { margin-top: var(--sp-5); }
+.sys-set__about { font-size: var(--fs-sm); line-height: 1.7; }
+.sys-set__about p + p { margin-top: var(--sp-1); }
+.sys-set__about code { font-family: inherit; font-weight: var(--fw-bold); }
+.sys-set__credits {
+  margin-top: var(--sp-2);
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--yoxi-slate);
+}
+.sys-set__credits li + li { margin-top: var(--sp-1); }
+.sys-set__credits b { color: var(--yoxi-navy); }
+
+/* --------------------------------------------------------------------------
+   推播浮層（.pushmock 沿用 chengshi.css）
+   -------------------------------------------------------------------------- */
+.sys-push { padding-top: calc(var(--statusbar-h) + 72px); }
+.sys-push .pushmock__card { color: var(--yoxi-navy); }
+.sys-push__meta {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--yoxi-slate);
+  margin-bottom: 2px;
+}
+.sys-push__note {
+  margin-top: var(--sp-4);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--yoxi-white);
+  opacity: .6;
+}
+.sys-push__close {
+  margin: auto auto calc(var(--sp-6) + var(--safe-bottom, 0px));
+  min-height: 44px;
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--yoxi-slate);
+  color: var(--yoxi-white);
+  font-size: var(--fs-cap);
+}
+
+/* --------------------------------------------------------------------------
+   分享面板（.sharesheet 沿用 chengshi.css；scrim 改成貼底）
+   -------------------------------------------------------------------------- */
+.sys-share { place-items: end stretch; padding: 0; z-index: 90; }
+.sys-share .row-nav { padding-left: 0; padding-right: 0; }
+.sys-share .row-nav__title { font-size: var(--fs-body); }

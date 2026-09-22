@@ -1,0 +1,269 @@
+/* ==========================================================================
+   yoxi 城事 web app — 核心樣式（契約：ARCHITECTURE.md §4、§9）
+   桌機外框／手機滿版、view 堆疊與轉場、tab bar 隱藏態、demo 面板、
+   內建卡片（尚未建檔／404／錯誤）、hsmap 需要的規則。
+
+   規則：不准出現 hex 色碼；顏色、圓角、動畫時間全用 tokens.css 的變數。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   外框（桌機 ≥ 560px：沿用 .stage > .device，旁邊一條 demo 面板）
+   -------------------------------------------------------------------------- */
+html, body { height: 100%; }
+#app { min-height: 100%; }
+
+.stage {
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+/* view 的容器：填滿狀態列以下、tab bar 以上（has-tabbar 由 app.js 切） */
+#view {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+main.view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--yoxi-paper);
+}
+main.view[data-leaving] { pointer-events: none; }
+
+/* tab 為 null 的全螢幕流程：tab bar 整條拿掉（.tabbar 的 display:flex 會蓋過 [hidden]） */
+.tabbar[hidden] { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   轉場：push 右滑入、back 左滑回、tab 淡入
+   html[data-still]（?still=1）時 base.css 會把動畫壓成 1ms，app.js 也直接跳過
+   -------------------------------------------------------------------------- */
+.view--in-push  { z-index: 2; box-shadow: var(--sh-lift); animation: app-in-push  var(--t-base) var(--ease) both; }
+.view--out-push { z-index: 1; animation: app-out-push var(--t-base) var(--ease) both; }
+.view--in-back  { z-index: 1; animation: app-in-back  var(--t-base) var(--ease) both; }
+.view--out-back { z-index: 2; box-shadow: var(--sh-lift); animation: app-out-back var(--t-base) var(--ease) both; }
+.view--in-tab   { z-index: 2; animation: app-fade-in  var(--t-base) var(--ease) both; }
+.view--out-tab  { z-index: 1; }
+
+@keyframes app-in-push  { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes app-out-push { from { transform: none; } to { transform: translateX(-28%); } }
+@keyframes app-in-back  { from { transform: translateX(-28%); } to { transform: none; } }
+@keyframes app-out-back { from { transform: none; } to { transform: translateX(100%); } }
+@keyframes app-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+
+/* --------------------------------------------------------------------------
+   demo 面板（桌機才顯示；system.js 往 #demo-panel 填內容）
+   建議結構：.demo-panel__t 標題、.demo-panel__btn 按鈕、.demo-panel__note 說明
+   -------------------------------------------------------------------------- */
+#demo-panel {
+  flex: none;
+  align-self: center;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-card);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-sm);
+}
+#demo-panel:empty { display: none; }
+
+.demo-panel__t {
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-slate);
+  letter-spacing: .04em;
+  margin-bottom: var(--sp-1);
+}
+.demo-panel__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-btn);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-align: center;
+  transition: background var(--t-fast) var(--ease);
+}
+.demo-panel__btn:active { background: var(--yoxi-navy-soft); }
+.demo-panel__btn:disabled,
+.demo-panel__btn[aria-disabled="true"] { background: var(--yoxi-line); color: var(--yoxi-slate); cursor: default; }
+.demo-panel__btn--ghost {
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  border: 1.5px solid var(--yoxi-navy);
+}
+.demo-panel__note {
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--yoxi-slate);
+}
+
+/* --------------------------------------------------------------------------
+   內建卡片：尚未建檔／404／render 出錯
+   -------------------------------------------------------------------------- */
+.app-empty {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--statusbar-h) + var(--sp-4)) var(--gutter) var(--sp-6);
+  background: var(--yoxi-mist);
+}
+.app-empty__card {
+  width: 100%;
+  padding: var(--sp-5);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-card);
+}
+.app-empty__eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-slate);
+  letter-spacing: .06em;
+  margin-bottom: var(--sp-2);
+}
+.app-empty__t {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-heavy);
+  line-height: var(--lh-tight);
+  margin-bottom: var(--sp-3);
+  word-break: break-all;
+}
+.app-empty__p {
+  font-size: var(--fs-sm);
+  color: var(--yoxi-slate);
+  margin-bottom: var(--sp-5);
+  word-break: break-all;
+}
+.app-empty__card--error .app-empty__eyebrow { color: var(--yoxi-red); }
+
+/* APP.ui.confirm */
+.app-modal { border-radius: var(--r-card); }
+.app-modal__acts { display: grid; gap: var(--sp-2); }
+
+/* 錯誤收集（給 headless 驗收讀；永遠不顯示） */
+#app-errors { display: none; }
+
+/* --------------------------------------------------------------------------
+   hsmap（從 prototype/css/concept.css 只挑真正需要的；concept.css 不載）
+   -------------------------------------------------------------------------- */
+/* APP.map.mount 產生的 .map：填滿呼叫端給的容器 */
+.app-map {
+  position: absolute;
+  inset: 0;
+  flex: none;
+}
+.app-map .map__spots { position: absolute; inset: 0; }
+.app-map .map__svg { pointer-events: none; }
+
+/* 被夾到地圖邊緣的景點（例：內灣 28 km）：不假裝它在畫面裡 */
+.spot--edge { opacity: .55; }
+.spot--edge .spot__img { border-style: dashed; }
+
+/* 景點縮圖換成真照片 */
+.spot__img > img.spot__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 照片站位與署名（photos.js 會把 <img> 放進 .ph） */
+.ph {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  border-radius: var(--r-img);
+  background: repeating-linear-gradient(135deg, var(--yoxi-mist) 0 8px, var(--yoxi-line) 8px 16px);
+}
+.ph--16x9 { aspect-ratio: 16 / 9; }
+.ph--4x3  { aspect-ratio: 4 / 3; }
+.ph--3x4  { aspect-ratio: 3 / 4; }
+.ph--1x1  { aspect-ratio: 1; }
+.ph::after {
+  content: attr(data-ph);
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 1;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-slate);
+}
+.ph > img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ph.has-photo::after { display: none; }
+.photo-mark {
+  position: absolute;
+  left: var(--sp-2);
+  top: var(--sp-2);
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: var(--r-btn);
+  background: var(--yoxi-navy-60);
+  color: var(--yoxi-white);
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+  letter-spacing: .03em;
+}
+.photo__credit {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--yoxi-slate);
+}
+.photo__credit a { text-decoration: underline; }
+
+/* 圖示磚裡的 <span data-icon>：components.css 的 `.tile-icon svg { 54% }` 是相對於外層 span，
+   而 injectIcons 產生的 span 是 inline、沒有尺寸，svg 就縮成十幾 px 的一小點（設定、分享、前往中、日誌都中）。
+   給 span 本身 54%，svg 填滿它。各區塊自己定尺寸的（.ride-list .tile-icon [data-icon] 等）選擇器較具體，照舊。 */
+.tile-icon > [data-icon] { display: block; width: 54%; height: 54%; }
+.tile-icon > [data-icon] > svg { display: block; width: 100%; height: 100%; }
+
+/* --------------------------------------------------------------------------
+   手機（< 560px）：滿版、無圓角、無瀏海、無原型狀態列、無 demo 面板
+   --statusbar-h 改成安全區高度：紅色頁首照樣延伸到最上緣，內容避開瀏海。
+   -------------------------------------------------------------------------- */
+@media (max-width: 559px) {
+  body { background: var(--yoxi-paper); }
+  .stage {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0;
+    display: block;
+  }
+  .device {
+    --statusbar-h: max(env(safe-area-inset-top, 0px), 12px);
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .device::after,
+  .device .statusbar,
+  .device .home-bar { display: none; }
+  #demo-panel { display: none; }
+}

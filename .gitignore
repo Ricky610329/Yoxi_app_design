@@ -1,3 +1,6 @@
 # 工具的快取與 Python 位元碼，不進版控
 prototype/tools/.cache/
 __pycache__/
+
+# app 測試的 DOM 輸出（run.py --keep）
+app/tests/.out/

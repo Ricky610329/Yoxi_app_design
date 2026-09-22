@@ -1,0 +1,382 @@
+/* ==========================================================================
+   yoxi 城事 web app — explore 區塊樣式
+   畫面：/explore、/explore/map、/place/:id、/going/:id、/unlock/:id、/routes、/route/:id
+   沿用 chengshi.css 的 .placecard／.why／.peek／.postcard／.track-mini／.route-track／.unlock／.burst／.gen；
+   這裡只補 app 版需要的版面與少數新零件（全部 ex- 前綴）。
+   規則：不寫 hex；顏色、圓角、動畫時間全用 tokens.css 的變數。
+   ========================================================================== */
+
+/* ---------- 共用 ---------- */
+.ex-scroll { background: var(--yoxi-mist); }
+.ex-block { padding: var(--sp-5) var(--gutter) 0; }
+.ex-block--white { background: var(--yoxi-white); padding-bottom: var(--sp-4); padding-top: var(--sp-4); }
+.ex-block--last { padding-bottom: var(--sp-6); }
+.ex-pad { padding: var(--sp-5) var(--gutter) 0; }
+.ex-note { margin-top: var(--sp-3); font-size: var(--fs-cap); color: var(--yoxi-slate); line-height: 1.7; }
+.ex-center-text { text-align: center; padding: var(--sp-4) var(--gutter) var(--sp-6); }
+.ex-center { justify-content: center; width: 100%; }
+.ex-strong { display: block; font-weight: var(--fw-heavy); line-height: 1.35; }
+.ex-muted { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); line-height: 1.6; }
+.ex-dot { opacity: .5; }
+.ex-fill { position: absolute; inset: 0; }
+.ex-noshrink { flex: none; }
+.ex-ic16 { display: block; width: 16px; height: 16px; flex: none; }
+.ex-ic18 { display: block; width: 18px; height: 18px; }
+.ex-ic20 { display: block; width: 20px; height: 20px; }
+.ex-ic22 { display: block; width: 22px; height: 22px; }
+.ex-ic36 { display: block; width: 36px; height: 36px; }
+.is-gray > .postcard__art,
+.ex-hero.is-gray .ex-hero__art > .postcard__art,
+.peek__img.is-gray > .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
+
+/* 找不到：卡片下面要能按回去 */
+.ex-empty { flex: 1 1 auto; }
+.ex-bar { position: relative; flex: none; height: calc(var(--statusbar-h) + 60px); }
+.ex-back {
+  top: calc(var(--statusbar-h) + var(--sp-2));
+  left: var(--gutter);
+  width: 44px;
+  height: 44px;
+  z-index: 30;
+}
+
+/* ---------- 紅色頁首的卡片｜地圖切換（現在這一個不是連結） ---------- */
+.ex-viewtoggle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+}
+.ex-viewtoggle span.is-on { background: var(--yoxi-white); color: var(--yoxi-navy); }
+.ex-viewtoggle .ex-vt-ic { display: block; width: 15px; height: 15px; padding: 0; background: none; }
+.ex-hdr-title { flex: 1; margin-left: var(--sp-2); }
+
+/* ---------- /explore：今天的地方 ---------- */
+.ex-today.is-gray .placecard__art > .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
+.ex-got {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: var(--r-btn);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+}
+.ex-why { margin-top: var(--sp-3); }
+.why__list[hidden] { display: none; }
+.ex-why__arrow { transition: transform var(--t-base) var(--ease); }
+.why__head.is-open .ex-why__arrow { transform: rotate(90deg); }
+.ex-cta { display: grid; gap: var(--sp-2); margin-top: var(--sp-3); }
+
+/* ---------- /explore：X2 缺口（一句陳述＋最多三個地方） ---------- */
+.ex-gap { background: var(--yoxi-white); padding-bottom: var(--sp-5); margin-top: var(--sp-3); }
+.ex-gap .sec { margin-bottom: var(--sp-2); }
+.ex-gap__line { font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: 1.45; }
+.ex-gap__line .num { color: var(--yoxi-red); }
+.ex-gap__sub { margin-top: var(--sp-1); font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ex-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.ex-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: 100%;
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+}
+.ex-chip__img {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.ex-chip__img > .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
+.ex-chip__body { min-width: 0; }
+.ex-chip__t { display: block; font-size: var(--fs-sm); font-weight: var(--fw-heavy); line-height: 1.3; }
+.ex-chip__s { display: block; font-size: var(--fs-xs); color: var(--yoxi-slate); }
+
+/* ---------- /explore：路線卡、還沒去的地方 ---------- */
+.ex-rcard { width: 240px; flex: none; }
+.ex-rcard__art { display: block; height: 110px; position: relative; overflow: hidden; }
+.ex-rcard__body { display: block; padding: var(--sp-3); }
+.ex-rcard__t { display: block; font-weight: var(--fw-heavy); line-height: 1.35; }
+.ex-rcard__s { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ex-track { margin-top: var(--sp-3); }
+.ex-track__n { margin-left: var(--sp-2); font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.ex-row { padding: var(--sp-3) var(--gutter); }
+.ex-row .row-nav__title { font-size: var(--fs-body); }
+.ex-row__img {
+  position: relative;
+  width: 46px;
+  height: 60px;
+  flex: none;
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+.ex-row__img > .postcard__art { filter: grayscale(1) contrast(.72) brightness(1.16); }
+
+/* ---------- /explore/map ---------- */
+.ex-mapwrap { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.ex-mapwrap .ex-locate { top: var(--sp-3); right: var(--gutter); }
+.ex-me { z-index: 7; }
+.ex-me__drop { width: 38px; height: 38px; }
+.ex-peek { bottom: var(--sp-3); z-index: 35; }
+.ex-peek__top { display: flex; align-items: center; gap: var(--sp-3); }
+.ex-peek__txt { min-width: 0; }
+.ex-peek__name { display: block; font-weight: var(--fw-heavy); line-height: 1.3; }
+.ex-peek__meta { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.ex-peek__hook {
+  display: -webkit-box;
+  margin-top: 5px;
+  font-size: var(--fs-cap);
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ---------- /place/:id ---------- */
+.ex-place { background: var(--yoxi-paper); padding-bottom: var(--sp-6); }
+.ex-hero { position: relative; height: 300px; overflow: hidden; background: var(--yoxi-mist); flex: none; }
+.ex-hero__art { position: absolute; inset: 0; }
+.ex-hero__mark { left: auto; right: var(--gutter); top: calc(var(--statusbar-h) + 14px); }
+.ex-hero__lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  color: var(--yoxi-white);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  text-shadow: 0 1px 4px var(--yoxi-navy-60);
+}
+.ex-head { padding-top: var(--sp-4); }
+.ex-eyebrow {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--yoxi-cream);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+}
+.ex-name { margin-top: var(--sp-2); font-size: var(--fs-h1); font-weight: var(--fw-heavy); line-height: 1.25; }
+.ex-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--yoxi-slate);
+}
+.ex-meta .num { color: var(--yoxi-navy); }
+.ex-gotline {
+  display: inline-block;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-navy);
+}
+.ex-why__head { border-bottom: 1px solid var(--yoxi-line); }
+.ex-why__list { padding-top: var(--sp-3); }
+.ex-tip { background: var(--yoxi-cream); border: 0; }
+.ex-tip__k {
+  margin-bottom: 6px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .08em;
+  color: var(--yoxi-red);
+}
+.ex-tip__t { line-height: 1.7; }
+.ex-tip__h { margin-top: var(--sp-2); font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ex-reward__img {
+  position: relative;
+  width: 60px;
+  height: 80px;
+  flex: none;
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+
+/* K1 動作區：固定在畫面底，上緣一條線 */
+.ex-foot {
+  flex: none;
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--gutter) var(--sp-4);
+  background: var(--yoxi-white);
+  border-top: 1px solid var(--yoxi-line);
+  box-shadow: var(--sh-sheet);
+}
+.ex-foot__row { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); }
+.ex-foot__row .btn-ghost { width: auto; padding: 0 var(--sp-4); }
+.ex-foot__note { text-align: center; font-size: var(--fs-xs); color: var(--yoxi-slate); line-height: 1.6; }
+.ex-ride { flex-direction: column; gap: 2px; min-height: 60px; }
+.ex-ride__t { display: block; }
+.ex-ride__tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+}
+
+/* ---------- /going/:id ---------- */
+.ex-going__map { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--map-land); }
+.ex-going__top {
+  position: absolute;
+  z-index: 25;
+  top: calc(var(--statusbar-h) + var(--sp-2));
+  left: var(--gutter);
+  right: var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-lift);
+}
+.ex-going__ic { width: 44px; height: 44px; flex: none; }
+.ex-going__d { display: block; font-size: var(--fs-title); font-weight: var(--fw-heavy); line-height: 1.2; }
+.ex-going__s { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ex-going__sheet { --sheet-min: 230px; padding-bottom: calc(var(--safe-bottom) + var(--sp-3)); }
+.ex-going__card { background: var(--yoxi-cream); border: 0; }
+.ex-going__card--mist { margin-top: var(--sp-2); background: var(--yoxi-mist); }
+.ex-going__p { font-size: var(--fs-sm); line-height: 1.6; }
+.ex-going__acts { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); }
+.ex-demo { width: 100%; }
+/* 收合態也看得到兩顆鈕：只把「抵達怎麼驗」那張卡收起來 */
+.ex-going__sheet.is-collapsed .ex-going__card--mist { display: none; }
+
+/* ---------- /unlock/:id ---------- */
+.ex-unlock { cursor: pointer; }
+.ex-unlock [data-scene="3"] { cursor: default; }
+.ex-unlock__t2 { font-size: var(--fs-title); }
+.ex-unlock__skip { margin-top: var(--sp-4); font-size: var(--fs-xs); opacity: .55; }
+.ex-unlock__card { position: relative; width: 220px; margin: 0 auto var(--sp-5); }
+.ex-unlock__card .postcard { aspect-ratio: 3 / 4; }
+.ex-unlock__in { padding: 0 var(--sp-2); }
+.ex-unlock__input {
+  width: 100%;
+  height: 52px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-btn);
+  border: 1px solid color-mix(in srgb, var(--yoxi-white) 28%, transparent);
+  background: color-mix(in srgb, var(--yoxi-white) 8%, transparent);
+  color: var(--yoxi-white);
+  font-size: var(--fs-body);
+  text-align: center;
+}
+.ex-unlock__input::placeholder { color: color-mix(in srgb, var(--yoxi-white) 60%, transparent); }
+.ex-unlock__acts { display: grid; gap: var(--sp-2); margin-top: var(--sp-5); padding: 0 var(--sp-2); }
+.ex-unlock__btn { background: var(--yoxi-white); color: var(--yoxi-navy); }
+.ex-unlock__link { color: color-mix(in srgb, var(--yoxi-white) 75%, transparent); }
+.ex-unlock__have { font-size: var(--fs-sm); font-weight: var(--fw-heavy); opacity: .85; }
+.ex-unlock__gold { display: grid; justify-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.ex-unlock__goldrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gold) 22%, transparent);
+  color: var(--gold-lite);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+}
+.ex-unlock__goldrow .num { color: var(--gold-lite); }
+/* 深底上的獎章圖示：icons.js 的 badge 把海軍藍寫死在 fill，壓在深底上看不見；外圈與緞帶換成淺金，中間紅點照舊 */
+.ex-unlock__goldrow [data-icon] svg > circle:first-of-type,
+.ex-unlock__goldrow [data-icon] svg > path { fill: var(--gold-lite); }
+
+/* 幕二的三層筆觸（原型 inline 的 rgba 換成 tokens 混色） */
+.ex-gen__l2 { background: linear-gradient(200deg, color-mix(in srgb, var(--yoxi-white) 28%, transparent), transparent 60%); }
+.ex-gen__l3 { background: radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--yoxi-white) 40%, transparent), transparent 52%); }
+.ex-gen__l4 { box-shadow: inset 0 -40px 60px color-mix(in srgb, var(--yoxi-navy) 45%, transparent); }
+
+/* 幕一：灰點爆開上色。點先是灰的，脹大時上色；八顆粒子往外噴，顏色輪流用品牌紅、金、奶油 */
+.ex-burst__dot { animation: burst-pop 900ms var(--ease-bump) both, ex-dot-color var(--t-scene) var(--ease-out) both; }
+@keyframes ex-dot-color {
+  0%, 35% { background: var(--yoxi-slate-lite); }
+  60%, 100% { background: var(--yoxi-red); }
+}
+.ex-burst__bits { position: absolute; inset: 0; }
+.ex-burst__bits i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--yoxi-red);
+  opacity: 0;
+  transform: rotate(calc(var(--i) * 45deg)) translateY(0);
+  animation: ex-bit var(--t-scene) var(--ease-out) calc(var(--t-scene) * .3) both;
+}
+.ex-burst__bits i:nth-child(3n + 2) { background: var(--gold); }
+.ex-burst__bits i:nth-child(3n) { background: var(--yoxi-cream); }
+@keyframes ex-bit {
+  0%   { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(0) scale(.4); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(-70px) scale(1); }
+}
+html[data-still] .ex-burst__bits i { animation: none; opacity: 0; }
+
+/* ---------- /routes ---------- */
+.ex-routes { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--gutter) 0; }
+.ex-rbig { display: block; }
+.ex-rbig__art { display: block; height: 130px; position: relative; overflow: hidden; }
+.ex-rbig__body { display: block; padding: 14px var(--gutter); }
+.ex-rbig__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+
+/* ---------- /route/:id ---------- */
+.ex-route { padding-bottom: var(--sp-6); }
+.ex-cover { position: relative; height: 240px; overflow: hidden; flex: none; }
+.ex-cover__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--yoxi-navy) 94%, transparent),
+    color-mix(in srgb, var(--yoxi-navy) 30%, transparent) 55%, transparent 80%);
+}
+.ex-cover__body { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--sp-5) var(--gutter); color: var(--yoxi-white); }
+.ex-cover__k { font-size: var(--fs-xs); font-weight: var(--fw-heavy); letter-spacing: .08em; opacity: .85; }
+.ex-cover__t { margin-top: 6px; font-size: var(--fs-title); font-weight: var(--fw-heavy); line-height: 1.3; }
+.ex-cover__s { margin-top: var(--sp-1); font-size: var(--fs-sm); opacity: .9; }
+.ex-prog { padding-top: var(--sp-4); }
+.ex-prog .ex-track { margin: var(--sp-2) 0 var(--sp-1); }
+.ex-stop { min-width: 0; }
+.ex-stop__txt { flex: 1; min-width: 0; }
+.ex-stop__thumb { position: relative; }
+
+/* 斷點（K4）：虛線的軌道＋一張沒有紅色的小卡 */
+.route-track__stop.is-broken .route-track__rail::before {
+  background: repeating-linear-gradient(to bottom, var(--yoxi-slate-lite) 0 6px, transparent 6px 12px);
+}
+.ex-brk {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px dashed var(--yoxi-navy);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+}
+.ex-brk__k { display: block; font-size: var(--fs-xs); font-weight: var(--fw-heavy); letter-spacing: .08em; color: var(--yoxi-slate); }
+.ex-brk__t { display: block; margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: 1.6; }
+.ex-brk__btn { margin-top: var(--sp-3); min-height: 44px; font-size: var(--fs-sm); }
