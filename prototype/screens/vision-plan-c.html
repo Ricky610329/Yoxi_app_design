@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行程交給 yoxi — yoxi 城事</title>
+<!--
+  PLAN-C 行程交給 yoxi【願景探索稿】
+
+  一個主意：共筆草稿按一下，就變成叫車首頁上已經填好的多點行程。
+  上下車點卡從兩個欄位長成三個（上車點 + 兩個停靠點），欄位填好、叫車鈕就緒。
+
+  其餘整段照抄 home.html：地圖、水系、道路、鐵路、地名、四顆浮動圓鈕、
+  上車點 pin、廣告輪播條（第 1 格還是「今天的地方」，沒有動）、
+  收合態 sheet 的問候語與機場接送那一列，全部逐字相同。
+
+  收合態一個像素都沒動，靠兩件事保證：
+  1. 新增的節點（第三個欄位、第二段那張卡、叫車鈕、rail 上多出來的線與點）
+     全部標了 data-expand-only
+  2. 第二個欄位在收合態維持母版原文「請輸入下車點可預估車資」，
+     只有展開時才換成「停靠點 1」——  用 MutationObserver 跟著 sheet 的 class 切
+  為了讓這張探索稿一眼看得到新東西，載入後自動拉開；
+  ?sheet=collapsed 可以看回收合態，用來逐像素對照 home.html。
+
+  刻意沒有的東西：沒有出發時刻、沒有預計抵達、沒有「行程開始」。
+  距離與段數全部來自 MOCK.PLANS[1].legs。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="plan-c" data-tab="ride" data-status="dark" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- 右上角已經有掃碼與通知兩顆圓鈕，角標往下讓一行 -->
+      <span class="vision-mark" style="top:calc(var(--statusbar-h) + 68px)">探索稿 · 不在 demo 流程</span>
+
+      <!-- ===== 地圖 ===== -->
+      <div class="map" data-pan>
+        <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="440" fill="var(--map-land)"/>
+
+          <!-- 水系：頭前溪與客雅溪 -->
+          <path d="M-20 96 Q70 118 140 92 T300 108 T420 78" stroke="var(--map-water)"
+                stroke-width="13" fill="none" opacity=".85"/>
+          <path d="M-20 300 Q90 322 170 296 T410 318" stroke="var(--map-water)"
+                stroke-width="9" fill="none" opacity=".7"/>
+
+          <!-- 主要道路 -->
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-10 168 L400 150" stroke-width="11"/>
+            <path d="M-10 238 L400 226" stroke-width="9"/>
+            <path d="M52 -10 L74 450"   stroke-width="10"/>
+            <path d="M196 -10 L212 450" stroke-width="11"/>
+            <path d="M320 -10 L308 450" stroke-width="9"/>
+            <path d="M-10 390 Q150 360 400 386" stroke-width="8"/>
+          </g>
+
+          <!-- 次要道路 -->
+          <g stroke="var(--map-road-minor)" stroke-width="5" fill="none">
+            <path d="M-10 128 L400 116"/><path d="M-10 200 L400 190"/>
+            <path d="M-10 272 L400 262"/><path d="M-10 334 L400 326"/>
+            <path d="M120 -10 L136 450"/><path d="M258 -10 L262 450"/>
+            <path d="M360 -10 L352 450"/>
+          </g>
+
+          <!-- 六家支線鐵路 -->
+          <g stroke="#B9BDC4" stroke-width="2.4" fill="none">
+            <path d="M344 -10 Q300 140 286 450"/>
+          </g>
+          <g stroke="#B9BDC4" stroke-width="1" fill="none" stroke-dasharray="2 7">
+            <path d="M344 -10 Q300 140 286 450" stroke-width="7"/>
+          </g>
+
+          <!-- 地名 -->
+          <g font-family="var(--font-sans)" fill="#9AA3AE" font-weight="700">
+            <text x="110" y="70"  font-size="15">竹北市</text>
+            <text x="214" y="156" font-size="18">新竹縣</text>
+            <text x="26"  y="206" font-size="14">北區</text>
+            <text x="24"  y="232" font-size="17">新竹市</text>
+            <text x="120" y="400" font-size="14">寶山鄉</text>
+            <text x="300" y="250" font-size="12"
+                  transform="rotate(84 300 250)">六家支線鐵路</text>
+          </g>
+        </svg>
+
+        <!-- 浮動圓鈕 -->
+        <a class="fab fab--navy" href="drawer.html"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
+          <span data-icon="menu"></span>
+        </a>
+        <button class="fab" data-toast="這是 yoxi 現有的掃碼叫車，原型沒有做這一段"
+                style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+          <span data-icon="scan"></span>
+        </button>
+        <a class="fab" href="notify.html"
+           style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
+          <span data-icon="bell"></span>
+        </a>
+        <button class="fab" data-recenter style="bottom:20px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 上車點 pin -->
+        <div class="pin" style="left:50%; top:62%">
+          <span class="pin__label">
+            東區水利路 46 巷 58 號
+            <svg width="14" height="14" viewBox="0 0 24 24">
+              <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                    fill="var(--yoxi-red)"/>
+            </svg>
+          </span>
+          <span class="pin__drop"><span data-icon="hail"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+      </div>
+
+      <!-- ===== 廣告輪播條。沒有動。 ===== -->
+      <div class="banner">
+        <a class="banner__item" href="place.html" style="background:var(--yoxi-navy)">
+          <span style="width:52px;height:52px;border-radius:4px;overflow:hidden;position:relative;flex:none"
+                data-art="glass" data-seed="1" data-wide></span>
+          <span style="flex:1;min-width:0;color: var(--yoxi-white)">
+            <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.8">
+              今天的地方 · 離你 900m
+            </span>
+            <span style="display:block;font-size:14px;font-weight:800;margin-top:2px">
+              這條巷子 1970 年代是全街最亮的地方
+            </span>
+          </span>
+          <span class="arrow arrow--onred"></span>
+        </a>
+
+        <div class="banner__item">
+          <span style="flex:1;font-size:15px;font-weight:800;color:var(--yoxi-navy)">
+            <span style="color:var(--yoxi-red)">點</span>從天降 ·
+            趟趟送最高 <span class="num" style="color:var(--yoxi-red);font-size:19px">99</span> 點
+          </span>
+        </div>
+      </div>
+
+      <!-- ===== 底部 sheet =====
+           收合態內容與順序完全保留，一個像素都沒動。 -->
+      <div class="sheet sheet--drag is-collapsed" data-drag id="sheet" style="--sheet-min:420px">
+        <div class="sheet__handle"></div>
+
+        <h1 class="sheet__greet">晚安，Rick 今天要去哪?</h1>
+
+        <div class="card">
+          <div class="route-input">
+            <div class="route-input__rail">
+              <span class="route-input__dot"></span>
+              <span class="route-input__line"></span>
+              <span class="route-input__dot route-input__dot--to"></span>
+              <!-- 【新增】第二個停靠點的線與點。收合態看不到。 -->
+              <span class="route-input__line" data-expand-only></span>
+              <span class="route-input__dot route-input__dot--to" data-expand-only></span>
+            </div>
+            <div class="route-input__fields">
+              <a class="route-input__field" href="pickup.html">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">上車點</span>
+                  <span class="route-input__value" style="display:block">東區水利路 46 巷 58 號</span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none">
+                  <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                        fill="var(--yoxi-navy)"/>
+                </svg>
+              </a>
+              <!-- 收合態＝母版原文；展開態才換成「停靠點 1」（見頁內腳本） -->
+              <a class="route-input__field" href="pickup.html?to=1" id="f2">
+                <span class="route-input__value route-input__value--ph">請輸入下車點可預估車資</span>
+              </a>
+              <!-- 【新增】第二個停靠點。收合態看不到。 -->
+              <a class="route-input__field" data-expand-only href="pickup.html?to=2" id="f3">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">停靠點 2</span>
+                  <span class="route-input__value" style="display:block">南寮漁港</span>
+                </span>
+              </a>
+            </div>
+          </div>
+
+          <!-- 【新增】展開態才出現的一列。收合態看不到。 -->
+          <div class="divider" data-expand-only></div>
+          <a class="row-nav" data-expand-only href="place.html" style="padding:12px 16px">
+            <span class="tile-icon tile-icon--sm">
+              <span data-icon="place" style="width:22px;height:22px;display:block"></span>
+            </span>
+            <span class="row-nav__body">
+              <span class="row-nav__title" style="font-size:15px">今天的地方 · 900m</span>
+              <span class="row-nav__sub">水利路的老玻璃窯</span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <!-- 【新增】為什麼這一段要搭車。收合態看不到。 -->
+        <div class="card card--pad" data-expand-only style="margin-top:12px">
+          <div id="segT" style="font-weight:800; line-height:1.6">第二段 8.2 公里，走不到。</div>
+        </div>
+
+        <!-- 【新增】欄位填好，叫車鈕就緒。收合態看不到。 -->
+        <div data-expand-only style="margin-top:12px">
+          <a class="btn-primary" href="#"
+             data-toast="原型到這裡 —— 實際會進入 yoxi 既有的叫車媒合流程">叫車</a>
+        </div>
+
+        <div class="u-row" style="justify-content:space-between; margin-top:16px">
+          <a class="btn-pill" href="#" data-toast="這是 yoxi 現有的功能，這份原型沒有改動它">
+            <span data-icon="plane" style="width:18px;height:18px;display:block"></span>
+            機場接送
+          </a>
+          <a class="btn-link" href="pickup.html">
+            略過下車地點，繼續叫車
+            <span class="arrow"></span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 草稿＝共筆那一張（vision-plan-b）。第一站走得到，第二段要搭車。 */
+  const P  = MOCK.PLANS[1];
+  const s1 = MOCK.findPlace(P.legs[1].placeId);
+  const s2 = MOCK.findPlace(P.legs[2].placeId);
+  const seg = P.legs[2];
+
+  document.querySelector('#f3 .route-input__value').textContent = s2.name;
+  document.getElementById('segT').innerHTML =
+    '第二段 <span class="num">' + (seg.dist / 1000).toFixed(1) + '</span> 公里，走不到。';
+
+  /* 第二個欄位：收合態維持母版原文，展開態才變成停靠點 1。
+     這樣「收合態一個像素都沒動」不是宣稱，是同一個節點的同一段文字。 */
+  const sheet = document.getElementById('sheet');
+  const f2 = document.getElementById('f2');
+  const PH = f2.innerHTML;
+  const STOP1 = '<span style="flex:1;min-width:0">' +
+    '<span class="route-input__label" style="display:block">停靠點 1</span>' +
+    '<span class="route-input__value" style="display:block">' + s1.name + '</span></span>';
+
+  function sync() {
+    const open = !sheet.classList.contains('is-collapsed');
+    const want = open ? STOP1 : PH;
+    if (f2.innerHTML !== want) f2.innerHTML = want;
+  }
+  new MutationObserver(sync).observe(sheet, { attributes: true, attributeFilter: ['class'] });
+
+  /* 探索稿要一眼看得到新東西，所以載入後自動拉開；?sheet=collapsed 看回收合態。 */
+  if (new URLSearchParams(location.search).get('sheet') !== 'collapsed') {
+    SHELL.ready(function () {
+      sheet.classList.remove('is-collapsed');
+      SHELL.yieldTabbar(true);
+    });
+  }
+  sync();
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

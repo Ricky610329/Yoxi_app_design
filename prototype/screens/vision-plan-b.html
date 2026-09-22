@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>跟小芸的下午 — yoxi 城事</title>
+<!--
+  PLAN-B 兩個人各丟一個地方【願景探索稿】
+
+  一個主意：同一張草稿，家人各自丟一個地方進來，誰都不用當主揪。
+  每一站左邊多一個頭像，標的是「誰放的」——  這是這張畫面唯一的新東西，
+  其餘版型整段照抄 vision-plan-a（也就是 route.html 的 .route-track）。
+
+  共筆最容易長出通知，所以這一張：
+  · 沒有未讀點、沒有紅色數字、沒有「小芸剛剛加了一個地方」
+  · 沒有催促、沒有「等你回覆」、沒有排程提醒
+  · 沒有誰是主揪、沒有邀請流程 —— 兩個人都只是往同一張草稿上放東西
+  · 草稿沒有送出這個動作，所以也沒有「已讀」
+  地點與距離全部來自 MOCK.PLANS[1].legs，經 findPlace() 展開。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="plan-b" data-tab="explore" data-status="light" data-time="14:05">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark">探索稿 · 不在 demo 流程</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="../vision.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px" id="title">跟小芸的下午</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+        <!-- ===== 直向時間軸（共筆版） ===== -->
+        <div style="padding:16px">
+          <div class="card">
+            <div class="card--pad" style="padding-bottom:0">
+              <div class="route-track" id="tl"></div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <button class="row-nav" data-toast="原型到這裡 —— 實際會開「還沒去的地方」讓你挑一個">
+              <span class="tile-icon tile-icon--sm">
+                <span data-icon="place" style="width:20px;height:20px;display:block"></span>
+              </span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:15px">還可以再加一個</span>
+                <span class="row-nav__sub">誰加都一樣，沒有先後</span>
+              </span>
+              <span class="arrow"></span>
+            </button>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              他們只看得到這張草稿
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 反時刻表的宣告 ===== -->
+        <div style="padding:0 16px 32px">
+          <div class="card card--pad">
+            <div style="font-weight:800; line-height:1.6">沒有開始時間，也不用照順序走。</div>
+            <p style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+              草稿沒有「送出」，所以也沒有人在等你回覆。
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const P = MOCK.PLANS[1];
+  document.title = P.name + ' — yoxi 城事';
+  document.getElementById('title').textContent = P.name;
+
+  /* who：'me' 就是你，其餘去 MOCK.FAMILY 對名字，不在這一頁另編人。 */
+  function whoName(who) {
+    if (!who || who === 'me') return '你';
+    const m = MOCK.FAMILY.filter(function (f) { return f.id === who; })[0];
+    return m ? m.name : '你';
+  }
+
+  function dist(m) {
+    return m >= 1000 ? '<span class="num">' + (m / 1000).toFixed(1) + '</span> 公里'
+                     : '<span class="num">' + m + '</span> 公尺';
+  }
+
+  function moveRow(lg, first) {
+    const walk = lg.by === 'walk';
+    return '<div class="route-track__stop">' +
+      '<span class="route-track__rail">' +
+        '<i style="position:absolute; top:0; bottom:calc(var(--sp-4) * -1);' +
+        ' left:calc(50% - 1px); width:2px; background:var(--yoxi-line)"></i>' +
+      '</span>' +
+      '<span class="row-nav" style="padding:0; border:0">' +
+        '<span class="tile-icon tile-icon--sm">' +
+          '<span data-icon="' + (walk ? 'steps' : 'tabRide') +
+          '" style="width:20px;height:20px;display:block"></span>' +
+        '</span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__sub" style="font-size:13px">' +
+            (first ? '從你家' : '') + (walk ? '走路 ' : '用 yoxi ') +
+            '<span class="num">' + lg.min + '</span> 分 · ' + dist(lg.dist) +
+          '</span>' +
+        '</span>' +
+      '</span>' +
+    '</div>';
+  }
+
+  /* 【新增】每一站左側多一個頭像：這個地方是誰放進來的。 */
+  function stopRow(pl, who, i, last) {
+    const nm = whoName(who);
+    return '<div class="route-track__stop' + (last ? ' is-next' : '') + '">' +
+      '<span class="route-track__rail"><span class="route-track__node"></span></span>' +
+      '<a class="route-track__body" href="place.html?id=' + pl.id + '">' +
+        '<span class="tile-icon tile-icon--sm tile-icon--round" style="font-size:14px;' +
+        ' font-weight:800">' + nm.slice(-1) + '</span>' +
+        '<span class="route-track__thumb" style="position:relative;' +
+        ' filter:grayscale(1) contrast(.72) brightness(1.16)"' +
+        ' data-art="' + pl.art + '" data-seed="' + (i + 2) + '"></span>' +
+        '<span style="flex:1; min-width:0">' +
+          '<span style="display:block; font-weight:800; line-height:1.35">' + pl.name + '</span>' +
+          '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+            nm + '放的 · ' + pl.type + '</span>' +
+        '</span></a>' +
+    '</div>';
+  }
+
+  document.getElementById('tl').innerHTML = P.legs.map(function (lg, i) {
+    return moveRow(lg, i === 0) +
+           stopRow(MOCK.findPlace(lg.placeId), lg.who, i, i === P.legs.length - 1);
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

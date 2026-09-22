@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>博覽會期間的左岸 — yoxi 城事</title>
+<!--
+  EVENT-B 活動期間的臨時路線【願景探索稿】
+
+  一個主意：一個大型活動＝一條會自己收起來的路線。
+  它串的是場館以外的地方（漁港、護城河、州廳、青草湖），不是活動節目表。
+
+  版型整段照抄 route.html 的封面 + .route-track，拿掉進度環與「集滿可得」——
+  臨時路線不掛獎章，因為獎章是長期的，活動不是。
+
+  限時內容怎麼跟反限量立場共存，就靠最後那一張卡：
+  「結束後這條線會收起來，但你收過的明信片留著。」
+  · 只寫日期區間，不寫倒數、不寫剩幾天
+  · 不寫限量、不寫走完才有什麼
+  · 站點用 MOCK.EVENTS[0].spots 經 findPlace() 展開，不另編地方
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="event-b" data-tab="explore" data-status="light" data-time="8:12">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- 封面右上角已經有「AI 生成示意」，角標往下讓一行 -->
+      <span class="vision-mark" style="top:calc(var(--statusbar-h) + 40px)">探索稿 · 不在 demo 流程</span>
+
+      <div class="scroll scroll--tabbed">
+
+        <!-- ===== 封面 ===== -->
+        <div style="position:relative; height:240px; overflow:hidden">
+          <div id="rArt" data-art="harbour" data-seed="3" data-wide style="position:absolute; inset:0"></div>
+          <span class="ai-mark" style="top:calc(var(--statusbar-h) + 8px); right:16px; left:auto">AI 生成示意</span>
+          <span style="position:absolute; inset:0; background:linear-gradient(to top,
+                rgba(6,32,64,.94), rgba(6,32,64,.3) 55%, transparent 80%)"></span>
+
+          <a class="fab" data-back href="../vision.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; padding:20px 16px; color: var(--yoxi-white)">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.85">
+              活動期間的路線
+            </div>
+            <h1 id="rName" style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px">
+              博覽會期間的左岸
+            </h1>
+            <div id="rSub" style="font-size:15px; opacity:.9; margin-top:4px">
+              <span class="num">09.20</span>–<span class="num">10.05</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 站點列表 ===== -->
+        <div style="padding:20px 16px 0">
+          <div class="sec"><h2 class="sec__t sec__t--sm">場館以外的四個地方</h2></div>
+          <div class="route-track" id="track"></div>
+        </div>
+
+        <!-- ===== 活動結束之後 ===== -->
+        <div style="padding:4px 16px 0">
+          <div class="card card--pad">
+            <div id="note" style="font-weight:800; line-height:1.6">
+              結束後這條線會收起來，但你收過的明信片留著。
+            </div>
+            <p style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+              路線是活動的，明信片是你的。這條線不見了以後，牆上那幾張不會跟著不見。
+            </p>
+          </div>
+        </div>
+
+        <p style="padding:20px 16px 28px; text-align:center;
+                  font-size:13px; color:var(--yoxi-slate)">
+          沒有期限，也不用照順序。
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const EV = MOCK.EVENTS[0];
+
+  document.title = EV.name + '期間的' + EV.area + ' — yoxi 城事';
+  document.getElementById('rName').textContent = EV.name.replace('城市', '') + '期間的' + EV.area;
+  document.getElementById('rSub').innerHTML =
+    '<span class="num">' + EV.from + '</span>–<span class="num">' + EV.to + '</span>';
+  document.getElementById('rArt').dataset.art = EV.art;
+  document.getElementById('note').textContent = EV.note;
+
+  /* 站點：活動的 spots 一律經 findPlace() 展開，名稱與距離都不是這裡編的。
+     收集狀態靠「牆上有沒有同名的那一張」對 —— 活動路線沒有自己的 card id，
+     直接拿地點 id 去問 STATE 會全部算成沒收，跟收藏頁對不起來。 */
+  function cardOf(pl) {
+    return MOCK.POSTCARDS.filter(function (p) { return p.name === pl.name; })[0] || null;
+  }
+
+  document.getElementById('track').innerHTML = EV.spots.map(function (id, i) {
+    const pl = MOCK.findPlace(id);
+    const cd = cardOf(pl);
+    const done = !!(cd && STATE.has(cd.id));
+    const dist = pl.distance != null
+      ? '<span class="num">' + (pl.distance / 1000).toFixed(1) + '</span> 公里'
+      : '距離待確認';
+    return '<div class="route-track__stop ' + (done ? 'is-done' : '') + '">' +
+      '<span class="route-track__rail"><span class="route-track__node"></span></span>' +
+      '<a class="route-track__body" href="' +
+        (done ? 'postcard.html?id=' + cd.id : 'place.html?id=' + pl.id) + '">' +
+        '<span class="route-track__thumb" style="position:relative; ' +
+          (done ? '' : 'filter:grayscale(1) contrast(.72) brightness(1.16)') + '"' +
+          ' data-art="' + pl.art + '" data-seed="' + (i + 2) + '"></span>' +
+        '<span style="flex:1; min-width:0">' +
+          '<span style="display:block; font-weight:800; line-height:1.35">' + pl.name + '</span>' +
+          '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+            (done ? '已收集' : dist) + ' · ' + pl.type + '</span>' +
+        '</span><span class="arrow"></span></a>' +
+    '</div>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

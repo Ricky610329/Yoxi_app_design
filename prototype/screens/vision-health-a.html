@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>健檢完的那一段路 — yoxi 城事</title>
+<!--
+  HEALTH-A 健檢完的那一段路【願景探索稿】
+
+  一個主意：健檢結束的推播不是「恭喜完成」，是回程路上的一個地方。
+  這一張只做推播那一面 —— 點下去就是既有的 place.html，沒有新畫面。
+
+  ★ 隱私前提（沒有這一條，這張不能做）：
+    設定頁「我們用你的哪些資料」必須多一列「健檢預約」，而且能單獨關掉，
+    跟常用地點、步數、相簿一樣。關掉之後城事照常運作，只是不會有這一則。
+    醫療資料是最敏感的一類，它不能被藏在「行程紀錄」或「常用地點」底下
+    一起授權 —— 那等於沒有問過。
+
+  版型整段照抄 push.html（demo 用的鎖定畫面浮層），只換了時間、日期、
+  一句文案與深連結。
+
+  刻意沒有的東西：
+  · 沒有「恭喜」「完成」「做得很好」—— 健檢不是成就
+  · 沒有健檢結果、沒有數值、沒有紅字提醒
+  · 沒有倒數、沒有「今天最後一次機會」
+  文案裡的「走 12 分鐘」是從醫院回家路上多繞的那一段，
+  跟 place.html 顯示的 2.4 公里（離家的距離）不是同一個量 ——
+  這兩個數字要不要統一，等這張被選上再決定。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="health-a" data-status="light" data-time="10:05">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- .pushmock 的 z-index 是 96，角標要壓在它上面才看得到 -->
+      <span class="vision-mark" style="z-index:97">探索稿 · 不在 demo 流程</span>
+
+      <div class="pushmock" style="position:absolute; inset:0">
+        <div class="pushmock__clock">
+          <div class="pushmock__time" id="clock">10:05</div>
+          <div class="pushmock__date" id="date">9月25日 星期四</div>
+        </div>
+
+        <a class="pushmock__card" id="card" href="place.html?id=brick">
+          <span class="pushmock__app">y</span>
+          <span style="flex:1; min-width:0">
+            <span class="pushmock__t">yoxi 城事</span>
+            <span class="pushmock__b" id="body"></span>
+          </span>
+        </a>
+
+        <p style="margin-top:auto; margin-bottom:48px; text-align:center;
+                  color: var(--yoxi-white); opacity:.45; font-size:12px">
+          demo 用的鎖定畫面。點通知進入 app。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const H  = MOCK.HEALTH[0];
+  const pl = MOCK.findPlace(H.nearby[0]);
+
+  /* 日期取 HEALTH[0].at 的前半段（'9月25日 星期四 08:30'）；
+     時間是「健檢結束之後」，不是預約時間本身。 */
+  const parts = H.at.split(' ');
+  document.getElementById('date').textContent = parts[0] + ' ' + parts[1];
+
+  /* 一句話，沒有結果、沒有恭喜、沒有期限。 */
+  document.getElementById('body').textContent =
+    H.kind + '結束了。回家的路上有一個地方，走 12 分鐘。';
+  document.getElementById('card').href = 'place.html?id=' + pl.id;
+})();
+</script>
+</body>
+</html>

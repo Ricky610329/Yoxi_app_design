@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>步數是一條線 — yoxi 城事</title>
+<!--
+  HEALTH-B 步數是一條線【願景探索稿】
+
+  一個主意：每日回顧的之字形旁邊，多一條「這個月」的線。
+  同色系明度差（今天＝品牌紅，這個月＝淡紅），做法照抄 week.html 的
+  本週／上週 —— 不用兩種對立的顏色，因為那會變成「好／不好」。
+
+  只做幕 1 那一幕；原本的幕 2（慶祝）、幕 3（照片）、幕 4（心情）與完成卡
+  都拿掉了，這一張不跑儀式，只看那條線。
+
+  健康資料最容易長出目標。所以這一張刻意沒有：
+  · 沒有進度環（.ring）、沒有百分比、沒有「達成」
+  · 沒有目標值、沒有達標線、沒有平均線
+  · 沒有連續天數、沒有「這個月還剩幾天」
+  · 沒有跟別人比
+  HEALTH_STEPS 本身就沒有 goal 欄位（見 js/mock.js 的註解）；
+  月線只畫已經走過的那幾天，還沒到的日子不畫成 0 ——
+  畫成 0 會讀成「這幾天沒走」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="health-b" data-status="light" data-time="21:30">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark" style="z-index:96">探索稿 · 不在 demo 流程</span>
+
+      <div class="lookback">
+
+        <div class="lookback__top">
+          <span>9月21日 星期日</span>
+          <button id="skipBtn" style="color: var(--yoxi-white); opacity:.8">跳過</button>
+        </div>
+
+        <div class="lookback__body">
+
+          <!-- ===== 幕 1：之字形步數路徑 ===== -->
+          <div class="lookback__act is-on" id="a1">
+            <svg class="zigzag" viewBox="0 0 300 300" style="height:250px">
+              <!-- 轉折點：3,000 步 → 5,000 步 → 6,240 步 -->
+              <path class="zigzag__path" d="M40 272 L252 206 L48 140 L214 82"/>
+
+              <g class="zigzag__stop">
+                <circle cx="252" cy="206" r="15" fill="#fff"/>
+                <text x="252" y="211" text-anchor="middle" font-size="11"
+                      font-weight="800" fill="#062040">市場</text>
+              </g>
+              <g class="zigzag__stop">
+                <circle cx="48" cy="140" r="15" fill="#fff"/>
+                <text x="48" y="145" text-anchor="middle" font-size="11"
+                      font-weight="800" fill="#062040">河</text>
+              </g>
+              <g class="zigzag__stop">
+                <circle cx="214" cy="82" r="17" fill="var(--yoxi-red)"/>
+                <text x="214" y="87" text-anchor="middle" font-size="11"
+                      font-weight="800" fill="#fff">窯</text>
+              </g>
+            </svg>
+
+            <div class="lookback__steps" id="stepNum">0</div>
+            <div class="lookback__unit">步 · 4.3 公里</div>
+
+            <!-- ===== 【新增】這個月的那一條線 ===== -->
+            <svg id="monthSvg" viewBox="0 0 300 80" preserveAspectRatio="none"
+                 style="width:100%; height:80px; margin-top:20px; display:block">
+              <path id="monthLine" fill="none" stroke="#FFB9AE" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+            <div class="u-row u-gap4" style="justify-content:center; margin-top:10px;
+                 font-size:12px; color:rgba(255,255,255,.75)">
+              <span class="u-row" style="gap:6px">
+                <i style="width:12px;height:12px;border-radius:var(--r-btn);
+                          background:var(--yoxi-red)"></i>今天
+              </span>
+              <span class="u-row" style="gap:6px">
+                <i style="width:12px;height:12px;border-radius:var(--r-btn);
+                          background:#FFB9AE"></i>這個月
+              </span>
+            </div>
+
+            <p class="unlock__sub" style="margin-top:10px; font-size:12px">
+              沒有目標值，這只是你這個月走過的樣子。
+            </p>
+          </div>
+
+        </div>
+
+        <div class="lookback__foot">
+          <a class="btn-primary" href="album.html"
+             style="background:var(--yoxi-white); color:var(--yoxi-navy)">看收藏</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* ---- 【新增】這個月的那一條線 ----
+     只畫已經走過的那幾天。刻意不畫目標線、不標最高最低、不寫平均。 */
+  const days = MOCK.HEALTH_STEPS.month.filter(function (v) { return v > 0; });
+  const top = Math.max.apply(null, days);
+  const pts = days.map(function (v, i) {
+    const x = 8 + i * (284 / Math.max(1, days.length - 1));
+    const y = 72 - (v / top) * 60;
+    return x.toFixed(1) + ' ' + y.toFixed(1);
+  });
+  document.getElementById('monthLine').setAttribute('d', 'M' + pts.join(' L'));
+
+  /* 幕 1：步數往上跳。刻意慢 —— 這是回顧不是載入條。 */
+  const target = MOCK.LOOKBACK.steps;
+  const el = document.getElementById('stepNum');
+
+  /* ?still=1 直接停在終值。縮圖若抓到數字動畫的隨機一幀，
+     全景圖上每次重整都會顯示不同的步數。 */
+  if (new URLSearchParams(location.search).has('still')) {
+    el.textContent = target.toLocaleString();
+  } else {
+    const t0 = performance.now();
+    const tick = function (now) {
+      const p = Math.min((now - t0) / 2600, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString();
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  document.getElementById('skipBtn').onclick = function () { SHELL.go('album.html'); };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一起走這條路線 — yoxi 城事</title>
+<!--
+  FAMILY-C 一起走這條路線【願景探索稿】
+
+  一個主意：路線詳情多一張「一起走的人」——  家人各自走到第幾站，
+  以及這條路線這個月替代掉的車程，換算成和泰點數的移動折抵（ESG）。
+
+  其餘區塊整段照抄 route.html（封面、進度環、站點軌道、下一站、集滿可得、
+  底部那句反任務化的宣告），連 inline style 都沒動。
+
+  刻意沒有的東西：
+  · 沒有排名 —— 三個人照 FAMILY 的原順序列，不照走得多寡排序
+  · 沒有「誰領先」「還差幾站追上」
+  · 看得到的只有「走到第幾站」，看不到人現在在哪裡
+  折抵率：1 公里 5 點（18 公里 → 90 點），兩個數字互相對得上。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="family-c" data-tab="explore" data-status="light" data-time="8:12">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- 封面右上角已經有「AI 生成示意」，角標往下讓一行 -->
+      <span class="vision-mark" style="top:calc(var(--statusbar-h) + 40px)">探索稿 · 不在 demo 流程</span>
+
+      <div class="scroll scroll--tabbed">
+
+        <!-- ===== 封面 ===== -->
+        <div style="position:relative; height:240px; overflow:hidden">
+          <div id="rArt" data-art="rail" data-seed="3" data-wide style="position:absolute; inset:0"></div>
+          <span class="ai-mark" style="top:calc(var(--statusbar-h) + 8px); right:16px; left:auto">AI 生成示意</span>
+          <span style="position:absolute; inset:0; background:linear-gradient(to top,
+                rgba(6,32,64,.94), rgba(6,32,64,.3) 55%, transparent 80%)"></span>
+
+          <a class="fab" data-back href="../vision.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; padding:20px 16px; color: var(--yoxi-white)">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.85">
+              這個月的路線
+            </div>
+            <h1 id="rName" style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px">
+              沿著鐵道走
+            </h1>
+            <div id="rSub" style="font-size:15px; opacity:.9; margin-top:4px">內灣線的六個站</div>
+          </div>
+        </div>
+
+        <!-- ===== 進度 ===== -->
+        <div style="padding:16px">
+          <div class="card card--pad u-row u-gap4">
+            <span style="position:relative; width:52px; height:52px; flex:none">
+              <svg class="ring" width="52" height="52" viewBox="0 0 52 52">
+                <circle class="ring__track" cx="26" cy="26" r="22"/>
+                <circle class="ring__bar" cx="26" cy="26" r="22"
+                        stroke-dasharray="138.2" stroke-dashoffset="92.1"/>
+              </svg>
+              <span style="position:absolute; inset:0; display:grid; place-items:center;
+                           font-size:13px; font-weight:800">
+                <span data-prog><span class="num">2</span>/6</span>
+              </span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800" id="progText">已經走過兩站</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                慢慢走，沒有期限
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 站點列表 ===== -->
+        <div style="padding:0 16px">
+          <div class="route-track" id="track"></div>
+        </div>
+
+        <!-- ===== 【新增】一起走的人 ===== -->
+        <div style="padding:4px 16px 0">
+          <div class="sec"><h2 class="sec__t sec__t--sm">一起走的人</h2></div>
+          <div class="card">
+            <div id="famTrack"></div>
+            <div class="card--pad" style="background:var(--yoxi-cream)">
+              <div style="font-weight:800; line-height:1.5">
+                這條路線這個月少開 <span class="num">18</span> 公里
+              </div>
+              <div style="font-size:13px; color:var(--yoxi-slate); margin-top:4px">
+                折抵和泰 Points <span class="num">90</span> 點 · 一公里 5 點
+              </div>
+            </div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只看得到站，看不到人在哪
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 下一站（由狀態決定是哪一站） ===== -->
+        <div style="padding:8px 16px 0">
+          <div class="card" id="nextBox"
+               style="border-color:var(--yoxi-navy); border-width:1.5px"></div>
+        </div>
+
+        <!-- ===== 集滿可得 ===== -->
+        <div style="padding:20px 16px 0">
+          <div class="sec"><h2 class="sec__t">全部走過會得到</h2></div>
+          <a class="card card--pad u-row u-gap4" id="bLink" href="badge.html?id=b4">
+            <span class="badge badge--locked" style="width:auto">
+              <span class="badge__disc"><span data-icon="route"></span></span>
+            </span>
+            <span class="u-fill">
+              <span id="bName" style="display:block; font-weight:800">〈內灣線全線〉</span>
+              <span id="bAward" style="display:block; font-size:13px; color:var(--yoxi-slate);
+                           margin-top:4px; line-height:1.6">
+                你走完了內灣線的每一個站。
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <!-- ===== 反任務化的宣告 ===== -->
+        <p style="padding:20px 16px 28px; text-align:center;
+                  font-size:13px; color:var(--yoxi-slate)">
+          沒有期限，也不用照順序。
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 哪一條路線由 ?id= 決定；每一站的狀態由「那一站的明信片收集了沒」決定 */
+  const rid = new URLSearchParams(location.search).get('id') || 'rail';
+  const R = MOCK.ROUTES.filter(function (r) { return r.id === rid; })[0] || MOCK.ROUTES[0];
+
+  const nx = R.stops.filter(function (st) {
+               return R.feature && st.card === R.feature && !STATE.has(st.card);
+             })[0]
+          || R.stops.filter(function (st) { return !STATE.has(st.card); })[0];
+  R.stops.forEach(function (st) {
+    st.state = STATE.has(st.card) ? 'done' : (st === nx ? 'next' : 'todo');
+  });
+  const done = R.stops.filter(function (st) { return st.state === 'done'; }).length;
+
+  document.title = R.name + ' — yoxi 城事';
+  document.getElementById('rName').textContent = R.name;
+  document.getElementById('rSub').textContent  = R.sub;
+  document.getElementById('rArt').dataset.art  = R.art;
+
+  const bd = STATE.badge(R.badge);
+  document.getElementById('bName').textContent  = '〈' + bd.name + '〉';
+  document.getElementById('bAward').textContent = bd.award;
+  document.getElementById('bLink').href = 'badge.html?id=' + R.badge;
+
+  document.querySelectorAll('.ring__bar').forEach(function (b) {
+    b.setAttribute('stroke-dashoffset', 138.2 * (1 - done / R.total));
+  });
+  document.querySelectorAll('[data-prog]').forEach(function (e) {
+    e.innerHTML = '<span class="num">' + done + '</span>/' + R.total;
+  });
+  const lead = document.getElementById('progText');
+  if (lead) lead.textContent = done >= R.total ? '全部走過了' :
+    (done === 0 ? '還沒開始' : '已經走過 ' + done + ' 站');
+
+  /* 下一站 */
+  const nxBox = document.getElementById('nextBox');
+  if (nx) {
+    const farNx = nx.dist > 10000;
+    nxBox.innerHTML =
+      '<div style="padding:14px 16px 0; font-size:12px; font-weight:800;' +
+      ' letter-spacing:.08em; color:var(--yoxi-red)">先去這一站</div>' +
+      '<a class="row-nav" href="place.html?id=' + nx.card + '" style="padding:10px 16px 14px">' +
+        '<span style="width:52px; height:68px; border-radius:4px; overflow:hidden;' +
+        ' position:relative; flex:none; filter:grayscale(1) contrast(.72) brightness(1.16)"' +
+        ' data-art="' + nx.art + '" data-seed="7"></span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title">' + nx.name + '</span>' +
+          '<span class="row-nav__sub">' + (nx.dist / 1000).toFixed(1) + ' 公里' +
+          (nx.note ? ' · ' + nx.note : '') + '</span>' +
+        '</span><span class="arrow"></span></a>' +
+      '<div style="padding:0 16px 16px">' +
+        '<a class="btn-primary" href="' + (farNx ? 'place.html?id=' + nx.card
+                                                 : 'going.html?id=' + nx.card) + '">' +
+        (farNx ? '先看看這一站 · 要搭車' : '走路前往') + '</a></div>';
+  } else {
+    nxBox.innerHTML = '<div style="padding:18px 16px; text-align:center; font-weight:800">' +
+      '這條路線你已經走完了。</div>';
+  }
+  SHELL.injectArt(nxBox);
+
+  document.getElementById('track').innerHTML = R.stops.map((s, i) => {
+    const done = s.state === 'done';
+    const next = s.state === 'next';
+    return `
+      <div class="route-track__stop ${done ? 'is-done' : ''} ${next ? 'is-next' : ''}">
+        <span class="route-track__rail"><span class="route-track__node"></span></span>
+        <a class="route-track__body" href="${done ? 'postcard.html?id=' + s.card : 'place.html?id=' + s.card}">
+          <span class="route-track__thumb ${done ? '' : 'is-locked'}"
+                style="position:relative; ${done ? '' : 'filter:grayscale(1) contrast(.72) brightness(1.16)'}"
+                data-art="${s.art}" data-seed="${i + 2}"></span>
+          <span style="flex:1; min-width:0">
+            <span style="display:block; font-weight:800; line-height:1.35">${s.name}</span>
+            <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+              ${done ? '已收集' : '<span class="num">' + (s.dist / 1000).toFixed(1) + '</span> 公里'}${s.note ? ' · ' + s.note : ''}
+            </span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+      </div>`;
+  }).join('');
+
+  /* ---- 【新增】一起走的人 ----
+     照 MOCK.FAMILY 的原順序列，不依進度排序 —— 一排序就變成排行榜。
+     每一列只有「走到第幾站」，沒有時間、沒有位置。整列不是連結。 */
+  document.getElementById('famTrack').innerHTML = MOCK.FAMILY.map(function (m) {
+    const n = (m.routeDone && m.routeDone[R.id]) || 0;
+    let mini = '';
+    for (let k = 0; k < R.total; k++) {
+      if (k) mini += '<i class="track-mini__link' + (k < n ? ' is-done' : '') + '"></i>';
+      mini += '<i class="track-mini__node' + (k < n ? ' is-done' : '') + '"></i>';
+    }
+    return '<div class="row-nav" style="padding:12px 16px">' +
+      '<span class="tile-icon tile-icon--md tile-icon--round"' +
+      ' style="font-size:16px; font-weight:800">' + m.name.slice(-1) + '</span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:15px">' + m.name + '</span>' +
+        '<span class="track-mini" style="margin-top:7px">' + mini + '</span>' +
+      '</span>' +
+      '<span style="font-size:13px; color:var(--yoxi-slate); flex:none">' +
+        (n ? '走到第 ' + n + ' 站' : '還沒開始') + '</span>' +
+    '</div>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

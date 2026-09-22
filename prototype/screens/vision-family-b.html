@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天出門了嗎 — yoxi 城事</title>
+<!--
+  FAMILY-B 今天出門了嗎【願景探索稿】
+
+  ★ 這是整組探索稿裡隱私風險最高的一張，要當反面教材一起展示。
+
+  一個主意：子女端只看一個燈號 ——「長輩今天有沒有出門」。
+  粒度刻意壓到最低：沒有地圖、沒有路徑、沒有幾點幾分在哪個座標，
+  只有一句相對描述，以及她自己按過分享的那幾張明信片。
+
+  即使壓到這麼低，它仍然是一個「被家人看著」的畫面。所以：
+  · 「她看得到你在看」這一列是預設打開的，而且是她那一端也看得到的同一個開關
+  · 沒有歷史紀錄、沒有「連續幾天沒出門」、沒有提醒你去關心她的通知
+  展示的時候要一起講反面：如果這個開關可以關掉、如果這裡多一張地圖，
+  它就變成監控產品。放在探索稿裡是為了讓這條線被明確地討論過，不是為了做它。
+
+  版型照抄 week.html／elder.html 那一類的「紅頁首 + mist 內容」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-vision="family-b" data-status="light" data-time="15:32">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark">探索稿 · 不在 demo 流程</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="../vision.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px" id="who">媽媽</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+        <!-- ===== 大字狀態卡：整張畫面就這一件事 ===== -->
+        <div style="padding:16px">
+          <div class="card card--pad u-row u-gap4">
+            <span class="tile-icon tile-icon--xl">
+              <span data-icon="steps" style="width:28px; height:28px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span id="stat" style="display:block; font-size:22px; font-weight:800">今天出門了</span>
+              <span id="statSub" style="display:block; font-size:15px; color:var(--yoxi-slate);
+                    margin-top:4px">15:20 在城隍廟附近</span>
+            </span>
+          </div>
+          <p style="margin-top:10px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            沒有地圖，也沒有她走過的路線。這一頁只回答「今天有沒有出門」這一件事。
+          </p>
+        </div>
+
+        <!-- ===== 她分享出來的 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="sec">
+            <h2 class="sec__t sec__t--sm">她分享出來的</h2>
+            <span class="sec__m">她按過分享的才在這裡</span>
+          </div>
+          <div class="hscroll" id="cards"></div>
+        </div>
+
+        <!-- ===== 對等可見：她那一端看到的是同一個開關 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="card">
+            <div class="row-nav">
+              <span class="tile-icon tile-icon--md">
+                <span data-icon="lock" style="width:22px; height:22px; display:block"></span>
+              </span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">她看得到你在看</span>
+                <span class="row-nav__sub">她的手機上也有這一列，關掉的話兩邊都看不到</span>
+              </span>
+              <button class="sw-toggle is-on" data-switch="famMirror"></button>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:0 16px 32px">
+          <button class="btn-ghost" data-toast="原型到這裡 —— 實際會叫出手機的撥號畫面">
+            打給她
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const M = MOCK.FAMILY[0];
+
+  document.title = M.name + ' — yoxi 城事';
+  document.getElementById('who').textContent = M.name;
+  document.getElementById('stat').textContent = M.out ? '今天出門了' : '今天還沒出門';
+  /* 只有相對描述：一個時間、一個「附近」。不寫地址、不寫座標。 */
+  document.getElementById('statSub').textContent =
+    M.lastAt.replace('今天 ', '') + ' 在' + M.lastArea;
+
+  /* 最近三張：她最後分享的那一張，加上另外兩張已經在牆上的。
+     全部走 findPlace()，名稱與插圖都不是這一頁自己編的。 */
+  const ids = [M.lastCard].concat(
+    MOCK.POSTCARDS.filter(function (p) {
+      return p.state === 'done' && p.id !== M.lastCard;
+    }).slice(-2).map(function (p) { return p.id; }));
+
+  document.getElementById('cards').innerHTML = ids.map(function (id, i) {
+    const p = MOCK.findPlace(id);
+    return '<span style="width:96px; flex:none">' +
+      '<span style="display:block; width:96px; height:128px; border-radius:4px;' +
+      ' overflow:hidden; position:relative" data-art="' + p.art + '" data-seed="' + (i + 1) + '"></span>' +
+      '<span style="display:block; font-size:12px; font-weight:700; margin-top:6px;' +
+      ' line-height:1.3">' + p.name + '</span></span>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>
