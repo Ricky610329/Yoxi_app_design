@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 X4 · 獎章三態 — yoxi 城事</title>
+<!--
+  變體 X4：獎章三態 —— 同一份資料，三種呈現
+
+  ?style=disc   勳章牆（現況）。一枚一個圓盤，底下一行「收集 3/4」。
+  ?style=ring   進度環牆。每枚外圈一個環，進度變成一個角度。
+  ?style=stamp  集點卡。一列格子，收到幾張就蓋幾格 —— 刻意做出來的那一版。
+
+  為什麼要有這一張：評審一定會挑戰「收集 4/8 跟任務 4/8 有什麼不一樣」。
+  口頭回答是辯解；三版並排，指著集點卡說「我們做了，刻意不選」才是證據。
+  集點卡哪裡不對，是看得出來的：格子是空位，空位會催人去填；
+  而圓盤是一個物件，沒收到的時候它只是灰的，不是缺了一塊。
+
+  三態必須顯示一模一樣的 n/total。它們共用 SHELL.badgeGrid 與 STATE.badge，
+  這一頁一個數字都不自己算 —— 只要有一版自己算，遲早會出現
+  「同一枚獎章在兩個畫面顯示不同進度」，那是最容易被當場抓包的錯。
+
+  這一張掛在收藏頁的「獎章」pill 底下，所以不進分頁列（body 沒有 data-tabs），
+  返回鍵指回 album.html。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="21:38">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="album.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">獎章</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- 三態切換。點一下就地重畫，並把 style 寫回網址 ——
+             這樣截圖與分享連結拿到的就是同一個畫面。 -->
+        <div style="padding:16px 16px 12px">
+          <!-- 用 data-mode 而不是 data-tab：data-tab 會被 interact.js 的 initPills
+               接走去切換 [data-panel]，這一頁沒有 panel，切了會把別的東西藏起來。
+               （data-mode 是 variant-a-map.html 那兩顆「想去／去過」用的同一種標記：
+               「這是模式切換，由畫面自己的腳本綁」。） -->
+          <div class="pill-group pill-group--onwhite" id="styles">
+            <button class="pill" data-mode="disc">勳章牆</button>
+            <button class="pill" data-mode="ring">進度環牆</button>
+            <button class="pill" data-mode="stamp">集點卡</button>
+          </div>
+        </div>
+
+        <div style="padding:0 16px 8px">
+          <p id="note" style="font-size:13px; color:var(--yoxi-slate); line-height:1.7"></p>
+        </div>
+
+        <div style="padding:8px 16px 0">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="grid"></div>
+        </div>
+
+        <p style="padding:24px 16px 28px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+          三種呈現讀的是同一份狀態，所以每一枚的「收集 n/total」在三態之間一定相同。
+          差別只在那個數字被畫成什麼形狀。
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const OK = ['disc', 'ring', 'stamp'];
+  const NOTE = {
+    disc: '現況。一枚獎章是一個物件：沒收到的時候它是灰的，不是缺了一塊。',
+    ring: '同一份資料換成角度。看得出快到了，但「快到了」本身就是一種壓力。',
+    stamp: '刻意做壞的那一版。格子是空位，空位會催人去填 —— 這正是我們不選它的理由。',
+  };
+
+  const q = new URLSearchParams(location.search).get('style');
+  let style = OK.indexOf(q) >= 0 ? q : 'disc';
+
+  const grid  = document.getElementById('grid');
+  const note  = document.getElementById('note');
+  const pills = document.getElementById('styles').querySelectorAll('.pill');
+
+  function draw() {
+    /* 每一枚的 n/total 一律由 SHELL.badgeGrid → STATE.badge 算，這一頁不自己算。 */
+    SHELL.badgeGrid(grid, { style: style });
+    note.textContent = NOTE[style];
+    pills.forEach(function (p) {
+      p.classList.toggle('is-active', p.dataset.mode === style);
+    });
+    document.title = '變體 X4 · 獎章三態（' +
+      { disc: '勳章牆', ring: '進度環牆', stamp: '集點卡' }[style] + '） — yoxi 城事';
+  }
+
+  pills.forEach(function (p) {
+    p.addEventListener('click', function () {
+      style = p.dataset.mode;
+      draw();
+      /* 網址跟著換，但不留一筆歷史 —— 返回鍵還是要回收藏頁，
+         不是在三個樣式之間退一格一格退回去。 */
+      const u = new URL(location.href);
+      u.searchParams.set('style', style);
+      try { history.replaceState(null, '', u.pathname.split('/').pop() + u.search); } catch (e) {}
+    });
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

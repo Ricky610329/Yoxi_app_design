@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 S3 · 路線書架 — yoxi 城事</title>
+<!--
+  N8 收藏首頁 —— 變體 S3「路線書架」【新增】
+
+  回答什麼問題：收藏的最小單位是一張卡，還是一個故事？
+
+  動了什麼：
+    明信片分頁的第一組不再是 22 張卡的牆，而是三條主題路線的書脊。
+    每一條書脊底下橫著展開它自己的站點 —— 收過的上色，沒收的灰階，
+    書脊上的 .track-mini 一眼看得出走到哪裡。
+    不屬於任何路線的散片收進最後一段「不屬於任何路線」。
+    這是把資訊架構最明顯的那個斷點接起來：路線原本只活在探索側，
+    收藏側完全看不到它，所以「這個月為什麼還在玩」在收藏頁是斷的。
+    其餘（統計條、今天的回顧、三顆 pill、獎章、日誌）維持原樣。
+
+  代價：
+    1. 只有三條路線的時候，「不屬於任何路線」那一段比任何單一路線都大 ——
+       書架的隱喻會被那一堆散片拖著走。
+    2. 站點縮圖橫著捲，六站的路線一眼看不完；牆的「一次看完」不見了。
+    3. 收藏頁從此依賴路線這份資料：新增一張沒有路線的卡，它就只能當散片。
+
+  站點與進度全部從 MOCK.ROUTES + STATE 算，沒有第二份對應表。
+  文案一律「收集 n/total」，絕不用「任務 n/total」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 書脊底下那一排站點。沿用 .hscroll 的滿版出血，
+     小卡直接用共用的 .postcard（上色／灰階／翻面的規則都在那裡）。 */
+  .shelf__cell { width: 78px; flex: none; }
+  .shelf__cell .postcard__name { font-size: var(--fs-xs); line-height: 1.25; }
+  .shelf__cell .postcard__date { font-size: var(--fs-xs); }
+  .shelf__cell .postcard__foot { padding: var(--sp-3) var(--sp-2) var(--sp-2); }
+  .shelf__cell .postcard__back  { font-size: var(--fs-xs); }
+  /* 書脊卡左緣的那一條 —— 讓它看起來是一本書的側面，不是又一張卡 */
+  .shelf__spine { position: relative; overflow: hidden; }
+  .shelf__spine::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--yoxi-navy);
+  }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="s3" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nPlaces">8</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nBadges">2</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nKm">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
+            <span class="tile-icon tile-icon--md" style="
+                  background:rgba(255,255,255,.14)">
+              <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 分段 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="cards">明信片</button>
+            <button class="pill" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
+          </div>
+        </div>
+
+        <!-- ===== 書架 ===== -->
+        <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
+
+          <div class="sec" style="margin-bottom:12px">
+            <h2 class="sec__t sec__t--sm">路線</h2>
+            <span class="sec__m" id="shelfMeta"></span>
+          </div>
+          <div id="shelf"></div>
+
+          <!-- 散片：不屬於任何一條路線的卡 -->
+          <div class="sec" style="margin:24px 0 10px">
+            <h2 class="sec__t sec__t--sm">不屬於任何路線</h2>
+            <span class="sec__m" id="looseMeta"></span>
+          </div>
+          <div id="loose"></div>
+
+          <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            灰色的是還沒去過的地方。到了就會上色。
+            路線沒有期限，也不用照順序。
+          </p>
+
+          <!-- 三代分眾：同一批明信片，換一種排版就換一個世代 -->
+          <a class="card u-row u-gap4" href="elder.html"
+             style="margin-top:16px; padding:14px 16px">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="elder" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">做一張圖傳給家人</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                把去過的地方變成可以傳的問候圖
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+        <!-- ===== 獎章 ===== -->
+        <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 日誌 ===== -->
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span id="logMood" data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+              <div style="margin-top:10px; font-size:14px; color:var(--yoxi-slate)">
+                水利路 · 東門市場 · 護城河
+              </div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+
+          <!-- 週回顧入口 -->
+          <a class="card u-row u-gap4" href="week.html" style="margin-top:12px; padding:14px 16px" id="weekEntry">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總 · 不含心情與日誌
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 統計：完全由狀態決定 ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  /* ---- 今天的回顧：做過就換成結果 ---- */
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  const idx  = function (p) { return MOCK.POSTCARDS.indexOf(p); };
+  const byId = {};
+  MOCK.POSTCARDS.forEach(function (p) { byId[p.id] = p; });
+
+  /* ---- 一本書＝一條路線。進度全部走 STATE.routeIds / progress，
+         跟探索側的路線詳情、獎章頁用同一個算法。 ---- */
+  const shelf = MOCK.ROUTES.map(function (R) {
+    const ids = STATE.routeIds(R.id);
+    const pr  = STATE.progress(ids);
+
+    /* 書脊上的小軌道：●─●─○─○ */
+    const mini = ids.map(function (cid, i) {
+      const done = !!STATE.card(cid);
+      const prev = i > 0 && !!STATE.card(ids[i - 1]);
+      return (i ? '<span class="track-mini__link' + (prev && done ? ' is-done' : '') + '"></span>' : '') +
+             '<span class="track-mini__node' + (done ? ' is-done' : '') + '"></span>';
+    }).join('');
+
+    /* 站點縮圖：直接用共用的明信片小卡，上色／灰階／翻面都不用再寫一次 */
+    const cells = ids.map(function (cid) {
+      const p = byId[cid];
+      if (!p) return '';
+      return '<span class="shelf__cell">' + SHELL.postcardCell(p, idx(p)) + '</span>';
+    }).join('');
+
+    return '<section style="margin-bottom:20px">' +
+      '<a class="card shelf__spine u-row u-gap4" href="route.html?id=' + R.id + '"' +
+      ' style="padding:12px 14px 12px 18px">' +
+        '<span class="route-track__thumb" style="position:relative"' +
+        ' data-art="' + R.art + '" data-seed="3"></span>' +
+        '<span class="u-fill">' +
+          '<span style="display:block; font-weight:800; line-height:1.35">' + R.name + '</span>' +
+          '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:3px">' +
+            '收集 <span class="num">' + pr.done + '</span>/' + pr.total + ' · ' + R.sub +
+          '</span>' +
+          '<span class="track-mini" style="margin-top:9px">' + mini + '</span>' +
+        '</span>' +
+        '<span class="arrow"></span>' +
+      '</a>' +
+      '<div class="hscroll" style="margin-top:8px; padding-bottom:2px">' + cells + '</div>' +
+      '</section>';
+  }).join('');
+
+  document.getElementById('shelf').innerHTML = shelf;
+  document.getElementById('shelfMeta').textContent = MOCK.ROUTES.length + ' 條';
+
+  /* ---- 散片：不在任何一條路線上的卡 ---- */
+  const inRoute = {};
+  MOCK.ROUTES.forEach(function (R) {
+    STATE.routeIds(R.id).forEach(function (cid) { inRoute[cid] = true; });
+  });
+  const loose = MOCK.POSTCARDS.filter(function (p) { return !inRoute[p.id]; });
+
+  SHELL.postcardWall(document.getElementById('loose'), { cards: loose });
+  document.getElementById('looseMeta').textContent =
+    '收集 ' + loose.filter(function (p) { return STATE.card(p.id); }).length + '/' + loose.length;
+
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
+
+  /* ---- 日誌 ---- */
+  const moodIcon = { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[A.today.mood] || 'moodGood';
+  document.getElementById('logMood').setAttribute('data-icon', moodIcon);
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  /* 「新」只標示一次，但不能把 lastCard 清掉 ——
+     每日回顧的第二幕（今天多了哪一張）完全靠它。 */
+  STATE.markLastSeen();
+})();
+</script>
+</body>
+</html>

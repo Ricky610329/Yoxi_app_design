@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 S4 · 收藏即地圖 — yoxi 城事</title>
+<!--
+  N8 收藏首頁 —— 變體 S4「收藏即地圖」【新增】
+
+  回答什麼問題：過去的組織軸是時間還是空間？
+
+  動了什麼：
+    收藏首頁第一眼不再是明信片牆，而是滿版的城市足跡。
+    「你的城市慢慢長出顏色」原本埋在收藏頁右上角那個連結後面，
+    這一版把它搬到最前面 —— 它是長期動機最強的那張視覺。
+    明信片牆退成底部的拉把面板：收合態只露出統計與第一排卡，
+    往上拉才是整面牆。獨立的城市足跡頁因此可以整頁拿掉
+    （覆蓋率、全部／這個月的褪色切換、圖例都搬進來了）。
+
+  牆在 sheet 裡改成 4 欄，不是 3 欄：地圖是主角，牆要退一步，
+  而且 4 欄讓收合態就能露出完整的一排卡。
+
+  tab bar 不能被蓋住：地圖與 sheet 都待在 .device__screen 裡，
+  而 .device__screen.has-tabbar 已經讓出底部那 76px，
+  所以 sheet 拉到最高也只會貼到 tab bar 上緣；拉開時 tab bar
+  降低不透明度（interact.js 的 is-yield），不是消失。
+
+  代價：
+    1. 跟 D／E／F 那條「全 app 只有一張地圖」的提案正面衝突 ——
+       這一版等於全 app 有兩張地圖，只在 B／C 系的前提下才成立。
+    2. 明信片從「一進來就看到的情感高點」變成要拉開才看得完的東西。
+    3. 獎章與日誌被推到 sheet 深處，收藏頁的第二層變深了。
+
+  覆蓋率與所有數字都從 MOCK.FOG／STATE 算，畫面上一個都不寫死。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 牆在 sheet 裡改 4 欄：地圖是主角，牆退一步。 */
+  #wall .postcard-wall { grid-template-columns: repeat(4, 1fr); }
+  #wall .postcard__name { font-size: var(--fs-xs); line-height: 1.25; }
+  #wall .postcard__date { font-size: var(--fs-xs); }
+  #wall .postcard__foot { padding: var(--sp-3) var(--sp-2) var(--sp-2); }
+  #wall .postcard__back  { font-size: var(--fs-xs); }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="s4" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="elder.html">
+            做一張圖
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+        <div class="hdr-red__pills" style="margin-top:12px">
+          <!-- 切的是「痕跡會褪色，資產不會」那條分軌：
+               全部＝含九十天前開始褪色的格子；這個月＝只算還亮著的。 -->
+          <div class="pill-group" id="span">
+            <button class="pill is-active" data-span="all">全部</button>
+            <button class="pill" data-span="month">這個月</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===== 滿版足跡地圖 ===== -->
+      <div class="fogmap u-fill" style="position:relative; min-height:0; overflow:hidden">
+        <svg id="fog" viewBox="0 0 390 420" preserveAspectRatio="xMidYMid slice"
+             style="position:absolute; inset:0; width:100%; height:100%"></svg>
+
+        <!-- 地名 -->
+        <svg viewBox="0 0 390 420" preserveAspectRatio="xMidYMid slice"
+             style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none">
+          <g font-family="var(--font-sans)" font-weight="800" fill="#062040" opacity=".55">
+            <text x="150" y="150" font-size="13">北區</text>
+            <text x="196" y="230" font-size="13">東區</text>
+            <text x="110" y="300" font-size="13">香山區</text>
+            <text x="262" y="120" font-size="12" opacity=".5">竹北</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- ===== 明信片牆退成底部 sheet ===== -->
+      <div class="sheet sheet--drag is-collapsed" data-drag
+           style="--sheet-min:270px; --sheet-max:72%">
+        <div class="sheet__handle"></div>
+
+        <!-- 統計：覆蓋率併進統計條，省下一整列，收合態才露得出第一排卡 -->
+        <div class="statbar">
+          <span class="statbar__cell">
+            <span class="statbar__n" id="nPlaces">8</span>
+            <span class="statbar__k">去過的地方</span>
+          </span>
+          <span class="statbar__cell">
+            <span class="statbar__n" id="nBadges">2</span>
+            <span class="statbar__k">獎章</span>
+          </span>
+          <span class="statbar__cell">
+            <span class="statbar__n" id="nKm">48</span>
+            <span class="statbar__k">公里</span>
+          </span>
+          <span class="statbar__cell">
+            <span class="statbar__n" id="cov">28%</span>
+            <span class="statbar__k" id="covNote">點亮的新竹</span>
+          </span>
+        </div>
+
+        <div class="u-row" style="justify-content:space-between; margin-top:12px">
+          <span style="font-size:13px; font-weight:800">你的明信片</span>
+          <span class="fogmap__legend">
+            <span class="fogmap__key">
+              <i class="fogmap__swatch" style="background:var(--map-explored)"></i>去過
+            </span>
+            <span class="fogmap__key">
+              <i class="fogmap__swatch" style="background:var(--map-fog)"></i>還沒
+            </span>
+          </span>
+        </div>
+
+        <div id="wall" style="margin-top:10px"></div>
+
+        <p style="margin-top:12px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+          灰色的是還沒去過的地方。到了就會上色。
+          超過 90 天沒回去的地方，地圖上的顏色會慢慢變淡 ——
+          但明信片不會消失。地圖是活的，收藏是永久的。
+        </p>
+
+        <!-- 今天的回顧 -->
+        <a class="card u-row u-gap4" href="lookback.html"
+           style="margin-top:16px; padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
+          <span class="tile-icon tile-icon--md" style="background:rgba(255,255,255,.14)">
+            <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
+          </span>
+          <span class="u-fill">
+            <span style="display:block; font-weight:800">今天的回顧</span>
+            <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+              走了 6,240 步，經過 3 個地方
+            </span>
+          </span>
+          <span class="arrow arrow--onred"></span>
+        </a>
+
+        <!-- 獎章 -->
+        <div class="sec" style="margin:24px 0 12px"><h2 class="sec__t sec__t--sm">獎章</h2></div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+
+        <!-- 週回顧 -->
+        <a class="card u-row u-gap4" href="week.html" style="margin-top:20px; padding:14px 16px">
+          <span class="tile-icon tile-icon--md">
+            <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+          </span>
+          <span class="u-fill">
+            <span style="display:block; font-weight:800">這一週</span>
+            <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+              唯一可以分享的匯總 · 不含心情與日誌
+            </span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+        <div style="height:24px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 霧地圖：格子與道路都跟城市足跡那一頁用同一組零件 ---- */
+  const cells = SHELL.fogCells(390, 420);
+
+  /* 道路疊在色塊之上，讓它還是一張「地圖」而不是棋盤 */
+  const roads =
+    '<g stroke="#FFF" stroke-width="7" fill="none" opacity=".9">' +
+      '<path d="M-10 168 L400 156"/><path d="M-10 262 L400 252"/>' +
+      '<path d="M118 -10 L136 430"/><path d="M262 -10 L254 430"/>' +
+    '</g>' +
+    '<g stroke="#C9D8EC" stroke-width="9" fill="none" opacity=".85">' +
+      '<path d="M-20 96 Q80 122 170 96 T420 112"/>' +
+    '</g>';
+
+  document.getElementById('fog').innerHTML = cells + roads;
+
+  /* ---- 覆蓋率跟著兩顆 pill 走。'fade' 是九十天前走過、已經在褪色的格子。 ---- */
+  const flat = MOCK.FOG.flat();
+  const cov = function (withFade) {
+    const lit = flat.filter(function (c) { return withFade ? c !== 'fog' : c === 'seen'; }).length;
+    return Math.round(lit / flat.length * 100);
+  };
+  const mapEl   = document.querySelector('.fogmap');
+  const covEl   = document.getElementById('cov');
+  const covNote = document.getElementById('covNote');
+
+  function setSpan(key) {
+    const all = key === 'all';
+    mapEl.classList.toggle('fade-off', !all);
+    covEl.textContent = cov(all) + '%';
+    covNote.textContent = all ? '點亮的新竹' : '這個月點亮的';
+  }
+  document.querySelectorAll('#span .pill').forEach(function (b) {
+    b.addEventListener('click', function () { setSpan(b.dataset.span); });
+  });
+  setSpan('all');
+
+  /* ---- 統計：完全由狀態決定 ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  /* ---- 今天的回顧：做過就換成結果 ---- */
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  /* ---- 明信片牆與獎章格：共用零件，變體只決定怎麼排 ---- */
+  SHELL.postcardWall(document.getElementById('wall'));
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  /* ?sheet=open 一載入就是拉開的樣子（整面牆 + tab bar 讓渡）。
+     預設是收合態，那才是這個變體的第一眼；但「拉開之後是什麼」
+     要能單獨拍成一張，不然只看縮圖會以為牆不見了。
+     用 SHELL.ready() 排到 interact.js 綁完 sheet 之後才改。 */
+  if (new URLSearchParams(location.search).get('sheet') === 'open') {
+    SHELL.ready(function () {
+      document.querySelector('.sheet--drag').classList.remove('is-collapsed');
+      SHELL.yieldTabbar(true);
+    });
+  }
+
+  /* 「新」只標示一次，但不能把 lastCard 清掉 ——
+     每日回顧的第二幕（今天多了哪一張）完全靠它。 */
+  STATE.markLastSeen();
+})();
+</script>
+</body>
+</html>

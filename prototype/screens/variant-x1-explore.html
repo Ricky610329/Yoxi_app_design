@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 X1 · 值得去的地方 — yoxi 城事</title>
+<!--
+  變體 X1：值得去的地方 —— 刻意做壞的對照組，不是提案
+
+  探索首頁不再是一張滿版的「今天的地方」，而是一條 5–7 個地方的清單：
+  今天那個排第一，後面接還沒去的地方與地圖上還沒去過的景點（同一個地方
+  只列一次）。每一列都是縮圖 + 名字 + 距離。
+
+  為什麼把它做出來：評審幾乎一定會問「一天只給一個，會不會太少」。
+  有這一張並排，那句話才有畫面可以指，而不是口頭辯解。
+
+  為什麼它是對照組（它撞掉的東西，一條一條寫在這裡）：
+
+  · 它直接撞掉整份提案的第一句話 ——「一天只給一個值得為它出門的地方」。
+    清單一出現，選擇成本就回來了：使用者要在五個地方之間比較，
+    而「比較」正是打開 app 之後最容易直接關掉的那個動作。
+
+  · 「為什麼推薦給你」沒有地方放。那四條 AI 推薦依據是針對「一個」地方
+    寫的；清單上每一列都掛四條會變成一面牆，不掛就等於把 AI 的論證
+    從首頁拿掉。這一版選了後者 —— 那是它最貴的代價，也是最不明顯的代價。
+
+  · 「還沒去的地方」失去了對照。在母版上它是一條反限時的展示品：
+    上面是今天，下面是永不過期的舊推薦。在這裡整頁都是還沒去的地方，
+    那條訊息就消失了。
+
+  詞彙禁用表：不用「任務／完成／達成／挑戰／每日」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 清單第一列的「今天」標記。標籤留著、版面份量沒了 ——
+     這個變體的代價就寫在這個對比裡。 */
+  .todaytag {
+    display: inline-block;
+    padding: 1px 6px;
+    margin-bottom: 4px;
+    border-radius: var(--r-btn);
+    background: var(--yoxi-red-soft);
+    color: var(--yoxi-red);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-heavy);
+  }
+</style>
+</head>
+
+<body data-tab="explore" data-tabs="x1" data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <nav class="viewtoggle">
+            <a class="is-on" href="variant-x1-explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a href="map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+        <!-- ===== 值得去的地方（清單取代一天一個） ===== -->
+        <div style="padding:16px">
+          <div class="sec">
+            <h2 class="sec__t">值得去的地方</h2>
+            <span class="sec__m" id="cnt"></span>
+          </div>
+
+          <div class="card" id="placeList"></div>
+        </div>
+
+        <!-- ===== 這個月的路線 ===== -->
+        <div style="padding:4px 16px 24px">
+          <div class="sec">
+            <h2 class="sec__t">這個月的路線</h2>
+            <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+          </div>
+
+          <div class="hscroll" id="routeCards"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* ---- 清單：今天的地方排第一，其餘是還沒去的地方 + 地圖上還沒去過的景點。
+          同一個地方只列一次 —— PENDING 與 SPOTS(state:'new') 本來就有重疊，
+          不去重的話護城河、州廳、十八尖山、青草湖會各出現兩次，
+          清單看起來變長，但那是假的長度。 ---- */
+  const rows = [];
+  const seen = {};
+  function push(p) {
+    if (!p.id || seen[p.id]) return;
+    seen[p.id] = true;
+    rows.push(p);
+  }
+
+  push({ id: MOCK.TODAY.id, name: MOCK.TODAY.name, art: MOCK.TODAY.art,
+         dist: MOCK.TODAY.distance, kind: MOCK.TODAY.type, today: true });
+  MOCK.PENDING.forEach(function (p) {
+    push({ id: p.id, name: p.name, art: p.art, dist: p.distance, kind: p.type });
+  });
+  MOCK.SPOTS.filter(function (s) { return s.state === 'new'; }).forEach(function (s) {
+    push({ id: s.id, name: s.name, art: s.art, dist: s.dist, kind: s.type });
+  });
+
+  /* 距離一律由資料算，不寫死 */
+  function far(m) {
+    if (m == null) return '距離待確認';
+    return m >= 1000
+      ? '<span class="num">' + (m / 1000).toFixed(1) + '</span> km'
+      : '<span class="num">' + m + '</span> m';
+  }
+
+  document.getElementById('cnt').innerHTML = '<span class="num">' + rows.length + '</span> 個';
+
+  const list = document.getElementById('placeList');
+  list.innerHTML = rows.map(function (p, i) {
+    return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:12px 16px">' +
+      '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+      'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 1) + '"></span>' +
+      '<span class="row-nav__body">' +
+        (p.today ? '<span class="todaytag">今天</span>' : '') +
+        '<span class="row-nav__title" style="font-size:16px">' + p.name + '</span>' +
+        '<span class="row-nav__sub">' + far(p.dist) + ' · ' + p.kind + '</span>' +
+      '</span><span class="arrow"></span></a>';
+  }).join('');
+  SHELL.injectArt(list);
+
+  /* ---- 這個月的路線：進度一律由狀態算，不寫死 ---- */
+  document.getElementById('routeCards').innerHTML = MOCK.ROUTES.map(function (r, i) {
+    const done = STATE.routeDone(r.id);
+    let track = '';
+    for (let n = 0; n < r.total; n++) {
+      if (n) track += '<i class="track-mini__link' + (n < done ? ' is-done' : '') + '"></i>';
+      track += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
+    }
+    return '<a class="card" href="route.html?id=' + r.id + '" style="width:240px; flex:none">' +
+      '<span style="display:block; height:110px; position:relative; overflow:hidden"' +
+      ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
+      '<span style="display:block; padding:12px">' +
+        '<span style="display:block; font-weight:800; line-height:1.35">' + r.name.split('：')[0] + '</span>' +
+        '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+          r.sub + '</span>' +
+        '<span class="track-mini" style="margin-top:10px">' + track +
+        '<span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">' +
+        '<span class="num">' + done + '</span>/' + r.total + '</span></span>' +
+      '</span></a>';
+  }).join('');
+  SHELL.injectArt(document.getElementById('routeCards'));
+
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

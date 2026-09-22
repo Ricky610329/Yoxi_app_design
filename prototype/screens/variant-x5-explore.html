@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 X5 · 走路就會長 — yoxi 城事</title>
+<!--
+  變體 X5：走路就會長 —— 過程本身就有回饋
+
+  探索首頁最頂端多一條「今天走了多少」：步數不是一個數字，是沿路長出來的
+  東西。每走 1,000 步，路邊就多長出一格。今天 6,240 步 = 六格長好了，
+  第七格正在長。母版原本的第一屏（今天的地方）往下移一塊。
+
+  借的是 Pikmin Bloom 的那一招：走路本身要有看得見的回饋，
+  不然「出門」這件事全靠終點的明信片撐著，走到一半就沒有東西給人看。
+
+  這一條刻意沒有的東西 —— 少了任何一個，它就變成 streak：
+  · 沒有連續天數。今天走了多少就是今天的事，昨天走幾步跟這裡無關。
+  · 沒有目標值、沒有分母。畫面上不會出現「6,240 / 10,000」，
+    因為只要有分母，沒走到就是沒走到，那是一個每天都會失敗的畫面。
+  · 沒有達標、沒有慶祝、沒有歸零。不會有一格是「最後一格」。
+  · 隔天重新開始長，但不會告訴你昨天的消失了 —— 不製造損失感。
+
+  代價：它引入了第二套計量單位。明信片數與步數在同一張畫面上爭注意力，
+  而步數天天都會動、明信片不一定 —— 久了人會盯著比較容易動的那一個。
+  這是這個變體最實際的風險，也是它被標成 maybe 而不是 pick 的原因。
+
+  詞彙禁用表：不用「任務／完成／達成／挑戰／每日」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 成長條：一格＝1,000 步。沒有分母，所以只畫已經長出來的那幾格
+     加上正在長的那一格 —— 畫不到的格子不存在，也就沒有空位可以催人填。 */
+  .grow__cells {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    margin-top: var(--sp-3);
+    padding-bottom: 2px;
+    border-bottom: 2px solid var(--yoxi-line);
+  }
+  .grow__cell {
+    flex: 1;
+    height: 72px;
+    border-radius: var(--r-img) var(--r-img) 0 0;
+    background: var(--yoxi-mist);
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .grow__cell svg { display: block; width: 76%; color: var(--yoxi-navy); }
+  /* 正在長的那一格：淡一點、矮一點。它不是「還沒達成」，是「還在走」。 */
+  .grow__cell--now { background: var(--yoxi-cream); }
+  .grow__cell--now svg { opacity: .55; }
+  .grow__k { font-size: var(--fs-xs); color: var(--yoxi-slate); margin-top: var(--sp-2); }
+</style>
+</head>
+
+<body data-tab="explore" data-tabs="x5" data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <nav class="viewtoggle">
+            <a class="is-on" href="variant-x5-explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a href="map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 今天走了多少 ===== -->
+        <div style="background:var(--yoxi-white); padding:16px">
+          <div class="sec" style="margin-bottom:2px">
+            <h2 class="sec__t">今天走了多少</h2>
+            <a class="sec__m u-row u-gap2" href="lookback.html">看今天 <span class="arrow"></span></a>
+          </div>
+
+          <div class="u-row u-gap2" style="align-items:baseline">
+            <span class="num" id="steps" style="font-size:32px; line-height:1.1;
+                  color:var(--yoxi-red)">0</span>
+            <span style="font-size:15px; color:var(--yoxi-slate)">步</span>
+            <span style="font-size:13px; color:var(--yoxi-slate); margin-left:auto" id="km"></span>
+          </div>
+
+          <div class="grow__cells" id="cells"></div>
+          <div class="grow__k" id="growNote"></div>
+        </div>
+
+        <!-- ===== 今天的地方（從第一屏往下移一塊） ===== -->
+        <div style="background:var(--yoxi-white); padding:16px; margin-top:12px">
+          <a class="placecard" href="place.html">
+            <div class="placecard__art" data-art="glass" data-seed="1" data-wide>
+              <span class="ai-mark">AI 生成示意</span>
+              <span class="placecard__scrim"></span>
+              <span class="placecard__body">
+                <span class="placecard__eyebrow">今天的地方</span>
+                <span class="placecard__name" id="tName"></span>
+                <span class="placecard__hook" id="tHook"></span>
+                <span class="placecard__meta" id="tMeta"></span>
+              </span>
+            </div>
+          </a>
+
+          <div class="why" style="margin-top:12px">
+            <button class="why__head" id="whyToggle">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px;height:18px;display:block"></span>
+                為什麼推薦給你
+              </span>
+              <span class="arrow" id="whyArrow" style="transform:rotate(0deg)"></span>
+            </button>
+            <div class="why__list" id="whyList" style="display:none"></div>
+          </div>
+
+          <div style="display:grid; gap:8px; margin-top:12px">
+            <a class="btn-primary" href="going.html">走路前往</a>
+            <a class="btn-ghost" href="place.html">先看看這是什麼地方</a>
+          </div>
+        </div>
+
+        <!-- ===== 這個月的路線 ===== -->
+        <div style="padding:20px 16px">
+          <div class="sec">
+            <h2 class="sec__t">這個月的路線</h2>
+            <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+          </div>
+          <div class="hscroll" id="routeCards"></div>
+        </div>
+
+        <!-- ===== 還沒去的地方 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="sec">
+            <h2 class="sec__t">還沒去的地方</h2>
+            <span class="sec__m">不會過期</span>
+          </div>
+          <div class="card" id="pendingList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const PER = 1000;                       /* 一格 = 1,000 步 */
+  const steps = MOCK.LOOKBACK.steps;
+  const full = Math.floor(steps / PER);
+  const rest = steps - full * PER;
+
+  document.getElementById('steps').textContent = steps.toLocaleString('en-US');
+  document.getElementById('km').textContent = MOCK.LOOKBACK.km + ' 公里';
+
+  /* 沿途長出來的東西。第 n 格的高度略有差異，看起來才像長出來的，
+     不像一條進度條被切成幾段。高度只跟 index 有關，不跟任何目標有關。 */
+  function sprout(h) {
+    const top = 46 - h;
+    return '<svg viewBox="0 0 40 ' + 50 + '" style="height:' + (h + 6) + 'px" aria-hidden="true">' +
+      '<path d="M20 48 L20 ' + top + '" stroke="currentColor" stroke-width="3"' +
+      ' stroke-linecap="round" fill="none"/>' +
+      '<path d="M20 ' + (top + 9) + ' C10 ' + (top + 7) + ' 7 ' + (top + 1) + ' 8 ' + (top - 4) +
+      ' C16 ' + (top - 4) + ' 19 ' + (top + 2) + ' 20 ' + (top + 9) + ' Z" fill="currentColor"/>' +
+      '<path d="M20 ' + (top + 15) + ' C30 ' + (top + 13) + ' 33 ' + (top + 7) + ' 32 ' + (top + 2) +
+      ' C24 ' + (top + 2) + ' 21 ' + (top + 8) + ' 20 ' + (top + 15) + ' Z" fill="currentColor"/>' +
+      '</svg>';
+  }
+
+  const HS = [30, 38, 26, 42, 34, 40, 28, 36, 32, 44];
+  let cells = '';
+  for (let i = 0; i < full; i++) {
+    cells += '<span class="grow__cell">' + sprout(HS[i % HS.length]) + '</span>';
+  }
+  if (rest > 0) {
+    /* 正在長的那一格。它是「還在走」，不是「還沒到」 ——
+       所以沒有虛線框、沒有分母、沒有剩下多少的說明。 */
+    cells += '<span class="grow__cell grow__cell--now">' +
+             sprout(Math.max(14, Math.round(HS[full % HS.length] * rest / PER))) + '</span>';
+  }
+  document.getElementById('cells').innerHTML = cells;
+
+  document.getElementById('growNote').innerHTML =
+    '每 <span class="num">' + PER.toLocaleString('en-US') + '</span> 步，路邊就多長出一格。' +
+    '走多少長多少，沒有要走到的數字。';
+
+  /* ---- 今天的地方 ---- */
+  const T = MOCK.TODAY;
+  document.getElementById('tName').textContent = T.name;
+  document.getElementById('tHook').textContent = T.hook;
+  document.getElementById('tMeta').innerHTML =
+    '<span>離你 <span class="num">' + T.distance + '</span> m</span>' +
+    '<span style="opacity:.5">·</span>' +
+    '<span>走路 <span class="num">' + T.walkMin + '</span> 分鐘</span>' +
+    '<span style="opacity:.5">·</span><span>' + T.type + '</span>';
+
+  document.getElementById('whyList').innerHTML = T.why.map(function (w) {
+    return '<div class="why__item"><span class="why__src">' + w.src + '</span>' + w.text + '</div>';
+  }).join('');
+
+  const head = document.getElementById('whyToggle');
+  const body = document.getElementById('whyList');
+  const arw  = document.getElementById('whyArrow');
+  head.onclick = function () {
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'grid';
+    arw.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+
+  /* ---- 這個月的路線：進度一律由狀態算 ---- */
+  document.getElementById('routeCards').innerHTML = MOCK.ROUTES.map(function (r, i) {
+    const done = STATE.routeDone(r.id);
+    let track = '';
+    for (let n = 0; n < r.total; n++) {
+      if (n) track += '<i class="track-mini__link' + (n < done ? ' is-done' : '') + '"></i>';
+      track += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
+    }
+    return '<a class="card" href="route.html?id=' + r.id + '" style="width:240px; flex:none">' +
+      '<span style="display:block; height:110px; position:relative; overflow:hidden"' +
+      ' data-art="' + r.art + '" data-seed="' + (i + 3) + '" data-wide></span>' +
+      '<span style="display:block; padding:12px">' +
+        '<span style="display:block; font-weight:800; line-height:1.35">' + r.name.split('：')[0] + '</span>' +
+        '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+          r.sub + '</span>' +
+        '<span class="track-mini" style="margin-top:10px">' + track +
+        '<span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">' +
+        '<span class="num">' + done + '</span>/' + r.total + '</span></span>' +
+      '</span></a>';
+  }).join('');
+
+  /* ---- 還沒去的地方 ---- */
+  document.getElementById('pendingList').innerHTML = MOCK.PENDING.map(function (p, i) {
+    return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:12px 16px">' +
+      '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+      'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 5) + '"></span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:16px">' + p.name + '</span>' +
+        '<span class="row-nav__sub">' + (p.distance / 1000).toFixed(1) + ' km · ' + p.ago + '</span>' +
+      '</span><span class="arrow"></span></a>';
+  }).join('');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

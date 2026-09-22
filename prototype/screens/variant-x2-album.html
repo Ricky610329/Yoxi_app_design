@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 X2 · 收藏（缺口一致） — yoxi 城事</title>
+<!--
+  變體 X2 的收藏頁 —— 缺口在兩邊講同一句話
+
+  探索頁把「你的圖鑑還缺什麼」放到了第一塊。如果收藏頁講的是另一套
+  （另一組缺口、另一種句型、另一個數字），那第一塊就會被讀成一個廣告版位，
+  而不是圖鑑真的少了那幾張。所以這一張做兩件事：
+
+  1. 獎章那一頁預設打開。缺口是獎章的事，進來就看得到，不用先點一下。
+  2. 缺口那一塊跟探索頁同一份資料（MOCK.BADGES + STATE.badge + findPlace）、
+     同一句句型「你的圖鑑裡還沒有 X」、同一種數字寫法「收集 3/4」。
+
+  跟母版 album.html 的差別只有這兩件。統計條、明信片牆、日誌、長輩圖入口
+  全部原樣 —— 變體要能被比較，就不能順手多改別的東西。
+
+  一樣禁止：百分比、「還差 N 個」、任何排序理由。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 與 variant-x2-explore.html 同一份寫法 */
+  .gap + .gap { border-top: 1px solid var(--yoxi-line); }
+  .gap__head {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: 14px var(--gutter) 0;
+  }
+  .gap__name { display: block; font-weight: var(--fw-heavy); font-size: var(--fs-sm); }
+  .gap__prog {
+    display: block; font-size: var(--fs-xs);
+    color: var(--yoxi-slate); font-style: italic;
+  }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="x2" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nPlaces">8</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nBadges">2</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nKm">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
+            <span class="tile-icon tile-icon--md" style="
+                  background:rgba(255,255,255,.14)">
+              <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 分段：獎章預設打開 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill" data-tab="cards">明信片</button>
+            <button class="pill is-active" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
+          </div>
+        </div>
+
+        <!-- ===== 明信片牆 ===== -->
+        <section id="segCards" data-panel="cards" class="u-hidden" style="padding:0 16px 24px">
+          <div id="wall"></div>
+          <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            灰色的是還沒去過的地方。到了就會上色。
+          </p>
+
+          <a class="card u-row u-gap4" href="elder.html"
+             style="margin-top:16px; padding:14px 16px">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="elder" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">做一張圖傳給家人</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                把去過的地方變成可以傳的問候圖
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+        <!-- ===== 獎章：缺口在最上面，然後才是全部的獎章 ===== -->
+        <section id="segBadges" data-panel="badges" style="padding:0 16px 24px">
+
+          <div class="sec">
+            <h2 class="sec__t sec__t--sm">還缺什麼</h2>
+            <a class="sec__m u-row u-gap2" href="explore.html">去看看 <span class="arrow"></span></a>
+          </div>
+          <div class="card" id="gapList"></div>
+          <p style="margin:12px 0 20px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            缺口不會過期，也沒有先後。想去哪一個就去哪一個。
+          </p>
+
+          <div class="sec"><h2 class="sec__t sec__t--sm">全部的獎章</h2></div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 日誌 ===== -->
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span id="logMood" data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+              <div style="margin-top:10px; font-size:14px; color:var(--yoxi-slate)">
+                水利路 · 東門市場 · 護城河
+              </div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+
+          <a class="card u-row u-gap4" href="week.html" style="margin-top:12px; padding:14px 16px" id="weekEntry">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總 · 不含心情與日誌
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 統計：完全由狀態決定（跟母版同一段） ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  /* ================= 缺口 =================
+     與 variant-x2-explore.html 同一份寫法、同一句句型、同一種數字。 */
+
+  function gaps(n) {
+    const out = [];
+    MOCK.BADGES.forEach(function (b) {
+      if (out.length >= (n || 3)) return;
+      const r = STATE.badge(b.id);
+      if (r.got) return;
+      const cardId = r.ids.filter(function (id) { return !STATE.has(id); })[0];
+      if (!cardId) return;
+      out.push({ r: r, cardId: cardId, place: MOCK.findPlace(cardId) });
+    });
+    return out;
+  }
+
+  function far(m) {
+    if (m == null) return '距離待確認';
+    return m >= 1000
+      ? '<span class="num">' + (m / 1000).toFixed(1) + '</span> 公里'
+      : '<span class="num">' + m + '</span> 公尺';
+  }
+
+  function gapLine(g) { return '你的圖鑑裡還沒有' + g.place.name; }
+
+  function renderGaps(el, seed) {
+    const list = gaps(3);
+    el.innerHTML = list.map(function (g, i) {
+      return '<div class="gap">' +
+        '<div class="gap__head">' +
+          '<span class="tile-icon tile-icon--sm"><span data-icon="' + g.r.icon +
+          '" style="width:20px;height:20px;display:block"></span></span>' +
+          '<span class="u-fill">' +
+            '<span class="gap__name">〈' + g.r.name + '〉</span>' +
+            '<span class="gap__prog">收集 <span class="num">' + g.r.done + '</span>/' +
+            g.r.total + '</span>' +
+          '</span>' +
+        '</div>' +
+        '<a class="row-nav" href="place.html?id=' + g.cardId + '" style="padding:10px 16px 14px">' +
+          '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+          'position:relative;flex:none" data-art="' + g.place.art + '" data-seed="' + (seed + i) + '"></span>' +
+          '<span class="row-nav__body">' +
+            '<span class="row-nav__title" style="font-size:16px">' + gapLine(g) + '</span>' +
+            /* type 落到 expand() 的通用值「地方」時就不印 —— 印出來是雜訊，不是資訊 */
+            '<span class="row-nav__sub">' + far(g.place.distance) +
+            (g.place.type && g.place.type !== '地方' ? ' · ' + g.place.type : '') + '</span>' +
+          '</span><span class="arrow"></span></a>' +
+        '</div>';
+    }).join('');
+    SHELL.injectArt(el);
+    SHELL.injectIcons(el);
+    return list.length;
+  }
+
+  renderGaps(document.getElementById('gapList'), 11);
+
+  /* ---- 明信片牆與獎章格：共用零件，跟母版同一組 ---- */
+  SHELL.postcardWall(document.getElementById('wall'));
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
+
+  const moodIcon = { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[A.today.mood] || 'moodGood';
+  document.getElementById('logMood').setAttribute('data-icon', moodIcon);
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  STATE.markLastSeen();
+})();
+</script>
+</body>
+</html>

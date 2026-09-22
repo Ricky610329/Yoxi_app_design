@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 S1 · 時間牆 — yoxi 城事</title>
+<!--
+  N8 收藏首頁 —— 變體 S1「時間牆」【新增】
+
+  回答什麼問題：收藏是圖鑑，還是日記？
+
+  動了什麼：
+    收藏首頁從「一面 3 欄的牆」改成倒序時間軸。一天一列：
+    日期、那天收到的明信片、那天寫的那句話。軌道沿用主題路線的
+    .route-track 直向 rail —— 同一個零件，在探索側是「走到哪裡」，
+    在收藏側是「走過哪些日子」。
+    pill 分頁整組拿掉：時間軸本身就是日誌，再開一個「日誌」分頁是重複的。
+    獎章降到時間軸後面一段，它是註腳，不是主角。
+
+  代價：
+    1. 缺席感。空白的日期會變成「你這幾天沒出門」的指控，所以只列
+       有卡的日子 —— 沒有卡的那一天在這面牆上不存在。
+    2. 失去「灰階剪影」那個收集動機的視覺支點：時間軸只長得出已經
+       發生的事，還沒去過的地方在這一版完全看不到。
+    3. 一天只有一張卡的時候，一列只有三分之一寬的一張圖，密度比原本低。
+
+  資料來源：STATE.all.cards 的 date / by / note，數字一個都不寫死。
+  沒有寫「星期幾」：狀態裡只有 MM.DD，硬算出來的星期會跟主線日誌那句
+  「9月21日 星期日」對不起來。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 時間軸的一列。骨架是 .route-track__stop（24px 軌道 + 1fr 內容），
+     但內容是直向堆疊的，所以不用 .route-track__body 那個橫排。 */
+  .dayrow__date {
+    display: block;
+    font-size: var(--fs-lead);
+    font-weight: var(--fw-heavy);
+    line-height: 1.2;
+  }
+  .dayrow__by {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--yoxi-slate);
+    margin-top: 3px;
+  }
+  .dayrow__cards { margin-top: var(--sp-3); }
+  /* 那句話。引號與左側細線都沿用「這是手寫的」那個語氣。 */
+  .dayrow__note {
+    margin-top: var(--sp-3);
+    padding-left: var(--sp-3);
+    border-left: 2px solid var(--yoxi-cream-deep);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-story);
+  }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="s1" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nPlaces">8</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nBadges">2</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nKm">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
+            <span class="tile-icon tile-icon--md" style="
+                  background:rgba(255,255,255,.14)">
+              <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 時間軸 ===== -->
+        <section style="padding:0 16px 8px">
+          <div class="sec" style="margin-bottom:12px">
+            <h2 class="sec__t">走過的日子</h2>
+            <span class="sec__m" id="tlMeta"></span>
+          </div>
+          <div class="route-track" id="timeline"></div>
+          <p style="font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            只列有明信片的日子。沒有出門的那幾天不會在這裡留下空格。
+          </p>
+        </section>
+
+        <!-- ===== 獎章：時間軸的註腳，不是主角 ===== -->
+        <section style="padding:20px 16px 0">
+          <div class="sec" style="margin-bottom:12px"><h2 class="sec__t sec__t--sm">獎章</h2></div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 週回顧：唯一可以拿出去的匯總 ===== -->
+        <div style="padding:20px 16px 24px">
+          <a class="card u-row u-gap4" href="week.html" style="padding:14px 16px">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總 · 不含心情與日誌
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 統計：完全由狀態決定 ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  /* ---- 今天的回顧：做過就換成結果 ---- */
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  /* ---- 把已收集的明信片依「哪一天」收成一列一列 ----
+     日期只有 MM.DD，同一年內字串排序就是時間排序，倒序＝最近的在最上面。 */
+  const byDay = {};
+  MOCK.POSTCARDS.forEach(function (p) {
+    const got = STATE.card(p.id);
+    if (!got) return;
+    (byDay[got.date] = byDay[got.date] || []).push(p);
+  });
+  const days = Object.keys(byDay).sort().reverse();
+
+  document.getElementById('tlMeta').textContent =
+    days.length + ' 天 · ' + STATE.count() + ' 張';
+
+  /* 09.20 → 9月20日。前面的 0 拿掉，跟主線日誌的寫法一致。 */
+  const label = function (d) {
+    const m = d.split('.');
+    return Number(m[0]) + '月' + Number(m[1]) + '日';
+  };
+  const byWord = { ride: '搭 yoxi 抵達', walk: '走路抵達' };
+
+  document.getElementById('timeline').innerHTML = days.map(function (d) {
+    const list = byDay[d];
+    /* 這一天的抵達方式：同一天兩張都搭車就寫一次，混著就兩種都寫。 */
+    const ways = list.map(function (p) { return byWord[STATE.card(p.id).by] || byWord.walk; })
+                     .filter(function (w, i, a) { return a.indexOf(w) === i; }).join(' · ');
+    /* 那句話：抵達解鎖時寫的那一行。沒有寫就整塊不出現。 */
+    const notes = list.map(function (p) { return (STATE.card(p.id).note || '').trim(); })
+                      .filter(Boolean);
+    return '<div class="route-track__stop is-done">' +
+      '<span class="route-track__rail"><span class="route-track__node"></span></span>' +
+      '<div style="min-width:0">' +
+        '<span class="dayrow__date">' + label(d) + '</span>' +
+        '<span class="dayrow__by">' + ways + '</span>' +
+        '<div class="postcard-wall dayrow__cards">' +
+          list.map(function (p) {
+            return SHELL.postcardCell(p, MOCK.POSTCARDS.indexOf(p));
+          }).join('') +
+        '</div>' +
+        notes.map(function (n) {
+          return '<p class="dayrow__note">「' + n + '」</p>';
+        }).join('') +
+      '</div></div>';
+  }).join('');
+
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  /* 「新」只標示一次，但不能把 lastCard 清掉 ——
+     每日回顧的第二幕（今天多了哪一張）完全靠它。 */
+  STATE.markLastSeen();
+})();
+</script>
+</body>
+</html>

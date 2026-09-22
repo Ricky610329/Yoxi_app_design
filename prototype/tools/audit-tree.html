@@ -176,9 +176,12 @@ CATALOG.FLOWS.forEach(function (f) {
   if (!fn) { fail('樹上沒有 ' + fid); return; }
 
   let bads = 0;
+  /* 步驟對得到哪個節點由 buildTree 決定（主線找 st:／scr:，找不到再用 href 對變體的畫面，
+     例如流程 B 最後一步是變體 E 的一個狀態）；這裡只驗它真的對到了。 */
+  const mapped = (fn.meta && fn.meta.steps) || [];
   f.steps.forEach(function (st, i) {
-    const id = nodes['st:' + st.s] ? 'st:' + st.s : (nodes['scr:' + st.s] ? 'scr:' + st.s : null);
-    if (!id) { fail(f.tag + ' 第 ' + (i + 1) + ' 步 ' + st.s + ' 在樹上找不到（st: 與 scr: 都沒有）'); bads++; }
+    const id = mapped[i];
+    if (!id || !nodes[id]) { fail(f.tag + ' 第 ' + (i + 1) + ' 步 ' + st.s + ' 在樹上找不到'); bads++; }
   });
 
   const steps = (fn.meta && fn.meta.steps) || [];

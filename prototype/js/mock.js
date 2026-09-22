@@ -200,7 +200,7 @@ const FAR_PLACE = {
   ],
 
   why: [
-    { src: '路線進度', text: '你已經完成內灣線的前兩站，這是接下來的一站' },
+    { src: '路線進度', text: '你已收下內灣線的前兩站，這是接下來的一站' },
     { src: '距離判斷', text: '28 公里，步行不可達 —— 這一段需要搭車' },
     { src: '活動資料', text: '內灣戲院今日 14:00 有老電影放映，每月一場' },
     { src: '運力調度', text: '週日下午新竹往內灣方向回程車較多，這個時段叫車較好媒合' },
@@ -318,7 +318,7 @@ const SPOTS = [
   { id: 'lake',    name: '青草湖的舊戲院地基', art: 'lake',  x: 58, y: 80, state: 'new',
     type: '遺構',     dist: 6400,  hook: '湖乾涸的那幾年，戲院的地基露了出來。' },
   { id: 'brick',   name: '新竹州廳',        art: 'brick',   x: 36, y: 46, state: 'new',
-    type: '古蹟',     dist: 1500,  hook: '1927 年蓋的，現在還在辦公。' },
+    type: '官署',     dist: 1500,  hook: '1927 年蓋的，現在還在辦公。' },
   { id: 'rail',    name: '竹中站',          art: 'rail',    x: 84, y: 40, state: 'seen',
     type: '車站',     dist: 7800,  hook: '收集於 09.14' },
 ];

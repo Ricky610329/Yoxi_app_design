@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 S2 · 圖鑑缺口 — yoxi 城事</title>
+<!--
+  N8 收藏首頁 —— 變體 S2「圖鑑缺口」【新增】
+
+  回答什麼問題：收集感要不要看得到缺哪一格？
+
+  動了什麼：
+    整張畫面只有一處跟主線不同 —— 明信片牆從一面 3 欄的牆，改成
+    「依地方類型分行」：車站一行、水岸一行、工業遺構一行……
+    每一行前面有這一類收了幾張，行內灰階的就是這一類還缺的那幾張。
+    整類一張都還沒收到的，那一行上面直接寫「這一類還沒有」（官署、老街、工業遺構）。
+    統計條、今天的回顧、三顆 pill、獎章與日誌分頁全部維持原樣，
+    這樣並排比較時，看到的差異就只有「牆怎麼排」這一件事。
+
+  類型從哪裡來：MOCK.findPlace(p.id).type，沒有在 mock 加任何欄位。
+    有 11 張明信片在 findPlace 裡只查得到通用的「地方」（它們沒有被
+    PENDING／SPOTS／FAR_PLACE 收錄，只落在 POSTCARDS 的通用展開），
+    如果照抄就會出現一行 11 張的「地方」，圖鑑就沒有意義了。
+    所以第二段退而查 findPlace(p.art) —— art 的鍵本身就是地點 id，
+    同樣是既有資料，一樣沒有新欄位。
+    缺口的定義是「這一類一張都還沒收到」：行還在、剪影還在，只是多一句
+    「這一類還沒有」。不另外列地圖上沒有的類型 —— 第一版曾多列一行「古蹟」，
+    那是 mock 裡州廳同時寫成官署與古蹟撐出來的假缺口，資料修正後拿掉。
+
+  代價：
+    1. 最接近任務清單的一版。所以文案只能是「還沒有 X 類」，
+       絕不能寫「還差 N 個」、也不能出現百分比。
+    2. 分類本身會被質疑。這份 mock 的類型粒度不齊（車站 5 張，
+       市場、廟宇、海岸各 1 張），行數多、每行短。
+    3. 一次要捲過 11 行，比原本一面牆長很多。
+
+  獎章文案一律用「收集 4/8」，絕不用「任務 4/8」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="album" data-tabs="s2" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nPlaces">8</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nBadges">2</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nKm">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
+            <span class="tile-icon tile-icon--md" style="
+                  background:rgba(255,255,255,.14)">
+              <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 分段 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="cards">明信片</button>
+            <button class="pill" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
+          </div>
+        </div>
+
+        <!-- ===== 明信片牆：依地方類型分行 ===== -->
+        <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
+          <div id="wall"></div>
+          <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            灰色的是還沒去過的地方。到了就會上色。
+            一張都還沒收到的類型，會直接說「這一類還沒有」—— 不倒數，也不算百分比。
+          </p>
+
+          <!-- 三代分眾：同一批明信片，換一種排版就換一個世代 -->
+          <a class="card u-row u-gap4" href="elder.html"
+             style="margin-top:16px; padding:14px 16px">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="elder" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">做一張圖傳給家人</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                把去過的地方變成可以傳的問候圖
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+        <!-- ===== 獎章 ===== -->
+        <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 日誌 ===== -->
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span id="logMood" data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+              <div style="margin-top:10px; font-size:14px; color:var(--yoxi-slate)">
+                水利路 · 東門市場 · 護城河
+              </div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+
+          <!-- 週回顧入口 -->
+          <a class="card u-row u-gap4" href="week.html" style="margin-top:12px; padding:14px 16px" id="weekEntry">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總 · 不含心情與日誌
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 統計：完全由狀態決定 ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  /* ---- 今天的回顧：做過就換成結果 ---- */
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  /* ---- 一張明信片屬於哪一類 ----
+     第一段：findPlace(卡片 id)。這是唯一的真相來源。
+     第二段：第一段只查得到通用的「地方」時，改查 findPlace(卡片的 art)——
+             art 的鍵就是地點 id（market／temple／harbour…），
+             一樣是既有資料，沒有在 mock 加任何欄位。
+     兩段都查不到就留在「其他地方」，不要偷偷塞進別類。 */
+  const GENERIC = '地方';
+  const typeOf = function (p) {
+    const t1 = (MOCK.findPlace(p.id) || {}).type;
+    if (t1 && t1 !== GENERIC) return t1;
+    const t2 = (MOCK.findPlace(p.art) || {}).type;
+    if (t2 && t2 !== GENERIC) return t2;
+    return '其他地方';
+  };
+
+  /* 固定的行序：人造的先、產業的次之、自然的最後。
+     只列資料裡真的有的類型；一張都還沒收到的行由 postcardWall 加「這一類還沒有」。 */
+  const ORDER = ['車站', '老街', '市場', '廟宇', '官署', '工業遺構',
+                 '水岸', '海岸', '山徑', '遺構'];
+
+  SHELL.postcardWall(document.getElementById('wall'), {
+    group: typeOf,
+    groups: ORDER,
+    empty: '這一類還沒有',
+  });
+
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
+
+  /* ---- 日誌 ---- */
+  const moodIcon = { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[A.today.mood] || 'moodGood';
+  document.getElementById('logMood').setAttribute('data-icon', moodIcon);
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  /* 「新」只標示一次，但不能把 lastCard 清掉 ——
+     每日回顧的第二幕（今天多了哪一張）完全靠它。 */
+  STATE.markLastSeen();
+})();
+</script>
+</body>
+</html>

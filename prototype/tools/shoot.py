@@ -71,6 +71,8 @@ variant-a-map.html?mode=been:variant-a-map-been
 lookback.html?still=1:lookback
 
 variant-s1-album variant-s2-album variant-s3-album variant-s4-album variant-s5-album
+variant-s4-album.html?sheet=open:variant-s4-album-open
+variant-s5-album.html?pill=family:variant-s5-album-family
 variant-x1-explore variant-x2-explore variant-x2-album variant-x3-explore variant-x5-explore
 variant-x4-badges
 variant-x4-badges.html?style=ring:variant-x4-badges-ring

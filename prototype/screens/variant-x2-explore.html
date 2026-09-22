@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 X2 · 缺口導向 — yoxi 城事</title>
+<!--
+  變體 X2：缺口導向 —— 讓收藏反過來變成出門的理由
+
+  探索首頁最上面不是今天的地方，而是「你的圖鑑還缺什麼」：
+  從 MOCK.BADGES 裡挑出還沒集滿的三枚，每一枚給一個最近的候選 ——
+  那枚獎章的明信片清單裡，你還沒收到的第一張。今天的地方退到第二塊。
+
+  它要回答的問題：收藏能不能反過來成為出門的理由？
+  母版已經有答案的雛形 ——「為什麼推薦給你」的第三條就是「收集缺口」。
+  這個變體把那一條從四條依據裡抽出來，放大成整頁的主敘事。
+
+  這是整批變體裡最容易滑進任務化的一張，所以句型鎖死：
+
+      你的圖鑑裡還沒有 X
+
+  它是一句敘述，不是一個分數。相對地，這一頁刻意不出現：
+  · 百分比（「圖鑑完成度 62%」）—— 那是進度條，不是一個地方
+  · 「還差 N 個」          —— 那是倒數，會長出「快去補完」的壓力
+  · 任何排序理由（「最快集滿的一枚」）—— 一排序就變成推薦人去補最短的那個，
+    那是效率，不是理由。三枚照 MOCK.BADGES 原本的順序取。
+
+  唯一允許的數字寫法是全站共用的那一種：「收集 3/4」。
+  跟 SHELL.badgeGrid 同一句、同一份 STATE.badge，不另算一份。
+
+  詞彙禁用表：不用「任務／完成／達成／挑戰／每日」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 一個缺口 = 獎章的抬頭 + 一個最近的候選。
+     刻意用 .row-nav（跟「還沒去的地方」同一種列），不是勾選清單的樣子。 */
+  .gap + .gap { border-top: 1px solid var(--yoxi-line); }
+  .gap__head {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: 14px var(--gutter) 0;
+  }
+  .gap__name { display: block; font-weight: var(--fw-heavy); font-size: var(--fs-sm); }
+  .gap__prog {
+    display: block; font-size: var(--fs-xs);
+    color: var(--yoxi-slate); font-style: italic;
+  }
+</style>
+</head>
+
+<body data-tab="explore" data-tabs="x2" data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <nav class="viewtoggle">
+            <a class="is-on" href="variant-x2-explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a href="map.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 第一塊：你的圖鑑還缺什麼 ===== -->
+        <div style="background:var(--yoxi-white); padding:16px">
+          <div class="sec">
+            <h2 class="sec__t">你的圖鑑還缺什麼</h2>
+            <a class="sec__m u-row u-gap2" href="album.html">看圖鑑 <span class="arrow"></span></a>
+          </div>
+
+          <div class="card" id="gapList"></div>
+
+          <p style="margin-top:12px; font-size:var(--fs-cap); color:var(--yoxi-slate); line-height:1.7">
+            缺口不會過期，也沒有先後。想去哪一個就去哪一個。
+          </p>
+        </div>
+
+        <!-- ===== 第二塊：今天的地方（從主角退到第二塊） ===== -->
+        <div style="padding:16px 16px 0">
+          <div class="sec"><h2 class="sec__t">今天的地方</h2></div>
+        </div>
+
+        <div style="background:var(--yoxi-white); padding:16px">
+          <a class="placecard" href="place.html">
+            <div class="placecard__art" data-art="glass" data-seed="1" data-wide>
+              <span class="ai-mark">AI 生成示意</span>
+              <span class="placecard__scrim"></span>
+              <span class="placecard__body">
+                <span class="placecard__eyebrow" id="tEyebrow">今天的地方</span>
+                <span class="placecard__name" id="tName">水利路的老玻璃窯</span>
+                <span class="placecard__hook" id="tHook"></span>
+                <span class="placecard__meta" id="tMeta"></span>
+              </span>
+            </div>
+          </a>
+
+          <!-- 為什麼推薦給你：AI 的推薦依據。
+               這一頁的第一塊就是從這四條裡的「收集缺口」長出來的，
+               所以它留著 —— 收合態，讓人自己點開對照。 -->
+          <div class="why" style="margin-top:12px">
+            <button class="why__head" id="whyToggle">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px;height:18px;display:block"></span>
+                為什麼推薦給你
+              </span>
+              <span class="arrow" id="whyArrow" style="transform:rotate(0deg)"></span>
+            </button>
+            <div class="why__list" id="whyList" style="display:none"></div>
+          </div>
+
+          <div style="display:grid; gap:8px; margin-top:12px">
+            <a class="btn-primary" href="going.html">走路前往</a>
+            <a class="btn-ghost" href="place.html">先看看這是什麼地方</a>
+          </div>
+        </div>
+
+        <!-- ===== 還沒去的地方 ===== -->
+        <div style="padding:20px 16px 24px">
+          <div class="sec">
+            <h2 class="sec__t">還沒去的地方</h2>
+            <span class="sec__m">不會過期</span>
+          </div>
+
+          <div class="card" id="pendingList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* ================= 缺口 =================
+     這一段跟 variant-x2-album.html 裡的那一段是同一份寫法、同一句句型。
+     資料只有一份（MOCK.BADGES + STATE.badge + MOCK.findPlace），
+     兩張畫面各自算的話遲早會在某一次改動之後講出不同的句子。 */
+
+  /* 還沒集滿的前三枚。不排序 —— 一排序就會變成「先去補最短的那個」。 */
+  function gaps(n) {
+    const out = [];
+    MOCK.BADGES.forEach(function (b) {
+      if (out.length >= (n || 3)) return;
+      const r = STATE.badge(b.id);
+      if (r.got) return;
+      /* 最近的候選：這枚獎章的明信片清單裡，你還沒收到的第一張。 */
+      const cardId = r.ids.filter(function (id) { return !STATE.has(id); })[0];
+      if (!cardId) return;
+      out.push({ r: r, cardId: cardId, place: MOCK.findPlace(cardId) });
+    });
+    return out;
+  }
+
+  function far(m) {
+    if (m == null) return '距離待確認';
+    return m >= 1000
+      ? '<span class="num">' + (m / 1000).toFixed(1) + '</span> 公里'
+      : '<span class="num">' + m + '</span> 公尺';
+  }
+
+  /* 句型鎖死：「你的圖鑑裡還沒有 X」。不要在這裡發明第二種說法。 */
+  function gapLine(g) { return '你的圖鑑裡還沒有' + g.place.name; }
+
+  function renderGaps(el, seed) {
+    const list = gaps(3);
+    el.innerHTML = list.map(function (g, i) {
+      return '<div class="gap">' +
+        '<div class="gap__head">' +
+          '<span class="tile-icon tile-icon--sm"><span data-icon="' + g.r.icon +
+          '" style="width:20px;height:20px;display:block"></span></span>' +
+          '<span class="u-fill">' +
+            '<span class="gap__name">〈' + g.r.name + '〉</span>' +
+            /* 全站唯一的數字寫法，跟 SHELL.badgeGrid 同一句 */
+            '<span class="gap__prog">收集 <span class="num">' + g.r.done + '</span>/' +
+            g.r.total + '</span>' +
+          '</span>' +
+        '</div>' +
+        '<a class="row-nav" href="place.html?id=' + g.cardId + '" style="padding:10px 16px 14px">' +
+          '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+          'position:relative;flex:none" data-art="' + g.place.art + '" data-seed="' + (seed + i) + '"></span>' +
+          '<span class="row-nav__body">' +
+            '<span class="row-nav__title" style="font-size:16px">' + gapLine(g) + '</span>' +
+            /* type 落到 expand() 的通用值「地方」時就不印 —— 印出來是雜訊，不是資訊 */
+            '<span class="row-nav__sub">' + far(g.place.distance) +
+            (g.place.type && g.place.type !== '地方' ? ' · ' + g.place.type : '') + '</span>' +
+          '</span><span class="arrow"></span></a>' +
+        '</div>';
+    }).join('');
+    SHELL.injectArt(el);
+    SHELL.injectIcons(el);
+    return list.length;
+  }
+
+  renderGaps(document.getElementById('gapList'), 11);
+
+  /* ================= 今天的地方 ================= */
+  const T = MOCK.TODAY;
+  document.getElementById('tName').textContent = T.name;
+  document.getElementById('tHook').textContent = T.hook;
+  document.getElementById('tMeta').innerHTML =
+    '<span>離你 <span class="num">' + T.distance + '</span> m</span>' +
+    '<span style="opacity:.5">·</span>' +
+    '<span>走路 <span class="num">' + T.walkMin + '</span> 分鐘</span>' +
+    '<span style="opacity:.5">·</span><span>' + T.type + '</span>';
+
+  document.getElementById('whyList').innerHTML = T.why.map(function (w) {
+    return '<div class="why__item"><span class="why__src">' + w.src + '</span>' + w.text + '</div>';
+  }).join('');
+
+  const head = document.getElementById('whyToggle');
+  const body = document.getElementById('whyList');
+  const arw  = document.getElementById('whyArrow');
+  head.onclick = function () {
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'grid';
+    arw.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+
+  /* ================= 還沒去的地方 ================= */
+  const list = document.getElementById('pendingList');
+  list.innerHTML = MOCK.PENDING.map(function (p, i) {
+    return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:12px 16px">' +
+      '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+      'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 5) + '"></span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:16px">' + p.name + '</span>' +
+        '<span class="row-nav__sub">' + (p.distance / 1000).toFixed(1) + ' km · ' + p.ago + '</span>' +
+      '</span><span class="arrow"></span></a>';
+  }).join('');
+  SHELL.injectArt(list);
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

@@ -630,7 +630,8 @@ function postcardCell(p, i) {
  *                       filter  fn(p, got) → 要不要畫
  *                       locked  false＝不畫沒收的佔位（預設 true）
  *                       group   fn(p, got) → 分組標題；有給就依標題分成幾面牆，順序照第一次出現
- *                       empty   分組沒有任何卡時顯示的一句話（例：「這一類還沒有」）；沒給就不畫空組
+ *                       empty   這一組一張都還沒收到時顯示的一句話（例：「這一類還沒有」）；
+ *                               組裡連地方都沒有時也印這句；沒給就不畫空組
  *                       groups  預先給定的分組順序（含空組），配 empty 用
  * 呼叫端記得在最後呼叫 STATE.markLastSeen()（收藏首頁才要，變體看情況）。
  */
@@ -659,12 +660,14 @@ function postcardWall(el, opt) {
     el.innerHTML = order.map(function (g) {
       const list = by[g];
       if (!list.length && !opt.empty) return '';
+      const got = list.filter(function (p) { return STATE.card(p.id); }).length;
       return '<section class="wallgroup">' +
         '<div class="sec" style="margin-bottom:10px"><h2 class="sec__t sec__t--sm">' + g + '</h2>' +
-        '<span class="sec__m">' + (list.length ? list.filter(function (p) { return STATE.card(p.id); }).length + '/' + list.length : '') + '</span></div>' +
+        '<span class="sec__m">' + (list.length ? got + '/' + list.length : '') + '</span></div>' +
+        (opt.empty && !got ? '<p class="wallgroup__empty">' + opt.empty + '</p>' : '') +
         (list.length
           ? '<div class="postcard-wall">' + list.map(function (p) { return postcardCell(p, idx(p)); }).join('') + '</div>'
-          : '<p class="wallgroup__empty">' + opt.empty + '</p>') +
+          : '') +
         '</section>';
     }).join('');
   }
@@ -883,7 +886,11 @@ function rewriteHref(raw, opt) {
   if (!opt.back && !opt.tab && !u.searchParams.has('from')) {
     u.searchParams.set('from', pageKey(location.href));
   }
-  return u.pathname.split('/').pop() + u.search + u.hash;
+  /* 同一個目錄內只回檔名（?v= 與 ?from= 靠它比對）；往上一層跳的連結
+     （探索稿的返回鍵 ../vision.html）保留原本的相對路徑，不然會指到 screens/vision.html。 */
+  const here = location.pathname.replace(/[^/]*$/, '');
+  const path = u.pathname.indexOf(here) === 0 ? u.pathname.slice(here.length) : raw.split(/[?#]/)[0];
+  return path + u.search + u.hash;
 }
 
 /* 標了 data-back 的返回鍵：有 ?from= 就指回去 */

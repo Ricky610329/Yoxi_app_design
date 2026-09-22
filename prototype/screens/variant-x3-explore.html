@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 X3 · 路線主敘事 — yoxi 城事</title>
+<!--
+  變體 X3：路線主敘事 —— 把長期動機搬到第一屏
+
+  母版的探索首頁是「今天的地方」佔第一屏，路線在第二屏的橫向卡片裡。
+  這個變體把兩者對調：一條路線（內灣線）的封面與直向站點軌道佔滿第一屏，
+  「今天的地方」變成這條路線的下一站。其餘路線與還沒去的地方要往下捲。
+
+  為什麼值得試：每日一則解決的是「今天為什麼打開」，路線解決的是
+  「這個月為什麼還在玩」。後者是題目原文點名的「動機持久」，
+  但在母版上它排在第二屏 —— 第一眼看不到的東西，評審也看不到。
+
+  下一站怎麼決定：沿用 route.html 的那一段，不另寫一份。
+  站序照內灣線實際地理排（內灣是終點），但推薦的是路線 feature 標的那一站 ——
+  它是唯一走路到不了、也是這條線存在的理由的那一站。收過了就退回第一個還沒收的。
+  軌道上標 is-next 的必須是同一站，不然同一張畫面會有兩個下一站。
+
+  代價（寫在這裡，因為畫面上看不出來）：
+  · 今天的地方被路線綁死了。母版的推薦可以是任何一個地方、依天氣與時段變動；
+    這裡它只能是這條線上的下一站。AI 每天重新選一個地方的能力被關掉了。
+  · 新使用者的開場是空的。一站都還沒走過的人，第一屏是一條全灰的軌道，
+    沒有任何一張明信片是彩色的 —— 那是這個變體最大的風險。
+
+  詞彙禁用表：不用「任務／完成／達成／挑戰／每日」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="explore" data-tabs="x3" data-status="dark" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+
+        <!-- ===== 第一屏：路線封面 ===== -->
+        <div style="position:relative; height:300px; overflow:hidden">
+          <div id="rArt" data-art="rail" data-seed="3" data-wide style="position:absolute; inset:0"></div>
+          <span class="ai-mark" style="top:calc(var(--statusbar-h) + 8px); right:16px; left:auto">AI 生成示意</span>
+          <span style="position:absolute; inset:0; background:linear-gradient(to top,
+                rgba(6,32,64,.94), rgba(6,32,64,.32) 58%, rgba(6,32,64,.24) 100%)"></span>
+
+          <div style="position:absolute; left:16px; top:calc(var(--statusbar-h) + 6px);
+                      color:var(--yoxi-white); font-size:var(--fs-title); font-weight:800">
+            探索
+          </div>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; padding:20px 16px;
+                      color:var(--yoxi-white)">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.85">
+              這個月的路線
+            </div>
+            <h1 id="rName" style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px"></h1>
+            <div id="rSub" style="font-size:15px; opacity:.9; margin-top:4px"></div>
+            <div class="track-mini" id="rTrack" style="margin-top:12px"></div>
+          </div>
+        </div>
+
+        <!-- ===== 今天的地方 ＝ 這條路線的下一站 ===== -->
+        <div style="background:var(--yoxi-white); padding:16px">
+          <div id="nextBox"></div>
+
+          <!-- 為什麼推薦給你：這一站自己的推薦依據 -->
+          <div class="why" style="margin-top:12px">
+            <button class="why__head" id="whyToggle">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px;height:18px;display:block"></span>
+                為什麼推薦給你
+              </span>
+              <span class="arrow" id="whyArrow" style="transform:rotate(0deg)"></span>
+            </button>
+            <div class="why__list" id="whyList" style="display:none"></div>
+          </div>
+
+          <div id="nextCta" style="display:grid; gap:8px; margin-top:12px"></div>
+        </div>
+
+        <!-- ===== 這條線的六個站 ===== -->
+        <div style="padding:20px 16px 0">
+          <div class="sec">
+            <h2 class="sec__t">這條線的每一站</h2>
+            <a class="sec__m u-row u-gap2" href="route.html?id=rail">看整條 <span class="arrow"></span></a>
+          </div>
+          <div class="route-track" id="track"></div>
+          <p style="padding:14px 0 0; text-align:center; font-size:13px; color:var(--yoxi-slate)">
+            沒有期限，也不用照順序。
+          </p>
+        </div>
+
+        <!-- ===== 其他路線 ===== -->
+        <div style="padding:20px 16px 0">
+          <div class="sec">
+            <h2 class="sec__t">其他路線</h2>
+            <a class="sec__m u-row u-gap2" href="routes.html">全部 <span class="arrow"></span></a>
+          </div>
+          <div class="hscroll" id="routeCards"></div>
+        </div>
+
+        <!-- ===== 還沒去的地方 ===== -->
+        <div style="padding:20px 16px 24px">
+          <div class="sec">
+            <h2 class="sec__t">還沒去的地方</h2>
+            <span class="sec__m">不會過期</span>
+          </div>
+          <div class="card" id="pendingList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 主敘事固定是第一條路線（內灣線）。它是唯一一條有走路到不了的站的線，
+     也就是唯一一條能同時撐起「內容」與「叫車」兩件事的線。 */
+  const R = MOCK.ROUTES[0];
+
+  document.getElementById('rName').textContent = R.name.split('：')[0];
+  document.getElementById('rSub').textContent  = R.name.split('：')[1] || R.sub;
+  document.getElementById('rArt').dataset.art  = R.art;
+
+  /* ---- 下一站：沿用 route.html 的那一段邏輯 ----
+     feature 標的那一站優先（唯一走路到不了、也是這條線存在的理由的一站），
+     收過了就退回第一個還沒收的。軌道上標 is-next 的是同一站。 */
+  const nx = R.stops.filter(function (st) {
+               return R.feature && st.card === R.feature && !STATE.has(st.card);
+             })[0]
+          || R.stops.filter(function (st) { return !STATE.has(st.card); })[0];
+  R.stops.forEach(function (st) {
+    st.state = STATE.has(st.card) ? 'done' : (st === nx ? 'next' : 'todo');
+  });
+  const done = R.stops.filter(function (st) { return st.state === 'done'; }).length;
+
+  /* ---- 封面上的進度：跟 STATE 算的一樣，不寫死 ---- */
+  let mini = '';
+  for (let n = 0; n < R.total; n++) {
+    if (n) mini += '<i class="track-mini__link' + (n < done ? ' is-done' : '') + '"></i>';
+    mini += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
+  }
+  document.getElementById('rTrack').innerHTML = mini +
+    '<span style="margin-left:8px; font-size:12px; opacity:.9">' +
+    '<span class="num">' + done + '</span>/' + R.total + '</span>';
+
+  /* ---- 今天的地方 ＝ 下一站 ---- */
+  const box = document.getElementById('nextBox');
+  const cta = document.getElementById('nextCta');
+  if (nx) {
+    const P = MOCK.findPlace(nx.card);
+    const dist = P.distance != null ? P.distance : nx.dist;
+    const farNx = dist > 10000;
+
+    box.innerHTML =
+      '<a class="placecard" href="place.html?id=' + nx.card + '">' +
+        '<div class="placecard__art" data-art="' + nx.art + '" data-seed="1" data-wide>' +
+          '<span class="ai-mark">AI 生成示意</span>' +
+          '<span class="placecard__scrim"></span>' +
+          '<span class="placecard__body">' +
+            '<span class="placecard__eyebrow">今天的地方 · 這條路線的下一站</span>' +
+            '<span class="placecard__name">' + nx.name + '</span>' +
+            '<span class="placecard__hook">' + (nx.note || P.hook || '') + '</span>' +
+            '<span class="placecard__meta">' +
+              '<span>離你 <span class="num">' + (dist / 1000).toFixed(1) + '</span> 公里</span>' +
+              '<span style="opacity:.5">·</span><span>' + P.type + '</span>' +
+            '</span>' +
+          '</span>' +
+        '</div>' +
+      '</a>';
+    SHELL.injectArt(box);
+
+    /* 「路線進度」那一條在這一頁是重複的：封面已經印了 2/6，軌道也已經標了
+       哪幾站收過。所以只印其餘的依據。
+       （附帶效果：MOCK.FAR_PLACE.why 的那一條寫的是「你已經完成內灣線的前兩站」，
+        帶著禁用詞「完成」。那句話該在 mock.js 改掉 —— 它在 place.html?id=neiwan
+        上是真的會顯示的，只是全站稽核掃的是不帶 id 的 place.html 所以沒抓到。） */
+    document.getElementById('whyList').innerHTML = (P.why || [])
+      .filter(function (w) { return w.src !== '路線進度'; })
+      .map(function (w) {
+        return '<div class="why__item"><span class="why__src">' + w.src + '</span>' + w.text + '</div>';
+      }).join('');
+
+    /* 遠的站不在這裡直接寫「用 yoxi 前往」：叫車的主按鈕在地方詳情頁，
+       那裡才有距離、限定版與點數的完整說明。跟 route.html 同一個判斷。 */
+    cta.innerHTML = farNx
+      ? '<a class="btn-primary" href="place.html?id=' + nx.card + '">先看看這一站 · 要搭車</a>' +
+        '<a class="btn-ghost" href="route.html?id=' + R.id + '">看這條線的其他站</a>'
+      : '<a class="btn-primary" href="going.html?id=' + nx.card + '">走路前往</a>' +
+        '<a class="btn-ghost" href="place.html?id=' + nx.card + '">先看看這是什麼地方</a>';
+  } else {
+    box.innerHTML = '<div class="card card--pad" style="text-align:center; font-weight:800">' +
+      '這條路線你已經走完了。</div>';
+    cta.innerHTML = '<a class="btn-ghost" href="routes.html">換一條路線</a>';
+  }
+
+  /* ---- 直向軌道 ---- */
+  document.getElementById('track').innerHTML = R.stops.map(function (s, i) {
+    const d = s.state === 'done';
+    const n = s.state === 'next';
+    return '<div class="route-track__stop ' + (d ? 'is-done' : '') + ' ' + (n ? 'is-next' : '') + '">' +
+      '<span class="route-track__rail"><span class="route-track__node"></span></span>' +
+      '<a class="route-track__body" href="' +
+        (d ? 'postcard.html?id=' + s.card : 'place.html?id=' + s.card) + '">' +
+        '<span class="route-track__thumb ' + (d ? '' : 'is-locked') + '"' +
+        ' style="position:relative; ' + (d ? '' : 'filter:grayscale(1) contrast(.72) brightness(1.16)') + '"' +
+        ' data-art="' + s.art + '" data-seed="' + (i + 2) + '"></span>' +
+        '<span style="flex:1; min-width:0">' +
+          '<span style="display:block; font-weight:800; line-height:1.35">' + s.name + '</span>' +
+          '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+            (d ? '已收集' : '<span class="num">' + (s.dist / 1000).toFixed(1) + '</span> 公里') +
+            (s.note ? ' · ' + s.note : '') +
+          '</span>' +
+        '</span><span class="arrow"></span></a></div>';
+  }).join('');
+
+  /* ---- 其他路線 ---- */
+  document.getElementById('routeCards').innerHTML = MOCK.ROUTES.slice(1).map(function (r, i) {
+    const rd = STATE.routeDone(r.id);
+    let track = '';
+    for (let n = 0; n < r.total; n++) {
+      if (n) track += '<i class="track-mini__link' + (n < rd ? ' is-done' : '') + '"></i>';
+      track += '<i class="track-mini__node' + (n < rd ? ' is-done' : '') + '"></i>';
+    }
+    return '<a class="card" href="route.html?id=' + r.id + '" style="width:240px; flex:none">' +
+      '<span style="display:block; height:110px; position:relative; overflow:hidden"' +
+      ' data-art="' + r.art + '" data-seed="' + (i + 4) + '" data-wide></span>' +
+      '<span style="display:block; padding:12px">' +
+        '<span style="display:block; font-weight:800; line-height:1.35">' + r.name.split('：')[0] + '</span>' +
+        '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+          r.sub + '</span>' +
+        '<span class="track-mini" style="margin-top:10px">' + track +
+        '<span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">' +
+        '<span class="num">' + rd + '</span>/' + r.total + '</span></span>' +
+      '</span></a>';
+  }).join('');
+
+  /* ---- 還沒去的地方 ---- */
+  document.getElementById('pendingList').innerHTML = MOCK.PENDING.map(function (p, i) {
+    return '<a class="row-nav" href="place.html?id=' + p.id + '" style="padding:12px 16px">' +
+      '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+      'position:relative;flex:none" data-art="' + p.art + '" data-seed="' + (i + 8) + '"></span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:16px">' + p.name + '</span>' +
+        '<span class="row-nav__sub">' + (p.distance / 1000).toFixed(1) + ' km · ' + p.ago + '</span>' +
+      '</span><span class="arrow"></span></a>';
+  }).join('');
+
+  /* 「為什麼推薦給你」收合 */
+  const head = document.getElementById('whyToggle');
+  const body = document.getElementById('whyList');
+  const arw  = document.getElementById('whyArrow');
+  head.onclick = function () {
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'grid';
+    arw.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

@@ -217,6 +217,7 @@ const MAIN_LIST =
  'home drawer pickup outofarea ride ride-done notify ridesettings points trips export ' +
  'payment coupon tasks support shop invite explore map place going routes route fogmap ' +
  'album postcard badge week elder settings push unlock lookback ' +
+ 'place.html?id=neiwan unlock.html?ride=1 push.html?when=night ' +
  'variant-a-map variant-a-explore variant-a-album variant-b-explore variant-b-album ' +
  'variant-c-map variant-c-explore variant-c-album ' +
  'variant-d-home variant-d-explore variant-d-album ' +
@@ -236,7 +237,7 @@ const VISION_LIST =
  'vision-health-a vision-health-b vision-health-c';
 
 const SCREENS = (VISION_SCOPE ? VISION_LIST : MAIN_LIST)
-  .split(/\s+/).filter(Boolean).map(function (s) { return s + '.html'; });
+  .split(/\s+/).filter(Boolean).map(function (s) { return /\.html/.test(s) ? s : s + '.html'; });
 
 const deadOut = {};      /* 檔名 → 死按鈕清單 */
 const wordOut = {};      /* 檔名 → 禁用詞命中 */

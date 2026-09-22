@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 T1 · 好康與城事同頁 — yoxi 城事</title>
+<!--
+  變體 T1：好康任務頁底下加一區城事 —— 被評估之後否決的證據
+
+  這一張直接違反 tasks.html 檔頭寫明的設計理由。原文是這樣寫的：
+
+      「今天的地方」在結構上跟每日任務同構，只要兩者靠太近，
+      使用者就會自動把地方推薦讀成任務，接著是罪惡感，接著是退坑。
+      所以這裡是實體隔離：任務有勾選框、有條狀進度、有趟次累積、有期限；
+      城事一個都沒有。兩套系統在視覺上完全不共用元件。
+
+  那為什麼還要做這一張：因為評審幾乎一定會問「你們已經有好康任務了，
+  為什麼不放在一起」。回答「我們判斷不行」是立場；把畫面做出來、
+  指著它說「這是它會變成的樣子」是證據。兩者的說服力差很多。
+
+  兩個版本：
+
+  預設       城事區跟好康任務同頁，但視覺語言分開：沒有勾選框、沒有條狀
+             進度、沒有期限。只用路線的 .track-mini 與獎章的「收集 n/total」。
+             這是「視覺語言分開就夠了嗎」的溫和版。看得出來的問題是：
+             同一個捲軸底下，上面三張卡都有日期區間與趟次累積，
+             下面那幾列就算長得不一樣，也會被讀成「這些是還沒做的」。
+
+  ?mode=merged  激進版：城事也套進 .task 卡的樣子 —— banner、期限、
+             右邊一個累積數字。這一版證明的是「合併」的真正代價：
+             路線不得不長出一個它本來沒有的結束日期，獎章不得不變成
+             一個分母。到這裡城事已經不是城事了。
+
+  詞彙禁用表在這一張是白名單：頁面上出現的「任務」是 yoxi 自己的功能名稱
+  （好康任務），不是城事的用詞 —— 稽核工具 tools/audit-app.html 裡也是
+  這樣登記的。城事那一區自己的文案仍然一個禁用詞都不用。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<!-- .task* 的樣式在 css/chengshi.css，跟 tasks.html 同一組，這裡不另外加 -->
+</head>
+
+<body data-status="light" data-time="21:36">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--center">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="drawer.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title">好康任務</h1>
+        </div>
+        <div class="hdr-red__pills">
+          <div class="pill-group" data-pills>
+            <button class="pill is-active" data-tab="on">進行中</button>
+            <button class="pill" data-tab="off">已結束</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist); padding:16px">
+
+        <div data-panel="on">
+
+          <!-- ===== yoxi 既有的三張，原樣照抄 tasks.html，一個像素都不改 ===== -->
+          <div class="card task">
+            <div class="task__banner" style="background:linear-gradient(120deg,#2A2E6B,#1A1440)">
+              <span>月來月好運</span>
+              <small>搭車即拿次月 88 折優惠</small>
+            </div>
+            <div class="task__body">
+              <span class="u-fill">
+                <span class="task__t">搭 1 趟贈次月 88 折券 1 張</span>
+                <span class="task__d">2026/09/01 ~ 2026/09/30</span>
+              </span>
+              <span class="task__cnt"><small>趟次累積</small><b style="color:var(--yoxi-red)">0</b>
+                <small>/ 1</small></span>
+            </div>
+          </div>
+
+          <div class="card task">
+            <div class="task__banner" style="background:var(--yoxi-red)">
+              <span>企業簽單選 yoxi</span>
+              <small>趟趟加送 10 點回饋</small>
+            </div>
+            <div class="task__body">
+              <span class="u-fill">
+                <span class="task__t">企業簽單趟趟贈 10 點和泰 Points（無上限）</span>
+                <span class="task__d">2026/09/01 ~ 2026/09/30</span>
+              </span>
+              <span class="task__cnt"><small>趟次累積</small><b style="color:var(--yoxi-red)">0</b>
+                <small>/ 1</small></span>
+            </div>
+          </div>
+
+          <div class="card task">
+            <div class="task__banner" style="background:linear-gradient(120deg,#5FA845,#2F6B2A)">
+              <span>綁定 iPASS MONEY 搭乘</span>
+              <small>每月搭 1 趟贈 $200 搭車金禮包</small>
+            </div>
+            <div class="task__body">
+              <span class="u-fill">
+                <span class="task__t">限定優惠｜iPASS MONEY 限定 $200 禮包（9月）</span>
+                <span class="task__d">2026/09/01 ~ 2026/09/30</span>
+              </span>
+              <span class="task__cnt"><small>趟次累積</small><b style="color:var(--yoxi-red)">0</b>
+                <small>/ 1</small></span>
+            </div>
+          </div>
+
+          <!-- ===== 這一區是變體加的：城事 ===== -->
+          <div id="chengshi" style="margin-top:20px"></div>
+
+          <!-- 原型附註。這不是產品畫面的一部分，是給看這份原型的人看的。 -->
+          <p style="margin-top:20px; font-size:13px; color:var(--yoxi-slate); line-height:1.8"
+             id="foot"></p>
+
+        </div>
+
+        <div data-panel="off" class="u-hidden">
+          <div class="empty-state">
+            <div class="empty-state__art"></div>
+            <div class="empty-state__mark">Get Started.</div>
+            <div class="empty-state__msg">目前沒有已結束的任務</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const merged = new URLSearchParams(location.search).get('mode') === 'merged';
+  const host = document.getElementById('chengshi');
+
+  /* 數字一律由 STATE 算。城事這一區在兩個版本裡顯示的數字必須一樣 ——
+     兩版差的只有「畫成什麼形狀」，不是「算出什麼數字」。 */
+  const routes = MOCK.ROUTES.slice(0, 2).map(function (r) {
+    return { r: r, done: STATE.routeDone(r.id) };
+  });
+  const badges = MOCK.BADGES.map(function (b) { return STATE.badge(b.id); })
+    .filter(function (x) { return !x.got; }).slice(0, 2);
+
+  function trackOf(total, done) {
+    let t = '';
+    for (let n = 0; n < total; n++) {
+      if (n) t += '<i class="track-mini__link' + (n < done ? ' is-done' : '') + '"></i>';
+      t += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
+    }
+    return t;
+  }
+
+  /* ---------------- 預設：視覺語言分開 ----------------
+     沒有勾選框、沒有條狀進度、沒有期限。只有路線的軌道與獎章的「收集 n/total」。 */
+  function gentle() {
+    const T = MOCK.TODAY;
+    let rows =
+      '<a class="row-nav" href="place.html" style="padding:12px 16px">' +
+        '<span style="width:46px;height:60px;border-radius:4px;overflow:hidden;' +
+        'position:relative;flex:none" data-art="' + T.art + '" data-seed="1"></span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">' + T.name + '</span>' +
+          '<span class="row-nav__sub">今天的地方 · 離你 <span class="num">' + T.distance +
+          '</span> m</span>' +
+        '</span><span class="arrow"></span></a>';
+
+    rows += routes.map(function (x) {
+      return '<a class="row-nav" href="route.html?id=' + x.r.id + '" style="padding:12px 16px">' +
+        '<span style="width:46px;height:46px;border-radius:4px;overflow:hidden;' +
+        'position:relative;flex:none" data-art="' + x.r.art + '" data-seed="3" data-wide></span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">' + x.r.name.split('：')[0] + '</span>' +
+          '<span class="track-mini" style="margin-top:6px">' + trackOf(x.r.total, x.done) +
+            '<span style="margin-left:8px; font-size:12px; color:var(--yoxi-slate)">' +
+            '<span class="num">' + x.done + '</span>/' + x.r.total + '</span>' +
+          '</span>' +
+        '</span><span class="arrow"></span></a>';
+    }).join('');
+
+    rows += badges.map(function (b) {
+      return '<a class="row-nav" href="badge.html?id=' + b.id + '" style="padding:12px 16px">' +
+        '<span class="tile-icon tile-icon--sm"><span data-icon="' + b.icon +
+        '" style="width:20px;height:20px;display:block"></span></span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">〈' + b.name + '〉</span>' +
+          '<span class="row-nav__sub">收集 <span class="num">' + b.done + '</span>/' + b.total +
+          '</span>' +
+        '</span><span class="arrow"></span></a>';
+    }).join('');
+
+    host.innerHTML =
+      '<div class="sec">' +
+        '<h2 class="sec__t">城事</h2>' +
+        '<a class="sec__m u-row u-gap2" href="explore.html">去探索 <span class="arrow"></span></a>' +
+      '</div>' +
+      '<div class="card">' + rows + '</div>' +
+      '<p style="margin-top:10px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">' +
+      '沒有期限，也不用照順序。走到了就會收下一張。</p>';
+  }
+
+  /* ---------------- ?mode=merged：合併成一種卡 ----------------
+     城事套上 .task 的外型。為了填滿那個外型，它被迫長出兩樣本來沒有的東西：
+     一個結束日期，以及一個分母。 */
+  function mergedCards() {
+    const T = MOCK.TODAY;
+    let cards =
+      '<div class="card task">' +
+        '<div class="task__banner" style="background:linear-gradient(120deg,#C7452E,#8C2B1E)">' +
+          '<span>今天的地方</span><small>走到現場就收下一張明信片</small>' +
+        '</div>' +
+        '<div class="task__body"><span class="u-fill">' +
+          '<span class="task__t">' + T.name + '</span>' +
+          '<span class="task__d">2026/09/21 當日有效</span>' +
+        '</span><span class="task__cnt"><small>今日</small>' +
+          '<b style="color:var(--yoxi-red)">0</b><small>/ 1</small></span></div>' +
+      '</div>';
+
+    cards += routes.map(function (x) {
+      return '<div class="card task">' +
+        '<div class="task__banner" style="background:linear-gradient(120deg,#2E6F96,#062040)">' +
+          '<span>' + x.r.name.split('：')[0] + '</span><small>走完 ' + x.r.total +
+          ' 站可得〈' + STATE.badge(x.r.badge).name + '〉</small>' +
+        '</div>' +
+        '<div class="task__body"><span class="u-fill">' +
+          '<span class="task__t">' + (x.r.name.split('：')[1] || x.r.sub) + '</span>' +
+          '<span class="task__d">2026/09/01 ~ 2026/09/30</span>' +
+        '</span><span class="task__cnt"><small>站數累積</small>' +
+          '<b style="color:var(--yoxi-red)">' + x.done + '</b><small>/ ' + x.r.total +
+          '</small></span></div>' +
+      '</div>';
+    }).join('');
+
+    cards += badges.map(function (b) {
+      return '<div class="card task">' +
+        '<div class="task__banner" style="background:linear-gradient(120deg,#D4761F,#6B4E2E)">' +
+          '<span>〈' + b.name + '〉</span><small>' + b.award + '</small>' +
+        '</div>' +
+        '<div class="task__body"><span class="u-fill">' +
+          '<span class="task__t">收齊這一組明信片</span>' +
+          '<span class="task__d">2026/09/01 ~ 2026/09/30</span>' +
+        '</span><span class="task__cnt"><small>張數累積</small>' +
+          '<b style="color:var(--yoxi-red)">' + b.done + '</b><small>/ ' + b.total +
+          '</small></span></div>' +
+      '</div>';
+    }).join('');
+
+    host.innerHTML = cards;
+  }
+
+  if (merged) mergedCards(); else gentle();
+
+  document.getElementById('foot').innerHTML = merged
+    ? '原型附註：這是合併的激進版。注意城事在這裡多了兩樣它原本沒有的東西 ——' +
+      '一個結束日期，和一個分母。路線本來「沒有期限、不用照順序」，' +
+      '獎章本來是一句敘述而不是一個分數。' +
+      '<br><a href="variant-t1-tasks.html" style="color:var(--yoxi-navy); font-weight:800">' +
+      '回到視覺語言分開的那一版</a>'
+    : '原型附註：城事跟好康任務同頁，但沒有勾選框、沒有條狀進度、沒有期限。' +
+      '即使如此，同一個捲軸底下，上面三張都有日期區間與趟次累積，' +
+      '下面這幾列還是會被讀成「這些是還沒做的」。' +
+      '<br><a href="variant-t1-tasks.html?mode=merged" style="color:var(--yoxi-navy); font-weight:800">' +
+      '看合併成一種卡的那一版</a>';
+
+  SHELL.injectArt(host);
+  SHELL.injectIcons(host);
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

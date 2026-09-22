@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 S5 · 家人視角 — yoxi 城事</title>
+<!--
+  N8 收藏首頁 —— 變體 S5「家人視角」【新增】
+
+  回答什麼問題：這個提案對誰最不可替代？
+
+  動了什麼：
+    pill 多第四顆「家人」。切過去以後，同一批已收集的明信片換一套
+    排版語言 —— 借長輩圖那一頁的語法：大字、置中、少色、少按鈕，
+    一張一句問候，一張一顆「傳給家人」。
+    明信片、獎章、日誌三個分頁跟主線的收藏首頁完全一樣，
+    所以並排比較時看到的差異就只有「多了一個世代」這一件事。
+    長輩圖原本埋在收藏頁第三層（做一張圖傳給家人 → elder.html），
+    這一版把它升成收藏頁的第四個分頁 —— 它是這個提案最難被複製的一格。
+
+  代價：
+    1. 稀釋主線。收藏頁原本的三個分頁是一句話講得完的（明信片／獎章／
+       日誌），第四顆 pill 讓它變成「這裡還有另一個 app」。
+    2. 同一批資產出現兩次（牆上一次、家人分頁再一次），
+       評審可能問「那到底哪一個才是收藏」。
+    3. 大字排版一張卡就佔掉半個螢幕，八張要捲很久。
+
+  文案是內容，不是數字；日期與地名一律從 STATE.card() 與 MOCK.POSTCARDS 來。
+  問候句刻意沿用 elder.html 那四句，讓兩頁看起來是同一個功能的兩個入口。
+  獎章文案一律用「收集 4/8」，絕不用「任務 4/8」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 家人分頁的排版語言跟牆完全相反：大字、置中、少色、一張一個動作。
+     借 elder.html 的語法，但不用它那組高飽和的描邊字 ——
+     那是「做給 LINE 看」的成品，這裡是「挑哪一張要傳」的挑選介面。 */
+  .fam__lead {
+    font-size: var(--fs-lead);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-story);
+    text-align: center;
+    color: var(--yoxi-slate);
+    margin-bottom: var(--sp-5);
+  }
+  .famcard {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: var(--yoxi-white);
+    border: 1px solid var(--yoxi-line);
+    border-radius: var(--r-card);
+    overflow: hidden;
+    padding-bottom: var(--sp-5);
+  }
+  .famcard + .famcard { margin-top: var(--sp-5); }
+  .famcard__art {
+    display: block;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+  .famcard__big {
+    display: block;
+    margin: var(--sp-5) var(--sp-4) 0;
+    font-size: var(--fs-h1);
+    font-weight: var(--fw-heavy);
+    line-height: var(--lh-tight);
+  }
+  .famcard__sub {
+    display: block;
+    margin: var(--sp-3) var(--sp-4) 0;
+    font-size: var(--fs-lead);
+    font-weight: var(--fw-bold);
+    color: var(--yoxi-slate);
+  }
+  .famcard__act {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-top: var(--sp-5);
+    padding: 12px var(--sp-5);
+    border-radius: var(--r-btn);
+    background: var(--yoxi-navy);
+    color: var(--yoxi-white);
+    font-size: var(--fs-lead);
+    font-weight: var(--fw-heavy);
+  }
+  .famcard__act svg { width: 22px; height: 22px; }
+</style>
+</head>
+
+<body data-tab="album" data-tabs="s5" data-status="light" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">收藏</h1>
+          <a class="hdr-red__action u-row u-gap2" href="fogmap.html">
+            城市足跡
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>
+
+
+        <!-- ===== 本月統計。沒有連續天數。 ===== -->
+        <div style="padding:16px">
+          <div class="statbar">
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nPlaces">8</span>
+              <span class="statbar__k">去過的地方</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nBadges">2</span>
+              <span class="statbar__k">獎章</span>
+            </span>
+            <span class="statbar__cell">
+              <span class="statbar__n" id="nKm">48</span>
+              <span class="statbar__k">公里</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 今天的回顧（晚間才出現） ===== -->
+        <div style="padding:0 16px 16px">
+          <a class="card u-row u-gap4" href="lookback.html"
+             style="padding:14px 16px; background:var(--yoxi-navy); border:0; color: var(--yoxi-white)">
+            <span class="tile-icon tile-icon--md" style="
+                  background:rgba(255,255,255,.14)">
+              <span class="ic-ondark" data-icon="steps" style="width:24px;height:24px;display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">今天的回顧</span>
+              <span style="display:block; font-size:13px; opacity:.75; margin-top:2px" id="lbSub">
+                走了 6,240 步，經過 3 個地方
+              </span>
+            </span>
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+
+        <!-- ===== 分段：多了第四顆「家人」 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="cards">明信片</button>
+            <button class="pill" data-tab="badges">獎章</button>
+            <button class="pill" data-tab="log">日誌</button>
+            <button class="pill" data-tab="family">家人</button>
+          </div>
+        </div>
+
+        <!-- ===== 明信片牆（與主線相同） ===== -->
+        <section id="segCards" data-panel="cards" style="padding:0 16px 24px">
+          <div id="wall"></div>
+          <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            灰色的是還沒去過的地方。到了就會上色。
+          </p>
+
+          <!-- 三代分眾：同一批明信片，換一種排版就換一個世代 -->
+          <button class="card u-row u-gap4" id="toFamily"
+                  style="margin-top:16px; padding:14px 16px; width:100%; text-align:left">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="elder" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">換成家人看得懂的樣子</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                同一批明信片，大字、少色、一張一句問候
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </button>
+        </section>
+
+        <!-- ===== 獎章（與主線相同） ===== -->
+        <section id="segBadges" data-panel="badges" class="u-hidden" style="padding:0 16px 24px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px" id="badgeGrid"></div>
+        </section>
+
+        <!-- ===== 日誌（與主線相同） ===== -->
+        <section id="segLog" data-panel="log" class="u-hidden" style="padding:0 16px 24px">
+          <div class="card">
+            <div style="padding:16px">
+              <div style="font-size:13px; color:var(--yoxi-slate)">9月21日 星期日</div>
+              <div class="u-row u-gap3" style="margin-top:10px">
+                <span id="logMood" data-icon="moodGood" style="width:26px;height:26px;color:var(--yoxi-red)"></span>
+                <span style="font-weight:800">6,240 步 · 4.3 公里</span>
+              </div>
+              <div style="margin-top:10px; font-size:14px; color:var(--yoxi-slate)">
+                水利路 · 東門市場 · 護城河
+              </div>
+            </div>
+            <div style="height:1px; background:var(--yoxi-line)"></div>
+            <div class="privacy-note" style="padding:12px">
+              <span data-icon="lock" style="width:14px;height:14px"></span>
+              只有你看得到
+            </div>
+          </div>
+
+          <!-- 週回顧入口 -->
+          <a class="card u-row u-gap4" href="week.html" style="margin-top:12px; padding:14px 16px" id="weekEntry">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">這一週</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                唯一可以分享的匯總 · 不含心情與日誌
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+        <!-- ===== 家人：第四個分頁 ===== -->
+        <section id="segFamily" data-panel="family" class="u-hidden" style="padding:0 16px 24px">
+          <p class="fam__lead">
+            同一批明信片，換一種排版。<br>
+            字大一點、顏色少一點，一張一句話。
+          </p>
+          <div id="famList"></div>
+          <p class="privacy-note" style="margin-top:20px; line-height:1.7; text-align:center; display:block">
+            按一張就會叫出分享面板，你按下傳送才會送出。<br>
+            日誌與心情不會跟著出去。
+          </p>
+          <a class="card u-row u-gap4" href="elder.html" style="margin-top:16px; padding:14px 16px">
+            <span class="tile-icon tile-icon--md">
+              <span data-icon="elder" style="width:24px; height:24px; display:block"></span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800">自己換一句話、換一個地方</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                到做圖那一頁挑吉祥話與底圖
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const A = STATE.all;
+
+  /* ---- 統計：完全由狀態決定 ---- */
+  const badgesGot = MOCK.BADGES.filter(function (b) { return STATE.badge(b.id).got; }).length;
+  document.getElementById('nPlaces').textContent = STATE.count();
+  document.getElementById('nBadges').textContent = badgesGot;
+  document.getElementById('nKm').textContent = A.km;
+
+  /* ---- 今天的回顧：做過就換成結果 ---- */
+  if (A.today.done) {
+    document.getElementById('lbSub').textContent =
+      '已經看過了 · ' + ({ good: '今天不錯', ok: '今天普通', low: '今天有點累' }[A.today.mood] || '');
+  }
+
+  /* ---- 明信片牆與獎章格：共用零件，與主線相同 ---- */
+  SHELL.postcardWall(document.getElementById('wall'));
+  SHELL.badgeGrid(document.getElementById('badgeGrid'));
+
+  /* ---- 日誌 ---- */
+  const moodIcon = { good: 'moodGood', ok: 'moodOk', low: 'moodLow' }[A.today.mood] || 'moodGood';
+  document.getElementById('logMood').setAttribute('data-icon', moodIcon);
+
+  /* ---- 家人分頁：同一批已收集的明信片，換大字排版 ----
+     問候句沿用 elder.html 那四句，依順序輪，每一張都有自己的一句。 */
+  const HELLO = ['早安　平安喜樂', '身體健康　萬事如意', '我今天去走走了', '有空一起來走走'];
+
+  const got = MOCK.POSTCARDS.filter(function (p) { return STATE.card(p.id); });
+  document.getElementById('famList').innerHTML = got.map(function (p, i) {
+    const c = STATE.card(p.id);
+    return '<button class="famcard" data-share="傳給家人：' + p.name + '" data-share-elder="no">' +
+      '<span class="famcard__art" data-art="' + p.art + '"' +
+      ' data-seed="' + MOCK.POSTCARDS.indexOf(p) + '" data-wide></span>' +
+      '<span class="famcard__big">' + HELLO[i % HELLO.length] + '</span>' +
+      '<span class="famcard__sub">2026.' + c.date + ' · ' + p.name + '</span>' +
+      '<span class="famcard__act">' +
+        '<span class="ic-ondark" data-icon="share" style="display:block"></span>傳給家人' +
+      '</span></button>';
+  }).join('');
+
+  /* 牆上那張卡直接切到家人分頁 —— 它是同一個功能的另一個入口，不是另一頁。
+     用 onclick 而不是 addEventListener：全站稽核是靠攔截 addEventListener
+     來認「這顆按鈕有行為」的，攔截器裝上之前就綁好的那些它看不到，
+     於是這顆會被報成死按鈕。指派 onclick 它讀得到。 */
+  document.getElementById('toFamily').onclick = function () {
+    const pill = document.querySelector('.pill[data-tab="family"]');
+    if (pill) {
+      pill.click();
+      document.querySelector('.scroll').scrollTop = 0;
+    }
+  };
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+
+  /* ?pill=family 一載入就停在家人分頁。
+     這個變體的差異全在第四個分頁裡，預設的明信片分頁跟主線長得一樣 ——
+     沒有這個參數，縮圖與導覽就只拍得到「多了一顆 pill」。
+     用 SHELL.ready() 排到 interact.js 綁完 pill 之後才點。 */
+  if (new URLSearchParams(location.search).get('pill') === 'family') {
+    SHELL.ready(function () {
+      const pill = document.querySelector('.pill[data-tab="family"]');
+      if (pill) pill.click();
+    });
+  }
+
+  /* 「新」只標示一次，但不能把 lastCard 清掉 ——
+     每日回顧的第二幕（今天多了哪一張）完全靠它。 */
+  STATE.markLastSeen();
+})();
+</script>
+</body>
+</html>
