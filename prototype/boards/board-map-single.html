@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>一張地圖：叫車的那張就是探索的那張 — yoxi 城事概念板</title>
+<!--
+  BOARD-MAP-SINGLE 單地圖（E 型）概念板（1600 × 1000）
+
+  回答什麼
+    城事到底要不要自己一張地圖？E 型的答案是不要：叫車主畫面那一張就是探索那一張。
+    景點常駐在上面，最多四個，點一下浮出小卡，小卡上可以直接「設為下車點」。
+    從「發現一個地方」到「叫車去」只有一步，中間不跳第二張圖。
+
+  怎麼讀
+    左邊是那張地圖本人（真的 OSM 幾何、真的經緯度、spot--compact）。
+    右邊三支手機是同一張圖在畫面裡的樣子：常駐 → 點開 → 進地方詳情。
+
+  刻意沒有的東西
+    · 沒有第四顆分頁（六條承諾之一：分頁永遠只有三顆）。
+    · 沒有商家圖釘、沒有即時路況 —— 地圖上能按的只有那四個地方。
+    · 沒有「探索地圖」這個獨立入口：這一型的主張就是它不存在。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<link rel="stylesheet" href="board.css">
+</head>
+
+<body>
+<div class="board">
+
+  <header class="board__h">
+    <div>
+      <span class="board__kicker">概念板 · 地圖 02 ／ 單地圖 E 型</span>
+      <h1 class="board__t">一張地圖</h1>
+    </div>
+    <p class="board__lead">叫車的那張就是探索的那張。景點常駐在叫車主畫面上，最多四個；
+      點一下浮出小卡，小卡上就能設為下車點 —— 從發現到叫車只有一步。</p>
+    <span class="board__file">boards/board-map-single.html</span>
+  </header>
+
+  <!-- ===== 左：那張地圖本人 ===== -->
+  <div class="board__l">
+    <div class="bigmap" id="big" style="width:900px; height:820px">
+      <span class="bigmap__tag">叫車主畫面的底圖　<small>paper · CORE · spanM 2200</small></span>
+      <div class="bigmap__spots" id="spots"></div>
+    </div>
+    <p class="board__note">中心是原型設定的家：<b>24.7990, 120.9800</b>（東區水利路）。
+      圖上四個景點用 <b>spot--compact</b>，位置來自 assets/map/hs-places.js 的真實經緯度 ——
+      框外的（南寮、青草湖、竹中、內灣）就不畫，不夾到邊緣假裝它在。</p>
+  </div>
+
+  <!-- ===== 右：三支手機＋取捨 ===== -->
+  <div class="board__r">
+
+    <div class="phones phones--3">
+      <div class="phone" data-png="../assets/thumbs/concept-home-paper.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-home.html?style=paper&amp;still=1&amp;bare=1"
+                  title="叫車主畫面：景點常駐" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">景點常駐，最多 4 個
+          <small>concept-map-home.html?style=paper</small></p>
+      </div>
+
+      <div class="phone" data-png="../assets/thumbs/concept-home-peek.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-home.html?style=illus&amp;peek=1&amp;still=1&amp;bare=1"
+                  title="點一下：小卡與設為下車點" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">點一下：小卡＋設為下車點
+          <small>concept-map-home.html?style=illus&amp;peek=1</small></p>
+      </div>
+
+      <div class="phone" data-png="../assets/thumbs/concept-place.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-place.html?id=glass-kiln&amp;still=1&amp;bare=1"
+                  title="地方詳情" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">地方詳情：照片站位
+          <small>concept-map-place.html?id=glass-kiln</small></p>
+      </div>
+    </div>
+
+    <section class="panel panel--flex">
+      <h2 class="panel__t">取捨</h2>
+      <ul class="tradeoffs">
+        <li><b>叫車主畫面多了四個圖釘。</b>那是本業畫面，每多一個可按的東西，叫車就慢一點 ——
+          四個是上限，不是起點；再多就變成寶可夢那種資訊過載。</li>
+        <li><b>六條承諾一條都沒破。</b>分頁還是三顆、首頁沒有新的紅點、
+          概念稿不動任何主線檔案，可按數與到達步數的數字跟現在逐行相同。</li>
+        <li><b>從發現到叫車只有一步。</b>小卡上的「設為下車點」直接填進既有的叫車流程，
+          不跳第二張地圖、不另開一個模式。</li>
+        <li><b>代價是一張圖要服務兩件事。</b>看路（叫車）要乾淨，看地方（探索）要熱鬧；
+          縮放、圖釘密度、標籤上限都只能各讓一半。</li>
+        <li><b>景點少，發現也少。</b>四個常駐等於把「今天去哪」壓成四選一；
+          想看更多只能拉遠，而拉遠就是另一張圖的事了。</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <p class="credit">
+    <b>地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）</b>　·
+    大地圖由 js/hsmap.js 即時繪製；手機是 screens/ 裡真的概念稿（?still=1&amp;bare=1）。
+    明信片與插圖為程式生成示意；實景照片見各頁出處。
+  </p>
+
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script src="board.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* 原型設定的家：東區水利路。叫車主畫面的地圖就以它為中心。 */
+  const m = HSMAP.render(document.getElementById('big'), {
+    style: 'paper',
+    center: [24.7990, 120.9800],
+    spanM: 2200,
+    width: 900,
+    height: 820,
+  });
+
+  /* 常駐的景點：框外的不畫（不夾邊緣），最多四個 —— 這一型的上限。 */
+  const list = m.spotsAt(MOCK.SPOTS)
+    .filter(function (s) { return !s.offMap; })
+    .slice(0, 4);
+  SHELL.renderSpots(document.getElementById('spots'), { spots: list, compact: true });
+})();
+</script>
+</body>
+</html>

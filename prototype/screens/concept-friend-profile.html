@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>他的牆 — yoxi 城事</title>
+<!--
+  CONCEPT-FRIEND-PROFILE 他的牆【概念稿 · 好友】
+
+  ?id=sis｜mom｜ann｜ken｜nb1｜nb2｜nb3（認不得就當 sis）
+
+  這張回答什麼：
+  點進一個朋友之後看到什麼。答案只有兩面牆 ——「他分享的」與「他寄給你的」，
+  加上一顆「寄一張給他」。個人頁不是檔案，是兩疊明信片。
+
+  動了什麼：
+  · 一個人的頁面只由他自己的分享設定決定：shares:'cards' 有牆，'none' 就說沒有，
+    不退而求其次去顯示別的東西。
+  · AI 鄰居多一張「這是 AI 鄰居」的會做／不會做對照，和一顆可以直接關掉他的開關
+    （第二層開關在 concept-friend-neighbors.html 的全域那一顆）。
+
+  刻意沒有的東西：
+  · 沒有「去過幾個地方」
+  · 沒有共同地點
+  · 沒有最後上線
+  · 沒有追蹤鍵
+  · 沒有位置或路線
+
+  反樣式怎麼躲（見 plan B5）：
+  · 比較感 → 整頁沒有任何關於人的數字，牆上也不寫張數。
+  · 通知化 → 沒有已讀、沒有未讀點，「他寄給你的」是一疊卡不是一串訊息。
+  · 監控感 → 阿堅沒打開牆就直說；他的狀態、位置、最後上線一律不取代那句話。
+  · AI 冒充真人 → 紅頭 chip、人物卡 chip、整張會做／不會做、
+    一句「他不一定會回。這件事我們還沒決定。」，再加一顆關掉他的開關。
+  · 小語變成聊天 → 這一頁沒有輸入框，也沒有「回一張」；要寄就走寄卡那一頁。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+</head>
+
+<body data-vision="concept-friend-profile" data-status="light" data-time="21:35">
+<script>
+  /* ?bare=1：給概念板的 iframe 用，拿掉 stage padding 與 device 陰影 */
+  if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');
+</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- 頁首右邊是空的，角標留在預設位置 -->
+      <span class="vision-mark">概念稿 · 好友</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="concept-friend-list.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title u-fill" id="hdrName" style="margin-left:6px">好友</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="concept-note">明信片與插圖是程式生成的示意圖，正式版才會換成 AI 依地點生成；人物是原型虛構的。</p>
+
+        <!-- ===== 人物卡 ===== -->
+        <div style="padding:6px 16px 16px">
+          <div class="card card--pad" id="who"></div>
+        </div>
+
+        <!-- ===== 只有 AI 鄰居才畫：會做／不會做 ＋ 開關 ===== -->
+        <div style="padding:0 16px 16px" id="aiBox" class="u-hidden"></div>
+
+        <!-- ===== 兩面牆 ===== -->
+        <div style="padding:0 16px 12px">
+          <div class="pill-group pill-group--onwhite" data-pills>
+            <button class="pill is-active" data-tab="wall">他分享的</button>
+            <button class="pill" data-tab="tome">他寄給你的</button>
+          </div>
+        </div>
+
+        <section data-panel="wall" style="padding:0 16px 20px">
+          <div id="wallBox"></div>
+        </section>
+
+        <section data-panel="tome" class="u-hidden" style="padding:0 16px 20px">
+          <div id="tomeBox"></div>
+          <p id="tomeHint" class="u-hidden"
+             style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+            點一張翻面，看他寫的那一句。
+          </p>
+        </section>
+
+        <!-- ===== 寄一張 ===== -->
+        <div style="padding:0 16px 32px">
+          <a class="btn-primary" id="sendBtn" href="concept-friend-send.html?to=sis&amp;step=pick">寄一張</a>
+          <p class="u-hidden" id="aiTail"
+             style="margin-top:12px; text-align:center; font-size:12px;
+                    color:var(--yoxi-slate); line-height:1.7">
+            他不一定會回。這件事我們還沒決定。
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/mock-friends.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ---- 是誰 ----
+     認不得的 id 不要畫半張頁面，也不要報錯：退回小芸。 */
+  const want = new URLSearchParams(location.search).get('id') || '';
+  const all  = FRIENDS.people.concat(FRIENDS.neighbors);
+  const m    = all.filter(function (x) { return x.id === want; })[0] || FRIENDS.people[0];
+  const isAI = !!m.isAI;
+
+  /* ---- 頁首 ---- */
+  document.getElementById('hdrName').innerHTML =
+    esc(m.name) + (isAI ? '<span class="chip chip--onred">AI</span>' : '');
+  document.title = m.name + ' — yoxi 城事';
+
+  /* ---- 人物卡 ----
+     真人給 how，鄰居給 title；下面那一行真人是 lastAt，鄰居是他守的那一帶。
+     兩邊都沒有數字。 */
+  const line = isAI ? m.ground : m.lastAt;
+  document.getElementById('who').innerHTML =
+    '<div class="u-row u-gap4">' +
+      '<span class="tile-icon tile-icon--lg tile-icon--round"' +
+      ' style="font-size:19px; font-weight:800">' + esc(m.name.slice(-1)) + '</span>' +
+      '<span class="u-fill">' +
+        '<span style="display:block; font-size:17px; font-weight:800">' + esc(m.name) +
+          (isAI ? '<span class="chip chip--ai">AI</span>' : '') + '</span>' +
+        '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+          esc(isAI ? m.title : m.how) + '</span>' +
+      '</span>' +
+    '</div>' +
+    (m.hello
+      ? '<p style="margin-top:12px; font-size:14px; color:var(--yoxi-slate); line-height:1.7">' +
+        '「' + esc(m.hello) + '」</p>' : '') +
+    (line
+      ? '<p style="margin-top:8px; font-size:13px; color:var(--yoxi-slate)">' + esc(line) + '</p>' : '');
+
+  /* ---- AI 鄰居才有的那一張 ----
+     never 的每一句本來就以「不會」開頭，標題已經說過一次了，這裡去掉重複的兩個字。 */
+  if (isAI) {
+    const box = document.getElementById('aiBox');
+    box.classList.remove('u-hidden');
+
+    const bullets = function (arr, strip) {
+      return arr.map(function (t) {
+        const s = strip ? String(t).replace(/^不會/, '') : t;
+        return '<span style="display:block">· ' + esc(s) + '</span>';
+      }).join('');
+    };
+
+    box.innerHTML =
+      '<div class="card card--pad" style="background:var(--yoxi-cream); border:0">' +
+        '<div style="font-weight:800">這是 AI 鄰居</div>' +
+        '<p style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">' +
+          esc(m.tone) + '</p>' +
+        '<div style="margin-top:12px; display:grid; gap:10px; font-size:14px; line-height:1.6">' +
+          '<div class="u-row u-gap3" style="align-items:flex-start">' +
+            '<span style="flex:none; width:52px; font-weight:800">他會</span>' +
+            '<span>' + bullets(m.does, false) + '</span>' +
+          '</div>' +
+          '<div style="height:1px; background:var(--yoxi-line)"></div>' +
+          '<div class="u-row u-gap3" style="align-items:flex-start">' +
+            '<span style="flex:none; width:52px; font-weight:800; color:var(--yoxi-red)">他不會</span>' +
+            '<span>' + bullets(m.never, true) + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      /* is-on 寫在 HTML 裡：STATE.settings 沒有這個 key，
+         interact.js 的 initSwitches 就不會把它覆寫成關。 */
+      '<div class="card" style="margin-top:8px">' +
+        '<div class="row-nav">' +
+          '<span class="row-nav__body">' +
+            '<span class="row-nav__title" style="font-size:16px">讓' + esc(m.name) + '寄明信片給你</span>' +
+            '<span class="row-nav__sub">關掉之後他不會再寄，已經收到的留著</span>' +
+          '</span>' +
+          '<button class="sw-toggle is-on" data-switch="ai' +
+            esc(m.id.charAt(0).toUpperCase() + m.id.slice(1)) +
+            '" aria-label="讓' + esc(m.name) + '寄明信片給你"></button>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('aiTail').classList.remove('u-hidden');
+  }
+
+  /* ---- 他分享的 ----
+     沒打開牆就直說，而且旁邊那顆「寄一張給他」照樣在。 */
+  const wallBox = document.getElementById('wallBox');
+  const wall = FRIENDS.wallOf(m.id);
+
+  if (m.shares === 'none' || !wall.length) {
+    wallBox.innerHTML =
+      '<div class="card card--pad" style="font-size:14px; line-height:1.75">' +
+        '他沒有打開自己的牆。你還是可以寄一張給他。' +
+      '</div>';
+  } else {
+    FRIENDS.renderWall(wallBox, wall.map(function (c) { return { card: c }; }));
+    /* cardHTML 的第二行預設是「你收過的」—— 那是我自己那一疊的說法。
+       這一面是他分享出來的，所以就地改成他的名字。 */
+    wallBox.querySelectorAll('.postcard__back small').forEach(function (s) {
+      s.textContent = m.name + '分享的';
+    });
+  }
+
+  /* ---- 他寄給你的 ----
+     一張都沒有的時候不要留一句「點一張翻面」在那裡指著空氣。 */
+  const nTome = FRIENDS.renderWall(
+    document.getElementById('tomeBox'),
+    FRIENDS.mail.filter(function (x) { return x.dir === 'in' && x.from === m.id; }),
+    { empty: '他還沒寄過。' }
+  );
+  if (nTome) document.getElementById('tomeHint').classList.remove('u-hidden');
+
+  /* ---- 寄一張 ---- */
+  const btn = document.getElementById('sendBtn');
+  btn.setAttribute('href', 'concept-friend-send.html?to=' + encodeURIComponent(m.id) + '&step=pick');
+  btn.textContent = '寄一張給' + m.name;
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

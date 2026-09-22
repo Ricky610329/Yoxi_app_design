@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>好友 — yoxi 城事</title>
+<!--
+  CONCEPT-FRIEND-LIST 好友列表【概念稿 · 好友】
+
+  這張回答什麼：
+  多人互動的第一個畫面長什麼樣。好友只有兩種來源 —— 你自己加的人，
+  和我們放進去的三個 AI 鄰居。列表只回答「有誰」與「他願不願意給你看」，
+  不回答「他去了幾個地方」。
+
+  動了什麼：
+  ·「AI 鄰居」是全新的角色：初始好友，永遠標示 AI，兩層開關可以關掉。
+  · 入口在側邊選單（跟「邀請好友賺搭車金」同一區），不是第四個時態，
+    所以這一頁沒有 tab bar —— 好友不是一個時態，是側邊選單進來的空間。
+  · 資料層另開一支 js/mock-friends.js，mock.js 一個字都沒改。
+
+  刻意沒有的東西：
+  · 沒有未讀點
+  · 沒有「幾張」
+  · 沒有上線狀態
+  · 沒有推薦好友與搜尋
+  · 沒有排行
+
+  反樣式怎麼躲（見 plan B5）：
+  · 比較感 → 整頁沒有任何關於人的數字，資料層連 count 欄位都不存在。
+  · 通知化 → 沒有 read 欄位，加朋友的 toast 明說原型不會真的送出。
+  · 監控感 → shares 只有 cards／none 兩種，阿堅沒打開牆就寫「他沒有打開牆」，
+    不退而求其次去顯示他的狀態或位置。
+  · AI 冒充真人 → 每一列都掛 chip--ai，區段下方一句「不是真人」，
+    再加一列「AI 鄰居是什麼」把會做／不會做講完。
+  · 小語變成聊天 → 這一頁沒有任何輸入框，也沒有「打招呼」。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+</head>
+
+<body data-vision="concept-friend-list" data-status="light" data-time="21:35">
+<script>
+  /* ?bare=1：給概念板的 iframe 用，拿掉 stage padding 與 device 陰影 */
+  if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');
+</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- 角標預設貼在頁首那一行，但這張的頁首右邊已經有「信箱」。
+           往下挪到頁首那一條紅色的下緣（bar 44px 之後、padding 16px 之內），
+           既不擋動作，也不壓到底下那段誠實聲明。 -->
+      <span class="vision-mark" style="top:calc(var(--statusbar-h) + 43px)">概念稿 · 好友</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="../concept.html"><span data-icon="close"></span></a>
+          <h1 class="hdr-red__title u-fill" style="margin-left:6px">好友</h1>
+          <a class="hdr-red__action u-row u-gap2" href="concept-friend-inbox.html">
+            信箱
+            <span class="arrow arrow--onred"></span>
+          </a>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="concept-note">明信片與插圖是程式生成的示意圖，正式版才會換成 AI 依地點生成；人物是原型虛構的。</p>
+
+        <!-- ===== 入口說明：概念稿不改 drawer.html，用一張卡講清楚 ===== -->
+        <div style="padding:6px 16px 16px">
+          <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+            <div style="font-size:13px; line-height:1.75">
+              正式版的入口在側邊選單，跟「邀請好友賺搭車金」同一區。這六張是概念稿，沒有接上主線。
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 朋友 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="sec">
+            <h2 class="sec__t sec__t--sm">朋友</h2>
+            <span class="sec__m">他們分享出來的才看得到</span>
+          </div>
+          <div class="card" id="people"></div>
+        </div>
+
+        <!-- ===== AI 鄰居 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="sec">
+            <h2 class="sec__t sec__t--sm">AI 鄰居</h2>
+            <span class="sec__m">都會標示，可以關掉</span>
+          </div>
+          <div class="card" id="nbList"></div>
+        </div>
+
+        <!-- ===== 加朋友 ===== -->
+        <div style="padding:0 16px 16px">
+          <div class="sec"><h2 class="sec__t sec__t--sm">加朋友</h2></div>
+          <div class="card">
+            <button class="row-nav" data-toast="邀請碼已複製 —— 原型到這裡，實際會開系統的分享面板">
+              <span class="tile-icon tile-icon--md">
+                <span data-icon="scan" style="width:24px; height:24px; display:block"></span>
+              </span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">用邀請碼加朋友</span>
+                <span class="row-nav__sub" id="inviteSub">你的碼：YOXI-8F3K · 點一下複製</span>
+              </span>
+              <span class="arrow"></span>
+            </button>
+            <button class="row-nav" data-toast="原型沒有做通訊錄這一段。正式版會先問過你。">
+              <span class="tile-icon tile-icon--md">
+                <span data-icon="share" style="width:24px; height:24px; display:block"></span>
+              </span>
+              <span class="row-nav__body">
+                <span class="row-nav__title" style="font-size:16px">從通訊錄找</span>
+                <span class="row-nav__sub">要先問過你，而且只比對已經在用城事的人</span>
+              </span>
+              <span class="arrow"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== 立場 ===== -->
+        <div style="padding:0 16px 32px">
+          <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+            <div style="font-size:13px; line-height:1.75">
+              這裡沒有數字。看不到誰寄了幾張、也看不到誰比較常出門 ——
+              好友這一頁最容易長出比較感，所以連「幾張」都不寫。
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/mock-friends.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* 圓形頭像：名字的末字。跟 vision-family-a 的家人列同一個做法 ——
+     頭貼是使用者的臉，原型不該憑空生一張臉出來。 */
+  function face(name) {
+    return '<span class="tile-icon tile-icon--md tile-icon--round"' +
+           ' style="font-size:17px; font-weight:800">' + esc(name.slice(-1)) + '</span>';
+  }
+
+  /* ---- 朋友 ----
+     沒打開牆的人照樣列出來，而且照樣可以點進去 ——
+     「看不到他的牆」跟「不能寄給他」是兩件事。 */
+  document.getElementById('people').innerHTML =
+    FRIENDS.people.map(function (m, i) {
+      const open  = m.shares === 'cards' && m.wall.length > 0;
+      const sub   = open ? m.how + ' · ' + m.lastAt : m.how + ' · 他沒有打開牆';
+      const thumb = open
+        ? '<span style="width:48px; height:64px; border-radius:4px; overflow:hidden;' +
+          ' position:relative; flex:none" data-art="' +
+          esc(MOCK.findPlace(m.wall[0]).art) + '" data-seed="' + (i + 2) + '"></span>'
+        : '';
+      return '<a class="row-nav" href="concept-friend-profile.html?id=' + esc(m.id) + '">' +
+        face(m.name) +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">' + esc(m.name) + '</span>' +
+          '<span class="row-nav__sub">' + esc(sub) + '</span>' +
+        '</span>' +
+        thumb +
+        '<span class="arrow"></span>' +
+      '</a>';
+    }).join('');
+
+  /* ---- AI 鄰居 ----
+     名字後面一定有 chip：這一頁只要有一列沒標，整個誠實敘事就破了。 */
+  document.getElementById('nbList').innerHTML =
+    FRIENDS.neighbors.map(function (n) {
+      return '<a class="row-nav" href="concept-friend-profile.html?id=' + esc(n.id) + '">' +
+        face(n.name) +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">' + esc(n.name) +
+            '<span class="chip chip--ai">AI</span></span>' +
+          '<span class="row-nav__sub">' + esc(n.title + ' · ' + n.ground) + '</span>' +
+        '</span>' +
+        '<span class="arrow"></span>' +
+      '</a>';
+    }).join('') +
+    '<a class="row-nav" href="concept-friend-neighbors.html">' +
+      '<span class="tile-icon tile-icon--md" style="font-size:19px; font-weight:800">?</span>' +
+      '<span class="row-nav__body">' +
+        '<span class="row-nav__title" style="font-size:16px">AI 鄰居是什麼</span>' +
+        '<span class="row-nav__sub">他們會做什麼、不會做什麼；也可以關掉</span>' +
+      '</span>' +
+      '<span class="arrow"></span>' +
+    '</a>' +
+    '<div style="height:1px; background:var(--yoxi-line)"></div>' +
+    '<div class="privacy-note" style="padding:12px">AI 鄰居是我們做的，不是真人。</div>';
+
+  /* 邀請碼只有一組，從資料層來，不在畫面上寫死第二份 */
+  document.getElementById('inviteSub').textContent = '你的碼：' + FRIENDS.invite + ' · 點一下複製';
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

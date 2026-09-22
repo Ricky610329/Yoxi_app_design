@@ -10,6 +10,7 @@
            --virtual-time-budget=90000 --dump-dom tools/audit-app.html
 
     tools/audit-app.html?scope=vision   改掃 12 張願景探索稿，只看死按鈕
+    tools/audit-app.html?scope=concept  改掃 13 張概念稿（地圖 7 ＋ 好友 6），只看死按鈕
 
   為什麼要有這一份：console 全綠、斷連為零、六條防護承諾全過 —— 然後
   五份人工稽核一次抓到 57 個「看起來可按、實際沒有任何行為」的元素，
@@ -31,6 +32,8 @@
                       這一行同時就是待辦表。
     探索稿（未稽核）  body[data-vision]。想法草圖，還沒到定稿文案的階段，
                       不進 A／B／C；要單獨看就跑 ?scope=vision。
+                      概念稿也掛 body[data-vision="concept-…"]，同理跳過，
+                      要單獨看就跑 ?scope=concept。
 -->
 <style>
   body { font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace; margin: 24px; }
@@ -44,7 +47,12 @@
 
 <script>
 const BASE = '../screens/';
-const VISION_SCOPE = new URLSearchParams(location.search).get('scope') === 'vision';
+const SCOPE = new URLSearchParams(location.search).get('scope');
+const VISION_SCOPE  = SCOPE === 'vision';
+const CONCEPT_SCOPE = SCOPE === 'concept';
+/* 兩個 scope 的共同點：只跑 A（死按鈕），而且不因為 body[data-vision] 就跳過 ——
+   跳過是預設跑法的事，指名要看的時候當然要看。 */
+const SCOPED = VISION_SCOPE || CONCEPT_SCOPE;
 
 /* 這些 href 是刻意的「沒有下一步」：demo 外殼、或是靠 JS 攔下來的。 */
 const OK_HASH = new Set(['nextBtn']);
@@ -236,7 +244,15 @@ const VISION_LIST =
  'vision-plan-a vision-plan-b vision-plan-c ' +
  'vision-health-a vision-health-b vision-health-c';
 
-const SCREENS = (VISION_SCOPE ? VISION_LIST : MAIN_LIST)
+/* 概念稿。不含 concept-map-tiles：那一張要連網才畫得出圖磚，
+   掛在 iframe 裡等 CDN 會把整份稽核拖住，而且它本來就不進任何 demo 流程。 */
+const CONCEPT_LIST =
+ 'concept-map-explore concept-map-home concept-map-footprint concept-map-place ' +
+ 'concept-map-iso concept-map-styles concept-map-ride ' +
+ 'concept-friend-list concept-friend-profile concept-friend-send ' +
+ 'concept-friend-inbox concept-friend-neighbors concept-friend-push';
+
+const SCREENS = (CONCEPT_SCOPE ? CONCEPT_LIST : VISION_SCOPE ? VISION_LIST : MAIN_LIST)
   .split(/\s+/).filter(Boolean).map(function (s) { return /\.html/.test(s) ? s : s + '.html'; });
 
 const deadOut = {};      /* 檔名 → 死按鈕清單 */
@@ -281,12 +297,12 @@ function scanOne(s, done) {
         try { shell = win && win.SHELL; } catch (e) {}
         if (!shell) return finish('missing');
         const isVision = !!(doc.body && doc.body.hasAttribute('data-vision'));
-        if (isVision && !VISION_SCOPE) return finish('vision');
+        if (isVision && !SCOPED) return finish('vision');
         let payload;
         try {
           payload = {
             dead: deadClicks(doc),
-            words: (VISION_SCOPE || isVision || WORD_OK[s]) ? [] : bannedHits(doc),
+            words: (SCOPED || isVision || WORD_OK[s]) ? [] : bannedHits(doc),
           };
         } catch (e) {
           payload = { dead: [], words: [] };
@@ -319,7 +335,7 @@ function pump() {
         if (payload.words.length) wordOut[s] = payload.words;
       }
       if (finished === SCREENS.length) {
-        if (VISION_SCOPE) report({});
+        if (SCOPED) report({});
         else runProbes();
       } else pump();
     });
@@ -343,7 +359,8 @@ function report(res) {
   const L = [];
   let bad = 0;
 
-  if (VISION_SCOPE) L.push('（scope=vision：12 張願景探索稿，只跑死按鈕這一段）');
+  if (VISION_SCOPE)  L.push('（scope=vision：12 張願景探索稿，只跑死按鈕這一段）');
+  if (CONCEPT_SCOPE) L.push('（scope=concept：13 張概念稿，只跑死按鈕這一段）');
 
   L.push('── A 看起來可按、實際沒有行為的元素 ' + '─'.repeat(20));
   const files = Object.keys(deadOut).sort();
@@ -365,7 +382,7 @@ function report(res) {
     L.push('  —     探索稿（未稽核）' + visionSkip.length + ' 張：' + visionSkip.sort().join('、'));
   }
 
-  if (!VISION_SCOPE) {
+  if (!SCOPED) {
     L.push('');
     L.push('── B 同一個數字在不同畫面一不一致 ' + '─'.repeat(20));
     const groups = {};

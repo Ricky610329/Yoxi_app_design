@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 · 探索地圖的六種質感 — yoxi 城事</title>
+<!--
+  概念稿 · 地圖的質感（探索地圖）【不在 demo 流程】
+
+  這張回答什麼：同一份新竹的真實地理資料（OpenStreetMap），探索地圖可以長成幾種
+  「真的會這樣」的樣子，而且還是同一個 app。
+
+  怎麼看：?style=paper|navy|illus|iso|fog，&tilt=1 給任何平面底圖加一點透視。
+  畫面頂端那條切換列是鷹架（data-concept-ui），不是產品的一部分。
+
+  跟 map.html 的差別只有一件事：底圖。景點圖釘、小卡、定位鈕、拉遠鈕、tab bar
+  全部原封不動 —— 和諧的意思是「零件不換、只換紙」。
+  · 景點的位置是真實經緯度（assets/map/hs-places.js），內灣 28 km 在圖外就不畫。
+  · 同時最多 10 個景點的規則照舊。
+  · 紅色仍只在頁首、今天的地方；海軍藍仍只在可按的東西。
+
+  刻意沒有的東西：沒有 Google 那種商家圖釘、沒有街道名（只有區名與幾個公園／市場）、
+  沒有即時交通、沒有 3D 建物的陰影特效（iso 只用三階明度）。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL）—— 右下角每一張都有署名。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+</head>
+
+<body data-vision="concept-map-explore" data-tab="explore" data-status="light" data-time="8:10">
+<script>if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark" style="right:auto; left:64px; top:calc(var(--statusbar-h) + 14px)">概念稿 · 質感探索</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <h1 class="hdr-red__title">探索</h1>
+          <nav class="viewtoggle">
+            <a href="explore.html">
+              <span data-icon="viewCards" style="width:15px;height:15px;display:block"></span>
+              卡片
+            </a>
+            <a class="is-on" href="concept-map-explore.html">
+              <span data-icon="viewMap" style="width:15px;height:15px;display:block"></span>
+              地圖
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <!-- ===== 地圖 ===== -->
+      <div class="map u-fill" data-pan id="mapArea">
+
+        <!-- 可傾斜的平面：底圖、你的位置、景點都在裡面，一起轉。
+             外層帶 data-panlayer，interact.js 的平移才會整個搬走。 -->
+        <div class="hsmap-tilt" data-panlayer id="plane" style="--tilt:0; --tilt-scale:1">
+          <div class="hsmap-tilt__plane">
+            <svg class="map__svg" id="mapSvg"></svg>
+            <div class="pin" id="mePin" style="left:46%; top:56%; z-index:7">
+              <span class="pin__drop" style="width:38px; height:38px">
+                <span data-icon="hail" style="width:20px;height:20px;display:block"></span>
+              </span>
+            </div>
+            <div id="spots"></div>
+          </div>
+        </div>
+
+        <!-- 鷹架：切換底圖（不是產品） -->
+        <div class="styleswitch" data-concept-ui id="styleswitch"></div>
+
+        <!-- 拉遠看整座城市 -->
+        <a class="fab" href="concept-map-footprint.html?style=fog" style="top:12px; right:16px" aria-label="整座城市">
+          <span data-icon="zoomOut"></span>
+        </a>
+        <button class="fab" data-recenter style="top:76px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 圖例：只有霧化足跡才需要 -->
+        <div class="maplegend" id="legend" style="position:absolute; left:16px; top:12px; z-index:10;
+                    display:none; gap:10px; padding:7px 11px; border-radius:999px;
+                    background:rgba(255,255,255,.94); box-shadow:var(--sh-card);
+                    font-size:11px; font-weight:700; color:var(--yoxi-slate)">
+          <span class="u-row" style="gap:5px">
+            <i style="width:12px;height:12px;border-radius:var(--r-btn);background:#fff;
+                      border:1px solid var(--yoxi-line)"></i>去過
+          </span>
+          <span class="u-row" style="gap:5px">
+            <i style="width:12px;height:12px;border-radius:var(--r-btn);
+                      background:var(--map-fog); border:1px solid var(--yoxi-line)"></i>還沒
+          </span>
+        </div>
+
+        <!-- 點圖釘後浮出的小卡（原封不動） -->
+        <a class="peek" id="peek" href="concept-map-place.html">
+          <span class="peek__img"></span>
+          <span class="u-fill" style="min-width:0">
+            <span data-peek-name style="display:block; font-weight:800; line-height:1.3"></span>
+            <span data-peek-meta style="display:block; font-size:12px; color:var(--yoxi-slate);
+                  margin-top:2px"></span>
+            <span data-peek-hook style="display:block; font-size:13px; margin-top:5px;
+                  line-height:1.5; overflow:hidden; text-overflow:ellipsis;
+                  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical"></span>
+          </span>
+          <span class="arrow"></span>
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const style = HSMAP.STYLES.indexOf(q.get('style')) >= 0 ? q.get('style') : 'paper';
+  const tilt = q.get('tilt') === '1' && style !== 'iso';
+
+  /* ---- 鷹架：切換列 ------------------------------------------------ */
+  const NAMES = { paper: '紙感', navy: '夜間', illus: '插畫', iso: '微 3D', fog: '霧化' };
+  const go = function (s, t) { location.search = '?style=' + s + (t ? '&tilt=1' : ''); };
+  const sw = document.getElementById('styleswitch');
+  sw.innerHTML = '<span class="styleswitch__k">底圖</span>' +
+    HSMAP.STYLES.map(function (s) {
+      return '<button class="styleswitch__b' + (s === style ? ' is-on' : '') + '" type="button" data-s="' + s + '">' + NAMES[s] + '</button>';
+    }).join('') +
+    '<button class="styleswitch__b' + (tilt ? ' is-on' : '') + '" type="button" data-t="1"' + (style === 'iso' ? ' disabled' : '') + '>傾斜</button>';
+  /* 每顆各自綁 onclick（不用父層委派）：全站稽核是逐顆看有沒有行為的 */
+  sw.querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () {
+      if (b.dataset.s) go(b.dataset.s, tilt && b.dataset.s !== 'iso');
+      else go(style, !tilt);
+    };
+  });
+
+  /* ---- 傾斜：只動 CSS 變數，markup 已經在 HTML 裡 --------------------- */
+  const plane = document.getElementById('plane');
+  if (tilt) { plane.style.setProperty('--tilt', '52'); plane.style.setProperty('--tilt-scale', '1.22'); }
+
+  /* ---- 底圖 --------------------------------------------------------- */
+  const seen = MOCK.SPOTS.filter(function (s) { return s.state === 'seen' || s.state === 'today'; }).map(function (s) { return s.id; });
+  const isIso = style === 'iso';
+  const m = HSMAP.render(document.getElementById('mapSvg'), {
+    style: style,
+    center: isIso ? 'temple' : [24.80296, 120.97304],   /* 車站與城隍廟之間；iso 拉近到廟口 */
+    spanM: isIso ? 720 : 1900,
+    fog: style === 'fog' ? { seen: seen, fade: ['harbour'], radiusM: 380 } : false,
+  });
+  document.getElementById('legend').style.display = style === 'fog' ? 'flex' : 'none';
+
+  /* ---- 你的位置：東區水利路（原型設定的家）---------------------------- */
+  const me = m.project(24.7990, 120.9800);
+  const pin = document.getElementById('mePin');
+  if (me[0] > 0 && me[0] < m.width && me[1] > 60 && me[1] < m.height) {
+    pin.style.left = (me[0] / m.width * 100).toFixed(1) + '%';
+    pin.style.top  = (me[1] / m.height * 100).toFixed(1) + '%';
+  } else {
+    pin.style.display = 'none';
+  }
+
+  /* ---- 景點：真實經緯度 → 相對地圖框的百分比，其餘照舊 -------------------- */
+  const list = m.spotsAt(MOCK.SPOTS).filter(function (s) { return !s.offMap; }).slice(0, 10);
+  const spots = SHELL.renderSpots(document.getElementById('spots'), { spots: list });
+
+  /* ---- 點圖釘 → 底部小卡（不跳頁）------------------------------------ */
+  const peek = document.getElementById('peek');
+  const pk = SHELL.bindPeek(peek, spots, {
+    onOpen: function (s) { peek.href = 'concept-map-place.html?id=' + s.id; },
+  });
+  const today = spots.findIndex(function (s) { return s.state === 'today'; });
+  if (today >= 0 && !isIso) pk.show(today);
+  else if (spots.length) pk.show(0);
+})();
+</script>
+</body>
+</html>

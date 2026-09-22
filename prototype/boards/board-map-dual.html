@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>兩張地圖：探索一張、足跡一張 — yoxi 城事概念板</title>
+<!--
+  BOARD-MAP-DUAL 雙地圖（變體 0 型）概念板（1600 × 1000）
+
+  回答什麼
+    如果不走 E 型的單地圖，另一條路是讓兩張圖各自做好一件事：
+    探索用近景（CORE，1.9 km，看得到巷子），足跡用整座城市（WIDE，7 km，看得到還沒去的地方）。
+    兩張的紙不同、縮放不同、能按的東西也不同。
+
+  怎麼讀
+    左上是探索那張（插畫風，景點常駐）；左下是足跡那張（霧化，沒有景點，只有覆蓋率）。
+    覆蓋率那個數字是 handle.coverage() 從畫出來的那一張實際量的，不是寫死的。
+    右邊第三支手機是收藏頁 —— 它刻意沒有地圖，這一板的第三個主張。
+
+  刻意沒有的東西
+    · 足跡圖上沒有景點圖釘：那張圖回答的是「還有多少沒走」，不是「今天去哪」。
+    · 沒有第三張地圖。收藏是一疊明信片，不是地圖上的點。
+    · 沒有百分比的目標值、沒有進度條、沒有「再走 3 個就滿」。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<link rel="stylesheet" href="board.css">
+</head>
+
+<body>
+<div class="board">
+
+  <header class="board__h">
+    <div>
+      <span class="board__kicker">概念板 · 地圖 03 ／ 雙地圖 0 型</span>
+      <h1 class="board__t">兩張地圖</h1>
+    </div>
+    <p class="board__lead">探索一張、足跡一張。探索是插畫風的近景（CORE，1.9 km），
+      足跡是霧化的整座城市（WIDE，7 km）。各自最佳化，代價是使用者要學兩張圖。</p>
+    <span class="board__file">boards/board-map-dual.html</span>
+  </header>
+
+  <!-- ===== 左：上探索、下足跡 ===== -->
+  <div class="board__l">
+    <div class="bigmap" id="bigExplore" style="width:900px; height:400px">
+      <span class="bigmap__tag">探索的地圖　<small>illus · CORE · spanM 1900</small></span>
+      <div class="bigmap__spots" id="spots"></div>
+    </div>
+
+    <div class="bigmap" id="bigFog" style="width:900px; height:400px">
+      <span class="bigmap__tag">城市足跡　<small>fog · WIDE · spanM 7000</small></span>
+      <span class="bigmap__chip" id="cov">這一框裡你走過　<b>—</b>　%</span>
+    </div>
+
+    <p class="board__note">兩張同一個原點、同一套投影，但不是同一份資料：上面是 CORE（3 × 3 km、
+      有建物與巷子），下面是 WIDE（11 × 12 km、只有主幹、鐵路、河與海岸線）。
+      覆蓋率由 <b>handle.coverage()</b> 以 60 × 60 取樣格現算，沒有寫死的數字。</p>
+  </div>
+
+  <!-- ===== 右：三支手機＋取捨 ===== -->
+  <div class="board__r">
+
+    <div class="phones phones--3">
+      <div class="phone" data-png="../assets/thumbs/concept-explore-illus.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-explore.html?style=illus&amp;still=1&amp;bare=1"
+                  title="探索的地圖" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">探索的地圖
+          <small>concept-map-explore.html?style=illus</small></p>
+      </div>
+
+      <div class="phone" data-png="../assets/thumbs/concept-footprint-fog.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-footprint.html?style=fog&amp;still=1&amp;bare=1"
+                  title="城市足跡" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">城市足跡
+          <small>concept-map-footprint.html?style=fog</small></p>
+      </div>
+
+      <!-- 主線的收藏頁沒有 bare 模式，所以用大一點的視窗把 .device 整個裝進來。
+           它會連手機黑邊一起出現 —— 這是刻意的：它是主線，不是概念稿。 -->
+      <div class="phone phone--raw" data-png="../assets/thumbs/album.png">
+        <div class="phone__box">
+          <iframe src="../screens/album.html?still=1"
+                  title="收藏（主線）" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">收藏（沒有地圖）
+          <small>album.html — 主線畫面，一字未動</small></p>
+      </div>
+    </div>
+
+    <section class="panel panel--flex">
+      <h2 class="panel__t">取捨</h2>
+      <ul class="tradeoffs">
+        <li><b>兩張圖各自最佳化。</b>探索只要看得到巷子（1.9 km），足跡只要看得到整座城（7 km）；
+          一張圖做不到兩種尺度，硬要做就兩邊都難看。</li>
+        <li><b>代價是使用者要學兩張圖。</b>同樣是新竹，配色、縮放、能按的東西全都不同 ——
+          第一次打開足跡的人會先愣一下。</li>
+        <li><b>足跡圖上沒有圖釘。</b>它回答「還有多少沒走」，不回答「今天去哪」；
+          放上圖釘，兩張圖就變成同一張的兩個縮放，這一型就沒有理由存在了。</li>
+        <li><b>收藏頁刻意沒有地圖。</b>第三張圖會讓人以為收藏＝地圖上的點，
+          但收藏是一疊明信片，過去的時態不需要座標。</li>
+        <li><b>兩張之間要有一條路。</b>探索頁右上的拉遠鈕就是那條路；
+          少了它，足跡那張圖就只能從側邊選單進來，多數人永遠不會看到。</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <p class="credit">
+    <b>地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）</b>　·
+    兩張大地圖由 js/hsmap.js 即時繪製；手機是 screens/ 裡真的頁面（?still=1）。
+    明信片與插圖為程式生成示意；實景照片見各頁出處。
+  </p>
+
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-wide.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script src="board.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ---- 上：探索（近景、插畫、景點常駐）--------------------------------- */
+  const ex = HSMAP.render(document.getElementById('bigExplore'), {
+    style: 'illus',
+    center: [24.80296, 120.97304],     /* 車站與城隍廟之間，跟手機那張同一個中心 */
+    spanM: 1900,
+    width: 900,
+    height: 400,
+  });
+  const list = ex.spotsAt(MOCK.SPOTS).filter(function (s) { return !s.offMap; });
+  SHELL.renderSpots(document.getElementById('spots'), { spots: list, compact: true });
+
+  /* ---- 下：足跡（整座城市、霧化、沒有景點）----------------------------- */
+  const seen = MOCK.SPOTS
+    .filter(function (s) { return s.state === 'seen' || s.state === 'today'; })
+    .filter(function (s) { return s.id !== 'harbour' && s.id !== 'rail'; })
+    .map(function (s) { return s.id; });
+  /* 半徑在城市尺度要放大：420 m 在 spanM 7000 上只有 54 px，
+     看起來像沒畫。900 m 才看得出「你走過的是哪幾塊」。 */
+  const fog = { seen: seen, fade: ['harbour', 'rail'], radiusM: 900 };
+
+  const fp = HSMAP.render(document.getElementById('bigFog'), {
+    style: 'fog',
+    center: [24.8016, 120.9717],       /* 新竹車站＝兩份資料共用的原點 */
+    spanM: 7000,
+    dataset: 'wide',
+    width: 900,
+    height: 400,
+    layers: { boundary: true },        /* 行政區界：整座城市的尺度需要一點骨架 */
+    fog: fog,
+  });
+
+  /* 覆蓋率：量這一張畫出來的圖，不是寫死的數字 */
+  document.querySelector('#cov b').textContent = fp.coverage(fog);
+})();
+</script>
+</body>
+</html>

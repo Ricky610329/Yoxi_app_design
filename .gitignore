@@ -1,0 +1,3 @@
+# 工具的快取與 Python 位元碼，不進版控
+prototype/tools/.cache/
+__pycache__/

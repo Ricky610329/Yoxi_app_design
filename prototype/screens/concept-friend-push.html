@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>好友的推播 — yoxi 城事</title>
+<!--
+  CONCEPT-FRIEND-PUSH 好友的推播【概念稿 · 好友】
+
+  這張回答什麼：
+  朋友寄了一張明信片給你，手機上會發生什麼事。答案是：預設什麼都不會發生。
+  這張畫的是「你自己去打開它」之後的樣子 —— 一天一則，而且是彙整成一句。
+
+  動了什麼：
+  · 好友的推播獨立於現有的兩則（早上的地方、晚上的回顧），而且預設是關的。
+  · 通知只帶一句話，點下去進信箱，不是進某一張卡 ——
+    進到單張卡就等於幫你決定先看誰的。
+
+  刻意沒有的東西：
+  · 沒有數字角標
+  · 沒有把小語寫在通知裡
+  · 沒有「快回他」
+
+  反樣式怎麼躲（見 plan B5）：
+  · 通知化 → 預設關；打開也只有一則、彙整成一句，不是一張一則；
+    通知上沒有任何可以「處理掉」的動作鍵。
+  · 比較感 → 通知裡沒有數字，角標也沒有。
+  · 小語變成聊天 → 小語不出現在鎖定畫面；要看就自己打開信箱。
+
+  版型抄 screens/push.html:31-49，那一張是 demo 工具，這一張是概念稿，兩邊都沒動到對方。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+</head>
+
+<body data-vision="concept-friend-push" data-status="light" data-time="18:40">
+<script>
+  /* ?bare=1：給概念板的 iframe 用，拿掉 stage padding 與 device 陰影 */
+  if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');
+</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <!-- .pushmock 是 z-index 96 的整片浮層，角標預設的 95 會被蓋掉 -->
+      <span class="vision-mark" style="z-index:98">概念稿 · 好友</span>
+
+      <!-- 鎖定畫面沒有頁首，返回鍵就浮在左上角 -->
+      <a class="hdr-red__close" data-back href="../concept.html"
+         style="position:absolute; left:var(--gutter); top:calc(var(--statusbar-h) + 4px);
+                z-index:97; color:var(--yoxi-white)">
+        <span data-icon="close"></span>
+      </a>
+
+      <div class="pushmock" style="position:absolute; inset:0">
+        <div class="pushmock__clock">
+          <div class="pushmock__time">18:40</div>
+          <div class="pushmock__date">9月21日 星期日</div>
+        </div>
+
+        <a class="pushmock__card" href="concept-friend-inbox.html">
+          <span class="pushmock__app">y</span>
+          <span style="flex:1; min-width:0">
+            <span class="pushmock__t">yoxi 城事</span>
+            <span class="pushmock__b">小芸寄了一張明信片給你。</span>
+          </span>
+        </a>
+
+        <p style="margin-top:auto; margin-bottom:48px; text-align:center;
+                  color: var(--yoxi-white); opacity:.45; font-size:12px; line-height:1.8">
+          這是打開之後的樣子。好友的推播預設是關的。<br>
+          打開也只有一則，而且是彙整成一句 —— 不是一張一則。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/mock-friends.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+</body>
+</html>

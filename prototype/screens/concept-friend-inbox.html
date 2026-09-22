@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>信箱 — yoxi 城事</title>
+<!--
+  CONCEPT-FRIEND-INBOX 信箱【概念稿 · 好友】
+
+  回答什麼
+    收到的明信片放在哪裡、長什麼樣。答案是一面牆，不是一串對話。
+    兩顆 pill：收到的（?pill=in）／我寄出的（?pill=out）——
+    「寄出的」跟「收到的」用同一面牆、同一種卡，因為它們是同一件事的兩個方向。
+
+  動了什麼
+    · 版型抄 notify.html 的紅頭＋pills，但這裡的 pill 不是「最新消息／個人通知」，
+      是方向。分組用 FRIENDS.dayLabel()：今天／昨天／更早。
+    · 每一張卡是 FRIENDS.cardHTML()，左上角 .card-from 寫誰寄的，
+      AI 鄰居一定多一個「· AI」。點一下翻面看那一句話。
+    · 分組標題右邊的 .sec__m 是空的。牆的共用零件本來會印「3/8」，
+      這裡刻意不給 —— 收了幾張不是成績。
+
+  刻意沒有的東西（plan B2）
+    · 沒有未讀點：mock-friends.js 的 mail 連 read 欄位都沒有
+    · 沒有已讀、沒有「他還沒看你的」
+    · 卡上沒有「回一張」按鈕 —— 一有回覆鍵，這一頁就會開始像聊天室
+    · 沒有刪除／封存／排序／搜尋
+    · 沒有數量：不寫幾張、不寫幾個人
+
+  反樣式怎麼躲（plan B5）
+    · 通知化 —— 資料層沒有 read，畫面就長不出紅點；底下那一行明講
+      「沒有未讀標記。誰都不知道你什麼時候看了。」
+    · 比較感 —— 整頁零數字
+    · AI 冒充真人 —— 卡角標「阿源 · AI」，跟真人的卡一眼分得出來
+    · 小語變成聊天 —— 沒有回覆鍵，要回就是「寄一張給朋友」，重新挑一張卡
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+</head>
+
+<body data-vision="concept-friend-inbox" data-status="light" data-time="21:35">
+<script>
+  /* ?bare=1：給概念板的 iframe 用，拿掉舞台留白與手機外框陰影。 */
+  if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');
+</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark">概念稿 · 好友</span>
+
+      <header class="hdr-red">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="concept-friend-list.html">
+            <span data-icon="close"></span>
+          </a>
+        </div>
+        <h1 class="hdr-red__title">信箱</h1>
+        <div class="hdr-red__pills">
+          <div class="pill-group" data-pills>
+            <button class="pill is-active" data-tab="in">收到的</button>
+            <button class="pill" data-tab="out">我寄出的</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll sheet-top" style="margin-top:-16px; background:var(--yoxi-mist)">
+        <p class="concept-note">明信片與插圖是程式生成的示意圖，正式版才會換成 AI 依地點生成；人物是原型虛構的。</p>
+
+        <!-- 收到的 -->
+        <div data-panel="in" id="panelIn" style="padding:4px 16px 0"></div>
+
+        <!-- 我寄出的。同一面牆、同一種卡，只是角標從「誰寄的」換成「寄給誰」。 -->
+        <div data-panel="out" id="panelOut" class="u-hidden" style="padding:4px 16px 0"></div>
+
+        <div style="padding:20px 16px 28px">
+          <!-- 要回一張，就跟第一次寄一樣：挑一張自己走到過的卡。
+               這裡不做「回覆」這個動作，也就沒有「欠一則回覆」這回事。 -->
+          <a class="btn-ghost" href="concept-friend-list.html">寄一張給朋友</a>
+
+          <div class="privacy-note" style="margin-top:14px">
+            沒有未讀標記。誰都不知道你什麼時候看了。
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/mock-friends.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const ORDER = ['今天', '昨天', '更早'];
+
+  /* 一個方向的信件，依 dayLabel 分成三組。
+     空的那一組整組不畫 —— 一個空的「今天」比沒有這一組更像在催人。 */
+  function fill(el, dir) {
+    const by = {};
+    FRIENDS.mail.forEach(function (m) {
+      if (m.dir !== dir) return;
+      const g = FRIENDS.dayLabel(m.at);
+      (by[g] = by[g] || []).push(m);
+    });
+
+    const groups = ORDER.filter(function (g) { return by[g] && by[g].length; });
+
+    /* .sec__m 留空：共用的牆會在這裡印「3/8」，那是收集進度，不是信箱該有的東西。 */
+    el.innerHTML = groups.map(function (g) {
+      return '<section class="wallgroup">' +
+        '<div class="sec" style="margin-bottom:10px">' +
+          '<h2 class="sec__t sec__t--sm">' + g + '</h2>' +
+          '<span class="sec__m"></span>' +
+        '</div>' +
+        '<div data-group="' + g + '"></div>' +
+      '</section>';
+    }).join('');
+
+    let n = 0;
+    groups.forEach(function (g) {
+      const host = el.querySelector('[data-group="' + g + '"]');
+      n += FRIENDS.renderWall(host, by[g].map(function (m) {
+        return { card: m.card, note: m.note, at: m.at, from: m.from, to: m.to };
+      }));
+    });
+    return n;
+  }
+
+  const nIn  = fill(document.getElementById('panelIn'),  'in');
+  const nOut = fill(document.getElementById('panelOut'), 'out');
+
+  /* 對不上就大聲喊：牆上少一張沒有人會發現。 */
+  const want = { in: 0, out: 0 };
+  FRIENDS.mail.forEach(function (m) { want[m.dir]++; });
+  if (nIn !== want.in || nOut !== want.out) {
+    console.error('信箱：收到的 ' + nIn + '/' + want.in + '、寄出的 ' + nOut + '/' + want.out);
+  }
+
+  /* ?pill=out 直接開在「我寄出的」。interact.js 的 pill 在 DOMContentLoaded
+     才綁，所以要排到 SHELL.ready 裡才點得動。 */
+  if (new URLSearchParams(location.search).get('pill') === 'out') {
+    SHELL.ready(function () {
+      const b = document.querySelector('.pill[data-tab="out"]');
+      if (b) b.click();
+    });
+  }
+})();
+</script>
+</body>
+</html>

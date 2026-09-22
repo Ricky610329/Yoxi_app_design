@@ -1,0 +1,400 @@
+/* ==========================================================================
+   yoxi 城事 — 概念板的共用樣式（1600 × 1000）
+
+   只有 boards/*.html 載入它。主線畫面、概念手機稿都不載，
+   所以這裡的任何規則都不會動到六條承諾。
+
+   版面的算術（改高度之前先看這一段，不然一定裁到東西）
+     1000 = 22（上）+ 頂條 55 + 14 + 中段 859 + 14 + 署名 18 + 18（下）
+     1552 = 1600 − 24 × 2（左右）
+     中段 = 900（大地圖）+ 20 +632（右欄）
+
+   顏色紀律照舊：紅只給標題的那一個字與地圖上的 pin；海軍藍給可按的東西與正文。
+   地圖表面的顏色來自 js/hsmap.js 的 PALETTE，板上不另外調色。
+   ========================================================================== */
+
+html, body { width: 1600px; height: 1000px; margin: 0; overflow: hidden; }
+body { background: var(--yoxi-mist); color: var(--yoxi-navy); }
+
+.board {
+  width: 1600px;
+  height: 1000px;
+  padding: 22px 24px 18px;
+  display: grid;
+  grid-template-columns: 900px 1fr;
+  grid-template-rows: auto 1fr auto;
+  column-gap: 20px;
+  row-gap: 14px;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   頂條：紅色的小標、34 px 的題、16 px 的引言
+   引言擺在題的右邊而不是下面 —— 擺下面會把中段擠掉 40 px，大地圖就裁到了。
+   -------------------------------------------------------------------------- */
+.board__h {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  min-width: 0;
+}
+.board__kicker {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .1em;
+  color: var(--yoxi-red);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.board__t {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-heavy);
+  line-height: 1.15;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+.board__lead {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--yoxi-slate);
+  max-height: 50px;
+  overflow: hidden;
+}
+.board__file {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  font-size: 10px;
+  font-weight: var(--fw-heavy);
+  letter-spacing: .06em;
+  color: var(--yoxi-slate-lite);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   中段：左邊大地圖、右邊手機與說明
+   -------------------------------------------------------------------------- */
+.board__l,
+.board__r {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.board__r { gap: 14px; }
+
+/* 大地圖的框。.spot 會落在它裡面，所以一定要 position:relative。 */
+.bigmap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-card);
+  flex: none;
+}
+.bigmap__spots { position: absolute; inset: 0; z-index: 6; }
+
+/* 左上角的小牌：這一張是哪一種紙、哪一份資料 */
+.bigmap__tag {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 10;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: rgba(252, 253, 255, .94);
+  box-shadow: var(--sh-card);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-navy);
+  letter-spacing: .02em;
+}
+.bigmap__tag small { font-weight: var(--fw-bold); color: var(--yoxi-slate); }
+
+/* 覆蓋率那一顆：數字由 handle.coverage() 量出來，不寫死 */
+.bigmap__chip {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: var(--r-pill);
+  background: rgba(252, 253, 255, .94);
+  box-shadow: var(--sh-card);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-slate);
+}
+.bigmap__chip b {
+  font-size: 20px;
+  font-style: italic;
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-navy);
+  letter-spacing: .01em;
+}
+
+/* 大地圖底下那行技術說明（中心、縮放、資料集） */
+.board__note {
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--yoxi-slate);
+}
+.board__note b { color: var(--yoxi-navy); font-weight: var(--fw-heavy); }
+
+/* --------------------------------------------------------------------------
+   六格對照（styles 板）：2 欄 × 3 列，430 × 248
+   同中心、同縮放、同一份幾何 —— 六格是受控實驗，不是拼貼。
+   -------------------------------------------------------------------------- */
+.smaps {
+  display: grid;
+  grid-template-columns: repeat(2, 430px);
+  column-gap: 40px;
+  row-gap: 14px;
+  flex: none;
+}
+.smap {
+  position: relative;
+  width: 430px;
+  height: 216px;             /* 3 列 × (216 + 5 + 35) + 2 × 14 = 796，中段放得下 */
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--yoxi-white);
+  box-shadow: var(--sh-card);
+}
+.scell__cap {
+  margin-top: 5px;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  line-height: 1.45;
+  color: var(--yoxi-navy);
+}
+.scell__cap small {
+  font-size: var(--fs-xs);   /* 說明壓成一行；兩行就會把第三列擠出板外 */
+  font-weight: var(--fw-reg);
+  color: var(--yoxi-slate);
+  letter-spacing: .01em;
+}
+
+/* --------------------------------------------------------------------------
+   手機：iframe 裝的是真的概念稿（?still=1&bare=1），外框由這裡畫
+   ?png=1 時 board.js 把 iframe 換成 data-png 的縮圖；縮圖沒拍，
+   框裡就留「縮圖尚未產生」，版面高度一格都不動。
+   -------------------------------------------------------------------------- */
+.phones {
+  --s: .62;                        /* 390 × 844 → 242 × 523 */
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex: none;
+}
+.phones--3 { --s: .50; gap: 22px; }   /* 三支排一列：632 px 只放得下 0.50 */
+
+.phone {
+  --pw: 390px;
+  --ph: 844px;
+  flex: none;
+  width: calc(var(--pw) * var(--s));
+}
+/* 主線畫面（例：album.html）沒有 bare 模式，用大一點的視窗把 .stage 的
+   留白與手機外框整個裝進來，再縮到跟旁邊一樣大。 */
+.phone--raw { --pw: 450px; --ph: 973px; --s: .4333; }
+
+.phone__box {
+  position: relative;
+  width: calc(var(--pw) * var(--s));
+  height: calc(var(--ph) * var(--s));
+  border-radius: 30px;
+  box-shadow: 0 0 0 7px #1B1B1F;
+  overflow: hidden;
+  background: var(--yoxi-white);
+}
+.phone__box > iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: var(--pw);
+  height: var(--ph);
+  border: 0;
+  background: var(--yoxi-white);
+  transform: scale(var(--s));
+  transform-origin: top left;
+}
+.phone__png {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.phone__na {                        /* 墊在最底下：iframe／img 一沒了就露出來 */
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-slate-lite);
+  background: repeating-linear-gradient(135deg, #F3F7FA 0 10px, #EAF1F5 10px 20px);
+}
+.phone__cap {
+  margin-top: 9px;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  line-height: 1.4;
+  color: var(--yoxi-navy);
+}
+.phone__cap small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: var(--fw-reg);
+  line-height: 1.4;
+  color: var(--yoxi-slate);
+  word-break: break-all;
+}
+
+/* --------------------------------------------------------------------------
+   右欄的白卡
+   -------------------------------------------------------------------------- */
+.panel {
+  background: var(--yoxi-white);
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-card);
+  padding: 13px 16px 15px;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel--flex { flex: 1 1 auto; }
+.panel__t {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .1em;
+  color: var(--yoxi-slate);
+  margin-bottom: 9px;
+}
+
+/* 色票表：列＝語意圖層，欄＝preset。表以外的顏色不准出現。 */
+.palette { width: 100%; border-collapse: collapse; }
+.palette th {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  color: var(--yoxi-navy);
+  text-align: left;
+  padding: 0 6px 6px 0;
+}
+.palette th:first-child { color: var(--yoxi-slate); }
+.palette td { padding: 0 6px 4px 0; vertical-align: top; }
+.palette__k {
+  width: 62px;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-navy);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.palette__sw {
+  display: block;
+  height: 18px;
+  border-radius: var(--r-btn);
+  border: 1px solid rgba(6, 32, 64, .10);
+}
+.palette__hex {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+  letter-spacing: .01em;
+  color: var(--yoxi-slate);
+  font-style: italic;
+}
+.palette__none {
+  display: block;
+  height: 18px;
+  border-radius: var(--r-btn);
+  border: 1px dashed var(--yoxi-slate-lite);
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+  color: var(--yoxi-slate);
+  text-align: center;
+  line-height: 16px;
+  font-style: normal;
+}
+
+/* 和諧的三個機制 */
+.mechs { display: grid; gap: 9px; }
+.mech { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.mech__n {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-btn);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  font-style: italic;
+  display: grid;
+  place-items: center;
+}
+.mech__t { font-size: var(--fs-cap); font-weight: var(--fw-heavy); line-height: 1.4; }
+.mech__d { font-size: 12px; line-height: 1.5; color: var(--yoxi-slate); margin-top: 2px; }
+
+/* 取捨：每張板都要有，3–5 條 */
+.tradeoffs { display: grid; gap: 6px; }
+.tradeoffs li {
+  position: relative;
+  padding-left: 15px;
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+  color: var(--yoxi-navy);
+}
+.tradeoffs li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--yoxi-slate-lite);
+}
+.tradeoffs b { font-weight: var(--fw-heavy); }
+
+/* 小標籤，語彙沿用 vision.html 的 .tag */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  background: var(--yoxi-mist);
+  color: var(--yoxi-slate);
+}
+.tag--note { background: var(--yoxi-cream); color: #8A5A1E; }
+
+/* --------------------------------------------------------------------------
+   署名：ODbL 要求的那一行，每張板都在最底下
+   -------------------------------------------------------------------------- */
+.credit {
+  grid-column: 1 / -1;
+  align-self: end;
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+  color: var(--yoxi-slate);
+}
+.credit b { font-weight: var(--fw-heavy); color: var(--yoxi-slate); }
+
+/* PNG 模式：assets/thumbs 的縮圖本來就含手機黑邊與陰影，框不再畫第二層 */
+html[data-board-mode="png"] .phone__box { box-shadow: none; border-radius: 0; background: transparent; }
+html[data-board-mode="png"] .phone__png { border-radius: 0; }

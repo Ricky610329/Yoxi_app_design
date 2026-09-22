@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念稿 — yoxi 城事</title>
+<!--
+  概念稿的目錄：四組 × 手機框 mock ＋ 大張概念板。
+
+  這一區不是 app 規格，也不在 demo 流程上：問的是「真的做出來會長怎樣」。
+  地圖是 OpenStreetMap 的真實幾何重新上色（不是截圖），照片來自 Wikimedia Commons，
+  兩者的出處與授權都寫在頁尾。資料在 js/catalog.js 的 CONCEPTS；
+  手機縮圖由 tools/shoot.py 產生、板的 PNG 由 tools/shoot.py --board 產生，
+  還沒拍的格子會顯示「尚未建檔」／「概念板尚未產生」。
+
+  版型照抄 vision.html（同一套 .fr／.dir__*／.tag），差別只有：
+  一筆可以有好幾支手機（同一張畫面的不同參數），而且每一組上面多一排概念板。
+-->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/chengshi.css">
+<style>
+  body { background: var(--yoxi-mist); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 40px 24px 96px; }
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+  .top h1 { font-size: 34px; font-weight: 800; line-height: 1.15; }
+  .top p { color: var(--yoxi-slate); margin-top: 8px; line-height: 1.7; max-width: 56em; }
+  .backlink { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+
+  .theme { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 24px; margin-bottom: 20px; scroll-margin-top: 16px; }
+  .theme__h { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .theme__t { font-size: 22px; font-weight: 800; }
+  .theme__lead { font-size: 14px; color: var(--yoxi-slate); }
+
+  /* --- 概念板（一組一到三張） ---------------------------------------- */
+  .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 720px) { .boards { grid-template-columns: 1fr; } }
+  .board { display: grid; grid-template-columns: 240px 1fr; gap: 16px; align-items: start;
+           padding: 14px; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: var(--yoxi-mist); }
+  @media (max-width: 560px) { .board { grid-template-columns: 1fr; } }
+  .board__fr { position: relative; width: 100%; aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden;
+               background: #fff; box-shadow: 0 2px 10px rgba(6,32,64,.12);
+               display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--yoxi-slate); text-align: center; }
+  .board__fr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .board__fr a { position: absolute; inset: 0; }
+  .board__n { font-size: 16px; font-weight: 800; line-height: 1.3; }
+  .board__one { font-size: 13px; color: var(--yoxi-slate); margin-top: 6px; line-height: 1.6; }
+  .board__acts { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; font-weight: 800; }
+
+  /* --- 一筆概念：一排手機框 ＋ 說明 ---------------------------------- */
+  .dirs { display: grid; gap: 22px; }
+  .dir { border-top: 1px solid var(--yoxi-line); padding-top: 18px; }
+  .dir:first-child { border-top: 0; padding-top: 0; }
+  .frs { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0 14px; }
+  .frs figure { width: 150px; }
+  .fr {
+    position: relative; width: 150px; height: calc(150px * 912 / 430);
+    border-radius: 12px; overflow: hidden; background: var(--yoxi-mist);
+    box-shadow: 0 2px 10px rgba(6,32,64,.14); display: grid; place-items: center;
+    font-size: 12px; font-weight: 800; color: var(--yoxi-slate); text-align: center;
+  }
+  .fr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .fr a { position: absolute; inset: 0; }
+  .fr__net { padding: 0 14px; line-height: 1.6; }
+  .frs figcaption { margin-top: 6px; font-size: 12px; font-weight: 800; text-align: center; color: var(--yoxi-navy); }
+  .dir__code { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--yoxi-red); }
+  .dir__n { font-size: 17px; font-weight: 800; margin-top: 2px; line-height: 1.3; }
+  .dir__one { font-size: 14px; color: var(--yoxi-navy); margin-top: 8px; line-height: 1.6; max-width: 62em; }
+  .dir__q { font-size: 13px; color: var(--yoxi-slate); margin-top: 8px; line-height: 1.5; }
+  .dir__q b { color: var(--yoxi-navy); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 800; background: var(--yoxi-mist); color: var(--yoxi-slate); }
+  .tag--risk { background: var(--yoxi-cream); color: #8A5A1E; }
+  .tag--net { background: #DCE3EA; }
+
+  /* --- 素材授權 ------------------------------------------------------ */
+  .licence { background: #fff; border: 1px solid var(--yoxi-line); border-radius: var(--r-card); padding: 20px 24px; }
+  .licence h2 { font-size: 18px; font-weight: 800; }
+  .licence ul { margin-top: 10px; display: grid; gap: 8px; }
+  .licence li { font-size: 13px; color: var(--yoxi-slate); line-height: 1.7; }
+  .licence b { color: var(--yoxi-navy); }
+  .licence code { padding: 1px 6px; border-radius: 3px; background: var(--yoxi-mist); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>概念稿</h1>
+      <p>地圖的真實質感與好友系統。手機框 mock 與大張概念板都有；不是 app 規格，也不在 demo 流程上。</p>
+    </div>
+    <div style="display:grid; gap:10px; justify-items:end">
+      <a class="backlink" href="index.html"><span class="arrow arrow--left"></span> demo 首頁</a>
+      <a class="backlink" href="overview.html?node=concepts">在層級樹裡看 <span class="arrow"></span></a>
+    </div>
+  </header>
+
+  <div id="groups"></div>
+
+  <section class="licence">
+    <h2>素材授權</h2>
+    <ul>
+      <li><b>地圖資料</b>　© OpenStreetMap 貢獻者，ODbL 1.0（<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">openstreetmap.org/copyright</a>）。
+          幾何是抓下來重新上色的，不是截圖；每一張地圖右下角都有這一行小字。</li>
+      <li><b>實景照片</b>　來自 Wikimedia Commons，作者與授權標在圖旁（<code>assets/photos/credits.js</code>）。只收 CC BY／CC BY-SA／CC0／Public domain。</li>
+      <li><b>Leaflet</b>　BSD-2，落地在專案裡（<code>assets/vendor/leaflet/LICENSE</code>）。</li>
+      <li><b>圖磚頁需要網路</b>　© OpenStreetMap contributors © CARTO；衛星底圖 Esri、Maxar、Earthstar Geographics。這一頁不會被任何 demo 流程依賴。</li>
+    </ul>
+  </section>
+</div>
+
+<script src="js/catalog.js"></script>
+<script>
+(function () {
+  /* 一筆概念要畫幾支手機：phones 沒寫就是一支（預設參數）；
+     phones[0] 通常就是 item.href，那一支不重複畫。 */
+  function phonesOf(it) {
+    const ps = (it.phones || []).slice();
+    if (!ps.length) return [{ label: '預設', href: it.href }];
+    if (ps[0].href !== it.href) ps.unshift({ label: '預設', href: it.href });
+    return ps;
+  }
+
+  function frame(it, p) {
+    const net = !!it.needsNet || !!p.needsNet;          /* 要連網＝沒有縮圖 */
+    const thumb = (net || it.thumb === null) ? null : CATALOG.thumbOf(p.href);
+    return '<figure><div class="fr">' +
+        (thumb ? '<img src="' + thumb + '" alt="' + p.label + '" loading="lazy" onerror="this.remove()">' : '') +
+        '<span' + (net ? ' class="fr__net"' : '') + '>' + (net ? '需要網路，沒有縮圖' : '尚未建檔') + '</span>' +
+        '<a href="' + p.href + '" target="_blank" aria-label="' + it.name + ' · ' + p.label + '"></a>' +
+      '</div><figcaption>' + p.label + '</figcaption></figure>';
+  }
+
+  function boardCard(b) {
+    return '<div class="board">' +
+      '<div class="board__fr">' +
+        '<img src="' + b.mini + '" alt="' + b.name + '" loading="lazy" onerror="this.remove()">' +
+        '<span>概念板尚未產生</span>' +
+        '<a href="' + b.href + '" target="_blank" aria-label="' + b.name + '"></a>' +
+      '</div>' +
+      '<div>' +
+        '<div class="board__n">' + b.name + '</div>' +
+        '<p class="board__one">' + b.one + '</p>' +
+        '<div class="board__acts">' +
+          '<a href="' + b.href + '" target="_blank">開啟互動版 <span class="arrow"></span></a>' +
+          '<a href="' + b.png + '" target="_blank">開 PNG <span class="arrow"></span></a>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  document.getElementById('groups').innerHTML = CATALOG.CONCEPTS.map(function (g) {
+    const boards = CATALOG.boardsOf(g);
+    return '<section class="theme" id="' + g.group + '">' +
+      '<div class="theme__h"><h2 class="theme__t">' + g.title + '</h2><span class="theme__lead">' + g.lead + '</span></div>' +
+      (boards.length ? '<div class="boards">' + boards.map(boardCard).join('') + '</div>' : '') +
+      '<div class="dirs">' + g.items.map(function (it) {
+        return '<div class="dir" id="' + g.group + '-' + it.code + '">' +
+          '<div class="dir__code">' + g.group.toUpperCase() + ' · ' + it.code.toUpperCase() + '</div>' +
+          '<div class="dir__n">' + it.name + '</div>' +
+          '<div class="frs">' + phonesOf(it).map(function (p) { return frame(it, p); }).join('') + '</div>' +
+          '<p class="dir__one">' + it.one + '</p>' +
+          '<p class="dir__q"><b>回答什麼：</b>' + it.answers + '</p>' +
+          '<div class="tags"><span class="tag">' + it.where + '</span>' +
+            (it.needsNet ? '<span class="tag tag--net">需要網路</span>' : '') +
+            (it.risk || []).map(function (r) { return '<span class="tag tag--risk">' + r + '</span>'; }).join('') +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>' +
+    '</section>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

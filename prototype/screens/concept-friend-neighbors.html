@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 鄰居 — yoxi 城事</title>
+<!--
+  CONCEPT-FRIEND-NEIGHBORS AI 鄰居【概念稿 · 好友】
+
+  回答什麼
+    第一天沒有朋友的人，信箱是空的。空信箱等於沒有這個功能。
+    所以我們放三個 AI 鄰居當初始好友，各守新竹的一個角落，每隔幾天寄一張。
+    這一頁要回答的不是「他們多好玩」，是「他們是什麼、他們不會做什麼、怎麼關」。
+
+  動了什麼
+    · 三張鄰居卡：16:9 的 data-art 大圖（取他牆上第一張的畫風）＋ tone ＋
+      「他那一帶」列地名 ＋ 他寄過的一句話 ＋ 看他的牆 ＋ 各自一個開關。
+    · 會做／不會做對照抄 settings.html 的「誰看得到什麼」兩列版型，
+      內容直接取 FRIENDS.neighbors 的 does／never 聯集 —— 圍牆寫在資料裡，
+      不是寫在文案裡，改資料畫面就跟著改。
+    · 兩層開關：每個鄰居各一個（aiNb1/2/3）＋一個全域的（aiAll）。
+    · ?state=first：第一次收到 AI 鄰居的卡長什麼樣。第一眼就給「先不要」。
+
+  刻意沒有的東西（plan B2）
+    · 不把 AI 講成朋友：他叫「鄰居」，卡上標「· AI」，卡片文案不寫「你的好朋友」
+    · 沒有好感度、沒有等級、沒有親密度
+    · AI 不會主動問問題、不會讀你的位置、不會推薦你今天去哪
+    · 沒有數量：不寫他寄過幾張、不寫他守著幾個地方，只列地名
+
+  反樣式怎麼躲（plan B5）
+    · AI 冒充真人 —— chip--ai、卡角標「· AI」、會做／不會做對照、兩層開關，
+      第一張卡就同時給「打開信箱」與「先不要 AI 鄰居」
+    · 通知化 —— 「每隔幾天寄一張」，never 裡寫著「不會天天寄」
+    · 比較感 —— 地名不列數量；never 裡寫著「不會比誰走得多」
+    · 監控感 —— never 裡寫著「不會問你在哪裡」「不會問你走了多少」
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<style>
+  /* 頁內樣式，只影響這一頁（concept.css 一個字沒改）。 */
+
+  /* 鄰居卡：幾何抄 variant-s5-album.html 的 .famcard ——
+     16:9 大圖佔滿卡片上緣，底下才是身分與那一帶。 */
+  .nbcard { overflow: hidden; }
+  .nbcard + .nbcard { margin-top: var(--sp-4); }
+  .nbcard__art {
+    display: block;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+  .nbcard__line {
+    margin-top: var(--sp-3);
+    font-size: var(--fs-sm);
+    line-height: 1.7;
+    color: var(--yoxi-slate);
+  }
+  .nbcard__line b { color: var(--yoxi-navy); font-weight: 800; }
+
+  /* 會做／不會做：settings.html 的兩列對照，右邊改成逐條列 ——
+     兩邊各有六到八條，擠成一句話會變成一段沒有人讀的文字。 */
+  .doesnt { display: grid; gap: var(--sp-3); font-size: var(--fs-sm); line-height: 1.6; }
+  .doesnt__row { display: flex; align-items: flex-start; gap: var(--sp-3); }
+  .doesnt__k { flex: none; width: 52px; font-weight: 800; }
+  .doesnt__k--yes { color: var(--yoxi-red); }
+  .doesnt__v { display: grid; gap: 6px; }
+</style>
+</head>
+
+<body data-vision="concept-friend-neighbors" data-status="light" data-time="21:35">
+<script>
+  /* ?bare=1：給概念板的 iframe 用，拿掉舞台留白與手機外框陰影。 */
+  if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');
+</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark">概念稿 · 好友</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" data-back href="concept-friend-list.html">
+            <span data-icon="close"></span>
+          </a>
+          <h1 class="hdr-red__title" style="flex:1; margin-left:8px">AI 鄰居</h1>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="concept-note">明信片與插圖是程式生成的示意圖，正式版才會換成 AI 依地點生成；人物是原型虛構的。</p>
+
+        <!-- ===================================================================
+             介紹（預設）
+             =================================================================== -->
+        <section id="main" class="u-hidden">
+
+          <!-- 開場：先講為什麼有這種東西，再講他是什麼。 -->
+          <div style="padding:0 16px 16px">
+            <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+              <div style="font-size:14px; line-height:1.8">
+                <p style="margin:0"><b>信箱一開始是空的。</b>剛裝好 app 的人沒有朋友，
+                  也還沒有人寄東西給他。</p>
+                <p style="margin:10px 0 0">所以我們放了三個 AI 鄰居，各守新竹的一個角落。
+                  他們每隔幾天寄一張那一帶的明信片給你，附一句話。</p>
+                <p style="margin:10px 0 0">他們不是真人。每一張卡都標著「· AI」，
+                  而且隨時可以關掉 —— 關掉之後，已經收到的還留著。</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 三個鄰居 -->
+          <div style="padding:0 16px 16px">
+            <div class="sec"><h2 class="sec__t sec__t--sm">三個鄰居</h2></div>
+            <div id="nbList"></div>
+          </div>
+
+          <!-- 圍牆：會做／不會做 -->
+          <div style="padding:0 16px 16px">
+            <div class="card card--pad">
+              <div class="u-row u-gap3" style="margin-bottom:12px">
+                <span data-icon="postcard" style="width:22px; height:22px; flex:none;
+                      color:var(--yoxi-navy)"></span>
+                <span style="font-weight:800">他會做什麼、不會做什麼</span>
+              </div>
+              <div class="doesnt" id="wall2"></div>
+              <p style="margin-top:12px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+                這兩欄寫在資料裡（js/mock-friends.js 的 does／never），不是寫在文案裡。
+                要多做一件事，得先改那一行。
+              </p>
+            </div>
+          </div>
+
+          <!-- 全域開關 -->
+          <div style="padding:0 16px 28px">
+            <div class="card">
+              <div class="row-nav">
+                <span class="tile-icon tile-icon--md">
+                  <span data-icon="place" style="width:24px; height:24px; display:block"></span>
+                </span>
+                <span class="row-nav__body">
+                  <span class="row-nav__title" style="font-size:16px">AI 鄰居</span>
+                  <span class="row-nav__sub">關掉之後，好友這一頁只剩真人</span>
+                </span>
+                <button class="sw-toggle is-on" data-switch="aiAll"></button>
+              </div>
+              <div style="height:1px; background:var(--yoxi-line)"></div>
+              <div class="privacy-note" style="padding:12px">設定頁也有同一個開關。</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             ?state=first：第一次收到 AI 鄰居的卡
+             =================================================================== -->
+        <section id="first" class="u-hidden" style="padding:8px 16px 28px">
+          <div style="width:220px; margin:0 auto var(--sp-5); position:relative" id="firstCard"></div>
+
+          <h2 style="text-align:center; font-size:22px; font-weight:800; line-height:1.3"
+              id="firstTitle">阿源寄了第一張給你</h2>
+          <p style="margin-top:10px; text-align:center; font-size:14px;
+                    color:var(--yoxi-slate); line-height:1.7" id="firstSub">
+            他是 AI 鄰居，不是真人。
+          </p>
+
+          <div style="display:grid; gap:10px; margin-top:24px">
+            <a class="btn-primary" href="concept-friend-inbox.html">打開信箱</a>
+            <button class="btn-ghost" data-toast="已經關掉。城事其他地方不受影響。">先不要 AI 鄰居</button>
+          </div>
+
+          <p style="margin-top:14px; text-align:center; font-size:12px;
+                    color:var(--yoxi-slate); line-height:1.7">
+            關掉之後他不會再寄。已經收到的那一張留著。
+          </p>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/mock-friends.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const q = new URLSearchParams(location.search);
+  const first = q.get('state') === 'first';
+
+  const esc = function (s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+  const artOf = function (cardId) {
+    const p = MOCK.POSTCARDS.filter(function (x) { return x.id === cardId; })[0];
+    return p ? p.art : 'moat';
+  };
+  const seedOf = function (cardId) {
+    return Math.max(0, MOCK.POSTCARDS.map(function (x) { return x.id; }).indexOf(cardId));
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* 第一次收到的那一張                                                 */
+  /* ---------------------------------------------------------------- */
+
+  if (first) {
+    document.getElementById('first').classList.remove('u-hidden');
+
+    const nb = FRIENDS.neighbors[0];
+    const wrap = document.getElementById('firstCard');
+    wrap.innerHTML = FRIENDS.cardHTML(
+      Object.assign({ from: nb.id, at: '09.21', flip: true }, nb.first));
+    SHELL.injectArt(wrap);
+
+    /* .postcard 的 overflow:hidden 會把 preserve-3d 壓平，背面朝人時畫出來的是
+       鏡像的正面。這一頁做的時候 chengshi.css 還沒修，所以就地放行；全站的解法
+       後來落在 .postcard[data-flip] 上，這兩行現在是同一個結果的保險。 */
+    const pc = wrap.querySelector('.postcard');
+    if (pc) {
+      pc.style.overflow = 'visible';
+      pc.querySelector('.postcard__back').style.borderRadius = 'var(--r-img)';
+    }
+
+    document.getElementById('firstTitle').textContent = nb.name + '寄了第一張給你';
+    document.getElementById('firstSub').textContent   = '他是 AI 鄰居，不是真人。';
+    return;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 三個鄰居                                                           */
+  /* ---------------------------------------------------------------- */
+
+  document.getElementById('main').classList.remove('u-hidden');
+
+  document.getElementById('nbList').innerHTML = FRIENDS.neighbors.map(function (n, i) {
+    /* 他那一帶：列地名，不列數量。「三個地方」是一個分數，地名不是。 */
+    const where = n.wall.map(function (id) { return MOCK.findPlace(id).name; }).join('、');
+    const head  = n.wall[0];
+
+    return '<div class="card nbcard">' +
+      '<span class="nbcard__art" data-art="' + esc(artOf(head)) + '"' +
+        ' data-seed="' + seedOf(head) + '" data-wide></span>' +
+      '<div class="card--pad">' +
+        '<div class="u-row u-gap3">' +
+          '<span class="tile-icon tile-icon--md tile-icon--round"' +
+            ' style="font-size:17px; font-weight:800">' + esc(n.name.slice(-1)) + '</span>' +
+          '<span class="u-fill">' +
+            '<span style="display:block; font-weight:800; font-size:16px">' + esc(n.name) +
+              '<span class="chip chip--ai">AI 鄰居</span></span>' +
+            '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+              esc(n.title) + '</span>' +
+          '</span>' +
+        '</div>' +
+        '<p class="nbcard__line" style="margin:12px 0 0">' + esc(n.tone) + '</p>' +
+        '<p class="nbcard__line" style="margin:8px 0 0"><b>他那一帶：</b>' + esc(where) + '</p>' +
+        '<p class="nbcard__line" style="margin:8px 0 0"><b>他寄過的一句話：</b>「' +
+          esc(n.first.note) + '」</p>' +
+      '</div>' +
+      '<div style="height:1px; background:var(--yoxi-line)"></div>' +
+      '<a class="row-nav" href="concept-friend-profile.html?id=' + esc(n.id) + '">' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">看他的牆</span>' +
+          '<span class="row-nav__sub">' + esc(n.name) + '願意給你看的那幾張</span>' +
+        '</span>' +
+        '<span class="arrow"></span>' +
+      '</a>' +
+      '<div class="row-nav">' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title" style="font-size:16px">讓' + esc(n.name) + '寄明信片給你</span>' +
+          '<span class="row-nav__sub">關掉之後他不會再寄，已經收到的留著</span>' +
+        '</span>' +
+        '<button class="sw-toggle is-on" data-switch="ai' +
+          n.id.charAt(0).toUpperCase() + esc(n.id.slice(1)) + '"></button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  /* ---------------------------------------------------------------- */
+  /* 會做／不會做：三個人的聯集                                          */
+  /* ---------------------------------------------------------------- */
+
+  const uniq = function (rows) {
+    const out = [];
+    rows.forEach(function (r) { if (out.indexOf(r) < 0) out.push(r); });
+    return out;
+  };
+  const flat = function (key) {
+    let all = [];
+    FRIENDS.neighbors.forEach(function (n) { all = all.concat(n[key] || []); });
+    return uniq(all);
+  };
+
+  const lines = function (rows) {
+    return rows.map(function (r) { return '<span>' + esc(r) + '</span>'; }).join('');
+  };
+
+  document.getElementById('wall2').innerHTML =
+    '<div class="doesnt__row">' +
+      '<span class="doesnt__k doesnt__k--yes">會做</span>' +
+      '<span class="doesnt__v">' + lines(flat('does')) + '</span>' +
+    '</div>' +
+    '<div style="height:1px; background:var(--yoxi-line)"></div>' +
+    '<div class="doesnt__row">' +
+      '<span class="doesnt__k">不會做</span>' +
+      '<span class="doesnt__v">' + lines(flat('never')) + '</span>' +
+    '</div>';
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

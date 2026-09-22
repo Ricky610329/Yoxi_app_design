@@ -451,6 +451,178 @@ const VISIONS = [
 ];
 
 /* --------------------------------------------------------------------------
+   概念稿（第三輪）
+   不是 app 規格、不在 demo 流程上、不進圍牆稽核：這一區問的是「真的做出來會長怎樣」。
+   兩件事：新竹地圖的真實質感（OSM 幾何重新上色，不是截圖）與好友系統。
+   每一組有一張（或三張）大概念板，每一筆有一排手機框 —— 同一個主意的兩種尺度。
+
+   形狀刻意抄 VISIONS：{ code, name, one, answers, where, risk[] }，
+   多的是 href／phones（同一張畫面的不同參數）／needsNet（要連網、沒有縮圖）。
+   phones[0] 的 href 就是 item.href；其餘每一支在樹上是一個 state 節點。
+   -------------------------------------------------------------------------- */
+const CONCEPTS = [
+  {
+    group: 'styles', title: '地圖的質感',
+    lead: '同一份新竹的真實幾何、同一個中心與縮放，換六種上色。看的是底圖能不能既有個性、彼此又像一家人。',
+    board: { href: 'boards/board-map-styles.html',
+             png: 'assets/boards/board-map-styles.png', mini: 'assets/boards/mini/board-map-styles.png',
+             name: '概念板 · 六種底圖', one: '六格同中心同縮放的對照，旁邊列出每一種的色票。紅色只留給頁首、pin 與今天。' },
+    items: [
+      { code: 'styles', name: '六種底圖',
+        one: '車站一帶的同一份路網，換成紙本、夜間、插畫、微 3D、傾斜與霧。景點與 pin 六版一模一樣，只有地面在換。',
+        answers: '底圖可以有多少個性，又不打架？',
+        where: '探索 · 地圖', risk: ['色彩擴張'],
+        href: 'screens/concept-map-explore.html?style=paper',
+        phones: [
+          { label: '紙本',  href: 'screens/concept-map-explore.html?style=paper' },
+          { label: '夜間',  href: 'screens/concept-map-explore.html?style=navy' },
+          { label: '插畫',  href: 'screens/concept-map-explore.html?style=illus' },
+          { label: '微 3D', href: 'screens/concept-map-explore.html?style=iso' },
+          { label: '傾斜',  href: 'screens/concept-map-explore.html?style=paper&tilt=1' },
+          { label: '霧',    href: 'screens/concept-map-explore.html?style=fog' },
+        ] },
+      { code: 'iso', name: '微 3D 近景',
+        one: '拉近到六百公尺，建物擠出高度、只畫朝向你的那兩面牆。景點與 pin 永遠平貼在最上層，不跟著傾斜，也沒有多出任何可按的東西。',
+        answers: '一點點 3D 會不會就變成遊戲？',
+        where: '新畫面 · 近景地圖', risk: ['像遊戲', '樓層資料稀疏'],
+        href: 'screens/concept-map-iso.html',
+        phones: [
+          { label: '白天',        href: 'screens/concept-map-iso.html' },
+          { label: '黃昏 · 傾斜', href: 'screens/concept-map-iso.html?tilt=1&hour=dusk' },
+        ] },
+    ],
+  },
+  {
+    group: 'layout', title: '單地圖與雙地圖',
+    lead: '「地圖該歸誰」第二輪用變體吵過一次；這一輪換成真的地理資料再看一次：一張圖兼顧兩個時態，還是兩張圖各司其職。',
+    board: { href: 'boards/board-map-single.html',
+             png: 'assets/boards/board-map-single.png', mini: 'assets/boards/mini/board-map-single.png',
+             name: '概念板 · 單地圖', one: '叫車首頁上的四個景點 → 點開小卡 → 設為下車點，三步都在同一張圖上。' },
+    boards: [
+      { href: 'boards/board-map-dual.html',
+        png: 'assets/boards/board-map-dual.png', mini: 'assets/boards/mini/board-map-dual.png',
+        name: '概念板 · 雙地圖', one: '探索的插畫底圖與足跡的霧，兩張圖各自最佳化，中間接的是收藏。' },
+      { href: 'boards/board-map-3d.html',
+        png: 'assets/boards/board-map-3d.png', mini: 'assets/boards/mini/board-map-3d.png',
+        name: '概念板 · 微 3D', one: '白天與黃昏兩種近景再加傾斜。建物高度來自 OSM，資料稀疏的地方看得出來。' },
+    ],
+    items: [
+      { code: 'single', name: '單地圖（E 型）',
+        one: '景點常駐在叫車首頁那張圖上，同時最多四個、沒去過的是灰階；點一下浮出小卡，上面就有「設為下車點」。',
+        answers: '一張圖能不能同時是叫車與探索？',
+        where: '叫車首頁 · 疊加', risk: ['干擾本業'],
+        href: 'screens/concept-map-home.html?style=paper',
+        phones: [
+          { label: '紙本',   href: 'screens/concept-map-home.html?style=paper' },
+          { label: '夜間',   href: 'screens/concept-map-home.html?style=navy' },
+          { label: '點景點', href: 'screens/concept-map-home.html?style=illus&peek=1' },
+        ] },
+      { code: 'dual', name: '雙地圖',
+        one: '探索用插畫底圖找地方，足跡用霧看去過哪裡。兩張圖同一份幾何、同一個原點，換的只有上色與圖層。',
+        answers: '兩張地圖怎麼長得像一家人？',
+        where: '探索 + 收藏', risk: ['兩張圖的疑問'],
+        href: 'screens/concept-map-explore.html?style=illus',
+        phones: [
+          { label: '探索 · 插畫', href: 'screens/concept-map-explore.html?style=illus' },
+          { label: '足跡 · 霧',   href: 'screens/concept-map-footprint.html?style=fog' },
+          { label: '足跡 · 紙本', href: 'screens/concept-map-footprint.html?style=paper' },
+        ] },
+      { code: 'ride', name: '夜間底圖在本業裡',
+        one: '行程中那一頁換上夜間底圖，司機資訊底下是收著的「這條路上」。深色是為了車內好讀，不是為了城事。',
+        answers: '夜間底圖放進叫車主流程會不會太搶？',
+        where: '行程中 · 疊加', risk: ['承諾②'],
+        href: 'screens/concept-map-ride.html?style=navy' },
+      { code: 'compare', name: '六格對照',
+        one: '手機尺寸的 2×3 六格，同中心、同縮放、同一批景點。要挑底圖就看這一張。',
+        answers: '哪一種底圖最耐看？',
+        where: '新畫面 · 對照', risk: ['只是工具頁'],
+        href: 'screens/concept-map-styles.html' },
+    ],
+  },
+  {
+    group: 'real', title: '真實素材',
+    lead: '離線的 OSM 幾何以外，還有兩種真東西：線上圖磚與 Wikimedia 的實景照片。兩者都標出處，也都不會被 demo 流程依賴。',
+    board: null,
+    items: [
+      { code: 'tiles', name: '線上圖磚',
+        one: '同一批景點擺到真的圖磚上：CARTO 的 voyager／positron／dark 與 Esri 衛星底圖。Leaflet 落地在專案裡，只有圖磚要連網。',
+        answers: '真的圖磚會比重新上色的幾何好看嗎？',
+        where: '新畫面 · 需要網路', risk: ['依賴網路', '署名義務'],
+        href: 'screens/concept-map-tiles.html?base=voyager', needsNet: true, thumb: null,
+        phones: [
+          { label: 'voyager',  href: 'screens/concept-map-tiles.html?base=voyager',  needsNet: true },
+          { label: 'positron', href: 'screens/concept-map-tiles.html?base=positron', needsNet: true },
+          { label: 'dark',     href: 'screens/concept-map-tiles.html?base=dark',     needsNet: true },
+          { label: '衛星',     href: 'screens/concept-map-tiles.html?base=satellite', needsNet: true },
+        ] },
+      { code: 'photos', name: '實景照片',
+        one: '地方詳情換成真的照片：來自 Wikimedia Commons，作者與授權就印在圖旁；右邊一張四百公尺的小定位圖，只有一根紅 pin。',
+        answers: '不靠 AI 生圖的時候，一個地方長什麼樣？',
+        where: '地方詳情 · 換素材', risk: ['素材稀少', '署名義務'],
+        href: 'screens/concept-map-place.html?id=station' },
+    ],
+  },
+  {
+    group: 'friend', title: '好友與 AI 鄰居',
+    lead: '多人互動只做一件事：把走到的地方寄給一個人，附一句話。沒有 in-app 聊天、沒有語音。',
+    board: { href: 'boards/board-friends.html',
+             png: 'assets/boards/board-friends.png', mini: 'assets/boards/mini/board-friends.png',
+             name: '概念板 · 好友', one: '寄 → 收 → 牆 → 鄰居四台手機一列；左下是四格原則，右下是還沒決定的五個問題。' },
+    items: [
+      { code: 'list', name: '朋友與 AI 鄰居',
+        one: '四個人與三個 AI 鄰居各一列，寫的是關係與「昨天寄了一張」，不是幾張，也不是上線狀態。',
+        answers: '好友列表可以整頁沒有數字嗎？',
+        where: '新畫面 · 從側邊選單進來', risk: ['比較感'],
+        href: 'screens/concept-friend-list.html' },
+      { code: 'profile', name: '他的牆',
+        one: '一個人的頁：他分享出來的明信片、他寄給你的。沒有打開牆的人就寫「他沒有打開自己的牆」，你還是可以寄一張給他。',
+        answers: '看得到朋友的什麼，才不算監看？',
+        where: '新畫面 · 人物頁', risk: ['監控感', '比較感'],
+        href: 'screens/concept-friend-profile.html?id=sis',
+        phones: [
+          { label: '真人的牆',   href: 'screens/concept-friend-profile.html?id=sis' },
+          { label: 'AI 鄰居的牆', href: 'screens/concept-friend-profile.html?id=nb1' },
+        ] },
+      { code: 'send', name: '寄一張',
+        one: '兩步：挑一張走過的明信片，再寫二十個字。四句罐頭可以按，寄出的提示明說對方不會跳通知。',
+        answers: '一句小語會不會長成聊天室？',
+        where: '新畫面 · 兩步', risk: ['小語變成聊天'],
+        href: 'screens/concept-friend-send.html?to=sis&step=pick',
+        phones: [
+          { label: '挑一張', href: 'screens/concept-friend-send.html?to=sis&step=pick' },
+          { label: '寫小語', href: 'screens/concept-friend-send.html?to=sis&step=write&card=p3' },
+        ] },
+      { code: 'inbox', name: '信箱',
+        one: '收到的明信片依今天、昨天、更早分段，翻面看小語。沒有未讀點、沒有已讀，卡上也沒有「回一張」。',
+        answers: '收到東西可以不變成通知嗎？',
+        where: '新畫面 · 紅頭 pills', risk: ['通知化'],
+        href: 'screens/concept-friend-inbox.html',
+        phones: [
+          { label: '收到的',   href: 'screens/concept-friend-inbox.html' },
+          { label: '我寄出的', href: 'screens/concept-friend-inbox.html?pill=out' },
+        ] },
+      { code: 'neighbors', name: 'AI 鄰居',
+        one: '信箱一開始是空的，所以放了三個 AI 鄰居各守一個角落。每一張都標示是 AI，會做什麼、不會做什麼寫在同一頁，隨時可以關。',
+        answers: 'AI 當初始好友，怎麼不冒充真人？',
+        where: '新畫面 · 開場', risk: ['AI 冒充真人'],
+        href: 'screens/concept-friend-neighbors.html',
+        phones: [
+          { label: '介紹',     href: 'screens/concept-friend-neighbors.html' },
+          { label: '第一張卡', href: 'screens/concept-friend-neighbors.html?state=first' },
+        ] },
+      { code: 'push', name: '好友的推播',
+        one: '一則靜態推播：「小芸寄了一張明信片給你。」預設是關的，打開也只有一則，彙整成一句 —— 不是一張一則。',
+        answers: '多人互動會不會把推播變多？',
+        where: '推播 · 疊加', risk: ['通知化'],
+        href: 'screens/concept-friend-push.html' },
+    ],
+  },
+];
+
+/* 一組的板：layout 有三張（單／雙／3D），real 一張都沒有。 */
+function boardsOf(g) { return (g.board ? [g.board] : []).concat(g.boards || []); }
+
+/* --------------------------------------------------------------------------
    縮圖
    -------------------------------------------------------------------------- */
 
@@ -469,6 +641,32 @@ const THUMB_ALIAS = {
   'variant-x4-badges.html?style=ring': 'variant-x4-badges-ring',
   'variant-x4-badges.html?style=stamp':'variant-x4-badges-stamp',
   'variant-t1-tasks.html?mode=merged': 'variant-t1-tasks-merged',
+
+  /* 概念稿。檔名是 concept-map-*，縮圖名字短一截（concept-explore-paper），
+     所以連沒帶參數的兩張也要寫進來，不然 thumbOf 會去找不存在的 concept-map-iso.png。
+     這裡的每一個值都必須跟 tools/shoot.py 的 SHOTS 逐字相同。 */
+  'concept-map-explore.html?style=paper':      'concept-explore-paper',
+  'concept-map-explore.html?style=navy':       'concept-explore-navy',
+  'concept-map-explore.html?style=illus':      'concept-explore-illus',
+  'concept-map-explore.html?style=iso':        'concept-explore-iso',
+  'concept-map-explore.html?style=paper&tilt=1': 'concept-explore-tilt',
+  'concept-map-explore.html?style=fog':        'concept-explore-fog',
+  'concept-map-home.html?style=paper':         'concept-home-paper',
+  'concept-map-home.html?style=navy':          'concept-home-navy',
+  'concept-map-home.html?style=illus&peek=1':  'concept-home-peek',
+  'concept-map-footprint.html?style=fog':      'concept-footprint-fog',
+  'concept-map-footprint.html?style=paper':    'concept-footprint-paper',
+  'concept-map-place.html?id=station':         'concept-place',
+  'concept-map-iso.html':                      'concept-iso',
+  'concept-map-iso.html?tilt=1&hour=dusk':     'concept-iso-dusk',
+  'concept-map-styles.html':                   'concept-styles',
+  'concept-map-ride.html?style=navy':          'concept-ride',
+  'concept-friend-profile.html?id=sis':                     'concept-friend-profile',
+  'concept-friend-profile.html?id=nb1':                     'concept-friend-profile-ai',
+  'concept-friend-send.html?to=sis&step=pick':              'concept-friend-send-pick',
+  'concept-friend-send.html?to=sis&step=write&card=p3':     'concept-friend-send-write',
+  'concept-friend-inbox.html?pill=out':                     'concept-friend-inbox-out',
+  'concept-friend-neighbors.html?state=first':              'concept-friend-neighbors-first',
 };
 
 function thumbKey(href) {
@@ -587,6 +785,44 @@ function buildTree() {
     });
   });
 
+  /* 概念稿：組 → 板與手機框。板不在 screens/ 底下，所以 audit-tree 第 4 關
+     （只探 screens/ 的 href）不會去載它；縮圖直接指 assets/boards/ 的 PNG。
+     needsNet 的那幾支（圖磚頁）thumb 是 null —— 要連網，本來就拍不出縮圖，
+     第 5 關只收 thumb 有值的節點，所以會自動跳過。 */
+  add({ id: 'concepts', type: 'group', parent: null, name: '概念稿', kind: null, href: 'concept.html',
+        file: null, thumb: null, mini: null, axis: null, meta: {} });
+  CONCEPTS.forEach(function (g) {
+    const gid = 'con:' + g.group;
+    add({ id: gid, type: 'theme', parent: 'concepts', name: g.title, kind: null,
+          href: 'concept.html#' + g.group, file: null, thumb: null, mini: null,
+          axis: 'concept', meta: { lead: g.lead } });
+    boardsOf(g).forEach(function (b) {
+      add({ id: 'con:board-' + b.href.replace(/^boards\/board-/, '').replace(/\.html$/, ''),
+            type: 'vision', parent: gid, name: b.name, kind: 'planned',
+            href: b.href, file: b.href.replace(/^boards\//, ''),
+            thumb: b.png, mini: b.mini, axis: 'concept', meta: { one: b.one, board: true } });
+    });
+    g.items.forEach(function (it) {
+      const id = 'con:' + g.group + '-' + it.code;
+      const dark = it.thumb === null || !!it.needsNet;      /* 拍不出縮圖的 */
+      add({ id: id, type: 'vision', parent: gid, name: it.name, kind: 'planned',
+            href: it.href, file: fileOf(it.href).replace(/\?.*$/, ''),
+            thumb: dark ? null : thumbOf(it.href), mini: dark ? null : miniOf(it.href),
+            axis: 'concept',
+            meta: { one: it.one, answers: it.answers, where: it.where, risk: it.risk || [],
+                    group: g.group, code: it.code, needsNet: !!it.needsNet } });
+      /* phones[0] 就是 item.href（同一張畫面的預設參數），不再掛一次。 */
+      (it.phones || []).forEach(function (p) {
+        if (p.href === it.href) return;
+        const net = !!it.needsNet || !!p.needsNet;
+        add({ id: id + '/' + p.href, type: 'state', parent: id, name: p.label, kind: 'planned',
+              href: p.href, file: fileOf(p.href).replace(/\?.*$/, ''),
+              thumb: net ? null : thumbOf(p.href), mini: net ? null : miniOf(p.href),
+              axis: 'concept', meta: { group: g.group, code: it.code, needsNet: net } });
+      });
+    });
+  });
+
   /* 流程：自成一支，步驟指向畫面節點 */
   add({ id: 'flows', type: 'group', parent: null, name: '三條 demo 流程', kind: null, href: 'index.html#flows',
         file: null, thumb: null, mini: null, axis: null, meta: {} });
@@ -621,7 +857,7 @@ function buildTree() {
     });
   });
 
-  TREE = { nodes: nodes, order: order, roots: ['sys', 'flows', 'variants', 'visions'],
+  TREE = { nodes: nodes, order: order, roots: ['sys', 'flows', 'variants', 'visions', 'concepts'],
            flowsOf: flowsOf, variantsOf: variantsOf };
   return TREE;
 }
@@ -643,8 +879,8 @@ function variant(key) { return VARIANTS.filter(function (v) { return v.key === k
 window.CATALOG = {
   SCREENS: S, GROUPS: GROUPS, FLOWS: FLOWS, KIND: KIND,
   TABS: TABS, CHILD_OF: CHILD_OF, STATE_OF: STATE_OF, STATES: STATES,
-  AXES: AXES, VARIANTS: VARIANTS, VISIONS: VISIONS, THUMB_ALIAS: THUMB_ALIAS,
-  screen: screen, flow: flow, thumbOf: thumbOf, miniOf: miniOf, thumbKey: thumbKey,
+  AXES: AXES, VARIANTS: VARIANTS, VISIONS: VISIONS, CONCEPTS: CONCEPTS, THUMB_ALIAS: THUMB_ALIAS,
+  screen: screen, flow: flow, thumbOf: thumbOf, miniOf: miniOf, thumbKey: thumbKey, boardsOf: boardsOf,
   tree: tree, node: node, children: children, ancestors: ancestors,
   flowsOf: flowsOf, variantsOf: variantsOf, byAxis: byAxis, variant: variant,
 };

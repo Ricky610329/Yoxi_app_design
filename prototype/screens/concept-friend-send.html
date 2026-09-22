@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>寄一張給朋友 — yoxi 城事</title>
+<!--
+  CONCEPT-FRIEND-SEND 寄一張明信片【概念稿 · 好友】
+
+  回答什麼
+    多人互動的動詞只有一個：「寄」。挑一張你自己走到過的明信片，寫一句話，
+    寄給一個人。兩步而已 —— 挑一張（?step=pick）、寫一句話（?step=write）。
+    收件人是從他的個人頁帶進來的（?to=sis），不是從一個「選很多人」的清單。
+
+  動了什麼
+    · 明信片牆直接用 SHELL.postcardWall(el,{locked:false})，但先把每張卡的
+      data-flip 拿掉再綁單選 —— interact.js 的翻面是 document 層級的委派，
+      屬性不拿掉，點一下會又翻面又選取。
+    · 只列 STATE 裡真的收到過的那幾張。沒去過的地方連出現都不出現。
+    · 寫小語那一步的 220 px 預覽是背面朝人（抄 unlock.html #cardWrap 的尺寸），
+      打字即時寫回背面的「…」那一行，看得到寄出去會長什麼樣。
+    · 罐頭句沿用 elder.html 的四句制（FRIENDS.phrases），點一下填進去。
+
+  刻意沒有的東西（plan B2）
+    · 沒有群發：收件人只有一個，而且是前一頁帶進來的
+    · 沒有排程、沒有草稿匣
+    · 沒有貼圖、沒有表情符號鍵盤
+    · 沒有「已送達／已讀」，寄出之後這一頁就結束了
+    · 沒有數字：不寫「你有幾張可以寄」、不寫第 1 步／第 2 步
+
+  反樣式怎麼躲（plan B5）
+    · 小語變成聊天 —— maxlength 20、四句固定罐頭、沒有回覆鍵、沒有多選，
+      而且寄出的 toast 明講「不會跳通知」
+    · 通知化 —— 寄出不產生已讀、不產生催促
+    · 比較感 —— 整頁沒有任何數字（剩餘字數是輸入限制，不是成績）
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<style>
+  /* 頁內樣式，只影響這一頁（concept.css 一個字沒改）。 */
+
+  /* 角標挪到紅色頁首底下那一道米色空隙 —— 頁首右邊已經被「挑一張」佔走了。
+     誠實句同時讓出上緣，兩個東西才不會疊在一起。 */
+  .concept-note { padding-top: 36px; }
+
+  /* 主要動作黏在捲動區下緣：挑一張要捲過三排明信片，
+     按鈕若跟著捲走，人會以為選完卡之後沒有下一步。 */
+  .sendbar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: var(--sp-3) var(--gutter) var(--sp-4);
+    background: var(--yoxi-mist);
+    box-shadow: 0 -8px 16px rgba(6, 32, 64, .06);
+  }
+
+  /* 小語輸入框：沿用 unlock.html 的單行輸入，但換成兩行的 textarea ——
+     20 字在 390 px 寬的手機上會折成兩行，一行的框會把字推到看不見。 */
+  #note {
+    display: block;
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--yoxi-line);
+    border-radius: var(--r-btn);
+    background: var(--yoxi-white);
+    color: var(--yoxi-navy);
+    font-family: inherit;
+    font-size: var(--fs-body);
+    line-height: 1.6;
+    resize: none;
+  }
+  #note::placeholder { color: var(--yoxi-slate); }
+  #noteLeft { margin-top: 6px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+</style>
+</head>
+
+<body data-vision="concept-friend-send" data-status="light" data-time="21:35">
+<script>
+  /* ?bare=1：給概念板的 iframe 用，拿掉舞台留白與手機外框陰影。 */
+  if (/[?&]bare=1/.test(location.search)) document.body.classList.add('is-bare');
+</script>
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <span class="vision-mark" style="top:calc(var(--statusbar-h) + 64px)">概念稿 · 好友</span>
+
+      <header class="hdr-red hdr-red--compact">
+        <div class="hdr-red__bar">
+          <a class="hdr-red__close" id="hClose" data-back href="concept-friend-profile.html?id=sis">
+            <span data-icon="close"></span>
+          </a>
+          <h1 class="hdr-red__title" id="hTitle" style="flex:1; margin-left:8px">寄給 小芸</h1>
+          <span class="hdr-red__action" id="hAction">挑一張</span>
+        </div>
+      </header>
+
+      <div class="scroll" style="background:var(--yoxi-mist)">
+        <p class="concept-note">明信片與插圖是程式生成的示意圖，正式版才會換成 AI 依地點生成；人物是原型虛構的。</p>
+
+        <!-- ===================================================================
+             第一步：挑一張
+             =================================================================== -->
+        <section id="stepPick" class="u-hidden">
+
+          <!-- 收件人。只有一個，而且是上一頁帶進來的。 -->
+          <div style="padding:0 16px 16px">
+            <div class="card card--pad u-row u-gap3">
+              <span class="tile-icon tile-icon--md tile-icon--round"
+                    id="toTile" style="font-size:17px; font-weight:800">芸</span>
+              <span class="u-fill">
+                <span style="display:block; font-weight:800; font-size:16px" id="toName">寄給 小芸</span>
+                <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px"
+                      id="toSub">妹妹</span>
+              </span>
+              <button class="btn-link" data-toast="原型到這裡 —— 實際會回到好友列表挑一個">換一個人</button>
+            </div>
+          </div>
+
+          <!-- 可以寄的就是你自己收過的那幾張，一張不多。 -->
+          <div style="padding:0 16px">
+            <div class="sec">
+              <h2 class="sec__t sec__t--sm">你收過的明信片</h2>
+              <span class="sec__m">只能寄自己收過的</span>
+            </div>
+            <div id="wall"></div>
+            <p style="margin-top:14px; font-size:13px; color:var(--yoxi-slate); line-height:1.7">
+              只能寄你自己收過的。沒去過的地方寄不出去 —— 明信片是走到了才有的東西。
+            </p>
+          </div>
+
+          <div class="sendbar">
+            <button class="btn-primary" id="pickNext" disabled onclick="SEND.next()">先挑一張</button>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             第二步：寫一句話
+             =================================================================== -->
+        <section id="stepWrite" class="u-hidden">
+
+          <!-- 背面朝人的預覽。打字會即時寫進背面的「…」那一行。 -->
+          <div style="padding:0 16px">
+            <div style="width:220px; margin:0 auto var(--sp-5); position:relative" id="cardWrap"></div>
+
+            <textarea id="note" maxlength="20" rows="2"
+                      placeholder="寫一句話（最多 20 字，可以不寫）"></textarea>
+            <p id="noteLeft">還可以寫 20 字</p>
+          </div>
+
+          <!-- 罐頭句：抄 elder.html 的四句制。點一下填進去，不想用就自己寫。 -->
+          <div style="padding:16px 16px 0">
+            <div class="sec"><h2 class="sec__t sec__t--sm">不知道寫什麼</h2></div>
+            <div class="card" id="phrases"></div>
+          </div>
+
+          <div style="padding:16px 16px 28px">
+            <a class="btn-primary" href="#" id="sendBtn"
+               data-toast="已經寄出 —— 小芸下次打開時會在信箱裡看到，不會跳通知">寄出</a>
+
+            <div class="privacy-note" style="margin-top:14px">
+              <span data-icon="lock" style="width:14px; height:14px"></span>
+              他只會看到這一張和這句話。
+            </div>
+            <p style="margin-top:10px; text-align:center; font-size:12px;
+                      color:var(--yoxi-slate); line-height:1.7">
+              寄出之後不會有已讀。你不會知道他什麼時候看。
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/mock-friends.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const q    = new URLSearchParams(location.search);
+  const to   = q.get('to') || 'sis';
+  const step = q.get('step') === 'write' ? 'write' : 'pick';
+  const him  = FRIENDS.who(to);
+
+  /* SHELL.go 會帶上 ?from= 與變體參數；萬一沒有就退回最笨的做法。 */
+  const go = (window.SHELL && SHELL.go) ? SHELL.go : function (h) { location.href = h; };
+
+  const esc = function (s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* 頁首：兩步共用一個頁首，只換標題、右邊那句話與 ✕ 的去處             */
+  /* ---------------------------------------------------------------- */
+
+  /* 右邊刻意不寫「1/2」。兩步就兩步，不用一個分數提醒人還沒做完。 */
+  if (step === 'pick') {
+    document.getElementById('hTitle').textContent  = '寄給 ' + him.name;
+    document.getElementById('hAction').textContent = '挑一張';
+    document.getElementById('hClose').setAttribute('href', 'concept-friend-profile.html?id=' + to);
+  } else {
+    document.getElementById('hTitle').textContent  = '寫一句話';
+    document.getElementById('hAction').textContent = '寄給 ' + him.name;
+    document.getElementById('hClose').setAttribute('href',
+      'concept-friend-send.html?to=' + to + '&step=pick');
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 第一步：挑一張                                                     */
+  /* ---------------------------------------------------------------- */
+
+  function initPick() {
+    document.getElementById('stepPick').classList.remove('u-hidden');
+
+    document.getElementById('toTile').textContent = him.name.slice(-1);
+    document.getElementById('toName').textContent = '寄給 ' + him.name;
+    document.getElementById('toSub').textContent  = him.sub || '';
+
+    const el = document.getElementById('wall');
+
+    /* locked:false ＝ 只畫已經收到的。牆的順序就是 MOCK.POSTCARDS 的順序，
+       所以同一份篩選可以拿來回推每一格是哪一張卡。 */
+    SHELL.postcardWall(el, { locked: false });
+    const mine  = MOCK.POSTCARDS.filter(function (p) { return STATE.card(p.id); });
+    const cells = Array.prototype.slice.call(el.querySelectorAll('.postcard'));
+
+    if (cells.length !== mine.length) {
+      console.error('挑一張：牆上有 ' + cells.length + ' 格，但收過的是 ' + mine.length + ' 張。');
+    }
+
+    let picked = q.get('card') || '';
+    const btn = document.getElementById('pickNext');
+
+    const paint = function () {
+      cells.forEach(function (c) {
+        c.classList.toggle('postcard--picked', c.dataset.card === picked);
+      });
+      const got = cells.some(function (c) { return c.dataset.card === picked; });
+      btn.disabled = !got;
+      btn.textContent = got ? '寫一句話' : '先挑一張';
+    };
+
+    cells.forEach(function (c, i) {
+      /* 翻面是 document 層級的委派，屬性留著就會「又翻面又選取」。 */
+      c.removeAttribute('data-flip');
+
+      /* 背面也要一起拿掉。chengshi.css 的 backface-visibility 掛在
+         .postcard[data-flip] > * 上：屬性一removeAttribute，背面那一層
+         （它本身永遠是 rotateY(180deg)）就失去遮蔽，整面牆會變成八張
+         左右相反的背面疊在正面上。沒收藏的卡本來就沒有背面，
+         這裡跟著同一個規矩 —— 挑卡看的是正面。 */
+      const back = c.querySelector('.postcard__back');
+      if (back) back.remove();
+
+      c.dataset.card = mine[i] ? mine[i].id : '';
+      c.setAttribute('aria-label', (mine[i] ? mine[i].name : '') + ' 選這一張');
+      /* 單選。不用 stopPropagation —— 這一層攔下來，別人就別想再加行為。 */
+      /* 用 onclick 不用 addEventListener：全站稽核是在頁面腳本之後才裝攔截器，逐顆看有沒有行為 */
+      c.onclick = function () { picked = c.dataset.card; paint(); };
+    });
+
+    paint();
+
+    window.SEND = {
+      next: function () {
+        if (btn.disabled) return;
+        go('concept-friend-send.html?to=' + to + '&step=write&card=' + picked);
+      },
+    };
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 第二步：寫一句話                                                   */
+  /* ---------------------------------------------------------------- */
+
+  function initWrite() {
+    document.getElementById('stepWrite').classList.remove('u-hidden');
+
+    /* 沒帶卡就退回挑卡那一步，不要畫一張空的預覽。 */
+    const card = q.get('card');
+    if (!card || !MOCK.POSTCARDS.some(function (p) { return p.id === card; })) {
+      go('concept-friend-send.html?to=' + to + '&step=pick');
+      return;
+    }
+
+    /* 預填：這張卡自己的小語（抵達解鎖時寫的那一句）。 */
+    const pre = ((STATE.card(card) || {}).note || '').slice(0, 20);
+
+    const wrap = document.getElementById('cardWrap');
+    wrap.innerHTML = FRIENDS.cardHTML({
+      card: card, note: pre, at: '09.21', to: to, flip: true,
+    });
+    SHELL.injectArt(wrap);
+
+    const pc = wrap.querySelector('.postcard');
+    /* .postcard 的 overflow:hidden 會把 preserve-3d 壓平（Chrome 的 grouping
+       property），背面朝人時畫出來的是鏡像的正面。這一頁做的時候 chengshi.css
+       還沒修，所以就地放行；全站的解法後來落在 .postcard[data-flip] 上，
+       這兩行現在是同一個結果的保險，不是第二套做法。 */
+    pc.style.overflow = 'visible';
+    pc.querySelector('.postcard__back').style.borderRadius = 'var(--r-img)';
+
+    /* 背面的第二個 <p> 就是「小語」那一行。cardHTML 在沒有小語時不畫它，
+       所以這裡補一個空的出來，打字才有地方寫。 */
+    const back = pc.querySelector('.postcard__back');
+    let line = back.querySelectorAll('p')[1];
+    if (!line) {
+      line = document.createElement('p');
+      line.style.fontWeight = '800';
+      back.insertBefore(line, back.querySelector('.postcard__stamp'));
+    }
+
+    const ta   = document.getElementById('note');
+    const left = document.getElementById('noteLeft');
+    ta.value = pre;
+
+    const sync = function () {
+      const v = ta.value.slice(0, 20);
+      line.textContent = v ? '「' + v + '」' : '';
+      /* 只講還可以寫幾個字。不顯示「3/20」—— 那是一個進度條。 */
+      left.textContent = '還可以寫 ' + (20 - v.length) + ' 字';
+      Array.prototype.forEach.call(document.querySelectorAll('#phrases [data-cap]'), function (b) {
+        b.classList.toggle('is-on', b.dataset.cap === v);
+      });
+    };
+    ta.addEventListener('input', sync);
+
+    /* 罐頭句。四句，寫死在 FRIENDS.phrases，不會依人／依地點變。 */
+    document.getElementById('phrases').innerHTML = FRIENDS.phrases.map(function (s) {
+      return '<button class="row-text" data-cap="' + esc(s) + '">' + esc(s) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#phrases [data-cap]'), function (b) {
+      b.addEventListener('click', function () { ta.value = b.dataset.cap; sync(); });
+    });
+
+    sync();
+
+    document.getElementById('sendBtn').setAttribute('data-toast',
+      '已經寄出 —— ' + him.name + '下次打開時會在信箱裡看到，不會跳通知');
+  }
+
+  if (step === 'pick') initPick(); else initWrite();
+})();
+</script>
+</body>
+</html>

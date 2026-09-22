@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>好友：寄一張，不是聊一句 — yoxi 城事概念板</title>
+<!--
+  BOARD-FRIENDS 好友系統概念板（1600 × 1000）
+
+  回答什麼
+    把六張手機稿收成一句話：多人互動只做一件事 —— 把走到的地方寄給一個人，
+    附一句話。四台手機一列，寄 → 收 → 牆 → 鄰居，照著讀一次就懂整條線。
+
+  怎麼讀
+    上面一列是四張畫面，每台下面一句話說它負責什麼。
+    左下四格是這一套東西的四條圍牆；右下是還沒決定的五個問題 ——
+    概念板不是規格書，沒想清楚的地方要寫出來。
+
+  跟其他四張板不一樣的地方
+    地圖板的手機是 iframe（改了畫面、板跟著變），這一張固定走 PNG：
+    頁內先設 window.BOARD_PNG = true，board.js 就把每個框換成 data-png 的縮圖。
+    好友這四張是靜態版面，沒有需要現場跑的地圖引擎，四個 iframe 只是白擔風險。
+    縮圖還沒拍的時候 board.js 會留下「縮圖尚未產生」，版面高度一格都不動。
+    ?png=1 因此是 no-op，留著是為了讓 shoot.py --board 一律帶同一個參數。
+
+  刻意沒有的東西
+    · 沒有數字（不寫幾張、幾個人、幾個功能）
+    · 沒有「路線圖／里程碑」那種進度敘事
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/concept.css">
+<link rel="stylesheet" href="board.css">
+<style>
+  /* 這一張板自己的版面。共用的頂條、手機框、白卡全部沿用 board.css，
+     這裡只寫「四台手機橫著排」與底下兩欄 —— 地圖板是左大圖右窄欄，
+     好友這一張是一條流程，兩種骨架沒辦法共用同一組 grid。 */
+
+  /* 一欄到底：board.css 的 900px + 1fr 是給大地圖用的。 */
+  .board { grid-template-columns: 1fr; }
+  .board__h { align-items: flex-end; }
+
+  .bf-back { display: flex; gap: 8px; flex: none; align-self: flex-end; }
+  .bf-back a {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--r-pill);
+    border: 1.5px solid var(--yoxi-navy);
+    background: var(--yoxi-white);
+    color: var(--yoxi-navy);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-heavy);
+    white-space: nowrap;
+  }
+
+  /* ---- 寄 → 收 → 牆 → 鄰居 ---- */
+  .bf-flow {
+    grid-column: 1 / -1;
+    min-height: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+  }
+  /* 縮圖是 430 × 912，框照同一個比例縮，所以一張都不會被裁到。
+     0.64 是「四台排一列還塞得下、又剛好把中段那一列填滿」的那一格；
+     板高改了就回來調這個數，不要改框的長寬比。 */
+  .bf-flow .phone { --pw: 430px; --ph: 912px; --s: .64; }
+  .bf-flow .phone__cap { font-weight: var(--fw-heavy); }
+  .bf-flow .phone__cap small { font-weight: var(--fw-reg); word-break: normal; }
+
+  /* 每台手機上面那一顆：寄／收／牆／鄰居 */
+  .bf-over {
+    display: block;
+    margin: 0 auto 8px;
+    width: max-content;
+    padding: 3px 12px;
+    border-radius: var(--r-pill);
+    background: var(--yoxi-navy);
+    color: var(--yoxi-white);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-heavy);
+    letter-spacing: .1em;
+  }
+  /* 覆蓋在框上的透明連結：點一下開互動版 */
+  .bf-hit { position: absolute; inset: 0; z-index: 3; display: block; }
+
+  .bf-arrow {
+    flex: none;
+    align-self: center;
+    margin-top: 10px;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--yoxi-slate);
+  }
+
+  /* ---- 底下兩欄：四條圍牆 ＋ 還沒決定 ---- */
+  .bf-bottom {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .bf-tiles { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .bf-tile b { display: block; font-size: var(--fs-sm); font-weight: var(--fw-heavy); }
+  .bf-tile span {
+    display: block;
+    margin-top: 5px;
+    font-size: var(--fs-xs);
+    line-height: 1.7;
+    color: var(--yoxi-slate);
+  }
+
+  .bf-open { flex: 0 0 440px; background: var(--yoxi-cream); border: 0; }
+  .bf-open .panel__t { color: var(--yoxi-navy); }
+  /* base.css 把 ol 的編號關掉了（全 app 沒有一份有序清單）。
+     這一欄是五個問題，編號本身就是內容，所以就地開回來。 */
+  .bf-open ol { margin: 0; padding-left: 20px; list-style: decimal; }
+  .bf-open li { font-size: var(--fs-xs); line-height: 1.85; }
+
+  .bf-files {
+    grid-column: 1 / -1;
+    font-size: 10px;
+    line-height: 1.5;
+    letter-spacing: .04em;
+    color: var(--yoxi-slate-lite);
+  }
+</style>
+</head>
+
+<body>
+<div class="board">
+
+  <!-- ===== 頂條 ===== -->
+  <header class="board__h">
+    <div>
+      <span class="board__kicker">概念板 · 好友</span>
+      <h1 class="board__t">好友：寄一張，不是聊一句</h1>
+    </div>
+    <p class="board__lead">
+      多人互動只做一件事：把走到的地方寄給一個人，附一句話。
+      沒有 in-app 聊天、沒有語音、沒有已讀、沒有數字。
+      第一天信箱是空的，所以放三個標示清楚、隨時可關的 AI 鄰居。
+    </p>
+    <nav class="bf-back">
+      <a href="../concept.html">概念稿目錄</a>
+      <a href="../index.html">原型首頁</a>
+    </nav>
+    <span class="board__file">boards/board-friends.html</span>
+  </header>
+
+  <!-- ===== 寄 → 收 → 牆 → 鄰居 ===== -->
+  <div class="bf-flow">
+
+    <div class="phone" data-png="../assets/thumbs/concept-friend-send-write.png">
+      <span class="bf-over">寄</span>
+      <div class="phone__box">
+        <a class="bf-hit" target="_blank" title="寄一張：挑卡與寫小語"
+           href="../screens/concept-friend-send.html?to=sis&amp;step=write&amp;card=p3"></a>
+      </div>
+      <p class="phone__cap">挑一張你自己走到過的卡，寫一句話
+        <small>concept-friend-send.html?step=write · 最多 20 字，沒去過的地方寄不出去</small></p>
+    </div>
+
+    <span class="bf-arrow">→</span>
+
+    <div class="phone" data-png="../assets/thumbs/concept-friend-inbox.png">
+      <span class="bf-over">收</span>
+      <div class="phone__box">
+        <a class="bf-hit" target="_blank" title="信箱：收到的與我寄出的"
+           href="../screens/concept-friend-inbox.html"></a>
+      </div>
+      <p class="phone__cap">收到的與寄出的，分今天／昨天／更早
+        <small>concept-friend-inbox.html · 沒有未讀點，卡上也沒有「回一張」</small></p>
+    </div>
+
+    <span class="bf-arrow">→</span>
+
+    <div class="phone" data-png="../assets/thumbs/concept-friend-profile.png">
+      <span class="bf-over">牆</span>
+      <div class="phone__box">
+        <a class="bf-hit" target="_blank" title="他的牆"
+           href="../screens/concept-friend-profile.html?id=sis"></a>
+      </div>
+      <p class="phone__cap">他願意給你看的那幾張
+        <small>concept-friend-profile.html?id=sis · 不是他的位置；沒打開牆也還是可以寄給他</small></p>
+    </div>
+
+    <span class="bf-arrow">→</span>
+
+    <div class="phone" data-png="../assets/thumbs/concept-friend-neighbors.png">
+      <span class="bf-over">鄰居</span>
+      <div class="phone__box">
+        <a class="bf-hit" target="_blank" title="AI 鄰居"
+           href="../screens/concept-friend-neighbors.html"></a>
+      </div>
+      <p class="phone__cap">三個 AI 鄰居各守一個角落，每隔幾天寄一張
+        <small>concept-friend-neighbors.html · 會做／不會做寫在資料裡，兩層開關都能關</small></p>
+    </div>
+
+  </div>
+
+  <!-- ===== 四條圍牆 ＋ 還沒決定 ===== -->
+  <div class="bf-bottom">
+
+    <section class="bf-tiles">
+      <div class="panel bf-tile">
+        <b>沒有聊天</b>
+        <span>多人互動只做一件事：把走到的地方寄給一個人，附一句話。沒有 in-app 聊天、沒有語音。</span>
+      </div>
+      <div class="panel bf-tile">
+        <b>沒有已讀</b>
+        <span>資料層沒有 read 欄位。沒有未讀點、沒有已讀；寄出之後你不會知道他什麼時候看。</span>
+      </div>
+      <div class="panel bf-tile">
+        <b>沒有數量</b>
+        <span>整頁沒有數字。不寫幾張、不寫去過幾個地方、沒有排行、沒有上線狀態。</span>
+      </div>
+      <div class="panel bf-tile">
+        <b>AI 有標示、可以關</b>
+        <span>列表 chip、卡角標「· AI」、會做／不會做對照；每個鄰居一個開關，再加一個全域開關。</span>
+      </div>
+    </section>
+
+    <section class="panel bf-open">
+      <h2 class="panel__t">還沒決定</h2>
+      <ol>
+        <li>AI 鄰居該不該回信？</li>
+        <li>能不能寄給還沒裝 app 的人？</li>
+        <li>「回一張」要不要做成按鈕？</li>
+        <li>20 字是不是太多？</li>
+        <li>入口放側邊選單，還是第四顆 pill？</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <p class="bf-files">
+    資料 js/mock-friends.js　·　畫面 screens/concept-friend-list.html、concept-friend-profile.html、
+    concept-friend-send.html、concept-friend-inbox.html、concept-friend-neighbors.html、concept-friend-push.html
+  </p>
+
+</div>
+
+<script>
+  /* 這一張板固定走 PNG。board.js 讀到這個旗標就把每個 .phone__box 換成
+     data-png 的縮圖，沒拍的留下「縮圖尚未產生」。?png=1 因此是 no-op。 */
+  window.BOARD_PNG = true;
+</script>
+<script src="board.js"></script>
+</body>
+</html>

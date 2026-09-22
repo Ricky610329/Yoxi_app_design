@@ -1103,14 +1103,18 @@
   will-change: transform;
 }
 
-/* 明信片翻面 */
+/* 明信片翻面。
+   overflow:hidden 會把 preserve-3d 壓平（Chrome 的 grouping property），翻過去只會看到
+   鏡射的正面、永遠看不到背面 —— 所以會翻的卡改成 overflow:visible，圓角改由兩個面自己裁。 */
 .postcard[data-flip] {
   transform-style: preserve-3d;
   transition: transform var(--t-slow) var(--ease-out);
   cursor: pointer;
+  overflow: visible;
 }
 .postcard[data-flip].is-flipped { transform: rotateY(180deg); }
-.postcard[data-flip] > *  { backface-visibility: hidden; }
+.postcard[data-flip] > *  { backface-visibility: hidden; border-radius: inherit; }
+.postcard[data-flip] > [data-art] { overflow: hidden; }
 
 .postcard__back {
   position: absolute;

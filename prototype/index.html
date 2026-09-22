@@ -114,7 +114,7 @@
   .script b { font-weight: 800; }
 
   /* --- 入口卡 ------------------------------------------------------ */
-  .doors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 8px; }
+  .doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 8px; }
   @media (max-width: 1000px) { .doors { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 600px)  { .doors { grid-template-columns: 1fr; } }
   .door {
@@ -187,6 +187,10 @@
     <a class="door" href="vision.html">
       <span class="door__t">願景探索稿 <span class="arrow"></span></span>
       <span class="door__d">家人動向、大型活動、行程規劃、健康出行：四個主題各三種呈現，不在 demo 流程上。</span>
+    </a>
+    <a class="door" href="concept.html">
+      <span class="door__t">概念稿 <span class="arrow"></span></span>
+      <span class="door__d">地圖質感探索與好友系統。真實 OSM 幾何、六種底圖、單／雙地圖、微 3D、寄明信片給朋友。手機框與大張概念板都有，不是 app 規格。</span>
     </a>
     <div class="door">
       <span class="door__t">驗收</span>

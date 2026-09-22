@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>同一份新竹，六種紙 — yoxi 城事概念板</title>
+<!--
+  BOARD-MAP-STYLES 底圖語言對照板（1600 × 1000）
+
+  回答什麼
+    「底圖都做做看，也可以有一點點 3D，不要侷限，但要確保是和諧的。」
+    這一張是那句話的答案：六種紙擺在一起，同中心、同縮放、同一份 OSM 幾何，
+    只換一張色票。和諧不是「看起來像」，是「換得掉的只有紙」。
+
+  怎麼讀
+    左邊六格是受控實驗（iso 例外：它得拉近到廟口才看得到樓）。
+    右邊的色票表是六格為什麼和諧的證據 —— 每一格的每一個顏色都來自
+    js/hsmap.js 的 PALETTE，表以外的顏色出現一個就是 review 沒過。
+
+  刻意沒有的東西
+    · 沒有「哪一種最好」的結論。這一張是給人挑的，不是替人挑好的。
+    · 沒有截圖：六格都是即時畫的 SVG，改 PALETTE 一行，六格一起變。
+    · 沒有分數、沒有排名、沒有數量。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<link rel="stylesheet" href="board.css">
+</head>
+
+<body>
+<div class="board">
+
+  <header class="board__h">
+    <div>
+      <span class="board__kicker">概念板 · 地圖 01 ／ 底圖語言</span>
+      <h1 class="board__t">同一份新竹，六種紙</h1>
+    </div>
+    <p class="board__lead">同一個中心、同一個縮放、同一份 OpenStreetMap 幾何，只換一張色票。
+      六格是受控實驗，不是拼貼 —— 能換的只有紙，圖釘、標籤、署名一個零件都沒換。</p>
+    <span class="board__file">boards/board-map-styles.html</span>
+  </header>
+
+  <!-- ===== 左：六格對照 ===== -->
+  <div class="board__l">
+    <div class="smaps" id="smaps"></div>
+    <p class="board__note">六格共用 <b>center 24.80296, 120.97304</b>（車站與城隍廟之間）、
+      <b>spanM 1400</b>、CORE 資料集；微 3D 那一格例外，它拉近到城隍廟、spanM 700。</p>
+  </div>
+
+  <!-- ===== 右：色票表、三個機制、取捨 ===== -->
+  <div class="board__r">
+
+    <section class="panel">
+      <h2 class="panel__t">一張色票表（列＝語意圖層，欄＝紙）</h2>
+      <table class="palette" id="palette"></table>
+      <p class="board__note" style="margin-top:7px">
+        插畫風的公園綠 <b>#CFE0C2</b> 是全案唯一的新色相，只准在地圖表面，永不進 UI。
+        微 3D 直接用紙感這一欄，差別只在把建物擠壓出頂面與兩階牆。
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__t">和諧的三個機制</h2>
+      <div class="mechs">
+        <div class="mech">
+          <span class="mech__n">1</span>
+          <div>
+            <div class="mech__t">一張色票</div>
+            <p class="mech__d">列是語意圖層，欄是紙。表以外的顏色出現一個就是 review 沒過。</p>
+          </div>
+        </div>
+        <div class="mech">
+          <span class="mech__n">2</span>
+          <div>
+            <div class="mech__t">一組零件</div>
+            <p class="mech__d">.spot、.pin、標籤、ODbL 小字六格相同，來自既有的 chengshi.css。</p>
+          </div>
+        </div>
+        <div class="mech">
+          <span class="mech__n">3</span>
+          <div>
+            <div class="mech__t">一份幾何</div>
+            <p class="mech__d">同中心、同縮放、同一份 OSM 折線。六格疊起來路網要對得上。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--flex">
+      <h2 class="panel__t">取捨</h2>
+      <ul class="tradeoffs">
+        <li><b>插畫風多了一個色相。</b>公園綠是全案唯一的例外，只准在地圖表面 ——
+          多一個色相，就多一條永遠要守的規矩。</li>
+        <li><b>微 3D 吃掉路。</b>建物一擠壓，牆就把巷子遮住，所以它只成立在近鏡頭
+          （spanM 500–900），拉遠就變成一片噪點。</li>
+        <li><b>夜間留給晚上。</b>白天用它，紅色頁首會從深藍裡跳出來咬人；
+          它的位置是叫車那一段，不是探索。</li>
+        <li><b>霧化只給足跡。</b>探索頁如果也霧，等於「先解鎖才准看」，
+          那是任務感，不是城事要的東西。</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <p class="credit">
+    <b>地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）</b>　·
+    六格由 js/hsmap.js 即時繪製，不是圖磚截圖。明信片與插圖為程式生成示意；實景照片見各頁出處。
+  </p>
+
+</div>
+
+<script src="../js/mock.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script src="board.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const W = 430, H = 248;
+  const CENTER = [24.80296, 120.97304];
+  const SPAN = 1400;
+
+  /* 去過的地方＝霧化那一格的洞。來源是 MOCK.SPOTS，不另外寫一份。 */
+  const seen = MOCK.SPOTS
+    .filter(function (s) { return s.state === 'seen' || s.state === 'today'; })
+    .map(function (s) { return s.id; });
+
+  /* ---- 六格 -------------------------------------------------------------- */
+  const CELLS = [
+    { k: 'paper', n: '紙感 paper', d: '白天的預設。地是米白，路是白的＋一圈 casing，建物比地深一階。',
+      opt: {} },
+    { k: 'navy',  n: '夜間 navy',  d: '同一份幾何的夜間版。叫車那一段用它，紅色頁首在深藍上最安靜。',
+      opt: {} },
+    { k: 'illus', n: '插畫 illus', d: '唯一多一個色相的一種：公園綠 #CFE0C2。次要道路也加了 casing。',
+      opt: {} },
+    { k: 'iso',   n: '微 3D iso',  d: 'center 城隍廟、spanM 700、rotate −22°。近鏡頭才看得到樓。',
+      opt: { center: 'temple', spanM: 700 } },
+    { k: 'paper', n: '傾斜的紙 tilt', d: '不換紙，只把紙立起來 52°（CSS rotateX）。圖釘會反向站直。',
+      tilt: true, opt: {} },
+    { k: 'fog',   n: '霧化 fog',   d: '去過的地方是洞，其餘蓋住。三態：去過／褪色／還沒。只給足跡。',
+      /* 半徑要跟著比例尺調：330 m 在 430 px／1400 m 上會把整格都變成「去過」 */
+      opt: { fog: { seen: seen, fade: ['harbour', 'rail'], radiusM: 220 } } },
+  ];
+
+  const host = document.getElementById('smaps');
+  host.innerHTML = CELLS.map(function (c, i) {
+    const inner = c.tilt
+      /* 格子比手機矮又寬，1.22 倍會在上緣留一條白；1.5 倍剛好把地平線推出框外 */
+      ? '<div class="hsmap-tilt" style="--tilt:52; --tilt-scale:1.7">' +
+          '<div class="hsmap-tilt__plane"><svg class="map__svg hsmap" id="sm' + i + '"></svg></div>' +
+        '</div>'
+      : '<svg class="map__svg hsmap" id="sm' + i + '"></svg>';
+    return '<div class="scell">' +
+      '<div class="smap">' + inner + '</div>' +
+      '<p class="scell__cap">' + c.n + '<br><small>' + c.d + '</small></p>' +
+    '</div>';
+  }).join('');
+
+  CELLS.forEach(function (c, i) {
+    const o = Object.assign({ style: c.k, center: CENTER, spanM: SPAN, width: W, height: H,
+                              layers: { label: true } }, c.opt);
+    HSMAP.render(document.getElementById('sm' + i), o);
+  });
+
+  /* ---- 色票表：直接讀 HSMAP.PALETTE，板上不另外調色 ------------------------ */
+  const ROWS = [
+    ['地',       ['land']],
+    ['水',       ['water']],
+    ['公園',     ['park']],
+    ['主要道路', ['roadFill', 'roadCase']],
+    ['次要道路', ['roadMinor']],
+    ['鐵路',     ['rail']],
+    ['建物',     ['bldFill']],
+    ['標籤',     ['label']],
+  ];
+  const COLS = [['paper', '紙感'], ['navy', '夜間'], ['illus', '插畫'], ['fog', '霧化']];
+
+  function cell(preset, keys) {
+    const P = HSMAP.PALETTE[preset];
+    const fill = P[keys[0]];
+    if (!fill) return '<span class="palette__none">不畫</span>';
+    const ring = keys[1] && P[keys[1]] ? 'box-shadow: inset 0 0 0 3px ' + P[keys[1]] + ';' : '';
+    const hex = keys.map(function (k) { return P[k] || '—'; }).join(' · ');
+    return '<span class="palette__sw" style="background:' + fill + ';' + ring + '"></span>' +
+           '<span class="palette__hex">' + hex + '</span>';
+  }
+
+  document.getElementById('palette').innerHTML =
+    '<thead><tr><th>圖層</th>' +
+      COLS.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') +
+    '</tr></thead><tbody>' +
+    ROWS.map(function (r) {
+      return '<tr><td class="palette__k">' + r[0] + '</td>' +
+        COLS.map(function (c) { return '<td>' + cell(c[0], r[1]) + '</td>'; }).join('') +
+      '</tr>';
+    }).join('') +
+    '</tbody>';
+})();
+</script>
+</body>
+</html>

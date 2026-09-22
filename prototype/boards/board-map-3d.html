@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>一點點 3D：擠壓的建物、傾斜的紙 — yoxi 城事概念板</title>
+<!--
+  BOARD-MAP-3D 微 3D 概念板（1600 × 1000）
+
+  回答什麼
+    「也可以有一點點 3D」有兩種做法，而且它們是不同的東西：
+    iso 是真的把建物擠壓成體塊（純 SVG，headless 截得到，不吃 WebGL）；
+    tilt 只是把平面的紙立起來 52°（CSS rotateX），幾何一點都沒變。
+    兩種都不新增任何可按的元素 —— 3D 是畫法，不是功能。
+
+  怎麼讀
+    左邊是 iso 的近鏡頭：城隍廟一帶、spanM 900、rotate −22°。
+    注意 spot 是平的、全尺寸、在最上層 —— 紙可以斜，圖釘不可以。
+    右邊三支：近景 iso ／ 黃昏＋傾斜 ／ 傾斜的紙感（同一份 paper 底圖立起來）。
+
+  刻意沒有的東西
+    · 沒有陰影特效、沒有環境光遮蔽：只有頂面與兩階牆，三階明度。
+    · 沒有 3D 的可按元素（不加「點建物看樓層」那種東西）。
+    · 沒有把 iso 當預設：它是近鏡頭風格，拉遠就不成立。
+
+  資料：地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）；建物高度見板上的取捨第一條。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<link rel="stylesheet" href="../css/concept.css">
+<link rel="stylesheet" href="board.css">
+</head>
+
+<body>
+<div class="board">
+
+  <header class="board__h">
+    <div>
+      <span class="board__kicker">概念板 · 地圖 04 ／ 微 3D</span>
+      <h1 class="board__t">一點點 3D</h1>
+    </div>
+    <p class="board__lead">兩種做法：iso 真的把建物擠壓成體塊（純 SVG），tilt 只是把平面的紙立起來 52°。
+      兩種都不新增任何可按的元素 —— 3D 是畫法，不是功能。</p>
+    <span class="board__file">boards/board-map-3d.html</span>
+  </header>
+
+  <!-- ===== 左：iso 近鏡頭 ===== -->
+  <div class="board__l">
+    <div class="bigmap" id="big" style="width:900px; height:820px">
+      <span class="bigmap__tag">擠壓的建物　<small>iso · CORE · spanM 900 · rotate −22°</small></span>
+      <div class="bigmap__spots" id="spots"></div>
+    </div>
+    <p class="board__note">dimetric 投影：<b>iso(x, y, z) = [(x − y)·0.866, (x + y)·0.5 − z·0.82]</b>，
+      畫家演算法依 (x + y) 由遠到近排；只擠壓中心 spanM × 0.8 內、面積前 600 棟，
+      其餘保持平面的輪廓。中心是城隍廟。</p>
+  </div>
+
+  <!-- ===== 右：三支手機＋取捨 ===== -->
+  <div class="board__r">
+
+    <div class="phones phones--3">
+      <div class="phone" data-png="../assets/thumbs/concept-iso.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-iso.html?still=1&amp;bare=1"
+                  title="近景 iso" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">近景 iso
+          <small>concept-map-iso.html</small></p>
+      </div>
+
+      <div class="phone" data-png="../assets/thumbs/concept-iso-dusk.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-iso.html?tilt=1&amp;hour=dusk&amp;still=1&amp;bare=1"
+                  title="黃昏與傾斜" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">黃昏＋傾斜
+          <small>concept-map-iso.html?tilt=1&amp;hour=dusk</small></p>
+      </div>
+
+      <div class="phone" data-png="../assets/thumbs/concept-explore-tilt.png">
+        <div class="phone__box">
+          <iframe src="../screens/concept-map-explore.html?style=paper&amp;tilt=1&amp;still=1&amp;bare=1"
+                  title="傾斜的紙感" scrolling="no" loading="eager"></iframe>
+        </div>
+        <p class="phone__cap">傾斜的紙感
+          <small>concept-map-explore.html?style=paper&amp;tilt=1</small></p>
+      </div>
+    </div>
+
+    <section class="panel panel--flex">
+      <h2 class="panel__t">取捨</h2>
+      <ul class="tradeoffs">
+        <li><b>高度多半是推的。</b>OSM 上只有 <b>21.7%</b> 的建物帶樓層數，其餘依標籤與面積估。
+          所以這是「示意的體塊」，不是實測的天際線 —— 不可以拿它當地標辨識。</li>
+        <li><b>3D 在 390 px 上吃掉路。</b>牆一立起來就把巷子遮住，
+          所以 iso 只做近鏡頭（spanM 500–900）；拉遠它就變成一片噪點。</li>
+        <li><b>spot 永遠平面、全尺寸、最上層。</b>紙可以斜，圖釘不可以：
+          傾斜的圖釘比較難按，而且 46 px 的縮圖一斜就看不出是什麼地方。</li>
+        <li><b>iso 不新增任何可按的元素。</b>它只是同一份資料的另一種畫法；
+          建物不能點、樓層不會跳數字、沒有「看這棟」。</li>
+        <li><b>tilt 是 CSS，不是幾何。</b>它便宜、每一種紙都能加，
+          但 preserve-3d 在 overflow:hidden 裡有被壓平的風險，所以 spot 得反向 rotateX 站直。</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <p class="credit">
+    <b>地圖資料 © OpenStreetMap 貢獻者（ODbL 1.0）</b>　·
+    建物量體由 js/hsmap.js 以純 SVG 擠壓，不使用 WebGL 或圖磚。
+    明信片與插圖為程式生成示意；實景照片見各頁出處。
+  </p>
+
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../assets/map/hs-core.js"></script>
+<script src="../assets/map/hs-places.js"></script>
+<script src="../js/hsmap.js"></script>
+<script src="board.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const m = HSMAP.render(document.getElementById('big'), {
+    style: 'iso',
+    center: 'temple',
+    spanM: 900,
+    rotate: -22,
+    width: 900,
+    height: 820,
+  });
+
+  /* spot 不跟著傾斜、不縮小、不換零件 —— 它們跟其他五種紙上的一模一樣。 */
+  const list = m.spotsAt(MOCK.SPOTS).filter(function (s) { return !s.offMap; });
+  SHELL.renderSpots(document.getElementById('spots'), { spots: list });
+})();
+</script>
+</body>
+</html>
