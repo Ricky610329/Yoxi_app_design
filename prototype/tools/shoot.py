@@ -85,6 +85,20 @@ variant-x4-badges.html?style=ring:variant-x4-badges-ring
 variant-x4-badges.html?style=stamp:variant-x4-badges-stamp
 variant-t1-tasks
 variant-t1-tasks.html?mode=merged:variant-t1-tasks-merged
+variant-k1-place.html?id=glass-kiln:variant-k1-place
+variant-k-ride.html?to=glass-kiln:variant-k-ride
+variant-k-ride.html?to=neiwan:variant-k-ride-neiwan
+variant-k-ride.html?to=neiwan&at=p10&leg=4000:variant-k-ride-leg
+variant-k-ride.html?to=home:variant-k-ride-home
+variant-k2-map
+variant-k3-push
+variant-k3-push.html?when=rain:variant-k3-push-rain
+variant-k4-route.html?id=rail:variant-k4-route
+variant-k5-unlock
+variant-k5-unlock.html?when=night:variant-k5-unlock-night
+variant-k6-place.html?id=neiwan:variant-k6-place
+variant-k7-place.html?id=glass-kiln:variant-k7-place
+variant-k7-place.html?id=neiwan:variant-k7-place-far
 variant-l1-explore variant-l2-explore variant-l3-album variant-l4-map
 variant-l5-explore variant-l5-album variant-l6-explore
 

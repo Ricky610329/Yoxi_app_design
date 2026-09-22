@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>推播（變體 K3） — yoxi 城事</title>
+<!--
+  變體 K3 推播：下雨就用車（轉換點在哪？K 系列）
+
+  轉換點放在哪、為什麼
+  ────────────────────
+  轉換點早到 app 還沒打開的時候：早上的通知本身就是那一步。
+  通知上掛的是 iOS 通知動作，不是 app 裡的按鈕 —— 語氣是作業系統的，不是 yoxi 的。
+  晴天只有一個動作「看地方」，通知裡一個字都不提車。
+  下雨（?when=rain）才多一顆「用 yoxi」，而且理由寫在第一句：「新竹今天有雨。」
+  車出現的條件是天氣，不是行銷排程；沒有理由的那天，車就不存在。
+
+  跟主線那張差在哪（只差一處）
+  ────────────────────────────
+  screens/push.html 只差一處：通知卡下面多了一排通知動作。
+  一天最多兩則的上限、早上／晚上兩則的分工、鎖定畫面的版型全部照舊，
+  ?when=night 的晚上那則也原樣保留（它的動作只有一顆「看今天」，同樣沒有車）。
+
+  刻意沒有的東西
+  ──────────────
+  · 晴天版沒有任何叫車入口 —— 這是這一版能不能過的唯一標準。
+  · 沒有折扣碼、沒有「限時」、沒有點數；下雨那顆只寫車資。
+  · 沒有第三則推播：多一顆動作不等於多一次打擾，上限沒有被動過。
+  · 雨天的動作也沒有預選走路或叫車：兩顆一樣大，讓人自己決定。
+
+  ?when=morning（預設 · 晴天）｜?when=rain（下雨）｜?when=night（晚上）
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-status="light" data-time="8:10">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <div class="pushmock" id="lock" style="position:absolute; inset:0">
+        <div class="pushmock__clock">
+          <div class="pushmock__time" id="clock">8:10</div>
+          <div class="pushmock__date" id="date">9月21日 星期日</div>
+          <!-- 天氣只在有天氣可講的時候才出現 -->
+          <div id="wx" style="font-size:13px; opacity:.8; margin-top:6px"></div>
+        </div>
+
+        <a class="pushmock__card" id="card" href="explore.html">
+          <span class="pushmock__app">y</span>
+          <span style="flex:1; min-width:0">
+            <span class="pushmock__t">yoxi 城事</span>
+            <span class="pushmock__b" id="body"></span>
+          </span>
+        </a>
+
+        <!-- 通知動作。長在卡片外面、鎖定畫面上，用的是系統的語言：
+             半透明白底、白字，不是 yoxi 的海軍藍按鈕。 -->
+        <div id="acts" style="display:flex; gap:8px; margin-top:8px"></div>
+
+        <p id="note" style="margin-top:14px; color:var(--yoxi-white); opacity:.45;
+                  font-size:12px; line-height:1.6">
+          一天最多兩則不變。晴天的版本沒有車 —— 車只在有理由的時候出現。
+        </p>
+
+        <p style="margin-top:auto; margin-bottom:48px; text-align:center;
+                  color: var(--yoxi-white); opacity:.45; font-size:12px">
+          demo 用的鎖定畫面。點通知進入 app。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const when  = new URLSearchParams(location.search).get('when') || 'morning';
+  const night = when === 'night';
+  const rain  = when === 'rain';
+
+  /* ---- 距離、時間、車資一律算出來，通知文案不寫死數字 -------------- */
+  const place   = MOCK.findPlace('glass-kiln');
+  const dist    = place.distance;
+  const fareOf  = function (d) { return Math.round(75 + 22 * d / 1000); };
+  const walkMin = function (d) { return Math.round(d / 75); };
+
+  /* ---- 鎖定畫面 ---------------------------------------------------- */
+  document.getElementById('clock').textContent = night ? '21:30' : '8:10';
+  if (night) document.body.dataset.time = '21:30';   /* 狀態列在 DOMContentLoaded 才畫，來得及 */
+
+  if (rain) {
+    /* 下雨的早上天更暗一點。只是天光，不是另一套主題。 */
+    document.getElementById('lock').style.background =
+      'linear-gradient(160deg, #141F2E, #060D18)';
+    document.getElementById('wx').textContent = '🌧 22°';
+  }
+
+  /* ---- 通知本文 ---------------------------------------------------- */
+  const walkLine = '今天的地方：' + place.name + ' · ' + dist + ' m，走路 ' +
+                   walkMin(dist) + ' 分';
+
+  document.getElementById('card').href = night ? 'lookback.html'
+                                               : 'place.html?id=' + place.id;
+  document.getElementById('body').textContent = night
+    ? '今天走了 6,240 步，經過 3 個地方。來看看今天。'
+    : (rain ? '新竹今天有雨。' : '') + walkLine;
+
+  /* ---- 通知動作 ----------------------------------------------------
+     鎖定畫面是暗的，所以動作是半透明白底＋白字 —— 系統的語言。
+     晴天只有一顆，而且沒有車。 */
+  const pill = function (label, href) {
+    return '<a href="' + href + '" style="flex:1; display:flex; align-items:center;' +
+           ' justify-content:center; min-height:38px; padding:0 14px; border-radius:999px;' +
+           ' background:rgba(255,255,255,.2); color:var(--yoxi-white);' +
+           ' font-size:13px; font-weight:700">' + label + '</a>';
+  };
+
+  document.getElementById('acts').innerHTML =
+    night ? pill('看今天', 'lookback.html')
+    : rain ? pill('走路去', 'place.html?id=' + place.id) +
+             pill('用 yoxi · <span class="num">$' + fareOf(dist) + '</span>',
+                  'variant-k-ride.html?to=' + place.id)
+    :        pill('看地方', 'place.html?id=' + place.id);
+
+  if (night) document.getElementById('note').textContent =
+    '一天最多兩則不變。晚上這則是回顧，同樣沒有車。';
+})();
+</script>
+</body>
+</html>

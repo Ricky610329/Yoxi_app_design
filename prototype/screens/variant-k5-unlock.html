@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 K5 · 回程用車 — yoxi 城事</title>
+<!--
+  變體 K5：到了之後 —— 回程用車（軸線 conv —— 轉換點在哪？）
+
+  這張是 K 系列哪一個
+    K5。七個變體把「從發現一個地方到叫車去那裡」這一步放在七個不同的
+    位置，這一版放得最晚：走路去、走路到、收下明信片之後才問。
+    七張共用同一張落點畫面 variant-k-ride.html?to=<place>。
+
+  轉換點放在哪、為什麼
+    轉換點在獎勵之後。去程一個字都不提車 —— 900 公尺本來就該走 ——
+    車出現在人最想坐的那一刻：已經走了 900 公尺、明信片已經收下、
+    接下來只剩回家這一段。理由不是促銷，是身體：走累了、天黑了。
+    ?when=night 把這件事講白：狀態列 21:35，卡片第一行「天黑了。」，
+    按鈕直接把等車時間寫進去。
+
+  跟主線那張差在哪（只差一處）
+    unlock.html 的三幕、金框限定版、「寫一句話」輸入框、STATE.collect
+    的寫入全部照抄，一行沒動。差的只有一處：收進收藏／分享下面多一張
+    「回程」卡。幕一、幕二完全沒變 —— 發現與收集不被打斷是這一版的前提。
+    （多了一張卡會比一個螢幕高，所以第三幕改成可以捲；
+      收進收藏永遠按得到，只是要往下滑。）
+
+  代價
+    · 每一次抵達都問一次會煩。所以有「這次不用」，而且它的回應要是記得住的
+      ——「下次到遠一點的地方再問」。正式版這句要真的寫進設定。
+    · 900 公尺的地方叫車回家有點蠢；這正是這一版要被實測的地方。
+
+  刻意沒有的東西
+    · 沒有倒數、沒有「限時折扣」、沒有把回程包裝成獎勵的一部分。
+      明信片是明信片，車是車，中間那條線不能糊掉。
+    · 沒有紅色。紅只留給頁首、圖釘與「今天」。
+    · 車資與等車時間不打字：$ = round(75 + 22×公里)；
+      上車時間是派車等待，不是車程，所以單獨列一個常數並註明。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 第三幕多了一張回程卡，會比一個螢幕高。
+     .unlock 原本是 flex + justify-content:center，內容一長就會被切掉上緣、
+     「收進收藏」直接掉出畫面。改成可捲 + 自動外距：
+     放得下的時候照樣置中，放不下就從頂端開始、往下捲得到。 */
+  #unlock { overflow-y: auto; justify-content: flex-start; padding-bottom: 40px; }
+  #unlock > .unlock__scene.is-on { margin-top: auto; margin-bottom: auto; }
+
+  /* 回程卡：白卡落在深藍幕上，字色要自己給（.unlock 把字設成白的）。 */
+  .backhome {
+    margin-top: 20px;
+    text-align: left;
+    color: var(--yoxi-navy);
+  }
+  .backhome__night { font-weight: 800; margin-bottom: 4px; }
+  .backhome__t { font-size: 17px; font-weight: 800; }
+  .backhome__line {
+    margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--yoxi-slate);
+  }
+  .backhome .btn-primary { margin-top: 14px; }
+  .backhome .btn-link {
+    display: flex; width: 100%; justify-content: center; margin-top: 10px;
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="8:26">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+      <div class="unlock" id="unlock">
+
+        <!-- ===== 幕 1：灰點爆開上色 ===== -->
+        <div class="unlock__scene is-on" id="act1">
+          <div class="burst">
+            <span class="burst__wave"></span>
+            <span class="burst__wave"></span>
+            <span class="burst__dot"></span>
+          </div>
+          <h1 class="unlock__title">你到了<br>水利路的老玻璃窯</h1>
+          <p class="unlock__sub" id="arriveBy">走了 2,140 步抵達</p>
+        </div>
+
+        <!-- ===== 幕 2：明信片生成 ===== -->
+        <div class="unlock__scene" id="act2">
+          <div class="gen">
+            <div class="gen__layer" data-art="glass" data-seed="1"></div>
+            <div class="gen__layer" style="background:
+                 linear-gradient(200deg, rgba(255,255,255,.28), transparent 60%)"></div>
+            <div class="gen__layer" style="background:
+                 radial-gradient(circle at 34% 26%, rgba(255,255,255,.4), transparent 52%)"></div>
+            <div class="gen__layer" style="box-shadow: inset 0 -40px 60px rgba(30,58,92,.45)"></div>
+            <div class="gen__sweep"></div>
+            <span class="gen__tag">yoxi ✕ AI 生成中</span>
+          </div>
+          <h2 class="unlock__title" style="font-size:22px">正在畫下今天的這裡</h2>
+          <p class="unlock__sub">依這個地方的樣子、今天的天氣與光線生成</p>
+          <p class="unlock__sub" style="margin-top:18px; font-size:12px; opacity:.55">點一下畫面直接看結果</p>
+        </div>
+
+        <!-- ===== 幕 3：明信片成品 ===== -->
+        <div class="unlock__scene" id="act3">
+          <div style="width:220px; margin:0 auto var(--sp-5); position:relative"
+               id="cardWrap">
+            <div class="postcard" id="finalCard" style="aspect-ratio:3/4">
+              <div data-art="glass" data-seed="1" style="position:absolute;inset:0"></div>
+              <span class="ai-mark">AI 生成示意</span>
+              <span class="postcard__foot">
+                <span class="postcard__name">水利路的老玻璃窯</span>
+                <span class="postcard__date">2026.09.21 · 晴 · 新竹市</span>
+              </span>
+            </div>
+          </div>
+
+          <div id="goldNote" class="u-hidden" style="margin-bottom:16px">
+            <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
+                        border-radius:999px; background:rgba(201,162,39,.22); color:var(--gold-lite);
+                        font-size:13px; font-weight:800">
+              <span class="ic-ondark" data-icon="badge" style="width:16px;height:16px;display:block"></span>
+              司機 陳先生 帶你走完了這一段
+            </div>
+          </div>
+
+          <div style="padding:0 var(--sp-2)">
+            <input id="oneLine" maxlength="10" placeholder="寫一句話（最多 10 字，可以不寫）"
+                   style="width:100%; height:52px; padding:0 16px; border-radius:4px;
+                          border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.08);
+                          color: var(--yoxi-white); font-size:15px; text-align:center">
+          </div>
+
+          <div style="display:grid; gap:10px; margin-top:20px; padding:0 var(--sp-2)">
+            <button class="btn-primary" id="keepBtn"
+               style="background:var(--yoxi-white); color:var(--yoxi-navy)">收進收藏</button>
+            <button class="btn-link" data-share="分享這張明信片"
+                    style="justify-content:center; color:rgba(255,255,255,.7)">
+              分享
+            </button>
+          </div>
+
+          <!-- ===== K5 唯一的新增：回程 ===== -->
+          <div style="padding:0 var(--sp-2)">
+            <div class="card card--pad backhome" id="backHome">
+              <div class="backhome__night u-hidden" id="nightLine">天黑了。</div>
+              <div class="backhome__t">回家用 yoxi？</div>
+              <div class="backhome__line" id="backLine"></div>
+              <a class="btn-primary" id="backBtn" href="variant-k-ride.html?to=home">叫車回家</a>
+              <button class="btn-link" data-toast="好，這次不問了 —— 下次到遠一點的地方再問">
+                這次不用
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 和泰 Points toast（僅限定版） -->
+      <div class="toast u-hidden" id="pointsToast" style="bottom:24px">
+        <span data-icon="point" style="width:22px;height:22px;flex:none"></span>
+        <span class="u-fill">和泰 Points <span class="num">+50</span></span>
+        <span style="font-size:12px; opacity:.7">城事解鎖回饋</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const isRide = q.has('ride');
+  const night  = q.get('when') === 'night';
+
+  /* 天黑的那一版：狀態列也要跟著天黑。
+     shell.js 的 mount 排在 DOMContentLoaded，這裡改得到。 */
+  if (night) document.body.dataset.time = '21:35';
+
+  /* 解鎖哪一個地方由 ?id= 決定（搭車固定是內灣）。以前寫死玻璃窯：
+     從「還沒去的地方」走到護城河，收下的卻是玻璃窯那張卡。 */
+  const P      = MOCK.findPlace(isRide ? 'neiwan' : (q.get('id') || 'glass-kiln'));
+  const cardId = MOCK.cardIdOf(P.id);
+  const card   = MOCK.POSTCARDS.filter(function (p) { return p.id === cardId; })[0];
+  const art    = card ? card.art  : P.art;
+  const name   = card ? card.name : P.name;
+
+  /* 視覺與文字一起換，收藏牆是用同一張 art 重繪的，兩邊才會是同一張卡 */
+  document.querySelector('#act2 .gen__layer').innerHTML = SHELL.postcardArt(art, { seed: 1 });
+  document.querySelector('#act3 [data-art]').innerHTML  = SHELL.postcardArt(art, { seed: 1 });
+  document.querySelector('#act1 .unlock__title').innerHTML = '你到了<br>' + name;
+  document.querySelector('#act2 .unlock__title').textContent =
+    '正在畫下今天的' + (isRide ? '內灣' : '這裡');
+  const fc = document.getElementById('finalCard');
+  fc.querySelector('.postcard__name').textContent = name;
+  fc.querySelector('.postcard__date').textContent =
+    '2026.09.21 · 晴 · ' + (isRide ? '內灣' : (P.area || '新竹市'));
+
+  /* 步數跟明信片詳情用同一條公式（1,450 步／公里），不再寫死 2,140 */
+  const dist = P.distance;
+  document.getElementById('arriveBy').textContent = isRide
+    ? '搭 yoxi 抵達 · ' + Math.round(dist / 1000) + ' 公里'
+    : (dist != null ? '走了 ' + Math.round(dist / 1000 * 1450).toLocaleString() + ' 步抵達'
+                    : '走路抵達');
+
+  /* yoxi 限定版：金框、角標、司機同行紀念、點數回饋 */
+  if (isRide) {
+    fc.classList.add('postcard--gold');
+    fc.insertAdjacentHTML('afterbegin', '<span class="postcard__ribbon">yoxi 限定版</span>');
+    document.getElementById('goldNote').classList.remove('u-hidden');
+  }
+
+  /* ===== K5 唯一的新增：回程那一張卡 =====
+     車資照全站同一條公式算。上車時間是「車開到你這裡要多久」，
+     跟車程是兩件事，所以單獨放一個常數 —— 正式版這個數字來自派車系統。 */
+  const PICKUP_MIN = 4;
+  const fareOf = function (d) { return Math.round(75 + 22 * d / 1000); };
+
+  const backLine = document.getElementById('backLine');
+  const backBtn  = document.getElementById('backBtn');
+  backLine.innerHTML = (dist != null
+      ? '走了 <span class="num">' + dist + '</span> m 到這裡；'
+      : '你已經走到這裡；') +
+    '回家 <span class="num">' + PICKUP_MIN + '</span> 分鐘後上車，' +
+    '<span class="num">$' + fareOf(dist != null ? dist : 900) + '</span>。';
+
+  if (night) {
+    document.getElementById('nightLine').classList.remove('u-hidden');
+    backBtn.textContent = '叫車回家 · ' + PICKUP_MIN + ' 分鐘';
+  }
+
+  /* 三幕依序播放。刻意慢 —— 這是產品的情緒高點，不該一閃而過。
+     但現場講的人要有台詞可對，也要能點過去：生成中的標籤會換兩次字，
+     點一下畫面就直接到成品。 */
+  const show = id => {
+    document.querySelectorAll('.unlock__scene').forEach(s => s.classList.remove('is-on'));
+    document.getElementById(id).classList.add('is-on');
+  };
+  const tag = document.querySelector('.gen__tag');
+  const timers = [];
+  const finish = function () {
+    timers.forEach(clearTimeout);
+    show('act3');
+    if (isRide && !STATE.has('p9')) {
+      const t = document.getElementById('pointsToast');
+      t.classList.remove('u-hidden');
+      setTimeout(() => t.classList.add('u-hidden'), 4000);
+    }
+  };
+
+  /* 收進收藏：寫入狀態，收藏頁才會真的多一張 */
+  document.getElementById('keepBtn').onclick = function () {
+    /* km 一定要帶。state.js 的預設值是「搭車算 12 公里」，
+       所以搭 28 公里去內灣，收藏頁的公里數只會加 12。 */
+    STATE.collect(P.id, {
+      km:   dist != null ? dist / 1000 : undefined,
+      by:   isRide ? 'ride' : 'walk',
+      date: '09.21',
+      note: (document.getElementById('oneLine').value || '').slice(0, 10),
+    });
+    /* 搭車那條線的重點是點數回流和泰生態系，終點該是點數頁；
+       點數頁的 ✕ 則回收藏，不要把人丟進抽屜選單。 */
+    SHELL.go(isRide ? 'points.html?from=album.html' : 'album.html');
+  };
+
+  /* ?still=1 直接跳到成品那一幕。縮圖若抓到生成動畫的中途，
+     全景圖上看到的會是「正在畫…」而不是明信片本身。 */
+  if (q.has('still')) { show('act3'); return; }
+
+  timers.push(setTimeout(() => { show('act2'); tag.textContent = '讀取今天的天氣與光線'; }, 1600));
+  timers.push(setTimeout(() => { tag.textContent = '鎖定風格 · yoxi ✕ AI'; }, 3300));
+  timers.push(setTimeout(finish, 5000));
+  document.getElementById('unlock').addEventListener('click', function () {
+    if (!document.getElementById('act3').classList.contains('is-on')) finish();
+  });
+})();
+</script>
+</body>
+</html>

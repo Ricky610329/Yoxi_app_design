@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 K4 · 路線的斷點 — yoxi 城事</title>
+<!--
+  變體 K4：路線的斷點（軸線 conv —— 轉換點在哪？）
+
+  這張是 K 系列哪一個
+    K4。同一個「轉換點」問題的七種放法裡，這一版把那一步放進主題路線的
+    軌道本身：不是每一站都賣車，而是只有「兩站之間腳到不了」的那一段，
+    軌道上才長出一張小卡。七個變體共用同一張落點畫面
+    variant-k-ride.html?to=<place>（下車點已填、車資已估、一顆「叫車」）。
+
+  轉換點放在哪、為什麼
+    放在兩站之間，不在站上。理由是這一版唯一的論證：
+    走得到的段落一個字都不提車，車只出現在腳真的到不了的地方。
+    門檻取 3 公里 —— 十八尖山 3.1 公里是一座真的走得上去的山，
+    所以 3 公里以內一律當成走得到，連提示都不給。
+    內灣線六站五段，超過 3 公里的有三段：
+      新竹車站 → 竹中站   6.6 公里
+      竹中站   → 橫山站   11.2 公里
+      合興車站 → 內灣老街 4 公里
+    另外兩段（橫山 → 九讚頭 2 公里、九讚頭 → 合興 3 公里）什麼都不長。
+    轉換點只出現在腳到不了的地方；市區三條路線裡只有內灣線用得上 ——
+    「兩站相減＝一段路」這句話只有在站序就是地理順序時才成立，
+    風城的玻璃與水的三種樣子是散在城裡的一組地方、不是一條線，
+    距離不遞增，相減得到的不是任何一段路。所以斷點只長在遞增的路線上，
+    三條裡只有內灣線通過，長出 3 個斷點。
+
+  跟主線那張差在哪（只差一處）
+    route.html 的封面、進度環、下一站卡、獎章卡、頁尾那句宣告全部照舊，
+    #nextBox 的邏輯一行沒動。差的只有一處：.route-track 裡多了斷點列。
+    斷點列用跟站一樣的 24px / 1fr 格線，所以縮圖、站名、箭頭的對齊沒變；
+    那一段的軌道線改成虛線，眼睛先看到「這裡斷了」才讀到卡。
+
+  刻意沒有的東西
+    · 沒有倒數、沒有限量、沒有「還差幾站」的催促。斷點不是關卡。
+    · 走得到的段落沒有任何提示 —— 連「也可以叫車」都不寫。
+      只要走得到的地方也出現車，這一版的論證就沒了。
+    · 斷點卡上沒有紅色。紅只留給頁首、圖釘與「今天」。
+    · 車資與時間一律算出來，不是打上去的：
+      $ = round(75 + 22×公里)，分 = round(3 + 2.2×公里)。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  /* 斷點列：跟 .route-track__stop 同一組格線，所以站的對齊完全沒動。
+     那一段的軌道線改成虛線 —— 上一站的 ::before 畫的是它自己那一格，
+     斷點列的 ::before 畫的是斷點列那一格，兩段都要換，線才會整段是虛的。 */
+  .route-track__gap .route-track__rail::before { top: 0; }
+
+  .route-track__stop.is-broken .route-track__rail::before,
+  .route-track__gap .route-track__rail::before {
+    background: repeating-linear-gradient(to bottom,
+      var(--yoxi-slate-lite) 0 6px, transparent 6px 12px);
+  }
+  /* 已經走過的段落照樣是紅的，只是改成虛線：斷點是地理事實，
+     不該把「走過了」這件事一起擦掉。 */
+  .route-track__stop.is-broken.is-done .route-track__rail::before,
+  .route-track__gap.is-done .route-track__rail::before {
+    background: repeating-linear-gradient(to bottom,
+      var(--yoxi-red) 0 6px, transparent 6px 12px);
+  }
+
+  .gap-card {
+    border-color: var(--yoxi-navy);
+    border-style: dashed;
+    background: var(--yoxi-white);
+  }
+  .gap-card__label {
+    font-size: 12px; font-weight: 800; letter-spacing: .08em;
+    color: var(--yoxi-slate);
+  }
+  .gap-card__line { margin-top: 6px; line-height: 1.6; }
+  .gap-card__line .nb { white-space: nowrap; }
+  .gap-card .btn-ghost { margin-top: 12px; min-height: 44px; font-size: 14px; }
+</style>
+</head>
+
+<body data-tab="explore" data-status="light" data-time="8:12">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll scroll--tabbed">
+
+        <!-- ===== 封面 ===== -->
+        <div style="position:relative; height:240px; overflow:hidden">
+          <div id="rArt" data-art="rail" data-seed="3" data-wide style="position:absolute; inset:0"></div>
+          <span class="ai-mark" style="top:calc(var(--statusbar-h) + 8px); right:16px; left:auto">AI 生成示意</span>
+          <span style="position:absolute; inset:0; background:linear-gradient(to top,
+                rgba(6,32,64,.94), rgba(6,32,64,.3) 55%, transparent 80%)"></span>
+
+          <a class="fab" data-back href="explore.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; padding:20px 16px; color: var(--yoxi-white)">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em; opacity:.85">
+              這個月的路線
+            </div>
+            <h1 id="rName" style="font-size:26px; font-weight:800; line-height:1.25; margin-top:6px">
+              沿著鐵道走
+            </h1>
+            <div id="rSub" style="font-size:15px; opacity:.9; margin-top:4px">內灣線的六個站</div>
+          </div>
+        </div>
+
+        <!-- ===== 進度 ===== -->
+        <div style="padding:16px">
+          <div class="card card--pad u-row u-gap4">
+            <span style="position:relative; width:52px; height:52px; flex:none">
+              <svg class="ring" width="52" height="52" viewBox="0 0 52 52">
+                <circle class="ring__track" cx="26" cy="26" r="22"/>
+                <circle class="ring__bar" cx="26" cy="26" r="22"
+                        stroke-dasharray="138.2" stroke-dashoffset="92.1"/>
+              </svg>
+              <span style="position:absolute; inset:0; display:grid; place-items:center;
+                           font-size:13px; font-weight:800">
+                <span data-prog><span class="num">2</span>/6</span>
+              </span>
+            </span>
+            <span class="u-fill">
+              <span style="display:block; font-weight:800" id="progText">已經走過兩站</span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                慢慢走，沒有期限
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ===== 站點列表（這一版的唯一差別：軌道裡會長出斷點列） ===== -->
+        <div style="padding:0 16px">
+          <div class="route-track" id="track"></div>
+        </div>
+
+        <!-- ===== 下一站（由狀態決定是哪一站） ===== -->
+        <div style="padding:8px 16px 0">
+          <div class="card" id="nextBox"
+               style="border-color:var(--yoxi-navy); border-width:1.5px"></div>
+        </div>
+
+        <!-- ===== 集滿可得 ===== -->
+        <div style="padding:20px 16px 0">
+          <div class="sec"><h2 class="sec__t">全部走過會得到</h2></div>
+          <a class="card card--pad u-row u-gap4" id="bLink" href="badge.html?id=b4">
+            <span class="badge badge--locked" style="width:auto">
+              <span class="badge__disc"><span data-icon="route"></span></span>
+            </span>
+            <span class="u-fill">
+              <span id="bName" style="display:block; font-weight:800">〈內灣線全線〉</span>
+              <span id="bAward" style="display:block; font-size:13px; color:var(--yoxi-slate);
+                           margin-top:4px; line-height:1.6">
+                你走完了內灣線的每一個站。
+              </span>
+            </span>
+            <span class="arrow"></span>
+          </a>
+        </div>
+
+        <!-- ===== 反任務化的宣告 ===== -->
+        <p style="padding:20px 16px 28px; text-align:center;
+                  font-size:13px; color:var(--yoxi-slate)">
+          沒有期限，也不用照順序。
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  /* 哪一條路線由 ?id= 決定；每一站的狀態由「那一站的明信片收集了沒」決定 */
+  const rid = new URLSearchParams(location.search).get('id') || 'rail';
+  const R = MOCK.ROUTES.filter(function (r) { return r.id === rid; })[0] || MOCK.ROUTES[0];
+
+  /* 這一版多出來的三條公式。車資與時間一律算，不打字。
+     一段路的長度＝兩站各自「離你多遠」的差。 */
+  const GAP     = 3000;                                          /* 超過這個距離＝腳到不了 */
+
+  /* 「兩站之間的差＝那一段路的長度」這句話只有在站序就是地理順序的時候才成立。
+     內灣線是一條線，距離一路遞增（1.2 → 7.8 → 19 → 21 → 24 → 28 公里），
+     所以相減有意義。風城的玻璃（5.2 → 0.9 → 2.6 → 6.8 → 2.1）與
+     水的三種樣子（1.8 → 8.2 → 6.4 → 11）是散在城裡的一組地方，不是一條線 ——
+     在那兩條上相減只會得到「你家到 A」與「你家到 B」的差，那不是任何一段路。
+     所以斷點只長在距離遞增的路線上：市區三條路線裡，只有內灣線用得上。 */
+  const isLine = R.stops.every(function (s, i) {
+    return i === 0 || s.dist > R.stops[i - 1].dist;
+  });
+  const fareOf  = function (d) { return Math.round(75 + 22 * d / 1000); };
+  const carMin  = function (d) { return Math.round(3 + 2.2 * d / 1000); };
+  const kmText  = function (d) { return (d / 1000).toFixed(1).replace(/\.0$/, ''); };
+
+  /* 斷點那一顆按鈕要把人送到「下一站」的落點畫面。
+     軌道上帶的是明信片 id（p9、p13…），落點畫面認的是地點 id，
+     所以先過一次 findPlace —— p9 會變成 neiwan，站沒有對應地點的就用明信片 id。 */
+  function rideTarget(stop) {
+    const P = MOCK.findPlace(stop.card || stop.id);
+    return (P && P.id) || stop.card || stop.id;
+  }
+
+  /* 「先去這一站」由路線的 feature 決定，不是陣列順序。
+     站序是照內灣線實際地理排的（內灣是終點），但這條路線沒有順序壓力 ——
+     推薦的是那一站「唯一走路到不了、也是這條線存在的理由」。
+     已經收下了就退回第一個還沒收的。
+     軌道上標 is-next 的也必須是同一站：以前軌道照陣列順序標橫山、
+     下面的卡片卻推內灣，同一張畫面兩個下一站。 */
+  const nx = R.stops.filter(function (st) {
+               return R.feature && st.card === R.feature && !STATE.has(st.card);
+             })[0]
+          || R.stops.filter(function (st) { return !STATE.has(st.card); })[0];
+  R.stops.forEach(function (st) {
+    st.state = STATE.has(st.card) ? 'done' : (st === nx ? 'next' : 'todo');
+  });
+  const done = R.stops.filter(function (st) { return st.state === 'done'; }).length;
+
+  document.title = '變體 K4 · ' + R.name + ' — yoxi 城事';
+  document.getElementById('rName').textContent = R.name;
+  document.getElementById('rSub').textContent  = R.sub;
+  document.getElementById('rArt').dataset.art  = R.art;
+
+  const bd = STATE.badge(R.badge);
+  document.getElementById('bName').textContent  = '〈' + bd.name + '〉';
+  document.getElementById('bAward').textContent = bd.award;
+  document.getElementById('bLink').href = 'badge.html?id=' + R.badge;
+
+  document.querySelectorAll('.ring__bar').forEach(function (b) {
+    b.setAttribute('stroke-dashoffset', 138.2 * (1 - done / R.total));
+  });
+  document.querySelectorAll('[data-prog]').forEach(function (e) {
+    e.innerHTML = '<span class="num">' + done + '</span>/' + R.total;
+  });
+  const lead = document.getElementById('progText');
+  if (lead) lead.textContent = done >= R.total ? '全部走過了' :
+    (done === 0 ? '還沒開始' : '已經走過 ' + done + ' 站');
+
+  /* 下一站 —— 跟主線那張一模一樣，一行沒動。 */
+  const nxBox = document.getElementById('nextBox');
+  if (nx) {
+    const farNx = nx.dist > 10000;
+    nxBox.innerHTML =
+      '<div style="padding:14px 16px 0; font-size:12px; font-weight:800;' +
+      ' letter-spacing:.08em; color:var(--yoxi-red)">先去這一站</div>' +
+      '<a class="row-nav" href="place.html?id=' + nx.card + '" style="padding:10px 16px 14px">' +
+        '<span style="width:52px; height:68px; border-radius:4px; overflow:hidden;' +
+        ' position:relative; flex:none; filter:grayscale(1) contrast(.72) brightness(1.16)"' +
+        ' data-art="' + nx.art + '" data-seed="7"></span>' +
+        '<span class="row-nav__body">' +
+          '<span class="row-nav__title">' + nx.name + '</span>' +
+          '<span class="row-nav__sub">' + (nx.dist / 1000).toFixed(1) + ' 公里' +
+          (nx.note ? ' · ' + nx.note : '') + '</span>' +
+        '</span><span class="arrow"></span></a>' +
+      /* 遠的站不能在這裡直接寫「用 yoxi 前往」卻只是換一頁：
+         叫車的主按鈕在地方詳情頁，那裡才有距離、限定版與點數的完整說明。
+         K4 不推翻這件事 —— 斷點卡按下去進的是落點畫面（下車點已填、
+         車資已估），不是「換一頁」，所以它有資格直接叫車，這裡沒有。 */
+      '<div style="padding:0 16px 16px">' +
+        '<a class="btn-primary" href="' + (farNx ? 'place.html?id=' + nx.card
+                                                 : 'going.html?id=' + nx.card) + '">' +
+        (farNx ? '先看看這一站 · 要搭車' : '走路前往') + '</a></div>';
+  } else {
+    nxBox.innerHTML = '<div style="padding:18px 16px; text-align:center; font-weight:800">' +
+      '這條路線你已經走完了。</div>';
+  }
+  SHELL.injectArt(nxBox);
+
+  /* ===== 這一版唯一動到的地方：軌道 =====
+     每一段都量一次。超過 3 公里就在兩站之間插一列斷點；
+     走得到的段落什麼都不長，連「也可以叫車」都不提示。 */
+  let gaps = 0;
+  const rows = [];
+
+  R.stops.forEach(function (s, i) {
+    const isDone = s.state === 'done';
+    const isNext = s.state === 'next';
+    const nextStop = R.stops[i + 1];
+    const leg = nextStop ? nextStop.dist - s.dist : 0;
+    const broken = isLine && leg > GAP;
+
+    rows.push(
+      '<div class="route-track__stop' + (isDone ? ' is-done' : '') +
+        (isNext ? ' is-next' : '') + (broken ? ' is-broken' : '') + '">' +
+        '<span class="route-track__rail"><span class="route-track__node"></span></span>' +
+        '<a class="route-track__body" href="' +
+          (isDone ? 'postcard.html?id=' + s.card : 'place.html?id=' + s.card) + '">' +
+          '<span class="route-track__thumb ' + (isDone ? '' : 'is-locked') + '"' +
+          ' style="position:relative; ' +
+          (isDone ? '' : 'filter:grayscale(1) contrast(.72) brightness(1.16)') + '"' +
+          ' data-art="' + s.art + '" data-seed="' + (i + 2) + '"></span>' +
+          '<span style="flex:1; min-width:0">' +
+            '<span style="display:block; font-weight:800; line-height:1.35">' + s.name + '</span>' +
+            '<span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">' +
+              (isDone ? '已收集'
+                      : '<span class="num">' + (s.dist / 1000).toFixed(1) + '</span> 公里') +
+              (s.note ? ' · ' + s.note : '') +
+            '</span>' +
+          '</span>' +
+          '<span class="arrow"></span>' +
+        '</a>' +
+      '</div>');
+
+    if (!broken) return;
+    gaps++;
+    rows.push(
+      '<div class="route-track__stop route-track__gap' + (isDone ? ' is-done' : '') + '">' +
+        '<span class="route-track__rail"></span>' +
+        '<div class="card card--pad gap-card">' +
+          '<div class="gap-card__label">斷點</div>' +
+          /* 每一節都 nowrap：讓換行只發生在「·」這種分隔處，
+             不會斷在「接／上」中間。 */
+          '<div class="gap-card__line">' +
+            '<span class="nb">這一段 <span class="num">' + kmText(leg) + '</span> 公里，走不到</span> · ' +
+            '<span class="nb">用 yoxi 接上 <span class="num">$' + fareOf(leg) + '</span></span> · ' +
+            '<span class="nb"><span class="num">' + carMin(leg) + '</span> 分</span>' +
+          '</div>' +
+          '<a class="btn-ghost" href="variant-k-ride.html?to=' + rideTarget(nextStop) +
+            '&at=' + rideTarget(s) + '&leg=' + leg + '">' +
+            '用 yoxi 接上</a>' +
+        '</div>' +
+      '</div>');
+  });
+
+  document.getElementById('track').innerHTML = rows.join('');
+  if (window.console && console.info) console.info('K4 斷點：' + gaps + ' 段');
+
+  SHELL.injectArt();
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>

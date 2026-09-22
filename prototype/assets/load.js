@@ -1,6 +1,6 @@
 /* 由 tools/verify-quiet.py 產生，不要手改。同 assets/load.json —— file:// 底下 fetch 讀不到 json，所以多這一份。 */
 window.LOAD = {
-  "generatedAt": "2026-09-22T08:05:04.601Z",
+  "generatedAt": "2026-09-22T08:35:40.424Z",
   "screens": {
     "album.html": {
       "blocks": 59,
@@ -126,6 +126,46 @@ window.LOAD = {
       "blocks": 8,
       "steps": 1,
       "taps": 11
+    },
+    "variant-k-ride.html": {
+      "blocks": 12,
+      "steps": null,
+      "taps": 9
+    },
+    "variant-k1-place.html": {
+      "blocks": 29,
+      "steps": null,
+      "taps": 3
+    },
+    "variant-k2-map.html": {
+      "blocks": 6,
+      "steps": 1,
+      "taps": 17
+    },
+    "variant-k3-push.html": {
+      "blocks": 6,
+      "steps": null,
+      "taps": 2
+    },
+    "variant-k4-route.html": {
+      "blocks": 32,
+      "steps": null,
+      "taps": 13
+    },
+    "variant-k5-unlock.html": {
+      "blocks": 5,
+      "steps": null,
+      "taps": 4
+    },
+    "variant-k6-place.html": {
+      "blocks": 32,
+      "steps": null,
+      "taps": 3
+    },
+    "variant-k7-place.html": {
+      "blocks": 28,
+      "steps": null,
+      "taps": 2
     },
     "variant-l1-explore.html": {
       "blocks": 7,

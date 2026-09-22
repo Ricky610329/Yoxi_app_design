@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>下車點已填好 — yoxi 城事</title>
+<!--
+  K 系列共用的落點畫面（「轉換之後」）
+
+  這是哪一個：不是 K1–K7 裡的任何一個，是七個變體共用的**下一頁**。
+  K1 的「設為下車點」、K2 小卡的「用 yoxi」、K3 推播的那顆鈕、K4 路線的斷點、
+  K5 的回程卡、K6 的金框理由，按下去全部落到這裡：?to=<地方 id>。
+
+  轉換點放在哪、為什麼：轉換點不在這一頁 —— 這一頁是轉換發生之後的樣子。
+  它存在的理由是讓七個變體比的是「那一步放在哪」，而不是各自畫一張不一樣的
+  叫車頁。落地之後要看到的只有三件事：下車點是誰填的、車資多少、一顆叫車。
+
+  跟主線那張差在哪（只差一處）：跟 home.html 只差「下車點已經填好」。
+  上車點、地圖、浮動鈕、分頁列逐字照抄；sheet 從收合態換成展開態，
+  因為下車點填好之後車資列與叫車鍵本來就該看得到 —— 那是同一件事的結果，
+  不是第二處改動。
+
+  刻意沒有的東西：
+  · 沒有廣告輪播條。下車點已經填好的畫面再推「今天的地方」等於叫人改主意。
+  · 沒有「略過下車地點，繼續叫車」。這一頁的前提就是下車點有了。
+  · 沒有折扣、沒有加價、沒有車型選擇 —— 比的是那一步，不是計費。
+  · 不寫死任何數字：車資與時間由距離算出來（$95／$691 都是算的）。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+</head>
+
+<body data-tab="ride" data-status="dark" data-time="21:35">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <!-- ===== 地圖（與 home.html 逐節點相同，只多一顆下車點 pin） ===== -->
+      <div class="map" data-pan>
+        <svg class="map__svg" viewBox="0 0 390 440" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="440" fill="var(--map-land)"/>
+
+          <!-- 水系：頭前溪與客雅溪 -->
+          <path d="M-20 96 Q70 118 140 92 T300 108 T420 78" stroke="var(--map-water)"
+                stroke-width="13" fill="none" opacity=".85"/>
+          <path d="M-20 300 Q90 322 170 296 T410 318" stroke="var(--map-water)"
+                stroke-width="9" fill="none" opacity=".7"/>
+
+          <!-- 主要道路 -->
+          <g stroke="var(--map-road)" fill="none" stroke-linecap="round">
+            <path d="M-10 168 L400 150" stroke-width="11"/>
+            <path d="M-10 238 L400 226" stroke-width="9"/>
+            <path d="M52 -10 L74 450"   stroke-width="10"/>
+            <path d="M196 -10 L212 450" stroke-width="11"/>
+            <path d="M320 -10 L308 450" stroke-width="9"/>
+            <path d="M-10 390 Q150 360 400 386" stroke-width="8"/>
+          </g>
+
+          <!-- 次要道路 -->
+          <g stroke="var(--map-road-minor)" stroke-width="5" fill="none">
+            <path d="M-10 128 L400 116"/><path d="M-10 200 L400 190"/>
+            <path d="M-10 272 L400 262"/><path d="M-10 334 L400 326"/>
+            <path d="M120 -10 L136 450"/><path d="M258 -10 L262 450"/>
+            <path d="M360 -10 L352 450"/>
+          </g>
+
+          <!-- 六家支線鐵路 -->
+          <g stroke="#B9BDC4" stroke-width="2.4" fill="none">
+            <path d="M344 -10 Q300 140 286 450"/>
+          </g>
+          <g stroke="#B9BDC4" stroke-width="1" fill="none" stroke-dasharray="2 7">
+            <path d="M344 -10 Q300 140 286 450" stroke-width="7"/>
+          </g>
+
+          <!-- 沒有畫上車點到下車點的路線：這份原型沒有做路徑規劃，
+               在地圖上畫一條假的線，等於在車資旁邊擺一個沒算過的數字。 -->
+
+          <!-- 地名 -->
+          <g font-family="var(--font-sans)" fill="#9AA3AE" font-weight="700">
+            <text x="110" y="70"  font-size="15">竹北市</text>
+            <text x="214" y="156" font-size="18">新竹縣</text>
+            <text x="26"  y="206" font-size="14">北區</text>
+            <text x="24"  y="232" font-size="17">新竹市</text>
+            <text x="120" y="400" font-size="14">寶山鄉</text>
+            <text x="300" y="250" font-size="12"
+                  transform="rotate(84 300 250)">六家支線鐵路</text>
+          </g>
+        </svg>
+
+        <!-- 浮動圓鈕 -->
+        <a class="fab fab--navy" href="drawer.html"
+           style="top:calc(var(--statusbar-h) + 12px); left:16px" aria-label="選單">
+          <span data-icon="menu"></span>
+        </a>
+        <button class="fab" data-toast="這是 yoxi 現有的掃碼叫車，原型沒有做這一段"
+                style="top:calc(var(--statusbar-h) + 16px); right:76px" aria-label="掃碼">
+          <span data-icon="scan"></span>
+        </button>
+        <a class="fab" href="notify.html"
+           style="top:calc(var(--statusbar-h) + 16px); right:16px" aria-label="通知">
+          <span data-icon="bell"></span>
+        </a>
+        <button class="fab" data-recenter style="bottom:20px; right:16px" aria-label="定位">
+          <span data-icon="locate"></span>
+        </button>
+
+        <!-- 返回鍵：回到剛剛那個地方的詳情。沒有它的話，
+             「改地方」就只剩下重開 app 一條路。 -->
+        <a class="fab" id="backBtn" data-back href="variant-k1-place.html?id=glass-kiln"
+           style="bottom:20px; left:16px" aria-label="回地方詳情">
+          <span class="arrow arrow--left"></span>
+        </a>
+
+        <!-- 上車點 pin（與 home.html 相同，一個字都沒改） -->
+        <div class="pin" style="left:50%; top:62%">
+          <span class="pin__label">
+            東區水利路 46 巷 58 號
+            <svg width="14" height="14" viewBox="0 0 24 24">
+              <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                    fill="var(--yoxi-red)"/>
+            </svg>
+          </span>
+          <span class="pin__drop"><span data-icon="hail"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+
+        <!-- 【唯一的新東西】下車點 pin。紅色，因為它是「目的地」。
+             位置是從受保護矩形反推的：右上角讓給掃碼與鈴鐺兩顆浮動鈕，
+             地圖上半部讓給上車點那張地址標籤，剩下的空隙就是右下這一塊。 -->
+        <div class="pin pin--red" id="dropPin" style="left:74%; top:78%">
+          <span class="pin__label" id="dropPinLabel"></span>
+          <span class="pin__drop"><span data-icon="place"></span></span>
+          <span class="pin__dot"></span>
+        </div>
+      </div>
+
+      <!-- ===== 底部 sheet =====
+           展開態。不掛 data-drag：這一頁的前提是下車點已經填好，
+           拉把只是視覺上的延續，沒有可以收起來的第二種狀態。 -->
+      <div class="sheet" id="sheet">
+        <div class="sheet__handle"></div>
+
+        <h1 class="sheet__greet" style="margin-bottom:12px">下車點已填好</h1>
+
+        <div class="card">
+          <div class="route-input">
+            <div class="route-input__rail">
+              <span class="route-input__dot"></span>
+              <span class="route-input__line"></span>
+              <span class="route-input__dot route-input__dot--to"></span>
+            </div>
+            <div class="route-input__fields">
+              <a class="route-input__field" href="pickup.html">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">上車點</span>
+                  <span class="route-input__value" id="fromName" style="display:block">東區水利路 46 巷 58 號</span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none">
+                  <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                        fill="var(--yoxi-navy)"/>
+                </svg>
+              </a>
+              <!-- 下車點：已經填好。欄位照樣可以按，按了是換地方。 -->
+              <a class="route-input__field" href="pickup.html?to=1">
+                <span style="flex:1;min-width:0">
+                  <span class="route-input__label" style="display:block">下車點</span>
+                  <span class="route-input__value" id="toName" style="display:block"></span>
+                  <span id="toMeta" style="display:block; font-size:12px;
+                        color:var(--yoxi-slate); margin-top:1px"></span>
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none">
+                  <path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2ZM20.7 6.9a1 1 0 0 0 0-1.4l-2.2-2.2a1 1 0 0 0-1.4 0l-1.8 1.8L19.1 8.7Z"
+                        fill="var(--yoxi-navy)"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 車資列：填好下車點才算得出來，所以它是「已填好」的證據 -->
+        <div class="card card--pad" id="fareRow" style="margin-top:12px"></div>
+
+        <a class="btn-primary" href="ride.html" style="margin-top:14px">叫車</a>
+
+        <div id="altRow" style="margin-top:12px; text-align:center"></div>
+
+        <div id="src" style="margin-top:10px; font-size:12px; line-height:1.6;
+             color:var(--yoxi-slate); text-align:center"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const q  = new URLSearchParams(location.search);
+  const to = q.get('to');
+  /* 三種進來的方式：
+     ?to=<地方>               從內容頁／小卡／推播來：家 → 那個地方（K1、K2、K3、K6）
+     ?to=home                 從抵達解鎖來：人在今天的地方，要回家（K5）
+     ?to=<站>&at=<站>&leg=<m>  從路線的斷點來：只算那一段，上車點是上一站（K4） */
+  const HOME = '東區水利路 46 巷 58 號';
+  const goingHome = to === 'home';
+  const P  = goingHome ? { id: 'home', name: HOME, type: '家', distance: MOCK.TODAY.distance }
+                       : MOCK.findPlace(to);          /* 查不到就是今天的地方 */
+  const at = q.get('at') ? MOCK.findPlace(q.get('at')) : null;
+  const leg = Number(q.get('leg')) || 0;
+  if (goingHome) document.getElementById('fromName').textContent = '你現在的位置 · ' + MOCK.TODAY.name;
+  else if (at && leg) document.getElementById('fromName').textContent = at.name;
+
+  /* 車資與時間一律用算的。七個變體要比的是「那一步放在哪」，
+     如果每一張畫面各自寫死一個數字，比到最後會變成比誰的數字好看。 */
+  const fareOf = function (m) { return Math.round(75 + 22 * m / 1000); };
+  const carMin = function (m) { return Math.round(3 + 2.2 * m / 1000); };
+  const walkMin = function (m) { return Math.round(m / 75); };
+  /* 附近的車幾分鐘到。這是全 app 唯一一個跟距離無關的時間 ——
+     它算的是司機到「上車點」，不是到下車點，而上車點永遠是同一個。 */
+  const PICKUP_MIN = 4;
+
+  const d    = (at && leg) ? leg : P.distance;   /* 斷點只算那一段，不算從家出發 */
+  const has  = d != null;
+  /* 走不走得到。門檻 3 公里：再遠就不會有人把它當成「還是走路去」的選項。 */
+  const far  = has && d > 3000;
+  const dist = !has ? '距離待確認'
+             : d >= 1000 ? String(+(d / 1000).toFixed(1)).replace(/\.0$/, '') + ' km'
+             : d + ' m';
+
+  document.title = P.name + ' · 下車點已填好 — yoxi 城事';
+
+  document.getElementById('toName').textContent = P.name;
+  document.getElementById('toMeta').textContent = P.type + ' · ' + dist;
+  document.getElementById('dropPinLabel').textContent = P.name;
+  document.getElementById('backBtn')
+    .setAttribute('href', goingHome ? 'variant-k5-unlock.html'
+                        : (at && leg) ? 'variant-k4-route.html?id=rail'
+                        : 'variant-k1-place.html?id=' + P.id);
+
+  const n = function (v) { return '<span class="num">' + v + '</span>'; };
+
+  document.getElementById('fareRow').innerHTML =
+    '<div style="display:flex; align-items:center; justify-content:center; gap:10px;' +
+    ' flex-wrap:wrap; font-size:15px; font-weight:700">' +
+      '<span>預估 <span class="num" style="color:var(--yoxi-red); font-size:19px">' +
+        (has ? '$' + fareOf(d) : '—') + '</span></span>' +
+      '<span style="color:var(--yoxi-slate)">·</span>' +
+      '<span>' + n(PICKUP_MIN) + ' 分鐘後上車</span>' +
+      '<span style="color:var(--yoxi-slate)">·</span>' +
+      (!has ? '<span>車程待確認</span>'
+            : far ? '<span>車程 ' + n(carMin(d)) + ' 分</span>'
+                  : '<span>走路 ' + n(walkMin(d)) + ' 分</span>') +
+    '</div>';
+
+  /* 走得到的地方一定要留一條「不叫車」的路 —— 城事不是叫車的漏斗。
+     走不到的地方就不要假裝有選擇，直接說走不到。 */
+  document.getElementById('altRow').innerHTML =
+    (has && far)
+      ? '<span style="font-size:14px; color:var(--yoxi-slate)">太遠了，走不到</span>'
+      : goingHome
+        ? '<a class="btn-link" href="going.html?id=' + MOCK.TODAY.id + '">還是走回去</a>'
+        : '<a class="btn-link" href="going.html?id=' + P.id + '">還是走路去</a>';
+
+  document.getElementById('src').textContent = goingHome
+    ? '從今天的地方回家。去程走路、回程坐車。'
+    : (at && leg) ? '這一段來自路線的斷點：' + at.name + ' → ' + P.name + '，只算這一段。'
+    : '下車點來自城事：' + P.name + '。改地方就回到地方詳情。';
+})();
+</script>
+</body>
+</html>

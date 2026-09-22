@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變體 K6 · 限定版當理由 — yoxi 城事</title>
+<!--
+  變體 K6：限定版當理由（軸線 conv —— 轉換點在哪？）
+
+  這張是 K 系列哪一個
+    K6。七個變體把「從發現一個地方到叫車去那裡」這一步放在七個不同的
+    位置，這一版不換位置 —— 位置跟 K1 一樣在內容頁頁尾 —— 換的是理由。
+    七張共用同一張落點畫面 variant-k-ride.html?to=<place>。
+
+  轉換點放在哪、為什麼
+    轉換點靠收集動機。其他六版拿距離、天氣、時段、斷點當理由，
+    這一版拿「你會得到哪一張明信片」當理由：走路到的是一般版，
+    搭 yoxi 抵達的是金框限定版，外加 50 和泰 Points。
+    所以頁尾的 CTA 區從兩顆按鈕變成一張卡 —— 先讓人看到那張金框，
+    再給按鈕。遠的地方（內灣 28 公里）本來就得坐車，
+    金框只是把「反正要坐車」變成「想坐車」。
+
+  跟主線那張差在哪（只差一處）
+    place.html 的灰階大圖、AI 敘事三段、資料應用卡、現場提示、
+    「到了會得到」與獎章環全部照舊。差的只有一處：頁尾 CTA。
+    近的地方（?id=glass-kiln）兩顆按鈕照樣都在，只是上面多了同一張卡；
+    遠的地方（?id=neiwan）走路那顆整個拿掉 —— 28 公里沒有走路這個選項。
+
+  為什麼明知道有風險還是做了
+    這是最接近「任務化」的一版：獎勵在前、地方在後，而整個城事的立場
+    是「不是集點活動」。還是做，有三個理由：
+      1. 金框限定版不是為了這一版新發明的機制，它從 N9 抵達解鎖就存在。
+         這一版只是把既有機制的說明提前到出發之前 —— 零新功能。
+      2. 「有一個變體最像集點」這件事本身就是證據。沒有 K6，
+         「城事不是任務」只是一句主張；有了 K6 跟 K7（完全不轉換）
+         夾在兩端，中間那幾版才量得出來。
+      3. 它的風險是可以看見的：獎勵寫得越大，地方的敘事就被壓得越小。
+         決策要靠比較，不是靠迴避。
+    這一版被否決也沒關係 —— 它要證明的就是「這條路我們走過了」。
+
+  刻意沒有的東西
+    · 沒有倒數、沒有限量、沒有「本週限定」。金框不是活動，是抵達方式的紀錄。
+    · 沒有「解鎖進度」「再收集幾張」的催促出現在 CTA 區。
+    · 金色只用在既有的限定版語彙上（金框、角標、金框限定版這幾個字），
+      按鈕一律是深藍。紅只留給頁首、圖釘與「今天」。
+    · 車資不打字：$ = round(75 + 22×公里)。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .place-foot {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
+    padding: var(--sp-3) var(--gutter) var(--sp-5);
+    background: var(--yoxi-white);
+    border-top: 1px solid var(--yoxi-line);
+    box-shadow: var(--sh-sheet);
+  }
+
+  /* 限定版卡：CTA 區多出來的那一塊。
+     金框明信片用真的 .postcard--gold，不是另外畫一個像金框的東西 ——
+     人在抵達解鎖那一幕看到的就會是同一個框。 */
+  .gold-why { margin-bottom: 12px; align-items: center; }
+  .gold-why__card {
+    width: 96px; height: 128px; flex: none;
+    aspect-ratio: auto;
+  }
+  .gold-why__card .postcard__ribbon {
+    top: 4px; right: 4px; padding: 2px 6px; font-size: 9px;
+  }
+  .gold-why__text { font-size: 14px; line-height: 1.65; }
+  .gold-why__gold { color: #8A6F14; font-weight: 800; }
+  .foot-note {
+    margin-top: 8px; text-align: center; font-size: 12px; color: var(--yoxi-slate);
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="8:11">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll" id="scroll" style="padding-bottom:172px">
+
+        <!-- ===== 未解鎖的明信片（灰階） ===== -->
+        <div style="position:relative; height:320px; overflow:hidden; background:var(--yoxi-mist)">
+          <div id="hero" style="position:absolute; inset:0;
+               filter:grayscale(1) contrast(.72) brightness(1.16)"></div>
+
+          <span class="ai-mark" style="left:auto; right:16px; top:calc(var(--statusbar-h) + 14px)">AI 生成示意</span>
+
+          <div style="position:absolute; inset:0; display:grid; place-items:center">
+            <div style="display:flex; flex-direction:column; align-items:center;
+                        gap:10px; color: var(--yoxi-white)">
+              <div style="width:40px; height:40px; opacity:.9" data-icon="lock"></div>
+              <div style="font-size:13px; font-weight:800;
+                          text-shadow:0 1px 4px rgba(0,0,0,.55)">到了就會上色</div>
+            </div>
+          </div>
+
+          <a class="fab" id="backBtn" data-back href="explore.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+        </div>
+
+        <!-- ===== 地點名 ===== -->
+        <div style="padding:20px 16px 0">
+          <span id="eyebrow" style="display:inline-block; padding:3px 10px; border-radius:999px;
+                       background:var(--yoxi-cream); font-size:12px; font-weight:800"></span>
+          <h1 id="name" style="font-size:28px; font-weight:800; line-height:1.25; margin-top:10px"></h1>
+          <div id="meta" class="u-row u-gap3"
+               style="margin-top:8px; color:var(--yoxi-slate); font-size:14px"></div>
+        </div>
+
+        <!-- ===== AI 敘事三段 ===== -->
+        <div class="story" style="padding:24px 16px" id="story"></div>
+
+        <!-- ===== 資料應用卡 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="why">
+            <div class="why__head" style="border-bottom:1px solid var(--yoxi-line)">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px; height:18px; display:block"></span>
+                為什麼今天推薦這裡給你
+              </span>
+            </div>
+            <div class="why__list" id="whyList" style="padding-top:12px"></div>
+          </div>
+        </div>
+
+        <!-- ===== 現場提示 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                        color:var(--yoxi-red); margin-bottom:6px">到了記得看</div>
+            <div id="tip" style="line-height:1.7"></div>
+            <div id="hours" style="margin-top:10px; font-size:13px; color:var(--yoxi-slate)"></div>
+          </div>
+        </div>
+
+        <!-- ===== 抵達可得 ===== -->
+        <div style="padding:0 16px 32px">
+          <div class="sec"><h2 class="sec__t">到了會得到</h2></div>
+          <div class="card card--pad u-row u-gap4">
+            <span id="rewardThumb"
+                  style="width:60px; height:80px; border-radius:4px; overflow:hidden;
+                         position:relative; flex:none;
+                         filter:grayscale(1) contrast(.72) brightness(1.16)"></span>
+            <span class="u-fill">
+              <span id="rewardTitle" style="display:block; font-weight:800"></span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                這個地方獨有，由 AI 依當天的光線與季節生成
+              </span>
+            </span>
+            <span id="rewardRing" style="position:relative; width:46px; height:46px; flex:none">
+              <svg class="ring" width="46" height="46" viewBox="0 0 46 46">
+                <circle class="ring__track" cx="23" cy="23" r="20"/>
+                <circle class="ring__bar" id="ringBar" cx="23" cy="23" r="20"
+                        stroke-dasharray="125.6" stroke-dashoffset="100.5"/>
+              </svg>
+              <span id="ringLabel"
+                    style="position:absolute; inset:0; display:grid; place-items:center;
+                           font-size:11px; font-weight:800"></span>
+            </span>
+          </div>
+          <div id="badgeNote"
+               style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); padding-left:2px"></div>
+        </div>
+
+      </div>
+
+      <!-- ===== 頁尾 CTA：這一版唯一動到的地方 ===== -->
+      <div class="place-foot" id="foot"></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const qid = new URLSearchParams(location.search).get('id');
+  const P = MOCK.findPlace(qid);
+  /* 什麼時候把叫車換成主要動作。
+     門檻本來是 3 公里 —— 但十八尖山 3.1 公里是一座真的走得上去的山，
+     畫面卻寫「走路到不了」，那是假話。改成 10 公里，
+     並且用「這段距離搭車比較合理」而不是「走不到」。 */
+  const far = P.distance != null && P.distance > 10000;
+
+  /* 車資照全站同一條公式算，不打字 */
+  const fareOf = function (d) { return Math.round(75 + 22 * d / 1000); };
+
+  document.title = '變體 K6 · ' + P.name + ' — yoxi 城事';
+
+  /* 灰階的未解鎖明信片 */
+  document.getElementById('hero').innerHTML       = SHELL.postcardArt(P.art, { seed: 1, wide: true });
+  document.getElementById('rewardThumb').innerHTML = SHELL.postcardArt(P.art, { seed: 1 });
+
+  document.getElementById('eyebrow').textContent = far ? P.eyebrow : P.type;
+  document.getElementById('name').textContent    = P.name;
+
+  /* 距離決定主次動作 */
+  /* 沒有距離就別編一個。以前 expand() 會回一個假的 2000，
+     現在會回 null —— 那就要真的有地方顯示「距離待確認」，
+     不然畫面上會印出「離你 null m · 走路 0 分鐘」。 */
+  const hasDist = P.distance != null;
+  const km  = hasDist ? (P.distance / 1000).toFixed(1) : null;
+  const mins = !hasDist ? null
+             : far ? Math.round(P.distance / 670) : Math.round(P.distance / 75);
+  document.getElementById('meta').innerHTML = !hasDist
+    ? '<span>距離待確認</span>'
+    : far
+    ? '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + km + '</span> km</span>' +
+      '<span>·</span><span>搭車 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>'
+    : '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + P.distance + '</span> m</span>' +
+      '<span>·</span><span>走路 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>';
+
+  document.getElementById('story').innerHTML = P.story.map(s => `
+    <div class="story__block">
+      <div class="story__label">${s.label}</div>
+      <p class="story__text">${s.text}</p>
+    </div>`).join('');
+
+  document.getElementById('whyList').innerHTML = P.why.map(w => `
+    <div class="why__item"><span class="why__src">${w.src}</span>${w.text}</div>`).join('');
+
+  document.getElementById('tip').textContent   = P.tip;
+  document.getElementById('hours').textContent = P.hours;
+  document.getElementById('rewardTitle').textContent = `一張〈${P.name}〉`;
+
+  /* 這個地方屬於哪一枚獎章。
+     獎章的組成清單放的是**明信片 id**，而這一頁拿到的是**地點 id**
+     （neiwan、glass-kiln、地圖上的 moat／hill…），所以要先換過去。 */
+  const cardId = MOCK.cardIdOf(P.id);
+  const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0];
+  if (owner) {
+    const pr = STATE.badge(owner.id);
+    document.getElementById('ringBar')
+      .setAttribute('stroke-dashoffset', 125.6 * (1 - pr.done / pr.total));
+    document.getElementById('ringLabel').innerHTML =
+      '<span><span class="num">' + pr.done + '</span>/' + pr.total + '</span>';
+    document.getElementById('badgeNote').textContent =
+      '也會讓〈' + pr.name + '〉這枚獎章多收集一張';
+  } else {
+    /* 明信片照樣拿得到，只是這個地方不歸任何一枚獎章 —— 把進度環收起來就好 */
+    document.getElementById('rewardRing').classList.add('u-hidden');
+    document.getElementById('badgeNote').classList.add('u-hidden');
+  }
+  if (far) document.getElementById('backBtn').href = 'route.html';
+
+  /* ===== 頁尾：CTA 區先擺那張金框，理由才是按鈕 =====
+     遠近共用同一張卡，差的只有最底下那一行與按鈕組：
+       遠（28 公里）：只有「用 yoxi 前往 · $691」，走路那顆整個拿掉。
+       近（900 公尺）：兩顆都在，走路仍然是主要動作 ——
+                       金框是誘因，不是把人從腳上拉下來的理由。 */
+  const goldCard =
+    '<div class="card card--pad u-row u-gap4 gold-why">' +
+      '<span class="postcard postcard--gold gold-why__card">' +
+        '<span data-art="' + P.art + '" data-seed="1" style="position:absolute; inset:0; display:block"></span>' +
+        '<span class="postcard__ribbon">yoxi 限定版</span>' +
+      '</span>' +
+      '<span class="u-fill gold-why__text">' +
+        '搭 yoxi 抵達，這張是<span class="gold-why__gold">金框限定版</span>，' +
+        '＋<span class="num">50</span> 和泰 Points' +
+      '</span>' +
+    '</div>';
+
+  const rideHref = 'variant-k-ride.html?to=' + P.id;
+
+  const buttons = !hasDist
+    ? '<div style="display:grid; grid-template-columns:1fr auto; gap:8px">' +
+        '<a class="btn-primary" href="going.html?id=' + P.id + '">走路前往</a>' +
+        '<a class="btn-ghost" href="' + rideHref + '" style="width:auto; padding:0 20px">用 yoxi</a>' +
+      '</div>'
+    : far
+    /* 28 公里沒有走路這個選項，所以這裡只有一顆。 */
+    ? '<a class="btn-primary" href="' + rideHref + '">用 yoxi 前往 · ' +
+        '<span class="num">$' + fareOf(P.distance) + '</span></a>'
+    : '<div style="display:grid; grid-template-columns:1fr auto; gap:8px">' +
+        '<a class="btn-primary" href="going.html?id=' + P.id + '">走路前往</a>' +
+        '<a class="btn-ghost" href="' + rideHref + '" style="width:auto; padding:0 16px">' +
+          '用 yoxi · <span class="num">$' + fareOf(P.distance) + '</span></a>' +
+      '</div>';
+
+  const note = far
+    ? '<div class="foot-note">走路到的是一般版；只有搭車抵達才有金框。</div>'
+    : '<div class="foot-note">走路到的是一般版；搭 yoxi 抵達會是金框。</div>' +
+      (hasDist
+        ? '<div class="foot-note" style="margin-top:4px">' + P.distance +
+          ' 公尺，走過去大概 ' + mins + ' 分鐘</div>'
+        : '');
+
+  const foot = document.getElementById('foot');
+  foot.innerHTML = goldCard + buttons + note;
+
+  /* 金框是真的 .postcard，所以要把明信片視覺注進去（mount 時它還不存在）。 */
+  SHELL.injectArt(foot);
+  SHELL.injectIcons();
+
+  /* CTA 區比主線那張高，捲動區的底部留白要跟著長 ——
+     不然最後一張卡會被壓在頁尾底下讀不到。 */
+  SHELL.ready(function () {
+    document.getElementById('scroll').style.paddingBottom = (foot.offsetHeight + 16) + 'px';
+  });
+})();
+</script>
+</body>
+</html>

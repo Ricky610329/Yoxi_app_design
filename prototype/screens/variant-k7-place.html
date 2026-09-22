@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地方詳情 — yoxi 城事</title>
+<!--
+  變體 K7 · 沒有轉換點（對照組）
+
+  這是哪一個：轉換點在哪？（K 系列）的 K7，也是整條軸的對照組。
+  結論欄寫的是「不建議」——它存在不是為了被選上。
+
+  轉換點放在哪、為什麼：哪裡都沒有。內容頁只有「走路前往」，
+  yoxi 只剩下頁首那個 logo 與這個 app 本身。把轉換點整個拿掉，
+  是為了回答一個一定會被問的問題：如果一年內完全不賣車，
+  城事還值不值得做？沒有這一版，K1–K6 的「多一步／少一步」就沒有零點。
+  代價也很直接：沒有訂單就沒有預算，這一版活不過第一次業務檢討。
+
+  跟主線那張差在哪（只差一處）：只差頁尾那一排。
+  主線是「走路前往 + 用 yoxi」兩顆，這裡只剩「走路前往」一顆；
+  28 公里那種走不到的地方，主線會把主要動作換成叫車，這裡換成一句
+  「這個原型不安排交通」，連按鈕都沒有。其餘逐節點與 place.html 相同。
+
+  刻意沒有的東西：
+  · 沒有任何叫車入口 —— 頁尾、內文、到了會得到，一個字都不提車。
+  · 沒有「限定版」與點數回饋。那是用獎勵換訂單，這一版沒有訂單可換。
+  · 沒有替遠的地方安排替代交通（公車、火車）。原型不假裝自己有排程能力。
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/chengshi.css">
+<style>
+  .place-foot {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
+    padding: var(--sp-3) var(--gutter) var(--sp-5);
+    background: var(--yoxi-white);
+    border-top: 1px solid var(--yoxi-line);
+    box-shadow: var(--sh-sheet);
+  }
+</style>
+</head>
+
+<body data-status="light" data-time="8:11">
+<div class="stage">
+  <div class="device">
+    <div class="device__screen">
+
+      <div class="scroll" style="padding-bottom:172px">
+
+        <!-- ===== 未解鎖的明信片（灰階） ===== -->
+        <div style="position:relative; height:320px; overflow:hidden; background:var(--yoxi-mist)">
+          <div id="hero" style="position:absolute; inset:0;
+               filter:grayscale(1) contrast(.72) brightness(1.16)"></div>
+
+          <span class="ai-mark" style="left:auto; right:16px; top:calc(var(--statusbar-h) + 14px)">AI 生成示意</span>
+
+          <div style="position:absolute; inset:0; display:grid; place-items:center">
+            <div style="display:flex; flex-direction:column; align-items:center;
+                        gap:10px; color: var(--yoxi-white)">
+              <div style="width:40px; height:40px; opacity:.9" data-icon="lock"></div>
+              <div style="font-size:13px; font-weight:800;
+                          text-shadow:0 1px 4px rgba(0,0,0,.55)">到了就會上色</div>
+            </div>
+          </div>
+
+          <a class="fab" id="backBtn" data-back href="explore.html"
+             style="top:calc(var(--statusbar-h) + 8px); left:16px; width:44px; height:44px"
+             aria-label="返回">
+            <span class="arrow arrow--left"></span>
+          </a>
+        </div>
+
+        <!-- ===== 地點名 ===== -->
+        <div style="padding:20px 16px 0">
+          <span id="eyebrow" style="display:inline-block; padding:3px 10px; border-radius:999px;
+                       background:var(--yoxi-cream); font-size:12px; font-weight:800"></span>
+          <h1 id="name" style="font-size:28px; font-weight:800; line-height:1.25; margin-top:10px"></h1>
+          <div id="meta" class="u-row u-gap3"
+               style="margin-top:8px; color:var(--yoxi-slate); font-size:14px"></div>
+        </div>
+
+        <!-- ===== AI 敘事三段 ===== -->
+        <div class="story" style="padding:24px 16px" id="story"></div>
+
+        <!-- ===== 資料應用卡 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="why">
+            <div class="why__head" style="border-bottom:1px solid var(--yoxi-line)">
+              <span class="u-row u-gap2">
+                <span data-icon="sun" style="width:18px; height:18px; display:block"></span>
+                為什麼今天推薦這裡給你
+              </span>
+            </div>
+            <div class="why__list" id="whyList" style="padding-top:12px"></div>
+          </div>
+        </div>
+
+        <!-- ===== 現場提示 ===== -->
+        <div style="padding:0 16px 24px">
+          <div class="card card--pad" style="background:var(--yoxi-cream); border:0">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.08em;
+                        color:var(--yoxi-red); margin-bottom:6px">到了記得看</div>
+            <div id="tip" style="line-height:1.7"></div>
+            <div id="hours" style="margin-top:10px; font-size:13px; color:var(--yoxi-slate)"></div>
+          </div>
+        </div>
+
+        <!-- ===== 抵達可得 ===== -->
+        <div style="padding:0 16px 32px">
+          <div class="sec"><h2 class="sec__t">到了會得到</h2></div>
+          <div class="card card--pad u-row u-gap4">
+            <span id="rewardThumb"
+                  style="width:60px; height:80px; border-radius:4px; overflow:hidden;
+                         position:relative; flex:none;
+                         filter:grayscale(1) contrast(.72) brightness(1.16)"></span>
+            <span class="u-fill">
+              <span id="rewardTitle" style="display:block; font-weight:800"></span>
+              <span style="display:block; font-size:13px; color:var(--yoxi-slate); margin-top:2px">
+                這個地方獨有，由 AI 依當天的光線與季節生成
+              </span>
+            </span>
+            <span id="rewardRing" style="position:relative; width:46px; height:46px; flex:none">
+              <svg class="ring" width="46" height="46" viewBox="0 0 46 46">
+                <circle class="ring__track" cx="23" cy="23" r="20"/>
+                <circle class="ring__bar" id="ringBar" cx="23" cy="23" r="20"
+                        stroke-dasharray="125.6" stroke-dashoffset="100.5"/>
+              </svg>
+              <span id="ringLabel"
+                    style="position:absolute; inset:0; display:grid; place-items:center;
+                           font-size:11px; font-weight:800"></span>
+            </span>
+          </div>
+          <div id="badgeNote"
+               style="margin-top:8px; font-size:13px; color:var(--yoxi-slate); padding-left:2px"></div>
+        </div>
+
+      </div>
+
+      <!-- ===== 頁尾 CTA（這一頁唯一的改動：只剩一顆，或者一句話） ===== -->
+      <div class="place-foot" id="foot"></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/icons.js"></script>
+<script src="../js/mock.js"></script>
+<script src="../js/state.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/interact.js"></script>
+<script>
+(function () {
+  const qid = new URLSearchParams(location.search).get('id');
+  const P = MOCK.findPlace(qid);
+  /* 主線用 10 公里判斷「這段搭車比較合理」。這一版沒有車可以搭，
+     所以 3 公里以上就直接說明原型不安排交通 —— 走路到不了，
+     又不給替代方案，那就要講清楚是原型的邊界，不是地方的邊界。 */
+  const far    = P.distance != null && P.distance > 10000;
+  const noWalk = P.distance != null && P.distance > 3000;
+
+  document.title = P.name + ' — yoxi 城事';
+
+  /* 灰階的未解鎖明信片 */
+  document.getElementById('hero').innerHTML       = SHELL.postcardArt(P.art, { seed: 1, wide: true });
+  document.getElementById('rewardThumb').innerHTML = SHELL.postcardArt(P.art, { seed: 1 });
+
+  document.getElementById('eyebrow').textContent = far ? P.eyebrow : P.type;
+  document.getElementById('name').textContent    = P.name;
+
+  const hasDist = P.distance != null;
+  const km  = hasDist ? (P.distance / 1000).toFixed(1) : null;
+  const mins = !hasDist ? null
+             : far ? Math.round(P.distance / 670) : Math.round(P.distance / 75);
+  document.getElementById('meta').innerHTML = !hasDist
+    ? '<span>距離待確認</span>'
+    : far
+    ? '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + km + '</span> km</span>' +
+      '<span>·</span><span>搭車 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>'
+    : '<span>離你 <span class="num" style="color:var(--yoxi-navy)">' + P.distance + '</span> m</span>' +
+      '<span>·</span><span>走路 <span class="num" style="color:var(--yoxi-navy)">' + mins + '</span> 分鐘</span>';
+
+  document.getElementById('story').innerHTML = P.story.map(s => `
+    <div class="story__block">
+      <div class="story__label">${s.label}</div>
+      <p class="story__text">${s.text}</p>
+    </div>`).join('');
+
+  document.getElementById('whyList').innerHTML = P.why.map(w => `
+    <div class="why__item"><span class="why__src">${w.src}</span>${w.text}</div>`).join('');
+
+  document.getElementById('tip').textContent   = P.tip;
+  document.getElementById('hours').textContent = P.hours;
+  document.getElementById('rewardTitle').textContent = `一張〈${P.name}〉`;
+
+  const cardId = MOCK.cardIdOf(P.id);
+  const owner = MOCK.BADGES.filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0];
+  if (owner) {
+    const pr = STATE.badge(owner.id);
+    document.getElementById('ringBar')
+      .setAttribute('stroke-dashoffset', 125.6 * (1 - pr.done / pr.total));
+    document.getElementById('ringLabel').innerHTML =
+      '<span><span class="num">' + pr.done + '</span>/' + pr.total + '</span>';
+    document.getElementById('badgeNote').textContent =
+      '也會讓〈' + pr.name + '〉這枚獎章多收集一張';
+  } else {
+    document.getElementById('rewardRing').classList.add('u-hidden');
+    document.getElementById('badgeNote').classList.add('u-hidden');
+  }
+  if (far) document.getElementById('backBtn').href = 'route.html';
+
+  /* ===== 這一頁唯一的改動：頁尾只剩一顆走路 =====
+     沒有「用 yoxi」，也沒有第二順位。走不到的地方連按鈕都沒有 ——
+     對照組的價值就在這裡：它誠實地什麼都不賣。 */
+  document.getElementById('foot').innerHTML = noWalk
+    ? `<div class="card card--pad" style="text-align:center; color:var(--yoxi-slate); font-size:14px">
+         <span class="num" style="color:var(--yoxi-navy)">${Math.round(P.distance / 1000)}</span> 公里，這個原型不安排交通。
+       </div>`
+    : `<a class="btn-primary" href="going.html?id=${P.id}">走路前往</a>` + (hasDist
+      ? `<div style="margin-top:8px; text-align:center; font-size:12px; color:var(--yoxi-slate)">
+           ${P.distance} 公尺，走過去大概 ${mins} 分鐘
+         </div>`
+      : '');
+
+  SHELL.injectIcons();
+})();
+</script>
+</body>
+</html>
