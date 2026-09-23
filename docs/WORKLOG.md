@@ -78,4 +78,15 @@
 | `ec3a212` | 跨文件一致性稽核：人力約 7 FTE／每月 NT$81.9 萬、推播停損 15%、第 1 步前提改北極星、K1 提前到第 0 步，另 15 處小不一致 |
 | `1048465` | 簡報第三波：評審 12 點修正（代號換白話、第 8 頁攤開派遣費 vs 點數的帳、第 11 頁改人看得懂的三張卡…）；試辦範圍拍板為第 0 步＋K1＋今天的地方最小版 |
 
-評審視角試打分：73.5／100（主題 8、創意 7、可行性 8、AI 整合 6），預估入圍 15 隊；第三波已針對其 12 點修正。交件前仍要人做的：隊名與成員、GitHub 公開與否、影片是否重錄真人操作、拿到 yoxi 真資料後是否換第 4 頁（見 `pitch/README.md`）。
+評審視角試打分：73.5／100（主題 8、創意 7、可行性 8、AI 整合 6），預估入圍 15 隊；第三波已針對其 12 點修正。交件前仍要人做的：隊名與成員、GitHub 公開與否、影片要不要換真人配音、拿到 yoxi 真資料後是否換第 4 頁（見 `pitch/README.md`）。
+
+## 2026-09-23 初賽影片重做：向量動畫＋願景版
+
+使用者要求：影片用向量動畫風格重做、少自我解釋、講願景；子 agent 一律開 Opus 5.5。主 agent 寫願景版腳本（13 格、旁白約 430 字）、動畫契約 `pitch/video/anim/CONTRACT.md` 與共用程式庫 `lib.js`，三個 Opus agent 並行：管線（`build-video.py` 重寫）、第 1–7 格場景、第 8–13 格場景。
+
+| commit | 做了什麼 |
+|---|---|
+| `6aa1e31` | 四張 web app 截圖搬到 `pitch/deck/assets/`（只剩簡報第 6 頁在用）；刪影片舊管線的 `shoot-extra.py` 與舊畫格，舊鏡頭表改名 `shots-draft-v1.json` |
+| `8777ec5` | 影片：`shots.json` 願景版 13 格；`anim/`（SVG 舞台、每格畫面是 t 的純函數、真實新竹街道三組地圖、共用零件、字幕條、交叉淡接、兩支場景檔）；`build-video.py`（檢查 → TTS → timeline.js → 標準庫 WebSocket 走 DevTools 逐格截圖餵 ffmpeg → 音軌對齊；`--frame／--only／--fps／--check／--audio-dir`）；README／script.md／storyboard 改版。成片 2:08.2、30 fps、13.4 MB；`--check` 13/13 格純函數；verify-quiet 八段 PASS 且六條承諾與基準相同；build-pdf PASS |
+
+畫面規矩：顏色只讀 `tokens.css`、數字只讀 `timeline.js` 的 `calc`（公式算）、地圖格自動署名 OpenStreetMap、明信片格標「AI 生成示意」。全片 30 fps 約 4 分鐘可重產；正式版只換真人配音（每格一個音檔 → `--audio-dir`）。
