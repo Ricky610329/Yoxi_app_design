@@ -90,3 +90,13 @@
 | `8777ec5` | 影片：`shots.json` 願景版 13 格；`anim/`（SVG 舞台、每格畫面是 t 的純函數、真實新竹街道三組地圖、共用零件、字幕條、交叉淡接、兩支場景檔）；`build-video.py`（檢查 → TTS → timeline.js → 標準庫 WebSocket 走 DevTools 逐格截圖餵 ffmpeg → 音軌對齊；`--frame／--only／--fps／--check／--audio-dir`）；README／script.md／storyboard 改版。成片 2:08.2、30 fps、13.4 MB；`--check` 13/13 格純函數；verify-quiet 八段 PASS 且六條承諾與基準相同；build-pdf PASS |
 
 畫面規矩：顏色只讀 `tokens.css`、數字只讀 `timeline.js` 的 `calc`（公式算）、地圖格自動署名 OpenStreetMap、明信片格標「AI 生成示意」。全片 30 fps 約 4 分鐘可重產；正式版只換真人配音（每格一個音檔 → `--audio-dir`）。
+
+## 2026-09-23 介紹網站：`site/`
+
+使用者要「專門介紹這個 app 的本機網站，捲動式、可互動」。主 agent 寫骨架（section 與掛載點、`scroll.js` 捲動框架、`data.js` 公式與地點、`site.css` 基底、`tools/shoot-site.py` 截圖驗收、`CONTRACT.md`），兩個 Opus agent 並行：內容 agent（各段文案、週曆條、三條線卡、19 個 scrolly 步驟、AI 卡、承諾清單、路線圖、影片、入口與頁尾）、互動 agent（hero 霧地圖、可點的真實地圖＋明信片、3 公里距離尺、叫車首頁圖層開／關對照）。
+
+| commit | 做了什麼 |
+|---|---|
+| `6a7070b` | `site/`：十三段一頁式介紹站，`file://` 直接開，沒有 build／框架／CDN／webfont；只讀 prototype、app 截圖、pitch 影片。CSS 不寫 hex、數字走 `data-fmt`／`SITE_DATA.fmt`、禁用詞掃過；手機寬度可看。README／AGENTS／HANDOFF §12 指向。shoot-site 十三段＋整頁＋互動後截圖無 JS 例外；verify-quiet 八段 PASS 且六條承諾與基準相同 |
+
+已知不夠好的：六條承諾的量測值是寫在 HTML 的字面值（它們是 verify-quiet 的量測結果，不是公式）；路線圖第 0 步守門指標「叫車完成率」為避禁用詞改寫成「叫車成功率」；hero 霧散開的效果偏含蓄；探索地圖把 2.5 km 外的地點夾到邊緣標「圖外」。
