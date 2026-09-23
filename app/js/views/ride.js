@@ -59,9 +59,13 @@ const PICKUPS = [
 ];
 /* 城事以外的一般行程（trips.html 的對照組；公里是資料，車資與點數用公式） */
 const PLAIN_TRIPS = [
-  { from: '東區', to: '竹北', date: '09/18', time: '08:42', km: 9.1 },
+  { from: '東區', to: '竹北', date: '09.18', time: '08:42', km: 9.1 },
 ];
-const TOAST_NA = '這是 yoxi 現有的功能，這份原型沒有改動它';
+/* 原型沒做的頁（yoxi 既有功能、活動推播、掃碼…）：全 app 同一句 */
+const TOAST_NA = '這份原型沒有做這一頁';
+/* 配對中 → 行程中：從叫車（trip.startedAt）起算多久。phase 由時間推導，
+   不靠「setTimeout 跑完才寫 riding」—— 離開 /trip 再回來、重整、測試的時序都得到同一個答案。 */
+const MATCH_MS = 1200;
 const DROP_LIMIT = 7;
 
 /* 上車點只活在這一次開 app（store 沒有這個鍵；契約 §3.3 不另開） */
@@ -71,11 +75,7 @@ let pickupName = null;
 function M() { return window.MOCK; }
 function S() { return window.STATE; }
 function store() { return APP.store; }
-function still() {
-  const h = document.documentElement;
-  if (h.hasAttribute('data-still')) return true;
-  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
-}
+function still() { return APP.reduceMotion(); }
 function icon(name, size) {
   return '<span data-icon="' + name + '" class="ride-ic"' +
     (size ? ' style="width:' + size + 'px;height:' + size + 'px"' : '') + '></span>';
@@ -104,6 +104,23 @@ function tripNow() {
   return t && t.placeId ? t : null;
 }
 function tripPlace(t) { return (t && APP.place(t.placeId)) || null; }
+/* 行程現在是哪一段：存的是 matching 但已經過了 MATCH_MS → riding。now 可注入（測試用）。 */
+function phaseOf(t, now) {
+  if (!t) return null;
+  if (t.phase !== 'matching') return t.phase;
+  const t0 = Date.parse(t.startedAt);
+  if (isNaN(t0)) return 'riding';                /* 舊資料沒有 startedAt：不要永遠卡在配對中 */
+  return ((now == null ? Date.now() : now) - t0 >= MATCH_MS) ? 'riding' : 'matching';
+}
+/* 行程進行中（配對中或行程中；抵達之後不算） */
+function tripActive() {
+  const t = tripNow();
+  return t && t.phase !== 'done' ? t : null;
+}
+function validDate(iso) {
+  const d = iso ? new Date(iso) : null;
+  return d && !isNaN(d.getTime()) ? d : null;
+}
 /* 抵達了、限定明信片還沒收的那一趟：它一直留在 store.trip，直到 APP.explore.collect 收卡才清。
    按「回首頁」不能讓限定版消失（產品決定），所以 /ride 與明信片頁都有一個回去解鎖的入口。 */
 function pendingUnlock() {
@@ -113,12 +130,26 @@ function pendingUnlock() {
   if (!p) return null;
   const card = M().cardIdOf(p.id);
   if (S().has(card)) return null;
-  return { trip: t, place: p, card: card, href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1' };
+  return { trip: t, place: p, card: card, limited: limitedPlace(p),
+           href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1' };
 }
+
+/* 限定版（金框＋和泰 Points +50）只給「走路到不了」的地方：搭車去 900 m 外的地方不該換到 50 點。
+   /unlock 決定金框、點數頁算城事解鎖回饋、收藏頁畫金框，全部用這一個判斷（門檻＝APP.fmt.WALK_MAX_M）。
+   STATE.points 是原型的算法（by==='ride' 的卡 × 50），app 的點數一律用 pointsRows／pointsTotal。 */
+function limitedPlace(p) { return !!p && p.dist != null && p.dist > F.WALK_MAX_M; }
+function limitedCard(cardId) {
+  const c = S().card(cardId);
+  if (!c || c.by !== 'ride') return false;
+  return limitedPlace(APP.place(cardId));
+}
+const VIA_LABEL = { k1: '從地方詳情', e: '從叫車地圖', route: '從路線', search: '搜尋' };
 
 /* ---------------------------------------------------------------- 跨區塊 API */
 let lastSet = { id: null, at: 0 };
 function setDropoff(placeId, via) {
+  /* 車已經叫了：目的地不能從旁邊偷改（K1、E 小卡、路線斷點、搜尋四個入口都經過這裡） */
+  if (tripActive()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
   const p = APP.place(placeId);
   if (!p) { APP.ui.toast('找不到這個地方'); return false; }
   /* 連點兩下（第二下常落在轉場中的舊畫面上）：同一個地方、剛設過、人已經在 /ride → 不再寫、不再導 */
@@ -167,7 +198,8 @@ function callRide() {
   if (pend) {
     if (asking) return;
     asking = true;
-    APP.ui.confirm({ text: '上一趟的限定明信片還沒收，要先去解鎖嗎？', yes: '先去解鎖', no: '直接叫車' })
+    APP.ui.confirm({ text: pend.limited ? '上一趟的限定明信片還沒收，要先去解鎖嗎？' : '上一趟的明信片還沒收，要先去收下嗎？',
+                     yes: pend.limited ? '先去解鎖' : '先去收下', no: '直接叫車' })
       .then(function (yes) {
         asking = false;
         if (yes) APP.nav.go(pend.href.slice(1));
@@ -184,6 +216,7 @@ function startTrip(d) {
   store().set('trip', {
     placeId: d.id, phase: 'matching', startedAt: new Date().toISOString(), rated: false,
     km: p ? F.km(p.dist) : d.km,
+    via: d.via || null,          /* 轉換歸因：這個下車點是從哪個入口設的 */
   });
   APP.nav.go('/trip');
 }
@@ -195,8 +228,9 @@ function pastTrips() {
     const c = S().card(pc.id);
     if (!c || c.by !== 'ride') return;
     const p = APP.place(pc.id);
-    out.push({ card: pc.id, from: '新竹市', to: pc.name, date: String(c.date || '').replace('.', '/'),
-               time: '', km: F.km(p ? p.dist : 0), city: true });
+    out.push({ card: pc.id, from: '新竹市', to: pc.name, date: String(c.date || ''),
+               time: '', km: F.km(p ? p.dist : 0), city: true, limited: limitedCard(pc.id),
+               via: (store().get('rideVia') || {})[pc.id] || null });
   });
   PLAIN_TRIPS.forEach(function (x) { out.push(Object.assign({ city: false }, x)); });
   out.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
@@ -208,8 +242,8 @@ function pointsRows() {
   const rows = [];
   pastTrips().forEach(function (tr) {
     rows.push({ name: tr.from + ' → ' + tr.to + ' · 搭乘', src: '搭車回饋', date: tr.date,
-                amt: Math.round(F.fare(tr.km) / FARE_PER_POINT), city: false });
-    if (tr.city) {
+                amt: Math.floor(F.fare(tr.km) / FARE_PER_POINT), city: false });
+    if (tr.city && tr.limited) {
       rows.push({ name: tr.to + ' · 抵達解鎖', src: '城事解鎖回饋', date: tr.date, amt: RIDE_BONUS, city: true });
     }
   });
@@ -229,6 +263,12 @@ APP.ride = Object.assign(APP.ride || {}, {
   pointsTotal: pointsTotal,
   pastTrips: pastTrips,
   pendingUnlock: pendingUnlock,
+  limitedPlace: limitedPlace,
+  limitedCard: limitedCard,
+  VIA_LABEL: VIA_LABEL,
+  tripActive: tripActive,
+  phaseOf: phaseOf,
+  MATCH_MS: MATCH_MS,
 });
 
 /* ==========================================================================
@@ -257,7 +297,7 @@ function rideOverlay() {
     '<a class="fab fab--navy ride-fab ride-fab--menu" href="#/drawer" aria-label="選單" data-act="open-drawer">' +
       '<span data-icon="menu"></span></a>' +
     '<button class="fab ride-fab ride-fab--scan" type="button" aria-label="掃碼" ' +
-      'data-toast="這是 yoxi 現有的掃碼叫車，原型沒有做這一段"><span data-icon="scan"></span></button>' +
+      'data-toast="' + TOAST_NA + '"><span data-icon="scan"></span></button>' +
     '<a class="fab ride-fab ride-fab--bell" href="#/notify" aria-label="通知" data-act="open-notify">' +
       '<span data-icon="bell"></span></a>' +
     '<button class="fab ride-fab ride-fab--loc" type="button" data-recenter aria-label="定位">' +
@@ -327,24 +367,27 @@ function keepClear(map, me) {
 function rideRender() {
   const m = M();
   const today = APP.place(m.TODAY.id);
-  const d = store().get('dropoff');
-  const dp = d && d.id ? APP.place(d.id) : null;
   let trip = tripNow();
   const pend = pendingUnlock();
   if (trip && trip.phase === 'done') trip = null;      /* 已抵達：不是「回到行程」；限定版另有金色入口 */
-  const km = dp ? F.km(dp.dist) : (d ? d.km : 0);
+  /* 行程進行中：下車點欄位是這一趟的目的地（store.dropoff 可能已經被別的入口改過或清掉），點了回行程 */
+  const tp = trip ? tripPlace(trip) : null;
+  const d = store().get('dropoff');
+  const dp = tp || (d && d.id ? APP.place(d.id) : null);
+  const km = tp ? (trip.km != null ? trip.km : F.km(tp.dist)) : dp ? F.km(dp.dist) : (d ? d.km : 0);
 
 
   const dropField = dp
-    ? '<div class="route-input__field ride-drop">' +
-        '<a class="ride-drop__main" href="#/dropoff" data-act="pick-dropoff">' +
-          '<span class="route-input__label">下車點</span>' +
+    ? '<div class="route-input__field ride-drop"' + (tp ? ' data-trip-dest' : '') + '>' +
+        (tp ? '<a class="ride-drop__main" href="#/trip" data-act="open-trip">'
+            : '<a class="ride-drop__main" href="#/dropoff" data-act="pick-dropoff">') +
+          '<span class="route-input__label">' + (tp ? '這一趟的下車點' : '下車點') + '</span>' +
           '<span class="route-input__value" data-drop-name>' + esc(dp.name) + '</span>' +
           '<span class="ride-drop__meta">' + esc(dp.type) + ' · ' + esc(F.dist(dp.dist)) +
             ' · 預估 <b class="num ride-em">$<span data-fare>' + F.fare(km) + '</span></b>' +
             ' · 車程 <span class="num" data-min>' + F.rideMin(km) + '</span> 分</span>' +
         '</a>' +
-        '<button class="ride-drop__clear" type="button" data-act="clear-dropoff">清除</button>' +
+        (tp ? '' : '<button class="ride-drop__clear" type="button" data-act="clear-dropoff">清除</button>') +
       '</div>'
     : '<a class="route-input__field" href="#/dropoff" data-act="pick-dropoff">' +
         '<span class="route-input__value route-input__value--ph">要去哪裡？</span></a>';
@@ -369,7 +412,7 @@ function rideRender() {
 
     '<div class="sheet sheet--drag is-collapsed ride-sheet" data-drag style="--sheet-min:420px">' +
       '<div class="sheet__handle"></div>' +
-      '<h1 class="sheet__greet">' + esc(F.greet(new Date().getHours())) + '，' + esc(M().USER.name) + ' 今天要去哪?</h1>' +
+      '<h1 class="sheet__greet">' + esc(F.greet(new Date().getHours())) + '，' + esc(M().USER.name) + ' 今天要去哪？</h1>' +
       '<div class="card">' +
         '<div class="route-input">' +
           '<div class="route-input__rail"><span class="route-input__dot"></span>' +
@@ -405,8 +448,8 @@ function rideRender() {
             '<span class="banner--gold__in">' +
               '<span class="banner--gold__art" data-art="' + esc(pend.place.art) + '" data-seed="7"></span>' +
               '<span class="banner--gold__txt">' +
-                '<span class="banner--gold__eyebrow">yoxi 限定版</span>' +
-                '<span class="banner--gold__t">限定明信片還沒收 · 去解鎖</span>' +
+                '<span class="banner--gold__eyebrow">' + (pend.limited ? 'yoxi 限定版' : '搭 yoxi 抵達') + '</span>' +
+                '<span class="banner--gold__t">' + (pend.limited ? '限定明信片還沒收 · 去解鎖' : '明信片還沒收 · 去收下') + '</span>' +
                 '<span class="banner--gold__p">你抵達了' + esc(pend.place.name) + '</span>' +
               '</span>' +
               '<span class="arrow arrow--onred"></span>' +
@@ -428,7 +471,9 @@ function rideMount(root) {
 
   /* ---- 地圖 ---- */
   const host = root.querySelector('[data-ride-map]');
-  const near = rideSpots();
+  /* 設定頁可以把叫車地圖上的景點關掉：地圖照畫，景點與小卡都不出現 */
+  const showSpots = store().get('rideSpots') !== false;
+  const near = showSpots ? rideSpots() : false;
   let current = null;
   const map = APP.map.mount(host, {
     style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
@@ -625,7 +670,7 @@ function tripMapOpts(p) {
 
 APP.view('trip', {
   path: '/trip', tab: null, status: 'light',
-  title: function () { const t = tripNow(); return t && t.phase === 'matching' ? '正在找車' : '行程中'; },
+  title: function () { const t = tripNow(); return phaseOf(t) === 'matching' ? '正在找車' : '行程中'; },
   render: function () {
     const t = tripNow();
     const p = tripPlace(t);
@@ -646,7 +691,7 @@ APP.view('trip', {
     const pick = story.filter(function (s) { return s.label === '以前的它'; })[0] || story[0];
     const heading = rs ? rs.heading : (p.name + ' 以前是什麼樣子');
     const paras = rs ? [rs.text].concat(pick ? [pick.text] : []) : story.slice(0, 2).map(function (s) { return s.text; });
-    const matching = t.phase === 'matching';
+    const matching = phaseOf(t) === 'matching';
 
     return '' +
       '<header class="hdr-red hdr-red--compact ride-trip-hdr">' +
@@ -723,7 +768,7 @@ APP.view('trip', {
     if (o.dLL) put(map.el.querySelector('[data-pin="dest"]'), H.project(o.dLL[0], o.dLL[1]));
     SHELL.injectIcons(root);
 
-    /* ---- 配對 → 行程中 ---- */
+    /* ---- 配對 → 行程中：時間到（從 startedAt 算）才切；已經過了就當場切 ---- */
     function toRiding() {
       const cur = tripNow();
       if (!cur || cur.phase !== 'matching') return;
@@ -733,9 +778,10 @@ APP.view('trip', {
       document.title = '行程中 — yoxi 城事';
     }
     if (t.phase === 'matching') {
-      if (still()) toRiding();
+      if (still() || phaseOf(t) === 'riding') toRiding();
       else {
-        const tm = setTimeout(toRiding, 1200);
+        const left = MATCH_MS - (Date.now() - Date.parse(t.startedAt));
+        const tm = setTimeout(toRiding, Math.max(0, Math.min(MATCH_MS, left)));
         offs.push(function () { clearTimeout(tm); });
       }
     }
@@ -771,17 +817,29 @@ APP.view('trip', {
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9Z"/></svg>';
 
 APP.view('trip-done', {
-  path: '/trip/done', tab: null, status: 'light', title: '行程完成',
+  path: '/trip/done', tab: null, status: 'light',
+  title: function () { const t = tripNow(); return t && t.phase === 'done' && tripPlace(t) ? '行程完成' : '行程'; },
   render: function () {
     const t = tripNow();
     const p = tripPlace(t);
-    const hdr = '<header class="hdr-red hdr-red--compact"><div class="hdr-red__bar"><h1 class="hdr-red__title">行程完成</h1></div></header>';
-    if (!t || !p || t.phase !== 'done') {
+    const hdrOf = function (title) {
+      return '<header class="hdr-red hdr-red--compact"><div class="hdr-red__bar"><h1 class="hdr-red__title">' + title + '</h1></div></header>';
+    };
+    const done = t && p && t.phase === 'done';
+    const hdr = hdrOf(done ? '行程完成' : '行程');
+    if (t && p && t.phase !== 'done') {
+      /* 有行程、還沒抵達（深連結或重整進來）：跟 /trip 的「已抵達 → 看結算」對稱，給回到行程的路 */
+      return hdr + '<div class="app-empty"><div class="app-empty__card"><p class="app-empty__eyebrow">行程</p>' +
+        '<h1 class="app-empty__t">還在前往 ' + esc(p.name) + ' 的路上</h1>' +
+        '<p class="app-empty__p">抵達之後才會有這趟的結算。</p>' +
+        '<a class="btn-primary" href="#/trip" data-act="go-trip">回到行程</a></div></div>';
+    }
+    if (!t || !p) {
       return hdr + emptyCard('行程', '目前沒有行程', '這趟行程已經結束，或還沒抵達。');
     }
     const km = t.km != null ? t.km : F.km(p.dist);
     const min = F.rideMin(km);
-    const start = t.startedAt ? new Date(t.startedAt) : new Date();
+    const start = validDate(t.startedAt) || new Date();
     const end = new Date(start.getTime() + min * 60000);
     const stars = t.stars || 0;
     const got = S().has(M().cardIdOf(p.id));
@@ -815,9 +873,10 @@ APP.view('trip-done', {
             '<span class="banner--gold__in">' +
               '<span class="banner--gold__art" data-art="' + esc(p.art) + '" data-seed="7"></span>' +
               '<span class="banner--gold__txt">' +
-                '<span class="banner--gold__eyebrow">yoxi 限定版</span>' +
+                '<span class="banner--gold__eyebrow">' + (limitedPlace(p) ? 'yoxi 限定版' : '搭 yoxi 抵達') + '</span>' +
                 '<span class="banner--gold__t">你抵達了' + esc(p.name) + '</span>' +
-                '<span class="banner--gold__p">' + (got ? '這個地方的明信片已經在收藏裡' : '解鎖 yoxi 限定明信片') + '</span>' +
+                '<span class="banner--gold__p">' + (got ? '這個地方的明信片已經在收藏裡'
+                  : limitedPlace(p) ? '解鎖 yoxi 限定明信片' : '收下這張明信片') + '</span>' +
               '</span>' +
               '<span class="arrow arrow--onred"></span>' +
             '</span>' +
@@ -852,7 +911,7 @@ APP.view('trip-done', {
 APP.view('drawer', {
   path: '/drawer', tab: 'ride', status: 'light', title: '選單',
   render: function () {
-    const NA = '原型未包含這一頁';
+    const NA = TOAST_NA;
     const item = function (label, href, act) {
       return href
         ? '<a class="drawer__item" href="' + href + '" data-act="' + act + '">' + label + '</a>'
@@ -972,7 +1031,7 @@ APP.view('notify', {
                     sub: '城事解鎖回饋 · ' + city.name.replace(' · 抵達解鎖', '') });
     }
     const news = function (t, sub) {
-      return '<a class="row-nav" href="#" data-toast="這是 yoxi 現有的活動推播，原型沒有做這一段">' +
+      return '<a class="row-nav" href="#" data-toast="' + TOAST_NA + '">' +
         '<span class="tile-icon tile-icon--red"><span class="ic-ondark" data-icon="bell"></span></span>' +
         '<span class="row-nav__body"><span class="row-nav__title">' + t + '</span>' +
         '<span class="row-nav__sub">' + sub + '</span></span><span class="arrow"></span></a>';
@@ -1012,7 +1071,8 @@ APP.view('trips', {
         '<span class="tile-icon"><span data-icon="tabRide"></span></span>' +
         '<span class="row-nav__body"><span class="row-nav__title">' + esc(tr.from) + ' → ' + esc(tr.to) + '</span>' +
           '<span class="row-nav__sub">' + esc(tr.date) + (tr.time ? ' ' + esc(tr.time) : '') +
-          ' · <span data-km>' + kmText(tr.km) + '</span> 公里' + (tr.city ? ' · 城事' : '') + '</span></span>' +
+          ' · <span data-km>' + kmText(tr.km) + '</span> 公里' + (tr.city ? ' · 城事' : '') +
+          (tr.via && VIA_LABEL[tr.via] ? ' · <span data-via="' + esc(tr.via) + '">' + VIA_LABEL[tr.via] + '</span>' : '') + '</span></span>' +
         '<span class="u-row u-gap3"><span class="num ride-trips__fare">$<span data-fare>' + F.fare(tr.km) + '</span></span>' +
         '<span class="arrow"></span></span></a>';
     }).join('');

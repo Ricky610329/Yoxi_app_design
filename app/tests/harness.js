@@ -47,6 +47,10 @@
   let readyMs = null;
   let loadSeq = 0;
   let errOffset = 0;            /* app 自己的 <pre id="app-errors">（render／mount 丟的例外）已讀到哪 */
+  /* 第幾條 test：逾時的 test 不會真的停下來，它後面的 await 會繼續跑、把斷言記到下一條 test 頭上。
+     每條 test 開始與逾時都 +1；waitFor／tick 發現世代換了就丟「已逾時」讓舊的那條停在下一個 await。 */
+  let gen = 0;
+  function staleError() { return new Error('這條 test 已逾時結束，後續步驟不再執行'); }
 
   function appErrText() {
     try { const pre = frame && frame.contentDocument.getElementById('app-errors'); return pre ? pre.textContent : ''; }
@@ -59,6 +63,10 @@
 
   /* ------------------------------------------------------------ 小工具 */
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function tickGuarded(ms) {
+    const g = gen;
+    return sleep(ms).then(function () { if (g !== gen) throw staleError(); });
+  }
 
   function stack2(e) {
     if (!e) return '';
@@ -77,8 +85,10 @@
   function waitFor(fn, ms, label) {
     ms = ms == null ? 3000 : ms;
     const t0 = Date.now();
+    const g = gen;
     return new Promise(function (resolve, reject) {
       (function poll() {
+        if (g !== gen) return reject(staleError());
         let v;
         try { v = fn(); } catch (e) { v = false; }
         if (v) return resolve(v);
@@ -205,7 +215,7 @@
     },
 
     waitFor: waitFor,
-    tick: function (ms) { return sleep(ms == null ? 50 : ms); },
+    tick: function (ms) { return tickGuarded(ms == null ? 50 : ms); },
 
     /* 導覽並等 data-view-ready 且 route().path 相符。
        opt.expect：預期落地的 path（例 go('/') 會導到 '/ride'）
@@ -449,11 +459,12 @@
 
   function runTest(tc) {
     const rec = { name: tc.name, ok: false, msg: '', ms: 0, asserts: 0, fails: [] };
+    gen++;
     current = rec;
     const t0 = performance.now();
     let timer;
     const timeout = new Promise(function (_, reject) {
-      timer = setTimeout(function () { reject(new Error('逾時 ' + tc.timeout + 'ms')); }, tc.timeout);
+      timer = setTimeout(function () { gen++; reject(new Error('逾時 ' + tc.timeout + 'ms')); }, tc.timeout);
     });
     let p;
     try { p = Promise.resolve(tc.fn(app)); } catch (e) { p = Promise.reject(e); }

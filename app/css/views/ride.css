@@ -48,7 +48,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ride-peek__meta { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--yoxi-slate); }
+.ride-peek__meta { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--app-muted); }
 .ride-peek__acts {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -57,7 +57,7 @@
 }
 .ride-peek__acts .btn-ghost,
 .ride-peek__acts .btn-primary {
-  min-height: 38px;
+  min-height: 44px;   /* 命中區 44（WCAG 2.5.8） */
   padding: 0 var(--sp-2);
   font-size: var(--fs-cap);
   white-space: nowrap;
@@ -109,7 +109,7 @@
   display: block;
   margin-top: 2px;
   font-size: var(--fs-cap);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
   line-height: 1.5;
 }
 .ride-drop__meta .num { font-size: var(--fs-sm); }
@@ -129,7 +129,7 @@
 
 .ride-sheet__row { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-4); }
 .ride-call { margin-top: var(--sp-4); }
-.ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--yoxi-slate); }
+.ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--app-muted); }
 
 /* --------------------------------------------------------------------------
    /dropoff、/pickup：白色頁首＋搜尋框＋清單
@@ -167,7 +167,7 @@
   font-weight: var(--fw-bold);
   color: var(--yoxi-navy);
 }
-.ride-search__box input::placeholder { color: var(--yoxi-slate); font-weight: var(--fw-med); }
+.ride-search__box input::placeholder { color: var(--app-muted); font-weight: var(--fw-med); }
 .ride-search__cam { display: block; width: 24px; height: 24px; flex: none; }
 
 .ride-list { background: var(--yoxi-white); }
@@ -213,7 +213,7 @@
   border-top: 1px solid var(--yoxi-line);
 }
 .ride-more-wrap .ride-more { border-top: 0; font-size: var(--fs-lead); }
-.ride-list__none { padding: var(--sp-5) var(--gutter); font-size: var(--fs-sm); color: var(--yoxi-slate); line-height: 1.7; }
+.ride-list__none { padding: var(--sp-5) var(--gutter); font-size: var(--fs-sm); color: var(--app-muted); line-height: 1.7; }
 
 /* --------------------------------------------------------------------------
    /trip：配對中 → 行程中
@@ -231,11 +231,11 @@
 .ride-trip__match { padding: var(--sp-2) 0 var(--sp-4); }
 .ride-trip__driver { padding-bottom: var(--sp-3); }
 .ride-trip__big { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
-.ride-trip__sub { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ride-trip__sub { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
 .ride-trip__eta { flex: none; text-align: right; }
 .ride-trip__eta .num { display: block; font-size: var(--fs-title); line-height: 1; }
-.ride-trip__eta > span:last-child { display: block; font-size: var(--fs-xs); color: var(--yoxi-slate); }
-.ride-trip__fare { margin-bottom: var(--sp-3); font-size: var(--fs-sm); color: var(--yoxi-slate); }
+.ride-trip__eta > span:last-child { display: block; font-size: var(--fs-xs); color: var(--app-muted); }
+.ride-trip__fare { margin-bottom: var(--sp-3); font-size: var(--fs-sm); color: var(--app-muted); }
 .ride-trip__fare .num { font-size: var(--fs-body); }
 .ride-trip__acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-3); }
 .ride-trip__cancel { display: block; margin: var(--sp-3) auto 0; }
@@ -246,7 +246,7 @@
 
 .ride-story { background: var(--yoxi-cream); border: 0; }
 .ride-story__head { padding: 14px var(--gutter); }
-.ride-story__eyebrow { display: block; font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--yoxi-slate); }
+.ride-story__eyebrow { display: block; font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--app-muted); }
 .ride-story__t { display: block; margin-top: 1px; }
 .ride-story__arrow { transition: transform var(--t-fast) var(--ease); }
 .ride-story__head.is-open .ride-story__arrow { transform: rotate(90deg); }
@@ -265,7 +265,7 @@
 .ride-done__body { padding: var(--sp-4); }
 .ride-done__line { justify-content: space-between; gap: var(--sp-3); }
 .ride-done__fare { font-size: var(--fs-title); }
-.ride-done__meta { margin-top: 6px; font-size: var(--fs-cap); color: var(--yoxi-slate); }
+.ride-done__meta { margin-top: 6px; font-size: var(--fs-cap); color: var(--app-muted); }
 
 .ride-stars { display: flex; justify-content: center; gap: var(--sp-2); margin-top: 14px; }
 .ride-star { width: 40px; height: 40px; padding: 1px; background: none; }

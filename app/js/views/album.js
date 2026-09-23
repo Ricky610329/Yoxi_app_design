@@ -78,6 +78,12 @@ function badgeOfCard(cardId) {
   return (M().BADGES || []).filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0] || null;
 }
 
+function limitedCard(cardId) {
+  const c = STATE.card(cardId);
+  if (!c || c.by !== 'ride') return false;
+  return APP.ride && APP.ride.limitedCard ? APP.ride.limitedCard(cardId) : true;
+}
+
 function badgeProg(r) { return '收集 ' + r.done + '/' + r.total; }
 
 function badgeCount() {
@@ -118,32 +124,47 @@ function dateLabel(d) {
   return (d.getMonth() + 1) + '月' + d.getDate() + '日 星期' + '日一二三四五六'.charAt(d.getDay());
 }
 
-/* ---- 這一週：HEALTH_STEPS.month 是明信片日期的那個月（POSTCARDS 第一張的月份） ----
-   週的最後一天＝有步數的最後一天與這個月最近收卡的那天取晚的；上週＝再往前 7 天。 */
+/* ---- 這一週：範圍是固定的 ----
+   本週＝HEALTH_STEPS.month 最後一個有步數的日子往前 7 天；上週＝再往前 7 天。不看卡片日期
+   （之前用「最近收卡那天」當結尾：今天收一張，整週往後滑到沒有步數的日子，公里與步數反而倒退）。
+   卡片：日期落在本週範圍、或在範圍之後（例如今天剛收的）→ 本週；落在上週範圍 → 上週。
+   步數與公里只取範圍內的資料。月份＝POSTCARDS 第一張的月份（HEALTH_STEPS 是那個月）。 */
 function weekStats() {
   const m = M();
   const month = (m.HEALTH_STEPS && m.HEALTH_STEPS.month) || [];
   const MM = String((m.POSTCARDS[0] && m.POSTCARDS[0].date) || APP.fmt.todayMMDD()).slice(0, 2);
+  const mm = Number(MM);
   let end = 0;
   month.forEach(function (v, i) { if (v > 0) end = i + 1; });
-  const got = m.POSTCARDS.map(function (p) { return { p: p, c: STATE.card(p.id) }; })
-    .filter(function (x) { return x.c && String(x.c.date).slice(0, 2) === MM; })
-    .map(function (x) { x.day = Number(String(x.c.date).slice(3, 5)); return x; });
-  got.forEach(function (x) { if (x.day <= month.length && x.day > end) end = x.day; });
   if (!end) end = Math.min(month.length, 7) || 7;
 
+  const keyOf = function (date) {          /* 'MM.DD' → MM*100+DD，跨月也比得出先後 */
+    const t = String(date || '');
+    return Number(t.slice(0, 2)) * 100 + Number(t.slice(3, 5));
+  };
+  const got = m.POSTCARDS.map(function (p) { return { p: p, c: STATE.card(p.id) }; })
+    .filter(function (x) { return x.c && /^\d\d\.\d\d/.test(String(x.c.date)); })
+    .map(function (x) { x.key = keyOf(x.c.date); return x; });
+
   const spk = stepsPerKm();
-  function range(a, b) {
+  function range(a, b, openEnd) {
     const days = [];
     for (let d = a; d <= b; d++) days.push({ day: d, steps: d >= 1 ? (month[d - 1] || 0) : 0 });
     const steps = days.reduce(function (s, x) { return s + x.steps; }, 0);
-    const cards = got.filter(function (x) { return x.day >= a && x.day <= b; })
-      .sort(function (x, y) { return x.day - y.day; })
+    const lo = mm * 100 + a, hi = mm * 100 + b;
+    const cards = got.filter(function (x) { return x.key >= lo && (openEnd || x.key <= hi); })
+      .sort(function (x, y) { return x.key - y.key; })
       .map(function (x) { return x.p; });
-    return { from: a, to: b, days: days, steps: steps,
+    /* 標題的終點：範圍之後還有卡（例如今天剛收的）就延到最晚那張的日子，列出來的卡才都落在標題的日期裡。
+       步數與公里仍只算 days（有資料的日子），起點不動。 */
+    let showTo = b;
+    if (openEnd) got.forEach(function (x) {
+      if (x.key > hi && Math.floor(x.key / 100) === mm) showTo = Math.max(showTo, x.key % 100);
+    });
+    return { from: a, to: b, showTo: showTo, days: days, steps: steps,
              km: spk ? Math.round(steps / spk * 10) / 10 : 0, cards: cards, places: cards.length };
   }
-  return { month: Number(MM), now: range(end - 6, end), prev: range(end - 13, end - 7) };
+  return { month: mm, now: range(end - 6, end, true), prev: range(end - 13, end - 7, false) };
 }
 function mdLabel(month, day) {
   if (day < 1) return '上個月';
@@ -185,7 +206,7 @@ function notFound(o) {
 function cellHTML(p) {
   const got = STATE.card(p.id);
   const fresh = !!got && STATE.lastIsNew && STATE.all.lastCard === p.id;
-  const ride = !!got && got.by === 'ride';
+  const ride = !!got && limitedCard(p.id);
   const cls = 'postcard alb-cell' + (got ? '' : ' postcard--locked') + (ride ? ' postcard--gold' : '') +
     (fresh ? ' postcard--fresh' : '');
   return '<a class="' + cls + '" href="#/postcard/' + esc(p.id) + '" data-card="' + esc(p.id) + '"' +
@@ -322,7 +343,7 @@ function weekPanel() {
   return '<a class="card alb-row" href="#/week" data-act="go-week">' +
       '<span class="tile-icon tile-icon--md"><span data-icon="share"></span></span>' +
       '<span class="u-fill"><span class="alb-row__t">這一週 · ' + esc(mdLabel(w.month, w.now.from)) + ' – ' +
-        esc(mdLabel(w.month, w.now.to)) + '</span>' +
+        esc(mdLabel(w.month, w.now.showTo)) + '</span>' +
       '<span class="alb-row__s">去了 <span class="num">' + w.now.places + '</span> 個地方 · 走了 <span class="num">' +
         w.now.km + '</span> 公里</span>' +
       '<span class="alb-row__s">可以分享的那一半：不含心情與日誌</span></span>' +
@@ -410,8 +431,8 @@ APP.view('album', {
       };
     });
 
-    /* 「新」只標一次；lastCard 留給每日回顧用 */
-    STATE.markLastSeen();
+    /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
+    if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
   },
 });
 
@@ -461,7 +482,7 @@ APP.view('postcard', {
             '<h1 class="alb-h1">' + esc(P.name) + '</h1>' +
             '<p class="alb-sub" data-notyet>還沒去 · 到了就會上色</p>' +
             (pend
-              ? '<a class="btn-primary alb-gap" href="' + pend.href + '" data-act="unlock-ride">解鎖限定版</a>'
+              ? '<a class="btn-primary alb-gap" href="' + pend.href + '" data-act="unlock-ride">' + (pend.limited ? '解鎖限定版' : '收下這張明信片') + '</a>'
               : '') +
             (canGo
               ? '<a class="' + (pend ? 'btn-ghost' : 'btn-primary') + ' alb-gap" href="#/place/' + esc(pid) + '" data-act="go-place">看看這個地方</a>'
@@ -472,6 +493,7 @@ APP.view('postcard', {
     }
 
     const ride = got.by === 'ride';
+    const gold = limitedCard(P.id);          /* 金框只給走不到的地方（ride.js 的門檻） */
     const pid = placeOfCard(P.id);
     const pl = pid ? APP.place(pid) : APP.place(P.id);
     const dist = pl && pl.dist != null ? pl.dist : null;
@@ -484,11 +506,11 @@ APP.view('postcard', {
     return header({ title: '明信片', back: '/album', action: shareBtn() }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
         '<div class="alb-big">' +
-          '<button class="postcard alb-big__card' + (ride ? ' postcard--gold' : '') + '" type="button" data-flip data-act="flip" ' +
+          '<button class="postcard alb-big__card' + (gold ? ' postcard--gold' : '') + '" type="button" data-flip data-act="flip" ' +
             'data-card="' + esc(P.id) + '" aria-label="翻面">' +
             '<div data-art="' + esc(P.art) + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
             '<span class="ai-mark">AI 生成示意</span>' +
-            (ride ? '<span class="postcard__ribbon" data-ribbon>yoxi 限定版</span>' : '') +
+            (gold ? '<span class="postcard__ribbon" data-ribbon>yoxi 限定版</span>' : '') +
             '<span class="postcard__foot"><span class="postcard__name alb-big__name">' + esc(P.name) + '</span>' +
               '<span class="postcard__date">' + esc(date) + '</span></span>' +
             '<span class="postcard__back alb-big__back">' +
@@ -753,7 +775,7 @@ APP.view('lookback', {
         (r ? '<p class="unlock__sub">〈' + esc(r.name) + '〉這枚獎章，' + badgeProg(r) + '</p>' : '');
     } else {
       act2 = '<div class="lookback__steps alb-lb__km"><span data-lb-km>' + esc(A.km) + '</span></div>' +
-        '<div class="lookback__unit">公里 · 這個月走過的</div>' +
+        '<div class="lookback__unit">公里 · 這個月移動的</div>' +
         '<h2 class="unlock__title alb-lb__t">今天沒有新的卡，路還是走了</h2>' +
         '<p class="unlock__sub">走過的路都還在。</p>';
     }
@@ -832,7 +854,7 @@ APP.view('lookback', {
       b.onclick = function () {
         root.querySelectorAll('[data-act="mood"]').forEach(function (x) { x.classList.toggle('is-on', x === b); });
         const k = b.getAttribute('data-mood');
-        if (still) finish(k);
+        if (still || APP.reduceMotion()) finish(k);
         else { clearTimeout(timer); timer = setTimeout(function () { finish(k); }, 360); }
       };
     });
@@ -881,7 +903,7 @@ APP.view('week', {
               }).join('') + '</div>'
             : '') +
           '<div class="alb-cover__txt">' +
-            '<div class="alb-cover__range">' + esc(mdLabel(w.month, N.from)) + ' – ' + esc(mdLabel(w.month, N.to)) + '</div>' +
+            '<div class="alb-cover__range">' + esc(mdLabel(w.month, N.from)) + ' – ' + esc(mdLabel(w.month, N.showTo)) + '</div>' +
             '<div class="alb-cover__t">這一週你去了 <span class="num" data-week-places>' + N.places + '</span> 個地方</div>' +
           '</div>' +
         '</div></div>' +

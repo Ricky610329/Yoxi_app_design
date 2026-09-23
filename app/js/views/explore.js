@@ -552,7 +552,8 @@ function renderPlace(params) {
         '<span class="ex-ride__t">用 yoxi 前往 · 約 $' + num(r.fare) + ' · ' + num(r.min) + ' 分</span>' +
         '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' +
       '</button>' +
-      '<a class="btn-ghost" href="#' + (R ? '/route/' + esc(R.id) : '/routes') + '" data-act="open-route">先看看路線</a>' +
+      (R ? '<a class="btn-ghost" href="#/route/' + esc(R.id) + '" data-act="open-route">先看看路線</a>'
+         : '<a class="btn-ghost" href="#/routes" data-act="open-route">看這個月的路線</a>') +
       '<p class="ex-foot__note">' + num(r.km) + ' 公里，這一段搭車比較合理。按下去只是填好下車點，還沒叫車。</p>';
   }
 
@@ -567,7 +568,7 @@ function renderPlace(params) {
         '<span class="ex-eyebrow">' + esc(p.type) + (p.area ? ' · ' + esc(p.area) : '') + '</span>' +
         '<h1 class="ex-name">' + esc(p.name) + '</h1>' +
         '<div class="ex-meta" data-place-meta>' + meta + '</div>' +
-        (got ? '<span class="ex-gotline">已收藏' + (S().card(p.card) && S().card(p.card).date ? ' · ' + esc(S().card(p.card).date) : '') + '</span>' : '') +
+        (got ? gotLine(p) : '') +
       '</section>' +
       '<section class="story ex-pad">' +
         (p.story || []).map(function (s) {
@@ -575,7 +576,8 @@ function renderPlace(params) {
             '<p class="story__text">' + esc(s.text) + '</p></div>';
         }).join('') +
       '</section>' +
-      (p.why && p.why.length
+      /* 已收藏：推薦理由（含 MOCK 的通用句「你從沒進去過」「圖鑑裡還沒有這一張」）已經不成立，整段不出現 */
+      (!got && p.why && p.why.length
         ? '<section class="ex-pad"><div class="why">' +
             '<div class="why__head ex-why__head"><span class="u-row u-gap2"><span data-icon="sun" class="ex-ic18"></span>為什麼推薦給你</span></div>' +
             '<div class="why__list ex-why__list">' +
@@ -595,6 +597,15 @@ function renderPlace(params) {
     (foot ? '<div class="ex-foot" data-place-foot>' + foot + '</div>' : '');
 }
 
+/* 已收藏那一行：日期 · 走路／搭車 */
+function gotLine(p) {
+  const c = p.card ? S().card(p.card) : null;
+  const bits = ['已收藏'];
+  if (c && c.date) bits.push(esc(c.date));
+  if (c) bits.push(c.by === 'ride' ? '搭車抵達' : '走路抵達');
+  return '<span class="ex-gotline" data-got-line>' + bits.join(' · ') + '</span>';
+}
+
 /* 找不到的頁面也要有返回鍵 */
 function backFabBar(fallback) {
   return '<div class="ex-bar">' + backFab(fallback) + '</div>';
@@ -610,10 +621,27 @@ function mountPlace(root, params) {
 
 /* ---------------------------------------------------------------- /going/:id */
 
+/* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義 */
+function activeTrip() {
+  const t = APP.store.get('trip');
+  return t && t.phase !== 'done' ? t : null;
+}
+
 function renderGoing(params) {
   const p = APP.place(params.id);
   if (!p) {
     return backFabBar('/explore') + notFound({ title: '找不到這個地方', text: '沒有目的地就沒辦法帶路。先回探索挑一個。' });
+  }
+  const trip = activeTrip();
+  if (trip) {
+    const dest = APP.place(trip.placeId);
+    return backFabBar('/explore') +
+      '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-trip>' +
+        '<p class="app-empty__eyebrow">行程進行中</p>' +
+        '<h1 class="app-empty__t">你正在搭車前往 ' + esc(dest ? dest.name : '目的地') + '</h1>' +
+        '<p class="app-empty__p">先抵達或取消這一趟，再走路去' + esc(p.name) + '。</p>' +
+        '<a class="btn-primary" href="#/trip" data-act="go-trip">回到行程</a>' +
+      '</div></div>';
   }
   const hasDist = p.dist != null;
   return '<div class="ex-going__map" data-going-map>' +
@@ -645,7 +673,7 @@ function renderGoing(params) {
 
 function mountGoing(root, params) {
   const p = APP.place(params.id);
-  if (!p) { APP.ui.setStatus('dark'); return; }
+  if (!p || activeTrip()) { APP.ui.setStatus('dark'); return; }
   const host = root.querySelector('[data-going-map]');
   let m = null;
   const geo = window.HSINCHU_PLACES && HSINCHU_PLACES[p.id];
@@ -684,18 +712,35 @@ function cardName(p) {
   return c ? c.name : p.name;
 }
 
+/* ?ride=1 的限定版只給「真的搭車抵達這裡」的那一趟：store.trip 是這個地方、而且已抵達（phase done）。
+   跟 /ride 的金色入口、/trip/done 的金色橫幅同一個判斷（ride.js 的 pendingUnlock 也要 phase done）。
+   沒有這一趟就把網址上的 ?ride=1 當沒看到：不然手打一個網址就能拿金框和 +50 點。 */
+function rideTripFor(p, ctx) {
+  if (!p || !ctx || !ctx.query || ctx.query.get('ride') !== '1') return null;
+  const trip = APP.store.get('trip');
+  if (!trip || trip.phase !== 'done') return null;
+  return trip.placeId === p.id ? trip : null;
+}
+
+function limitedPlace(p) {
+  if (APP.ride && APP.ride.limitedPlace) return APP.ride.limitedPlace(p);
+  return !!p && p.dist != null && p.dist > fmt.WALK_MAX_M;
+}
+
 function renderUnlock(params, ctx) {
   const p = APP.place(params.id);
   if (!p) {
     return backFabBar('/explore') + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  const isRide = ctx.query.get('ride') === '1';
+  const trip = rideTripFor(p, ctx);
+  const isRide = !!trip;
+  /* 金框＋50 點只給走不到的地方（ride.js 的 limitedPlace）；近的地方搭車抵達是一般卡 */
+  const gold = isRide && limitedPlace(p);
   const got = collected(p);
   const name = cardName(p);
   const today = fmt.todayMMDD();
   const year = new Date().getFullYear();
-  const trip = APP.store.get('trip');
-  const km = isRide && trip && trip.km != null ? trip.km : fmt.km(p.dist);
+  const km = isRide && trip.km != null ? trip.km : fmt.km(p.dist);
   const arriveBy = isRide
     ? '搭 yoxi 抵達 · ' + num(km) + ' 公里'
     : (p.dist != null ? '走了 ' + distHTML(p.dist) + ' 抵達' : '走路抵達');
@@ -706,7 +751,7 @@ function renderUnlock(params, ctx) {
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看這張明信片</a>' : '') +
         '<a class="btn-link ex-center ex-unlock__link" href="#/explore" data-act="go-explore">回探索</a>' +
       '</div>'
-    : (isRide
+    : (gold
         ? '<div class="ex-unlock__gold" data-gold-note>' +
             '<span class="ex-unlock__goldrow"><span data-icon="badge" class="ex-ic16"></span>司機同行紀念 · 這一段是 yoxi 陪你到的</span>' +
             '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' +
@@ -719,7 +764,7 @@ function renderUnlock(params, ctx) {
         '<button class="btn-primary ex-unlock__btn" type="button" data-act="collect">收進收藏</button>' +
       '</div>';
 
-  return '<div class="unlock ex-unlock" data-unlock' + (isRide ? ' data-ride' : '') + '>' +
+  return '<div class="unlock ex-unlock" data-unlock' + (gold ? ' data-ride' : '') + '>' +
       '<div class="unlock__scene' + (got ? '' : ' is-on') + '" data-scene="1">' +
         '<div class="burst ex-burst">' +
           '<span class="burst__wave"></span><span class="burst__wave"></span>' +
@@ -746,8 +791,8 @@ function renderUnlock(params, ctx) {
       '</div>' +
       '<div class="unlock__scene' + (got ? ' is-on' : '') + '" data-scene="3">' +
         '<div class="ex-unlock__card">' +
-          '<div class="postcard' + (isRide && !got ? ' postcard--gold' : '') + '" data-final-card>' +
-            (isRide && !got ? '<span class="postcard__ribbon">yoxi 限定版</span>' : '') +
+          '<div class="postcard' + (gold && !got ? ' postcard--gold' : '') + '" data-final-card>' +
+            (gold && !got ? '<span class="postcard__ribbon">yoxi 限定版</span>' : '') +
             '<div class="ex-fill" data-art="' + esc(p.art) + '" data-seed="1"></div>' +
             '<span class="ai-mark">AI 生成示意</span>' +
             '<span class="postcard__foot">' +
@@ -773,7 +818,7 @@ function sceneMs() {
 function mountUnlock(root, params, ctx) {
   const p = APP.place(params.id);
   if (!p) { APP.ui.setStatus('dark'); return; }
-  const isRide = ctx.query.get('ride') === '1';
+  const isRide = !!rideTripFor(p, ctx);
   const box = root.querySelector('[data-unlock]');
   const timers = [];
   const show = function (n) {
@@ -788,8 +833,7 @@ function mountUnlock(root, params, ctx) {
     show(3);
   };
 
-  const still = document.documentElement.hasAttribute('data-still');
-  if (collected(p) || still) {
+  if (collected(p) || APP.reduceMotion()) {
     finish();
   } else {
     show(1);
@@ -815,9 +859,17 @@ function mountUnlock(root, params, ctx) {
       btn.disabled = true;
       const input = box.querySelector('[data-one-line]');
       const note = input ? String(input.value || '').trim().slice(0, 40) : '';
-      const trip = APP.store.get('trip');
-      const km = isRide && trip && trip.km != null ? trip.km : fmt.km(p.dist);
-      collect(p.id, { by: isRide ? 'ride' : 'walk', note: note, km: km });
+      /* 收的當下再判一次（畫面開著的時候行程可能被取消或換掉了） */
+      const trip = rideTripFor(p, ctx);
+      const ride = isRide && !!trip;
+      const km = ride && trip.km != null ? trip.km : fmt.km(p.dist);
+      /* 轉換歸因：這趟車是從哪個入口叫的，記在 app store（行程紀錄的小標），collect 會清掉 trip 所以先記 */
+      if (ride && trip.via && p.card) {
+        const rv = Object.assign({}, APP.store.get('rideVia') || {});
+        rv[p.card] = trip.via;
+        APP.store.set('rideVia', rv);
+      }
+      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km });
       APP.ui.toast('收進收藏了');
       APP.nav.go('/album', { dir: 'push' });
     };

@@ -49,6 +49,8 @@ function fresh() {
     trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km } */
     pushes: [],           /* [{ when:'am'|'pm', at:ISO }] */
     arrivedDemo: null,    /* placeId */
+    rideSpots: true,      /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
+    rideVia: {},          /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
     tabPaths: { ride: '/ride', explore: '/explore', album: '/album' },
   };
 }
@@ -67,8 +69,15 @@ function load() {
     if (!got || typeof got !== 'object') return base;
     /* 跟預設合併：舊版存的結構少了鍵也不會讓畫面讀到 undefined */
     const s = Object.assign(base, got);
-    s.tabPaths = Object.assign(fresh().tabPaths, got.tabPaths || {});
+    /* tabPaths 只收「/ 開頭的字串」：舊版或手改過的值（null、數字、整串字串）不能讓 nav.tab 導到怪地方 */
+    s.tabPaths = fresh().tabPaths;
+    const tp = got.tabPaths && typeof got.tabPaths === 'object' ? got.tabPaths : {};
+    TABS.forEach(function (k) {
+      if (typeof tp[k] === 'string' && tp[k][0] === '/') s.tabPaths[k] = tp[k];
+    });
     if (!Array.isArray(s.pushes)) s.pushes = [];
+    if (!s.rideVia || typeof s.rideVia !== 'object' || Array.isArray(s.rideVia)) s.rideVia = {};
+    if (typeof s.rideSpots !== 'boolean') s.rideSpots = true;
     return s;
   } catch (e) {
     return base;
@@ -125,6 +134,18 @@ const fmt = {
   },
 };
 
+/* MOCK 的敘事文字裡手寫了數字（例：內灣「從你家 28 公里，搭車 42 分鐘」），
+   跟同一頁用公式算的分鐘數對不起來。把「搭車 N 分鐘」「走路 N 分鐘」「N 公里」換成這個地方的公式值。
+   只換阿拉伯數字，「不到三公里」這種描述不動。dist 是公尺；null（距離待確認）就原樣回傳。 */
+fmt.fixText = function (text, dist) {
+  if (text == null || dist == null || isNaN(Number(dist))) return text;
+  const km = fmt.km(dist);
+  return String(text)
+    .replace(/搭車\s*\d+\s*分鐘/g, '搭車 ' + fmt.rideMin(km) + ' 分鐘')
+    .replace(/走路\s*\d+\s*分鐘/g, '走路 ' + fmt.walkMin(dist) + ' 分鐘')
+    .replace(/\d+(?:\.\d+)?\s*公里/g, km + ' 公里');
+};
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -139,10 +160,12 @@ function M() { return W.MOCK || {}; }
 
 function knownId(id) {
   const m = M();
-  if (!id) return false;
+  if (!id || typeof id !== 'string') return false;
   if (m.TODAY && m.TODAY.id === id) return true;
   if (m.FAR_PLACE && m.FAR_PLACE.id === id) return true;
-  if (m.CARD_TO_PLACE && m.CARD_TO_PLACE[id]) return true;
+  /* 用 hasOwnProperty：'constructor'、'toString' 這類 id 不能從原型鏈上撿到東西
+     （否則 findPlace 會默默退回今天的地方，/place/constructor 顯示成玻璃窯） */
+  if (m.CARD_TO_PLACE && Object.prototype.hasOwnProperty.call(m.CARD_TO_PLACE, id)) return true;
   const hit = function (arr) { return (arr || []).some(function (p) { return p.id === id; }); };
   if (hit(m.SPOTS) || hit(m.PENDING) || hit(m.POSTCARDS)) return true;
   return (m.ROUTES || []).some(function (r) {
@@ -168,18 +191,22 @@ function place(id) {
   const spot = (m.SPOTS || []).filter(function (s) { return s.id === f.id; })[0];
   const geo = (W.HSINCHU_PLACES || {})[f.id];
   const dist = f.distance != null ? f.distance : (spot && spot.dist != null ? spot.dist : null);
+  const fix = function (t) { return fmt.fixText(t, dist); };
+  const fixList = function (arr) {
+    return (arr || []).map(function (x) { return Object.assign({}, x, { text: fix(x.text) }); });
+  };
   return {
     id: f.id,
     name: f.name,
     art: f.art,
     dist: dist,                               /* 公尺；null＝距離待確認 */
     type: f.type || '地方',
-    hook: f.hook || '',
+    hook: fix(f.hook || ''),
     area: f.area || '',
     eyebrow: f.eyebrow || '',
-    story: f.story || [],
-    why: f.why || [],
-    tip: f.tip || '',
+    story: fixList(f.story),
+    why: fixList(f.why),
+    tip: fix(f.tip || ''),
     hours: f.hours || '',
     card: cardOf(f),
     state: spot ? spot.state : null,          /* SPOTS 上的 today／seen／new */
@@ -322,10 +349,19 @@ let cleanup = null;
 let pendingDir = null;
 let finishTimer = null;
 let finishPending = null;
+/* nav.back 已經呼叫 history.back()、還沒等到 popstate：這段期間再按返回不能再退一格
+   （返回鍵連按兩下，第二下常落在轉場中的舊畫面上；序號只剩 1 時第二下會直接退出 app） */
+let backPending = false;
+let backTimer = null;
+function clearBackPending() {
+  backPending = false;
+  if (backTimer) { clearTimeout(backTimer); backTimer = null; }
+}
 
 function $(sel, root) { return (root || document).querySelector(sel); }
 
 function isStill() {
+  if (typeof document === 'undefined') return false;
   if (document.documentElement.hasAttribute('data-still')) return true;
   try { if (W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches) return true; }
   catch (e) { /* ignore */ }
@@ -377,7 +413,15 @@ const nav = {
     route(dir);
   },
   back: function (fallback) {
-    if (curIdx > 0) { pendingDir = 'back'; history.back(); return; }
+    if (backPending) return;
+    if (curIdx > 0) {
+      backPending = true;
+      /* popstate 一定會來；保險起見一秒後也放開（例如瀏覽器擋掉了這次返回） */
+      backTimer = setTimeout(clearBackPending, 1000);
+      pendingDir = 'back';
+      history.back();
+      return;
+    }
     nav.go(fallback || '/ride', { replace: true, dir: 'back' });
   },
   tab: function (id) {
@@ -435,6 +479,7 @@ function finishNow() {
 
 function route(dir) {
   finishNow();
+  clearBackPending();
   const p = parse(location.hash);
 
   /* '/'：第一次開先 onboarding（system 有註冊才去），其餘去叫車 */
@@ -653,14 +698,61 @@ function tickClock() {
   if (t) t.textContent = fmt.clock();
 }
 
+/* ---- 對話框可及性：焦點移進去、Esc 關、關掉之後焦點回原處 ----
+   a11yDialog(dialogEl, { label, onEsc, focus }) → release()。release 可以重複呼叫。 */
+function a11yDialog(dlg, opt) {
+  opt = opt || {};
+  const before = document.activeElement;
+  dlg.setAttribute('role', 'dialog');
+  dlg.setAttribute('aria-modal', 'true');
+  if (opt.label) dlg.setAttribute('aria-label', opt.label);
+  const onKey = function (e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      e.preventDefault();
+      if (opt.onEsc) opt.onEsc();
+    }
+  };
+  document.addEventListener('keydown', onKey);
+  const first = opt.focus || dlg.querySelector('button, a[href], input, [tabindex]');
+  if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+  let released = false;
+  return function release() {
+    if (released) return;
+    released = true;
+    document.removeEventListener('keydown', onKey);
+    if (before && before !== document.body && before.isConnected && typeof before.focus === 'function') {
+      try { before.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    }
+  };
+}
+
+const TOAST_MS = 3200;       /* 至少 3 秒：讀得完一句話 */
+
 /* ---- UI 零件 ---- */
 const ui = {
   toast: function (msg, opt) {
-    if (W.SHELL && SHELL.toast) return SHELL.toast(msg, opt);
+    if (W.SHELL && SHELL.toast) {
+      const r = SHELL.toast(msg, Object.assign({ ms: TOAST_MS }, opt || {}));
+      /* 報讀器要念得到：補 role=status／aria-live，文字在屬性之後再放進去（先有 live region 再有內容才會被念） */
+      const host = $('.device') || document.body;
+      const list = host.querySelectorAll('.toast');
+      const t = list[list.length - 1];
+      if (t) {
+        t.setAttribute('role', 'status');
+        t.setAttribute('aria-live', 'polite');
+        t.textContent = '';
+        t.textContent = String(msg == null ? '' : msg);
+      }
+      return r;
+    }
     console.info('[toast]', msg);
   },
+  a11yDialog: a11yDialog,
   confirm: function (o) {
     o = o || {};
+    /* 同一時間只有一個確認框：連按「取消行程」「重設」會開第二個，兩個都按「是」動作就做兩次。
+       已經有一個開著時，新的這次直接回 false（第一個照常等使用者回答）。 */
+    if (document.querySelector('.app-confirm')) return Promise.resolve(false);
     return new Promise(function (resolve) {
       const host = $('.device') || document.body;
       const scrim = document.createElement('div');
@@ -672,11 +764,13 @@ const ui = {
             '<button class="btn-primary" type="button" data-act="confirm-yes">' + esc(o.yes || '好') + '</button>' +
             '<button class="btn-ghost" type="button" data-act="confirm-no">' + esc(o.no || '先不要') + '</button>' +
           '</div></div>';
-      const end = function (v) { scrim.remove(); resolve(v); };
+      let release = null;
+      const end = function (v) { scrim.remove(); if (release) release(); resolve(v); };
       scrim.querySelector('[data-act="confirm-yes"]').onclick = function () { end(true); };
       scrim.querySelector('[data-act="confirm-no"]').onclick = function () { end(false); };
       scrim.onclick = function (e) { if (e.target === scrim) end(false); };
       host.appendChild(scrim);
+      release = a11yDialog(scrim.querySelector('.modal'), { label: o.text || '確定嗎？', onEsc: function () { end(false); } });
     });
   },
   /* 預設實作：system.js 會覆寫這兩個 */
@@ -736,6 +830,7 @@ const map = {
         const s = placed[Number(b.dataset.i)];
         if (!s) return;
         b.setAttribute('data-spot', s.id);
+        if (s.name && !b.hasAttribute('aria-label')) b.setAttribute('aria-label', s.name);
         if (s.edge) b.classList.add('spot--edge');
         if (hasCb) {
           b.setAttribute('type', 'button');
@@ -759,6 +854,37 @@ const map = {
   },
 };
 
+/* ---- 桌機外框縮放：.device 固定 844 高，1280×720／1366×768 的螢幕會把 tab bar 擠到畫面外 ----
+   桌機（≥ 560 寬）時 scale = min(1, (innerHeight − 48) / 844)，寫進 --device-scale；app.css 用 transform 縮、
+   用負 margin 把版面佔位也縮掉（置中與 demo 面板才不會錯位）。手機模式不縮。 */
+const DESKTOP_MIN_W = 560;
+const STAGE_PAD_Y = 48;
+function deviceH() {
+  const d = $('.device');
+  const v = d ? parseFloat(getComputedStyle(d).getPropertyValue('--device-h')) : NaN;
+  return v > 0 ? v : 844;
+}
+function fitDevice() {
+  const html = document.documentElement;
+  const w = W.innerWidth || 0, h = W.innerHeight || 0;
+  const scale = (w >= DESKTOP_MIN_W && h > 0) ? Math.max(0.3, Math.min(1, (h - STAGE_PAD_Y) / deviceH())) : 1;
+  html.style.setProperty('--device-scale', String(Math.round(scale * 1000) / 1000));
+  return scale;
+}
+let fitTimer = null;
+function onResize() {
+  if (fitTimer) return;
+  fitTimer = setTimeout(function () { fitTimer = null; fitDevice(); }, 100);
+}
+
+/* 狀態列時鐘：下一次排在下一個整分，之後每分鐘一次 */
+function scheduleClock() {
+  tickClock();
+  const now = new Date();
+  const wait = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+  setTimeout(scheduleClock, Math.max(250, wait + 20));
+}
+
 /* ---- 啟動 ---- */
 function start() {
   if (started) return;
@@ -780,11 +906,13 @@ function start() {
 
   on('state:change', renderTabbar);
   on('store:change', renderTabbar);
+  W.addEventListener('popstate', clearBackPending);
   W.addEventListener('hashchange', onHashChange);
 
   /* 桌機狀態列顯示真實時間 */
-  tickClock();
-  setInterval(tickClock, 60 * 1000);
+  scheduleClock();
+  fitDevice();
+  W.addEventListener('resize', onResize);
 
   const st = history.state;
   if (st && typeof st.i === 'number') curIdx = st.i;
@@ -818,6 +946,9 @@ W.APP = {
   ui: ui,
   map: map,
   start: start,
+  /* 動畫要不要省掉：?still=1（html[data-still]）或系統的「減少動態效果」。views 一律問這個 */
+  reduceMotion: isStill,
+  fitDevice: fitDevice,
 };
 
 if (typeof document !== 'undefined' && document.addEventListener) {

@@ -97,3 +97,27 @@ test('on 回傳 off；listener 丟錯不影響其他人', () => {
   } finally { console.error = origErr; }
   assert.equal(n, 1);
 });
+
+test('tabPaths 只收「/ 開頭的字串」：舊版或手改的怪值退回預設', () => {
+  const bad = { onboarded: true, tabPaths: { ride: null, explore: 42, album: 'javascript:alert(1)', extra: '/x' } };
+  const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(bad) }) });
+  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  const str = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify({ tabPaths: 'abc' }) }) }).APP;
+  assert.deepEqual({ ...str.store.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  const ok = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify({ tabPaths: { album: '/album?tab=journal' } }) }) }).APP;
+  assert.equal(ok.store.get('tabPaths').album, '/album?tab=journal');
+});
+
+test('APP.place：Object 原型上的名字不算認得的 id', () => {
+  const { APP, ctx } = loadApp();
+  ctx.MOCK.CARD_TO_PLACE = { p11: 'glass-kiln' };
+  /* 真的 MOCK.findPlace 不認得就默默退回今天的地方：照樣模擬，擋不擋得住要看 app.js 自己 */
+  const orig = ctx.MOCK.findPlace;
+  ctx.MOCK.findPlace = function (id) { return orig.call(this, id) || this.TODAY; };
+  try {
+    for (const id of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) assert.equal(APP.place(id), null, id);
+    assert.equal(APP.place(null), null);
+    assert.equal(APP.place(42), null);
+    assert.equal(APP.place('glass-kiln').id, 'glass-kiln');
+  } finally { delete ctx.MOCK.CARD_TO_PLACE; ctx.MOCK.findPlace = orig; }
+});

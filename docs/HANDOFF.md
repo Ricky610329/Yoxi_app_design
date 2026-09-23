@@ -16,7 +16,7 @@
 | 第二輪 | 層級樹＋評語（`overview.html`）、變體註冊表、收藏 S1–S5、探索 X1–X5、T1、低認知負擔 L1–L6（可按數／到達步數自動量測）、願景探索稿 12 張 | `overview.html`、`variants.html`、`vision.html` |
 | 第三輪 | 真實 OSM 地圖引擎與六種底圖、單／雙地圖、微 3D、實景照片、好友系統六頁＋AI 鄰居、五張概念板；轉換點 K1–K7 | `concept.html`、`variants.html#axis-conv` |
 | 提案 | 提案總覽頁、README、本交接 | `proposal.html` |
-| web app | 合一版做成單頁 web app：25 條 route、hash 路由、localStorage 狀態、PWA；瀏覽器測試 159 條＋node 單元測試 32 條。見 §10 | `app/index.html`、`app/README.md` |
+| web app | 合一版做成單頁 web app：25 條 route、hash 路由、localStorage 狀態、PWA；瀏覽器測試 187 條＋node 單元測試 34 條。見 §10 | `app/index.html`、`app/README.md` |
 
 規模：102 張畫面檔（33 主線＋43 變體＋12 願景稿＋14 概念稿，含 `variant-k-ride` 落點頁）、10 條設計軸線 36 個變體、5 張概念板、10 張 CC 照片。
 
@@ -113,6 +113,8 @@ python app/tests/run.py                           # web app：node 單元＋head
 8. **web app 換真資產**：`postcardArt` 換成真的生成圖；八張對不到座標的卡補座標（或擴大底圖）。
 9. **web app 換真抵達**：geolocation（80 公尺內停 1 分鐘）取代 demo 的「模擬抵達」。
 10. **web app 換後端**：`STATE` 與 `APP.store` 的 localStorage 換成帳號＋後端，才能跨裝置。
+11. **把六條承諾搬進 app 的測試**：合一版的 `/ride` 目前只有「剛好 4 顆景點」有斷言；②tap 數、③收合態 0 像素、⑤不遮 pin 與浮動鈕、⑥兩套標記 class 交集為空，都要在 `app/tests` 重量（五份評估都點到，見 `docs/webapp-review/README.md`）。
+12. **評估提出、需要產品決定的**：探索是否退回一天一個（UX）；探索 tab 的小紅點算不算未讀提示（UX）；上線順序拆成「記錄與獎章＋K1＋抽屜入口」先上（商業）；投影用 1080p 或全螢幕（評審）。
 
 ## 9. 交給 Codex 的最短路徑
 
@@ -152,3 +154,9 @@ python app/tests/run.py                           # web app：node 單元＋head
 - **內灣在底圖外**：底圖只有新竹 11×12 km，內灣在 28 km 外，行程與路線上會夾到地圖邊緣（`.spot--edge`）。
 - **城市足跡少算八張卡**：22 張明信片裡 8 張（p10 合興、p12 九讚頭、p13 橫山、p14 玻璃工藝博物館、p15 春池玻璃、p16 舊社的矽砂場、p17 水源地的窯口、p18 頭前溪河口）對不到地圖座標，收了也不進覆蓋率（`album.js` 的 `placeOfCard`）。
 - 叫車、抵達、推播都是模擬；PWA 只能在 localhost 或 https 安裝。
+- **六條承諾在 app 只有④有斷言**：合一版動了叫車首頁（tab bar、4 顆景點、banner 第一格），驗收數字量的是原型的 `home.html`。講的時候要說清楚（`docs/narratives/zero-harm.md`）。
+- **桌機縮放後拖曳跟手 80%**：1280×720 投影時 `.device` 用 `transform: scale()` 縮到約 0.8，`interact.js` 的平移與 sheet 拖曳用 clientX／Y 差值換算，沒有除以 scale。要修得動 `prototype/js/interact.js`。
+- **+50 點與金框只給走不到（> 3 km）的地方**：近的地方搭車抵達照實記 `by:'ride'`，但只算一般搭車回饋（每 20 元 1 點，無條件捨去）。`STATE.points` 是原型算法（所有 ride 卡 ×50），app 的點數頁用 `APP.ride.pointsTotal` 自己算；初始兩張搭車卡都走不到，兩邊目前一致。
+- **轉換歸因**：`store.trip.via` 與 `store.rideVia[cardId]` 記下車點來源（k1／e／route／search），行程紀錄顯示；原型的 `state.js` 卡片欄位不能加，所以放在 app 的 store。
+
+五個視角的評估（商業、UX、工程、無障礙、評審）在 `docs/webapp-review/`（索引 `README.md` 有交叉整理與已回應清單）；五種敘述方向與 demo 講稿在 `docs/narratives/`。

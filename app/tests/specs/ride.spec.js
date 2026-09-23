@@ -224,7 +224,7 @@ T.spec('ride', function (t) {
     const amts2 = app.$$('[data-amt]').map(function (e) { return Number(e.getAttribute('data-amt')); });
     const sum2 = amts2.reduce(function (a, b) { return a + b; }, 0);
     t.eq(Number(app.text('[data-points-total]')), sum2, '收卡後總數＝明細相加');
-    t.eq(sum2 - sum, 50 + Math.round(app.APP.fmt.fare(28) / 20), '多了 50＋搭車回饋');
+    t.eq(sum2 - sum, 50 + Math.floor(app.APP.fmt.fare(28) / 20), '多了 50＋搭車回饋（每 20 元 1 點，無條件捨去）');
   });
 
   t.test('/trips：搭車卡各一筆、車資＝fare(km)', async function (app) {
