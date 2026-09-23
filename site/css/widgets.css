@@ -1,0 +1,204 @@
+/* ==========================================================================
+   yoxi 城事 介紹網站 — 互動元件樣式（互動 agent）
+   hero 霧地圖（.hm-*）、今天的地方地圖（.wx*）、距離尺（.wf*）、圖層開／關對照（.wc*）。
+   顏色一律 tokens.css 的變數（SVG 的填色也在這裡用 class 指定），不寫 hex；圓角只用 --r-*。
+   紅＝品牌情緒（pin、強調數字、門檻線）；海軍藍＝可按的東西。
+   ========================================================================== */
+
+/* ---- 1. hero 背景：霧隨捲動散開 -------------------------------------------- */
+/* svg 比容器高 40 px（parallax 往上推時底部不露白）；transform 由 widgets.js 依捲動寫入 */
+.hero__map .hm-svg { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% + 40px); will-change: transform; }
+.hm-fog { fill: var(--yoxi-mist); }
+.hm-veil { fill: var(--yoxi-mist); opacity: .35; pointer-events: none; }
+.hm-dot { fill: var(--yoxi-red); }
+
+/* ---- 2. 今天的地方：可點的真實地圖 ------------------------------------------ */
+.wx { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.wx__map {
+  position: relative; height: 560px; border-radius: var(--r-card); overflow: hidden;
+  background: var(--yoxi-mist); border: 1px solid var(--yoxi-line); box-shadow: var(--sh-card);
+}
+.wx__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wx-fog { fill: var(--yoxi-mist); opacity: .6; }
+.wx-glow-a { stop-color: var(--yoxi-cream-deep); stop-opacity: .9; }
+.wx-glow-b { stop-color: var(--yoxi-cream-deep); stop-opacity: 0; }
+.wx-ring { fill: none; stroke: var(--yoxi-red); stroke-width: 2; }
+.wx-lead { stroke: var(--yoxi-slate); stroke-width: 1; stroke-dasharray: 2 2; opacity: .8; }
+.wx-lead-dot { fill: var(--yoxi-slate); }
+.wx__pins { position: absolute; inset: 0; }
+.wx__legend {
+  position: absolute; right: 10px; top: 10px; margin: 0; padding: 4px 10px; border-radius: var(--r-pill);
+  background: var(--yoxi-white); color: var(--yoxi-slate); box-shadow: var(--sh-card); display: flex; align-items: center; gap: 4px;
+}
+.wx-key { display: inline-block; width: 9px; height: 9px; border-radius: var(--r-pill); margin-right: 2px; }
+.wx-key--gray { background: var(--yoxi-slate-lite); }
+.wx-key--red { background: var(--yoxi-red); }
+.wx-key--ring { border: 2px solid var(--yoxi-red); }
+.wx__credit { position: absolute; right: 8px; bottom: 6px; margin: 0; padding: 1px 6px; border-radius: var(--r-btn); background: var(--yoxi-white); opacity: .9; }
+
+/* pin：錨點在尖端（left/top 是尖端的位置），圖示 30×30 */
+.wx-pin {
+  position: absolute; width: 30px; height: 34px; margin: -33px 0 0 -15px; padding: 0; border: 0; background: none;
+  cursor: pointer; color: var(--yoxi-slate-lite); z-index: 1; border-radius: var(--r-btn);
+  transition: transform var(--t-fast) var(--ease);
+  transform-origin: 50% 100%;
+}
+.wx-pin svg { width: 30px; height: 30px; display: block; filter: drop-shadow(0 1px 1.5px rgba(6, 32, 64, .35)); }
+.wx-pin__body { fill: currentColor; }
+.wx-pin__eye { fill: var(--yoxi-white); }
+.wx-pin:hover, .wx-pin:focus-visible { transform: scale(1.12); z-index: 3; }
+.wx-pin.is-seen { color: var(--yoxi-red); }
+.wx-pin.is-selected { transform: scale(1.25); z-index: 4; }
+.wx-pin.is-selected .wx-pin__eye { fill: var(--yoxi-navy); }
+.wx-pin.is-selected:not(.is-seen) { color: var(--yoxi-slate); }
+.wx-pin.is-pop { animation: wx-pop 520ms var(--ease-bump); }
+@keyframes wx-pop { 0% { transform: scale(1.25); } 40% { transform: scale(1.7); } 100% { transform: scale(1.25); } }
+/* 今天的地方：一圈會呼吸的紅色細環 */
+.wx-pin__ring {
+  position: absolute; left: 50%; top: 12px; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border: 2px solid var(--yoxi-red); border-radius: var(--r-pill); animation: wx-breathe 2.2s var(--ease) infinite; pointer-events: none;
+}
+@keyframes wx-breathe { 0%, 100% { transform: scale(.85); opacity: .9; } 50% { transform: scale(1.25); opacity: .25; } }
+/* 名稱：選中時常駐，其他在 hover／focus 時出現 */
+.wx-pin__name {
+  position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); white-space: nowrap;
+  padding: 2px 8px; border-radius: var(--r-pill); background: var(--yoxi-navy); color: var(--yoxi-white);
+  font-size: var(--site-xs); font-weight: var(--fw-bold); opacity: 0; pointer-events: none; transition: opacity var(--t-fast) var(--ease);
+}
+.wx-pin.is-selected .wx-pin__name, .wx-pin:hover .wx-pin__name, .wx-pin:focus-visible .wx-pin__name { opacity: 1; }
+.wx-pin.is-selected .wx-pin__name { transform: translateX(-50%) scale(.8); }
+.wx-pin.is-r .wx-pin__name, .wx-pin.is-r .wx-pin__edge { left: auto; right: 0; transform: none; transform-origin: 100% 100%; }
+.wx-pin.is-l .wx-pin__name, .wx-pin.is-l .wx-pin__edge { left: 0; transform: none; transform-origin: 0 100%; }
+/* 圖外：夾到邊緣的 pin 下方標方向 */
+.wx-pin__edge {
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%); white-space: nowrap; margin-top: 1px;
+  padding: 0 6px; border-radius: var(--r-pill); background: var(--yoxi-white); color: var(--yoxi-slate);
+  font-size: 11px; font-weight: var(--fw-bold); line-height: 1.5;
+}
+.wx-pin.is-far svg { opacity: .9; }
+.wx-pin.is-edge .wx-pin__name { display: none; }      /* 圖外的 pin 名稱已經寫在小標裡 */
+.wx-pin.is-edge.is-selected .wx-pin__edge { background: var(--yoxi-navy); color: var(--yoxi-white); }
+/* 夾在左右邊的：小標放在 pin 旁邊（朝圖內），不佔下方的位置 */
+.wx-pin.is-side.is-r .wx-pin__edge { top: 8px; right: calc(100% + 2px); margin: 0; }
+.wx-pin.is-side.is-l .wx-pin__edge { top: 8px; left: calc(100% + 2px); margin: 0; }
+
+/* 右欄 */
+.wx__side { display: grid; gap: var(--sp-4); }
+.wx__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.wx__count { margin: 0; font-size: var(--site-small); color: var(--yoxi-slate); }
+.wx__count b { color: var(--yoxi-red); font-size: 1.25em; }
+.wx__card { padding: var(--sp-5); }
+.wx__card .h3 { margin-top: var(--sp-2); }
+.wx-photo { margin: calc(var(--sp-5) * -1) calc(var(--sp-5) * -1) var(--sp-4); }
+.wx-photo img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--r-card) var(--r-card) 0 0; }
+.wx-photo figcaption { padding: 4px var(--sp-5) 0; }
+.wx-card__eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+.wx-card__hook { font-size: var(--site-lead); line-height: 1.5; margin-bottom: var(--sp-3); }
+.wx-stats { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: var(--sp-3) 0; padding: var(--sp-3) 0; border-top: 1px solid var(--yoxi-line); border-bottom: 1px solid var(--yoxi-line); }
+.wx-stats div { display: grid; }
+.wx-stats dt { font-size: var(--site-xs); color: var(--yoxi-slate); }
+.wx-stats dd { margin: 0; font-size: 22px; font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
+.wx-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.wx-arrive { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-3); }
+.wx-arrive__btn { border-style: dashed; }
+.wx-arrived { margin: 0; font-weight: var(--fw-bold); color: var(--yoxi-red); }
+.wx-status { margin: var(--sp-3) 0 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-btn); background: var(--yoxi-mist); color: var(--yoxi-navy); }
+
+/* 明信片（地方卡下方與距離尺共用） */
+.wx__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: var(--sp-3); }
+.wx__cards:empty { display: none; }
+.wx-pc { margin: 0; opacity: 0; transform: translateY(8px) scale(.96); transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
+.wx-pc.is-in { opacity: 1; transform: none; }
+.wx-pc figcaption { display: grid; margin-top: 4px; font-size: var(--site-small); line-height: 1.35; }
+.wx-pc__art { position: relative; aspect-ratio: 100 / 133; border-radius: var(--r-img); overflow: hidden; background: var(--yoxi-white); padding: 4px; box-shadow: var(--sh-card); }
+.wx-pc__art svg { width: 100%; height: 100%; border-radius: var(--r-img); }
+.wx-pc.is-ride .wx-pc__art, .wf-pc.is-ride .wx-pc__art { background: var(--gold); box-shadow: 0 0 0 1px var(--gold-lite), var(--sh-card); }
+.wx-pc__tag {
+  position: absolute; right: 8px; bottom: 8px; padding: 1px 6px; border-radius: var(--r-pill);
+  background: var(--yoxi-white); color: var(--yoxi-navy); font-size: 10px; font-weight: var(--fw-bold); opacity: .88;
+}
+
+@media (max-width: 900px) {
+  .wx { grid-template-columns: 1fr; }
+  .wx__map { height: 460px; }
+}
+@media (max-width: 600px) {
+  .wx__map { height: 360px; }
+  .wx__legend { font-size: 11px; padding: 2px 8px; }
+  /* 窄螢幕：圖外小標只留箭頭，名稱改在選中時的小標顯示 */
+  .wx-pin__edge-n { display: none; }
+  .wx-pin.is-edge .wx-pin__name { display: block; }
+  .wx-pin.is-side.is-r .wx-pin__edge { top: 100%; right: 0; margin-top: 1px; }
+  .wx-pin.is-side.is-l .wx-pin__edge { top: 100%; left: 0; margin-top: 1px; }
+  .wx-stats dd { font-size: 19px; }
+}
+
+/* ---- 3. 距離尺 ------------------------------------------------------------ */
+.wf { display: grid; gap: var(--sp-4); }
+.wf__top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.wf__label { font-weight: var(--fw-bold); color: var(--yoxi-slate); }
+.wf__km { font-size: 34px; font-weight: var(--fw-heavy); color: var(--yoxi-navy); line-height: 1; }
+.wf.is-ride .wf__km { color: var(--yoxi-red); }
+.wf__track { position: relative; padding: 24px 0 26px; }
+/* 刻度：位置＝比例 ×（寬 − 拇指寬）＋ 半個拇指，跟 range 拇指的中心對齊 */
+.wf__scale { position: absolute; inset: 0; pointer-events: none; }
+.wf__tick { position: absolute; top: 18px; height: 16px; left: calc(var(--f) * (100% - 24px) + 12px); width: 0; border-left: 1px solid var(--yoxi-slate-lite); }
+.wf__tick-t { position: absolute; top: -18px; left: 0; transform: translateX(-50%); white-space: nowrap; font-size: var(--site-xs); color: var(--yoxi-slate); }
+.wf__tick--end .wf__tick-t { transform: translateX(-100%); }
+/* 3 km 門檻：紅色細線穿過軌道，字在下方 */
+.wf__tick--th { top: 14px; height: auto; bottom: 4px; border-left: 2px solid var(--yoxi-red); z-index: 1; }
+.wf__tick--th .wf__tick-t { top: auto; bottom: -4px; left: 6px; transform: none; color: var(--yoxi-red); font-weight: var(--fw-bold); }
+.wf__range {
+  -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 24px; margin: 0; background: transparent; cursor: pointer; position: relative;
+}
+.wf__range::-webkit-slider-runnable-track {
+  height: 8px; border-radius: var(--r-pill);
+  background: linear-gradient(to right, var(--yoxi-navy) 0, var(--yoxi-navy) calc(var(--v, 0) * 100%), var(--yoxi-mist) calc(var(--v, 0) * 100%));
+}
+.wf__range::-moz-range-track { height: 8px; border-radius: var(--r-pill); background: var(--yoxi-mist); }
+.wf__range::-moz-range-progress { height: 8px; border-radius: var(--r-pill); background: var(--yoxi-navy); }
+.wf__range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 24px; height: 24px; margin-top: -8px; border-radius: var(--r-pill);
+  background: var(--yoxi-white); border: 3px solid var(--yoxi-navy); box-shadow: var(--sh-card);
+}
+.wf__range::-moz-range-thumb { width: 18px; height: 18px; border-radius: var(--r-pill); background: var(--yoxi-white); border: 3px solid var(--yoxi-navy); }
+.wf.is-ride .wf__range::-webkit-slider-thumb { border-color: var(--yoxi-red); }
+.wf__range:focus-visible { outline: 3px solid var(--yoxi-navy); outline-offset: 4px; }
+.wf__presets { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.wf__out { min-height: 150px; }
+.wf__big { font-size: 24px; font-weight: var(--fw-bold); margin: 0 0 var(--sp-2); }
+.wf__big b { font-size: 1.35em; font-weight: var(--fw-heavy); color: var(--yoxi-red); }
+.wf__out .small b { color: var(--yoxi-red); }
+.wf__out .btn[aria-disabled="true"] { border-color: var(--yoxi-line); color: var(--yoxi-slate); }
+.wf-pc { margin: 0; display: flex; align-items: center; gap: var(--sp-3); }
+.wf-pc .wx-pc__art { width: 84px; flex: none; }
+.wf-pc figcaption { color: var(--yoxi-slate); }
+.wf-pc.is-ride figcaption { color: var(--yoxi-navy); font-weight: var(--fw-bold); }
+
+/* ---- 4. 叫車首頁圖層開／關對照 ---------------------------------------------- */
+.wc { display: grid; justify-items: center; gap: var(--sp-3); }
+.wc__labels { display: flex; justify-content: space-between; width: min(320px, 100%); }
+/* 截圖自帶手機外框（430×912），所以舞台就是圖的比例 */
+.wc__stage { --x: 50%; position: relative; width: min(320px, 100%); aspect-ratio: 430 / 912; user-select: none;
+  /* 截圖四角是灰底：沿著圖裡手機外框（x 5–423、y 5–912，圓角約 50 px）裁掉 */
+  clip-path: inset(0.55% 1.4% 0 1.15% round 12% / 5.6%); }
+.wc__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.wc__after { position: absolute; inset: 0; clip-path: inset(0 0 0 var(--x)); }
+.wc__handle {
+  position: absolute; top: 2%; bottom: 2%; left: var(--x); width: 3px; margin-left: -1.5px; background: var(--yoxi-red);
+  border-radius: var(--r-pill); pointer-events: none; box-shadow: 0 0 0 1px var(--yoxi-white);
+}
+.wc__handle::after {
+  content: "‹ ›"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px;
+  display: grid; place-items: center; border-radius: var(--r-pill); background: var(--yoxi-red); color: var(--yoxi-white);
+  font-weight: var(--fw-heavy); font-size: 16px; letter-spacing: 2px; box-shadow: var(--sh-card);
+}
+/* 透明的 range 疊在整張圖上當把手：拖、點、方向鍵都行 */
+.wc__range {
+  -webkit-appearance: none; appearance: none; position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  background: transparent; cursor: ew-resize; opacity: 0;
+}
+.wc__range::-webkit-slider-thumb { -webkit-appearance: none; width: 44px; height: 100%; }
+.wc__stage:has(.wc__range:focus-visible) .wc__handle::after { outline: 3px solid var(--yoxi-navy); outline-offset: 3px; }
+.wc__note { text-align: center; max-width: 30em; margin: 0; }
+@media (max-width: 600px) { .wc__stage, .wc__labels { width: min(280px, 100%); } }

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>yoxi 城事 — 不搭車的日子，也有理由打開 yoxi</title>
+<meta name="description" content="提給 yoxi 的產品提案：一天一個地方，走得到就走，走不到就用 yoxi 去。捲動式、可互動的介紹頁，file:// 直接開。">
+<!--
+  回答什麼：這個 app 是什麼、為什麼 yoxi 該做、怎麼接進叫車主業、AI 做什麼、怎麼分步上線。給第一次聽到「城事」的人看。
+  動了什麼：只讀 ../prototype（tokens、icons、hsmap、地圖資料、照片授權）、../app/assets/shots（截圖）、../pitch/video（影片）。不改它們。
+  刻意沒有的東西：CDN、webfont、框架、build、打卡／排名／倒數類的字（禁用詞見 AGENTS.md）、手寫的車資與分鐘（全部由 SITE_DATA.fmt 算）。
+  結構固定（section 的 id、掛載點 id、載入順序）；文案與各段細節由 CONTRACT.md 分工。
+-->
+<link rel="stylesheet" href="../prototype/css/tokens.css">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/sections.css">
+<link rel="stylesheet" href="css/widgets.css">
+</head>
+<body>
+<div class="progress-bar" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="wrap nav__in">
+    <a class="wordmark" href="#top"><b>yoxi</b> 城事</a>
+    <nav class="nav__links" aria-label="頁內導覽">
+      <a href="#why" data-nav="why">為什麼</a>
+      <a href="#idea" data-nav="idea">一句話</a>
+      <a href="#story-a" data-nav="story-a">不搭車的日常</a>
+      <a href="#explore" data-nav="explore">今天的地方</a>
+      <a href="#fare" data-nav="fare">走不到才叫車</a>
+      <a href="#story-b" data-nav="story-b">搭車的轉換</a>
+      <a href="#story-c" data-nav="story-c">晚上的回顧</a>
+      <a href="#ai" data-nav="ai">AI</a>
+      <a href="#promises" data-nav="promises">承諾</a>
+      <a href="#roadmap" data-nav="roadmap">路線圖</a>
+      <a href="#video" data-nav="video">影片</a>
+    </nav>
+    <a class="btn btn--sm" href="../app/index.html#/ride" target="_blank" rel="noopener">打開原型</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ===================================================================== hero -->
+<section class="hero" id="top" data-section data-progress>
+  <div class="hero__map" id="hero-map" aria-hidden="true"></div>
+  <div class="wrap hero__in">
+    <p class="eyebrow" data-reveal>提給 yoxi（和泰叫車）的產品提案 · 2026 和泰 AI 黑客松</p>
+    <h1 class="h1" data-reveal data-reveal-delay="80">不搭車的日子，<br>也有理由打開 <span class="em">yoxi</span>。</h1>
+    <p class="lead" data-reveal data-reveal-delay="160">「yoxi 城事」把叫車 app 變成一個不搭車也會打開的城市探索與收藏工具：一天一個離你不遠的地方，走得到就走，走不到就用 yoxi 去。到了才上色，收進你的城市。</p>
+    <div class="hero__chips" data-reveal data-reveal-delay="220">
+      <span class="pill">一天一個地方</span>
+      <span class="pill pill--navy">走得到就走</span>
+      <span class="pill pill--navy">走不到就用 yoxi 去</span>
+      <span class="pill pill--white">叫車首頁一個像素都不動</span>
+    </div>
+    <div class="hero__actions" data-reveal data-reveal-delay="280">
+      <a class="btn" href="#why">往下看</a>
+      <a class="btn btn--ghost" href="../app/index.html#/ride" target="_blank" rel="noopener">打開 web app 原型</a>
+      <a class="btn btn--ghost" href="#video">看 2 分鐘影片</a>
+    </div>
+  </div>
+  <p class="hero__hint" aria-hidden="true">往下捲，霧會散開 ↓</p>
+  <p class="hero__credit credit">地圖 © OpenStreetMap 貢獻者</p>
+</section>
+
+<!-- ===================================================================== 為什麼 -->
+<section class="section section--mist" id="why" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">yoxi 的處境</p>
+      <h2 class="h2">叫車 app，只有要出門那一刻才被打開。</h2>
+      <p class="lead">不搭車的日子，yoxi 就安靜了。題目問的是「不搭車，也打開 yoxi」。我們的答案不是再送一張券，而是給它一個跟車無關的理由。</p>
+    </div>
+    <div id="w-week" data-reveal><!-- 內容 agent：一週開啟幾次的互動週曆條（現在的 yoxi ↔ 有了城事） --></div>
+  </div>
+</section>
+
+<!-- ===================================================================== 一句話與三條線 -->
+<section class="section" id="idea" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">產品一句話</p>
+      <h2 class="h2">一天一個地方。走得到就走，走不到就用 yoxi 去。</h2>
+      <p class="lead">發現一個地方 → 叫車去那裡，接回本業；點數回流和泰 Points。三條主線各證明一件事。</p>
+    </div>
+    <div class="grid grid--3" id="idea-cards">
+      <article class="card idea-card" data-reveal>
+        <span class="idea-card__tag">A</span>
+        <h3 class="h3">不搭車的日常</h3>
+        <p class="idea-card__proof">不搭車也玩得下去；推薦有個人化的依據；動機來自內容，不是獎勵。</p>
+        <p class="idea-card__quote">「路過一百次都是灰的，走進去一次就有顏色。」</p>
+        <a class="btn btn--sm btn--ghost" href="#story-a">看早上到晚上</a>
+      </article>
+      <article class="card idea-card" data-reveal data-reveal-delay="100">
+        <span class="idea-card__tag">B</span>
+        <h3 class="h3">搭車的轉換</h3>
+        <p class="idea-card__proof">從發現到叫車只有一步，而且叫車首頁一個像素都沒動。</p>
+        <p class="idea-card__quote">「車只出現在腳到不了的地方。」</p>
+        <a class="btn btn--sm btn--ghost" href="#story-b">看內灣那一趟</a>
+      </article>
+      <article class="card idea-card" data-reveal data-reveal-delay="200">
+        <span class="idea-card__tag">C</span>
+        <h3 class="h3">晚上的回顧</h3>
+        <p class="idea-card__proof">一天的路變成明信片、日誌與週回顧；只有你看得到的，跟你可以分享的，分成兩軌。</p>
+        <p class="idea-card__quote">「同一批明信片，換一種排版，就換一個世代。」</p>
+        <a class="btn btn--sm btn--ghost" href="#story-c">看回顧與長輩圖</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== A 不搭車的日常（scrolly） -->
+<section class="section section--cream" id="story-a" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">A · 不搭車的日常</p>
+      <h2 class="h2">早上一個地方，走過去，到了才上色。</h2>
+    </div>
+    <div class="scrolly" data-scrolly>
+      <div class="steps">
+        <!-- 內容 agent：每一步的標題、說明、「在原型裡看」連結；data-step 對應右邊 data-shot，不要改 -->
+        <div class="step" data-step="push-am"><span class="step__n">1</span><h3 class="h3">早上一則提醒</h3><p>8 點 10 分，鎖定畫面上一行字：今天的地方，水利路的老玻璃窯。一天最多兩則，早晚各一，各自可以關。原型裡的推播是模擬的。</p><a class="step__link" href="../app/index.html#/explore" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="explore"><span class="step__n">2</span><h3 class="h3">一天只有一個地方</h3><p>沒有清單可以滑，也沒有換一個。離你 <span data-fmt="km:900">0.9</span> 公里，走路約 <span data-fmt="walk:900">12</span> 分鐘。底下寫著為什麼推薦給你：常走的路、常出門的時段、收藏裡還缺哪一類。</p><a class="step__link" href="../app/index.html#/explore" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="place"><span class="step__n">3</span><h3 class="h3">先看看這是什麼地方</h3><p>每個地方三段：現在的它、以前的它、為什麼是今天。圖是灰的，到了才上色。走得到，主按鈕就是「走路前往」。</p><a class="step__link" href="../app/index.html#/place/glass-kiln" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="going"><span class="step__n">4</span><h3 class="h3">這段路本來就不是拿來滑的</h3><p>前往中這一頁刻意什麼都不做。到了會自動響，你不用一直看手機。原型裡的抵達是按鈕模擬的。</p><a class="step__link" href="../app/index.html#/going/glass-kiln" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="unlock"><span class="step__n">5</span><h3 class="h3">到了才上色</h3><p>路過一百次都是灰的，走進去一次就有顏色。灰點爆開，變成一張這個地方的明信片。明信片是 AI 生成示意，原型裡是程式畫的。</p><a class="step__link" href="../app/index.html#/unlock/glass-kiln" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="album"><span class="step__n">6</span><h3 class="h3">收進你的城市</h3><p>明信片放上書架，獎章寫「收集 4/8」。路線沒有期限，也不用照順序。明信片不會消失。</p><a class="step__link" href="../app/index.html#/album" target="_blank" rel="noopener">在原型裡看 →</a></div>
+      </div>
+      <div class="stage" data-scrolly-stage>
+        <div class="phone">
+          <div class="phone__screen">
+            <img data-shot="push-am" src="../app/assets/shots/push-am.png" alt="早上的推播：今天的地方" class="is-current">
+            <img data-shot="explore" src="../app/assets/shots/explore.png" alt="探索頁：今天的地方">
+            <img data-shot="place" src="../app/assets/shots/place.png" alt="地方詳情：走路前往">
+            <img data-shot="going" src="../app/assets/shots/going.png" alt="前往中">
+            <img data-shot="unlock" src="../app/assets/shots/unlock.png" alt="抵達解鎖：明信片">
+            <img data-shot="album" src="../app/assets/shots/album.png" alt="收藏">
+          </div>
+          <span class="phone__label credit">web app 原型畫面 · 明信片為 AI 生成示意</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== 互動：今天的地方 -->
+<section class="section" id="explore" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">試試看</p>
+      <h2 class="h2">新竹的 <span data-fmt="places">10</span> 個地方，點一個，走進去。</h2>
+      <p class="lead">真實新竹街道（OpenStreetMap）。點地圖上的灰 pin 看它是什麼、離你多遠；走得到的主按鈕是「走路前往」，超過 <span data-fmt="walkmax">3</span> 公里就變成「設為下車點」。按「走進去」，它才上色。</p>
+    </div>
+    <div id="w-explore" data-reveal><!-- 互動 agent：可點的真實地圖＋地方卡＋明信片 --></div>
+  </div>
+</section>
+
+<!-- ===================================================================== 互動：距離尺 -->
+<section class="section section--mist" id="fare" data-section>
+  <div class="wrap split">
+    <div data-reveal>
+      <p class="eyebrow">走不到才叫車</p>
+      <h2 class="h2">3 公里是一條線。</h2>
+      <p class="lead">線的這一邊，城事是走路的理由；線的那一邊，它一鍵變成 yoxi 的下車點。內灣老街 <span data-fmt="km:28000">28</span> 公里，車資約 <span data-fmt="fare:28">$691</span>、<span data-fmt="min:28">65</span> 分，搭車回饋 <span data-fmt="pts:28">34</span> 點，走不到的地方搭車抵達另 +<span data-fmt="bonus">50</span> 點。</p>
+      <p class="note">車資 75 + 22 × km、車程 3 + 2.2 × km 分、走路 m ÷ 75 分、每 20 元 1 點無條件捨去——都是 app 原型的公式，接上 yoxi 真實估價就能換。+50 是原型畫面的固定值；簡報建議依距離分 20／35／50 三級加每月上限。</p>
+    </div>
+    <div id="w-fare" data-reveal data-reveal-delay="120"><!-- 互動 agent：距離滑桿 → 走路分鐘／車資／車程／點數／主按鈕怎麼變 --></div>
+  </div>
+</section>
+
+<!-- ===================================================================== B 搭車的轉換（scrolly） -->
+<section class="section" id="story-b" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">B · 搭車的轉換</p>
+      <h2 class="h2">探索的終點，就是叫車的起點。</h2>
+    </div>
+    <div class="scrolly" data-scrolly>
+      <div class="steps">
+        <div class="step" data-step="routes"><span class="step__n">1</span><h3 class="h3">這個月的路線</h3><p>路線把一群地方串成一個出門的理由。例如內灣線：沿著鐵道走的六個站。</p><a class="step__link" href="../app/index.html#/routes" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="route"><span class="step__n">2</span><h3 class="h3">腳到不了的一段</h3><p>走得到的幾站，車一個字都不提。到了內灣老街，<span data-fmt="km:28000">28</span> 公里，才建議叫車。<span data-fmt="walkmax">3</span> 公里內叫你走路，超過才請你叫車。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="ride-dropoff"><span class="step__n">3</span><h3 class="h3">按一下，下車點就填好了</h3><p>「設為下車點」把你帶回叫車首頁：下車點填好，車資約 <span data-fmt="fare:28">$691</span>、<span data-fmt="min:28">65</span> 分鐘，都是公式當場算的。按下去只是填好，還沒叫車。這一步是產品設計，不是 AI。</p><a class="step__link" href="../app/index.html#/place/neiwan" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="trip-riding"><span class="step__n">4</span><h3 class="h3">車上的時間也是內容時間</h3><p>坐車的 <span data-fmt="min:28">65</span> 分鐘，「這條路上」講內灣線為什麼是為了木材而蓋。原型裡的配對與行程是模擬的。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="trip-done-rated"><span class="step__n">5</span><h3 class="h3">先評分，再有獎勵</h3><p>行程結束先評分，金色橫幅才出現。評分是 yoxi 要的資料，城事排在它後面，不搶。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="unlock-ride"><span class="step__n">6</span><h3 class="h3">搭 yoxi 抵達版，鑲金框</h3><p>走不到的地方搭車抵達，明信片多一圈金框。它是去遠方的理由，不是折價券。</p><a class="step__link" href="../app/index.html#/unlock/neiwan?ride=1" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="points"><span class="step__n">7</span><h3 class="h3">點數回流和泰 Points</h3><p>明細多兩列：搭車回饋 +<span data-fmt="pts:28">34</span>、抵達解鎖 +<span data-fmt="bonus">50</span>，總數等於明細相加。點數流回 yoxi、iRent、HOTAI 購。</p><a class="step__link" href="../app/index.html#/points" target="_blank" rel="noopener">在原型裡看 →</a></div>
+      </div>
+      <div class="stage" data-scrolly-stage>
+        <div class="phone">
+          <div class="phone__screen">
+            <img data-shot="routes" src="../app/assets/shots/routes.png" alt="這個月的路線" class="is-current">
+            <img data-shot="route" src="../app/assets/shots/route.png" alt="路線詳情：腳到不了的一段">
+            <img data-shot="ride-dropoff" src="../app/assets/shots/ride-dropoff.png" alt="叫車首頁：下車點已填">
+            <img data-shot="trip-riding" src="../app/assets/shots/trip-riding.png" alt="行程中">
+            <img data-shot="trip-done-rated" src="../app/assets/shots/trip-done-rated.png" alt="行程結束：評分後的金色橫幅">
+            <img data-shot="unlock-ride" src="../app/assets/shots/unlock-ride.png" alt="搭 yoxi 抵達版明信片">
+            <img data-shot="points" src="../app/assets/shots/points.png" alt="和泰 Points 明細">
+          </div>
+          <span class="phone__label credit">web app 原型畫面 · 數字由 app 公式算出</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== C 晚上的回顧（scrolly） -->
+<section class="section section--dark" id="story-c" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">C · 晚上的回顧</p>
+      <h2 class="h2">今天走過的路，自己變成一則回顧。</h2>
+    </div>
+    <div class="scrolly" data-scrolly>
+      <div class="steps">
+        <div class="step" data-step="push-pm"><span class="step__n">1</span><h3 class="h3">晚上一則</h3><p>今天走了多少、經過幾個地方。它只告訴你今天發生了什麼；點下去直接進回顧，不用找入口。</p><a class="step__link" href="../app/index.html#/lookback" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="lookback"><span class="step__n">2</span><h3 class="h3">回顧幾乎是自動帶入的</h3><p>步數、今天多了哪一張卡，都算好了。你只選一張照片、選一個心情，也可以都跳過。</p><a class="step__link" href="../app/index.html#/lookback" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="album-journal"><span class="step__n">3</span><h3 class="h3">日誌只有你看得到</h3><p>「今天的城市，感覺如何？」這一頁連分享的念頭都不給。日誌卡角落一個鎖，沒有分享鍵。</p><a class="step__link" href="../app/index.html#/album?tab=journal" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="week"><span class="step__n">4</span><h3 class="h3">週回顧才長出分享</h3><p>這一週去過的地方，明信片並排。分享鍵只長在匯總上，不長在日誌上：只有你的，跟你可以分享的，用眼睛就分得出來。</p><a class="step__link" href="../app/index.html#/week" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="share"><span class="step__n">5</span><h3 class="h3">第一格就是傳給家人</h3><p>分享面板三格：傳給家人、存成圖片、複製連結。存成圖片不含位置資訊。這個排序本身就是一個立場。</p><a class="step__link" href="../app/index.html#/week" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="elder"><span class="step__n">6</span><h3 class="h3">同一張明信片，換個排版就是長輩圖</h3><p>「晚安 平安喜樂」，底圖是你真的去過的青草湖。話是長輩熟悉的話；傳出去的是一張圖，不是一條路線。圖是 AI 生成示意。</p><a class="step__link" href="../app/index.html#/elder" target="_blank" rel="noopener">在原型裡看 →</a></div>
+      </div>
+      <div class="stage" data-scrolly-stage>
+        <div class="phone">
+          <div class="phone__screen">
+            <img data-shot="push-pm" src="../app/assets/shots/push-pm.png" alt="晚上的推播" class="is-current">
+            <img data-shot="lookback" src="../app/assets/shots/lookback.png" alt="回顧">
+            <img data-shot="album-journal" src="../app/assets/shots/album-journal.png" alt="日誌：只有你">
+            <img data-shot="week" src="../app/assets/shots/week.png" alt="週回顧">
+            <img data-shot="share" src="../app/assets/shots/share.png" alt="分享面板">
+            <img data-shot="elder" src="../app/assets/shots/elder.png" alt="長輩圖">
+          </div>
+          <span class="phone__label credit">web app 原型畫面 · 明信片為 AI 生成示意</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== AI -->
+<section class="section" id="ai" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">AI 的角色</p>
+      <h2 class="h2">AI 在後面安靜做四件事。</h2>
+      <p class="lead">推薦今天的地方、起草地方內容給編輯審、生成明信片與長輩圖、把一天寫成回顧。「設為下車點」是產品設計，不是 AI。</p>
+    </div>
+    <div id="w-ai" data-reveal><!-- 內容 agent：四張可展開的卡（怎麼做／沒有 AI 會怎樣／原型裡是什麼） --></div>
+  </div>
+</section>
+
+<!-- ===================================================================== 六條防護承諾 -->
+<section class="section section--mist" id="promises" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">叫車沒有變難用</p>
+      <h2 class="h2">六條防護承諾，每一條都能當場重跑。</h2>
+      <p class="lead">城事全部加在叫車首頁之外；首頁只多一個可以關掉的圖層。關掉圖層，DOM 逐節點跟現況相同。</p>
+    </div>
+    <div class="split">
+      <div id="w-compare" data-reveal><!-- 互動 agent：叫車首頁圖層開／關對照（拖曳滑桿） --></div>
+      <div id="promises-list" data-reveal data-reveal-delay="120">
+        <ol class="promises">
+          <li><span class="promises__n">1</span><span class="promises__t">圖層關掉，叫車首頁的 DOM 逐節點相同</span><b class="promises__v">464 節點相同</b></li>
+          <li><span class="promises__n">2</span><span class="promises__t">叫車關鍵路徑的點按次數不變</span><b class="promises__v">4 下</b></li>
+          <li><span class="promises__n">3</span><span class="promises__t">收合態的叫車面板沒有改動</span><b class="promises__v">0 像素</b></li>
+          <li><span class="promises__n">4</span><span class="promises__t">叫車地圖上同時最多幾個景點</span><b class="promises__v">4 個</b></li>
+          <li><span class="promises__n">5</span><span class="promises__t">景點遮住上下車 pin 與浮動鈕的面積</span><b class="promises__v">0 px²</b></li>
+          <li><span class="promises__n">6</span><span class="promises__t">上下車 pin 與景點縮圖是兩套標記</span><b class="promises__v">class 交集為空</b></li>
+          <li class="promises__todo"><span class="promises__n">7</span><span class="promises__t">足跡上色對叫車地圖的干擾</span><b class="promises__v">還沒量</b></li>
+        </ol>
+        <p class="note">量在原型 <code>prototype/screens/home.html</code>；合一版 app 只有「叫車地圖最多 4 個景點」有測試。一個指令可重跑：<code>python prototype/tools/verify-quiet.py</code>。第 7 條還沒定義怎麼量，所以先不開。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== 路線圖 -->
+<section class="section" id="roadmap" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">給 yoxi 的路線圖</p>
+      <h2 class="h2">第 0 步不動叫車首頁，新竹先試 12 週；看到數字再走下一步。</h2>
+    </div>
+    <div id="w-roadmap" data-reveal><!-- 內容 agent：五步時間軸，點開看做什麼／不動什麼／前提／守門與停損 --></div>
+  </div>
+</section>
+
+<!-- ===================================================================== 影片 -->
+<section class="section section--dark" id="video" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">2 分鐘</p>
+      <h2 class="h2">用一支向量動畫講一遍。</h2>
+    </div>
+    <div id="w-video" data-reveal>
+      <div class="video-frame">
+        <video controls preload="metadata" playsinline poster="../pitch/video/out/board/01-s01-quiet.png">
+          <source src="../pitch/video/out/draft.mp4" type="video/mp4">
+          你的瀏覽器放不了這支影片，可以直接開 <a href="../pitch/video/out/draft.mp4">draft.mp4</a>。
+        </video>
+      </div>
+      <p class="video-cap">2:08，向量動畫；配音是 Windows TTS 草稿。畫面裡的明信片是 AI 生成示意，車資與分鐘都照 app 的公式。</p>
+      <p class="video-cap"><a href="../pitch/video/script.md" target="_blank" rel="noopener">讀逐句腳本 →</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== 更多入口 -->
+<section class="section" id="more" data-section>
+  <div class="wrap">
+    <div class="section__head" data-reveal>
+      <p class="eyebrow">往下挖</p>
+      <h2 class="h2">原型、提案、簡報，都在這個 repo 裡。</h2>
+    </div>
+    <div id="w-more" data-reveal>
+      <div class="grid grid--3 more">
+        <a class="card more__card" href="../app/index.html#/ride" target="_blank" rel="noopener">
+          <span class="more__kind">web app</span><b class="more__t">能用的原型</b>
+          <span class="more__d">叫車、探索、收藏三分頁，三條流程都走得完；狀態會記住，可以裝到手機主畫面。</span><span class="more__go">打開 →</span></a>
+        <a class="card more__card" href="../prototype/proposal.html" target="_blank" rel="noopener">
+          <span class="more__kind">提案</span><b class="more__t">五步路線圖與決策矩陣</b>
+          <span class="more__d">一軸一行：問題、我們選了什麼、代價、什麼時候回頭看。</span><span class="more__go">打開 →</span></a>
+        <a class="card more__card" href="../prototype/index.html" target="_blank" rel="noopener">
+          <span class="more__kind">原型</span><b class="more__t">三條 demo 流程</b>
+          <span class="more__d">A 不搭車的日常、B 搭車的轉換、C 晚上的回顧，一格一格點過去。</span><span class="more__go">打開 →</span></a>
+        <a class="card more__card" href="../prototype/overview.html" target="_blank" rel="noopener">
+          <span class="more__kind">原型</span><b class="more__t">畫面總覽與評語</b>
+          <span class="more__d">每張畫面、每個變體都在一棵樹上；可以直接寫評語、匯出給我們。</span><span class="more__go">打開 →</span></a>
+        <a class="card more__card" href="../prototype/concept.html" target="_blank" rel="noopener">
+          <span class="more__kind">概念稿</span><b class="more__t">真實質感</b>
+          <span class="more__d">真實新竹地圖、實景照片、微 3D 與好友系統的探索稿。</span><span class="more__go">打開 →</span></a>
+        <div class="card more__card more__card--pair">
+          <span class="more__kind">初賽簡報</span><b class="more__t">給 yoxi 的提案</b>
+          <span class="more__d">摘要一頁＋正文，七大章節；數字都能回溯到佐證文件。</span>
+          <span class="more__links"><a href="../pitch/deck/index.html" target="_blank" rel="noopener">HTML 版 →</a><a href="../pitch/deck/out/yoxi_城事_初賽提案.pdf" target="_blank" rel="noopener">PDF →</a></span></div>
+        <a class="card more__card" href="../prototype/variants.html" target="_blank" rel="noopener">
+          <span class="more__kind">原型</span><b class="more__t">變體比較</b>
+          <span class="more__d">同一個問題的幾種做法並排，刻意做壞的對照組也留著。</span><span class="more__go">打開 →</span></a>
+        <a class="card more__card" href="../prototype/vision.html" target="_blank" rel="noopener">
+          <span class="more__kind">願景稿</span><b class="more__t">再往後的樣子</b>
+          <span class="more__d">第 4 步以後可能長出來的東西；不是本期範圍。</span><span class="more__go">打開 →</span></a>
+        <a class="card more__card" href="../README.md" target="_blank" rel="noopener">
+          <span class="more__kind">repo</span><b class="more__t">README</b>
+          <span class="more__d">每個資料夾是什麼、怎麼打開、要守的設計紀律。</span><span class="more__go">打開 →</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap" id="w-footer">
+    <div class="foot">
+      <div class="foot__brand">
+        <a class="wordmark" href="#top"><b>yoxi</b> 城事</a>
+        <p class="foot__line">一天一個地方。走得到就走，走不到就用 yoxi 去。</p>
+      </div>
+      <ul class="foot__credits">
+        <li>地圖資料 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 貢獻者</a>（ODbL）。</li>
+        <li>明信片與插圖為 AI 生成示意（原型階段為程式生成）。</li>
+        <li>實景照片來自 Wikimedia Commons，作者與授權標在各圖旁。</li>
+        <li>yoxi 為和泰汽車之商標；本頁為提案示意，非 yoxi 官方。</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="../prototype/js/icons.js"></script>
+<script src="../prototype/assets/map/hs-places.js"></script>
+<script src="../prototype/assets/map/hs-core.js"></script>
+<script src="../prototype/assets/map/hs-wide.js"></script>
+<script src="../prototype/js/hsmap.js"></script>
+<script src="../prototype/assets/photos/credits.js"></script>
+<script src="js/data.js"></script>
+<script src="js/scroll.js"></script>
+<script src="js/postcard.js"></script>
+<script src="js/widgets.js"></script>
+<script src="js/sections.js"></script>
+</body>
+</html>

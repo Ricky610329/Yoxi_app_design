@@ -10,6 +10,7 @@
 
 | 想做什麼 | 打開 |
 |---|---|
+| 第一次聽到「城事」，先看介紹 | `site/index.html`：一頁式捲動介紹站——痛點、三條線、可點的真實新竹地圖、3 公里距離尺、AI 角色、六條承諾、路線圖、影片 |
 | 先看整體怎麼接進 yoxi | `prototype/proposal.html`：五步 roadmap、一軸一行的決策矩陣（問題／我們選／代價／什麼時候回頭看）、風險控制、還沒決定的事 |
 | 看 demo、聽講稿 | `prototype/index.html` → 三條流程各有「開始導覽」，手機旁邊會出現講的人看的字幕列，鍵盤 ← → 翻頁 |
 | 評估某個畫面、寫評語 | `prototype/overview.html`：整個系統的層級樹，點節點在右邊打分、寫評語（存在你的瀏覽器，右上「匯出評語」給我） |
@@ -20,6 +21,7 @@
 
 要接手開發（人或 AI agent）：先讀 `AGENTS.md`（規矩與慣例），再讀 `docs/HANDOFF.md`（架構、驗收、未決、下一步）與 `docs/WORKLOG.md`（每一筆 commit 做了什麼）。
 要提案：`docs/narratives/` 有五種敘述方向（情感、商業轉換、零傷害、世代、城市）與對應 app 按法的 demo 講稿；`docs/webapp-review/` 有五個視角（yoxi 產品、UX、工程、無障礙、評審）的評估。
+要介紹給別人：`site/index.html` 是介紹站（`file://` 直接開，讀 `prototype/`、`app/assets/shots/` 與 `pitch/video/` 的共用檔，規矩在 `site/CONTRACT.md`）。
 要交初賽（2026 和泰 AI 黑客松 · yoxi 題，10/14 13:00 截止）：`pitch/` 是交件包——HTML 簡報印成 PDF（`pitch/deck/`）、3 分鐘影片的腳本與草稿（`pitch/video/`）、每個數字的佐證（`pitch/docs/`）、上傳前打勾清單（`pitch/README.md`）。
 
 ## 三條 demo 流程

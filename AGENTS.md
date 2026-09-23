@@ -47,6 +47,14 @@
 - **收工前**：`python app/tests/run.py` 全綠，而且 `python prototype/tools/verify-quiet.py` 八段 PASS、六條承諾數字與基準相同。
 - **新增檔案**：加進 `app/sw.js` 的 `PRECACHE`、`VERSION` 加一，跑 `python app/tools/check-sw.py`（清單與檔案對不上就 exit 1；`cache.addAll` 全有全無，一個 404 整個安裝失敗）。
 
+## `site/`（介紹網站）的規矩
+
+- **契約在 `site/CONTRACT.md`**：檔案歸屬、`window.SITE`（捲動框架）與 `window.SITE_DATA`（公式、地點、連結）的 API、`data-reveal／data-progress／data-scrolly／data-fmt` 的 HTML 約定。
+- **只讀共用檔不改**：`../prototype`（tokens、icons、hsmap、地圖資料、照片授權）、`../app/assets/shots/`、`../pitch/video/out/`。
+- **新 CSS 不寫 hex**、圓角只用 `--r-*`、字級用 `site.css` 的 `--site-*`；畫面上的車資／分鐘／點數一律 `data-fmt` 或 `SITE_DATA.fmt`。
+- 禁用詞與誠實標示同上（明信片「AI 生成示意」、地圖署名、照片授權）。
+- 驗收：`python site/tools/shoot-site.py`（每段一張＋整頁，會印 JS 例外）；加段落要同時加 `data-section`、導覽列連結與 `shoot-site.py` 的 `SECTIONS`。
+
 ## 常見坑（都踩過）
 
 - Windows 顯示縮放會讓 Chrome 用 1.25 倍出圖：shoot.py 已鎖 `--force-device-scale-factor=1`，自己寫截圖腳本也要帶。
