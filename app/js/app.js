@@ -19,7 +19,16 @@
 
 const W = (typeof window !== 'undefined') ? window : globalThis;
 const APP_KEY = 'yoxi-chengshi-app-v1';
-const TABS = ['ride', 'explore', 'album'];
+const TABS = ['ride', 'album'];
+
+/* 舊探索網址只保留作入口，所有內容都落在叫車地圖的今天模式。 */
+function canonicalPath(path) {
+  const p = parse(path);
+  if (p.path !== '/explore' && p.path !== '/explore/map') return null;
+  const q = new URLSearchParams(p.qs);
+  q.set('mode', 'today');
+  return '/ride?' + q.toString();
+}
 
 /* --------------------------------------------------------------------------
    事件
@@ -49,9 +58,9 @@ function fresh() {
     trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km } */
     pushes: [],           /* [{ when:'am'|'pm', at:ISO }] */
     arrivedDemo: null,    /* placeId */
-    rideSpots: true,      /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
+    rideSpots: true,      /* 今天模式要不要疊景點（沿用舊設定鍵） */
     rideVia: {},          /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
-    tabPaths: { ride: '/ride', explore: '/explore', album: '/album' },
+    tabPaths: { ride: '/ride', album: '/album' },
   };
 }
 
@@ -73,8 +82,15 @@ function load() {
     s.tabPaths = fresh().tabPaths;
     const tp = got.tabPaths && typeof got.tabPaths === 'object' ? got.tabPaths : {};
     TABS.forEach(function (k) {
-      if (typeof tp[k] === 'string' && tp[k][0] === '/') s.tabPaths[k] = tp[k];
+      if (typeof tp[k] === 'string' && tp[k][0] === '/') {
+        s.tabPaths[k] = k === 'ride' ? (canonicalPath(tp[k]) || tp[k]) : tp[k];
+      }
     });
+    /* 只有沒有有效叫車記錄時，才接手舊探索的最後位置。 */
+    if (!(typeof tp.ride === 'string' && tp.ride[0] === '/') && typeof tp.explore === 'string') {
+      const migrated = canonicalPath(tp.explore);
+      if (migrated) s.tabPaths.ride = migrated;
+    }
     if (!Array.isArray(s.pushes)) s.pushes = [];
     if (!s.rideVia || typeof s.rideVia !== 'object' || Array.isArray(s.rideVia)) s.rideVia = {};
     if (typeof s.rideSpots !== 'boolean') s.rideSpots = true;
@@ -269,8 +285,8 @@ const PLANNED = [
   ['/welcome', null], ['/ride', 'ride'], ['/dropoff', 'ride'], ['/pickup', 'ride'],
   ['/trip', null], ['/trip/done', null], ['/drawer', 'ride'], ['/points', 'ride'],
   ['/notify', 'ride'], ['/trips', 'ride'],
-  ['/explore', 'explore'], ['/explore/map', 'explore'], ['/place/:id', 'explore'],
-  ['/going/:id', null], ['/unlock/:id', null], ['/routes', 'explore'], ['/route/:id', 'explore'],
+  ['/place/:id', 'ride'],
+  ['/going/:id', null], ['/unlock/:id', null], ['/routes', 'ride'], ['/route/:id', 'ride'],
   ['/album', 'album'], ['/postcard/:id', 'album'], ['/badge/:id', 'album'], ['/footprint', 'album'],
   ['/lookback', null], ['/week', 'album'], ['/elder', 'album'], ['/settings', null],
 ].map(function (x) { const r = compile(x[0]); r.tab = x[1]; return r; });
@@ -393,6 +409,8 @@ const nav = {
     opt = opt || {};
     path = String(path || '/').replace(/^#/, '');
     if (path[0] !== '/') path = '/' + path;
+    const canonical = canonicalPath(path);
+    if (canonical) { path = canonical; opt = Object.assign({}, opt, { replace: true }); }
     if (!started) { try { location.hash = '#' + path; } catch (e) { /* ignore */ } return; }
     const url = '#' + path;
     let dir = opt.dir || 'push';
@@ -428,7 +446,9 @@ const nav = {
     if (TABS.indexOf(id) < 0) return;
     const here = cur && cur.tab;
     /* 已經在這個 tab：回到它的根；不然回到它最後停的那一頁 */
-    const target = (here === id) ? '/' + id : (S.tabPaths[id] || '/' + id);
+    const target = (here === id)
+      ? (id === 'ride' && cur.path === '/ride' ? fullPath(cur) : '/' + id)
+      : (S.tabPaths[id] || '/' + id);
     if (cur && target === fullPath(cur)) return;
     nav.go(target, { dir: 'tab' });
   },
@@ -482,6 +502,9 @@ function route(dir) {
   clearBackPending();
   const p = parse(location.hash);
 
+  const canonical = canonicalPath(fullPath(p));
+  if (canonical) { nav.go(canonical, { replace: true, dir: 'none' }); return; }
+
   /* '/'：第一次開先 onboarding（system 有註冊才去），其餘去叫車 */
   if (p.path === '/') {
     const toWelcome = !S.onboarded && routes.some(function (r) { return r.pattern === '/welcome'; });
@@ -492,7 +515,7 @@ function route(dir) {
   const r = resolve(p.path);
   const def = r.def;
   const prev = cur;
-  const tab = def.tab === undefined ? null : def.tab;
+  const tab = def.tab === 'explore' ? 'ride' : (def.tab === undefined ? null : def.tab);
   cur = { path: p.path, qs: p.qs, query: p.query, pattern: r.pattern, params: r.params,
           name: r.name, tab: tab, def: def };
 
@@ -644,17 +667,8 @@ function reportError(e, where) {
 /* ---- tab bar ---- */
 const TABDEF = [
   { id: 'ride',    label: '叫車', icon: 'tabRide' },
-  { id: 'explore', label: '探索', icon: 'tabExplore', dot: true },
   { id: 'album',   label: '收藏', icon: 'tabAlbum' },
 ];
-
-/* 今天的地方的明信片還沒收 → 探索 tab 上一個小圓點（不是數字） */
-function todayPending() {
-  const m = M();
-  if (!m.TODAY || !W.STATE) return false;
-  const c = m.cardIdOf ? m.cardIdOf(m.TODAY.id) : m.TODAY.id;
-  return !STATE.has(c);
-}
 
 function renderTabbar() {
   const nb = $('#tabbar');
@@ -668,13 +682,11 @@ function renderTabbar() {
   }
   nb.hidden = false;
   if (screen) screen.classList.add('has-tabbar');
-  const dot = todayPending();
   nb.innerHTML = TABDEF.map(function (t) {
     return '<a class="tabbar__item' + (t.id === active ? ' is-active' : '') + '" href="#/' + t.id +
       '" data-tab-id="' + t.id + '"' + (t.id === active ? ' aria-current="page"' : '') + '>' +
       '<span class="tabbar__icon">' +
         '<span data-icon="' + t.icon + '" style="display:block;width:26px;height:26px"></span>' +
-        (t.dot && dot && t.id !== active ? '<i class="tabbar__dot"></i>' : '') +
       '</span><span>' + t.label + '</span></a>';
   }).join('');
   nb.querySelectorAll('[data-tab-id]').forEach(function (a) {
@@ -933,7 +945,11 @@ W.APP = {
   views: views,
   routes: function () { return routes.map(function (r) { return { pattern: r.pattern, name: r.name }; }); },
   PLANNED: PLANNED.map(function (r) { return { pattern: r.pattern, tab: r.tab }; }),
-  resolve: function (path) { const r = resolve(parse(path).path); return { name: r.name, pattern: r.pattern, params: r.params }; },
+  resolve: function (path) {
+    const canonical = canonicalPath(path);
+    const r = resolve(parse(canonical || path).path);
+    return { name: r.name, pattern: r.pattern, params: r.params };
+  },
   parse: parse,
   nav: nav,
   store: store,

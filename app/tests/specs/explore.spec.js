@@ -1,12 +1,11 @@
 /* ==========================================================================
-   explore.spec — 探索區塊（/explore、/explore/map、/place、/going、/unlock、/routes、/route）
+   explore.spec — 今天地圖內容與地方流程（/ride?mode=today、/place、/going、/unlock、/routes、/route）
    契約：ARCHITECTURE.md §6.3 五類 —— render／主要互動改狀態／數字＝公式／可按數／返回。
    ========================================================================== */
 T.spec('explore', function (t) {
 
   const ROUTES = [
-    { path: '/explore', max: 12 },
-    { path: '/explore/map', max: 10 },
+    { path: '/ride?mode=today', max: 10 },
     { path: '/place/glass-kiln', max: 10 },
     { path: '/place/neiwan', max: 10 },
     { path: '/place/moat', max: 10 },
@@ -40,13 +39,16 @@ T.spec('explore', function (t) {
     });
   });
 
-  /* 2. /explore：今天的地方、X2 缺口、路線、還沒去 */
-  t.test('/explore：今天的地方與雙 CTA', async function (app) {
+  /* 2. /ride?mode=today：今天的地方、X2 缺口、路線、還沒去 */
+  t.test('/ride?mode=today：今天的地方與雙 CTA', async function (app) {
     await app.reset();
-    await app.go('/explore');
+    await app.go('/ride?mode=today');
     const T0 = app.MOCK.TODAY;
     const P = app.APP.place(T0.id);
     t.includes(app.text('.ex-today'), P.name, '今天的地方名字');
+    const more = app.$('.ex-today-more[data-expand-only]');
+    t.ok(more, '缺口、路線和其他地方收在可展開區');
+    t.eq(app.win.getComputedStyle(more).display, 'none', '收合時不露出更多內容');
     t.ok(app.$('.ex-today.is-gray'), '沒收過是灰階');
     t.ok(app.$('.ex-today .ai-mark'), '有 AI 生成示意');
     const go = app.$('[data-act="go-walk"]');
@@ -58,10 +60,12 @@ T.spec('explore', function (t) {
     await app.click('[data-act="toggle-why"]');
     t.ok(!app.$('[data-why-list]').hidden, '點開後看得到');
     t.eq(app.$$('[data-why-list] .why__item').length, T0.why.length, '依據條數＝MOCK.TODAY.why');
+    await app.click('[data-act="toggle-map-sheet"]');
+    t.ok(app.win.getComputedStyle(more).display !== 'none', '展開 sheet 後可看缺口與路線');
   });
 
-  t.test('/explore：X2 缺口是一句陳述、最多三個地方', async function (app) {
-    await app.go('/explore');
+  t.test('/ride?mode=today：X2 缺口是一句陳述、最多三個地方', async function (app) {
+    await app.go('/ride?mode=today');
     const g = app.APP.explore.gap();
     t.ok(g, '有一枚還沒收齊的獎章');
     if (!g) return;
@@ -80,8 +84,8 @@ T.spec('explore', function (t) {
     });
   });
 
-  t.test('/explore：路線 ≤ 2 張、進度＝STATE.routeDone；還沒去 ≤ 3 列', async function (app) {
-    await app.go('/explore');
+  t.test('/ride?mode=today：路線 ≤ 2 張、進度＝STATE.routeDone；還沒去 ≤ 3 列', async function (app) {
+    await app.go('/ride?mode=today');
     const cards = app.$$('.ex-rcard');
     t.ok(cards.length <= 2 && cards.length >= 1, '路線卡 ' + cards.length);
     cards.forEach(function (c) {
@@ -91,13 +95,13 @@ T.spec('explore', function (t) {
     });
     t.ok(app.$('a[href="#/routes"]'), '有「全部」→ /routes');
     t.ok(app.$$('.ex-row').length <= 3, '還沒去 ≤ 3 列');
-    t.ok(app.$('.ex-block--last a[href="#/explore/map"]'), '在地圖上看 → /explore/map');
+    t.ok(!app.$('.ex-block--last [data-act="view-map"]'), '同頁地圖不用另設入口');
   });
 
-  t.test('/explore：今天的地方收過之後是彩色＋已收藏', async function (app) {
+  t.test('/ride?mode=today：今天的地方收過之後是彩色＋已收藏', async function (app) {
     await app.reset();
     app.APP.explore.collect(app.MOCK.TODAY.id, { by: 'walk', km: 1 });
-    await app.go('/explore');
+    await app.go('/ride?mode=today');
     t.ok(app.$('.ex-today.is-got'), '彩色');
     t.includes(app.text('.ex-today'), '已收藏', '已收藏角標');
     t.ok(app.$('[data-act="open-postcard"]'), '動作換成看明信片');
@@ -145,11 +149,11 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  t.test('/place/nope：找不到這個地方＋回探索', async function (app) {
+  t.test('/place/nope：找不到這個地方＋回地圖', async function (app) {
     await app.go('/place/nope');
     t.ok(app.$('[data-ex-missing]'), '找不到卡');
     t.includes(app.text('main.view[data-view]'), '找不到這個地方', '文案');
-    t.ok(app.$('main.view[data-view] a[href="#/explore"]'), '回探索');
+    t.ok(app.$('main.view[data-view] a[href="#/ride?mode=today"]'), '回地圖');
     t.ok(!app.$('[data-place-foot]'), '沒有動作區');
   });
 
@@ -162,10 +166,10 @@ T.spec('explore', function (t) {
     t.ok(!app.$('[data-act="go-walk"], [data-act="set-dropoff"]'), '收過就不再推走路／叫車');
   });
 
-  /* 4. /explore/map：10 顆、點一顆小卡名字對 */
-  t.test('/explore/map：剛好 10 顆景點，點一顆小卡名字正確', async function (app) {
+  /* 4. /ride?mode=today：10 顆、點一顆小卡名字對 */
+  t.test('/ride?mode=today：剛好 10 顆景點，點一顆小卡名字正確', async function (app) {
     await app.reset();
-    await app.go('/explore/map');
+    await app.go('/ride?mode=today');
     await app.tick(80);
     const spots = app.$$('.spot');
     t.eq(spots.length, 10, '.spot 數');
@@ -175,17 +179,17 @@ T.spec('explore', function (t) {
     await app.click(s);
     t.eq(app.text('[data-peek-name]'), app.APP.place('moat').name, '小卡名字');
     t.includes(app.text('[data-peek-meta]'), app.APP.fmt.dist(app.APP.place('moat').dist).split(' ')[0], '小卡距離');
-    t.ok(app.$('.ex-peek.is-on [data-act="go-walk"]'), '1.8 km 走得到 → 走路前往');
-    t.eq(app.$('.ex-peek [data-act="open-place"]').getAttribute('href'), '#/place/moat', '看看這個地方');
-    t.noDeadButtons(app, '/explore/map 小卡');
+    t.ok(app.$('.ride-peek.is-on [data-act="go-walk"]'), '1.8 km 走得到 → 走路前往');
+    t.ok(app.$('.ride-peek [data-act="peek-place"]'), '看看這個地方');
+    t.noDeadButtons(app, '/ride?mode=today 小卡');
   });
 
-  t.test('/explore/map：走不到的景點 → 設為下車點（via e）', async function (app) {
+  t.test('/ride?mode=today：走不到的景點 → 設為下車點（via e）', async function (app) {
     await app.reset();
-    await app.go('/explore/map');
+    await app.go('/ride?mode=today');
     await app.click('.spot[data-spot="lake"]');
     t.eq(app.text('[data-peek-name]'), app.APP.place('lake').name, '小卡名字');
-    await app.click('.ex-peek [data-act="set-dropoff"]');
+    await app.click('.ride-peek [data-act="set-dropoff"]');
     await app.at('/ride');
     const d = app.APP.store.get('dropoff');
     t.eq(d && d.id, 'lake', 'dropoff.id');
@@ -196,13 +200,13 @@ T.spec('explore', function (t) {
   /* 5. /going → /unlock → collect */
   t.test('/going：模擬抵達 → /unlock，先不去了 → 回來處', async function (app) {
     await app.reset();
-    await app.go('/explore');
+    await app.go('/ride?mode=today');
     await app.go('/going/glass-kiln');
     t.ok(app.$('.spot'), '地圖上有目的地');
     t.includes(app.text('main.view[data-view]'), '80', '抵達怎麼驗：80 公尺');
     t.ok(!/倒數|步數/.test(app.text('main.view[data-view]')), '沒有倒數、步數');
     await app.click('[data-act="cancel-going"]');
-    await app.at('/explore');
+    await app.at('/ride?mode=today');
     await app.go('/going/glass-kiln');
     await app.click('[data-act="arrive"]');
     await app.at('/unlock/glass-kiln');
@@ -310,22 +314,23 @@ T.spec('explore', function (t) {
   });
 
   /* 7. 返回鍵回到來處 */
-  t.test('返回：/explore → /route/rail → 返回 → /explore', async function (app) {
+  t.test('返回：/ride?mode=today → /route/rail → 返回 → /ride?mode=today', async function (app) {
     await app.reset();
-    await app.go('/explore');
+    await app.go('/ride?mode=today');
+    await app.click('[data-act="toggle-map-sheet"]');
     await app.click('.ex-rcard[href="#/route/rail"], .ex-rcard');
     await app.waitFor(function () { return /^\/route\//.test(app.route().path) && app.doc.documentElement.getAttribute('data-view-ready') === '1'; }, 3000, '進到路線');
     await app.click('main.view[data-view] a[data-back]');
-    await app.at('/explore');
+    await app.at('/ride?mode=today');
   });
 
-  t.test('返回：/explore/map → /place/moat → 返回 → /explore/map', async function (app) {
-    await app.go('/explore/map');
+  t.test('返回：/ride?mode=today → /place/moat → 返回 → /ride?mode=today', async function (app) {
+    await app.go('/ride?mode=today');
     await app.click('.spot[data-spot="moat"]');
-    await app.click('.ex-peek [data-act="open-place"]');
+    await app.click('.ride-peek [data-act="peek-place"]');
     await app.at('/place/moat');
     await app.click('main.view[data-view] a[data-back]');
-    await app.at('/explore/map');
+    await app.at('/ride?mode=today');
   });
 
   t.test('返回：/routes → /route/glass → 站 → /place → 返回 → /route/glass', async function (app) {

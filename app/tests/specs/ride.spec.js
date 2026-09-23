@@ -18,7 +18,8 @@ T.spec('ride', function (t) {
     t.noDeadButtons(app, path);
     t.noBannedWords(app, { msg: path });
     const n = t.countTappables(app);
-    t.ok(n <= 10, path + ' 可按數 ' + n + ' ≤ 10');
+    const max = path.indexOf('/ride') === 0 ? 12 : 10;
+    t.ok(n <= max, path + ' 可按數 ' + n + ' ≤ ' + max);
     t.eq(app.errors.length, 0, path + ' 錯誤：' + app.errors.join('；'));
   }
 
@@ -49,29 +50,51 @@ T.spec('ride', function (t) {
     await app.go('/ride');
     await app.tick(60);
     checkPage(app, '/ride 已填');
+    await app.click('[data-act="show-today"]');
     await app.click('.spot[data-spot="market"]');
     t.noDeadButtons(app, '/ride 小卡');
     t.ok(t.countTappables(app) <= 12, '小卡打開時可按數 ' + t.countTappables(app));
   });
 
+  t.test('切今天再回叫車保留目的地；把手可展開更多內容', async function (app) {
+    await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣老街', km: 28, via: 'k1' } } });
+    await app.go('/ride');
+    await app.click('[data-act="show-today"]');
+    t.eq(app.APP.store.get('dropoff').id, 'neiwan', '切換不清空目的地');
+    const grip = app.$('[data-act="toggle-map-sheet"]');
+    t.eq(grip.tagName, 'BUTTON', '把手使用原生按鈕');
+    await app.click(grip);
+    t.eq(grip.getAttribute('aria-expanded'), 'true', '展開狀態');
+    t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '更多內容展開');
+    t.ok(app.$('[data-expand-only] a[href="#/routes"]'), '路線有入口');
+    await app.click('[data-act="show-ride"]');
+    t.eq(app.route().query.get('mode'), null, '回叫車模式');
+    t.includes(app.text('[data-drop-name]'), '內灣', '目的地仍在');
+    t.eq(app.$$('main.view .spot').length, 0, '景點收起');
+    t.ok(app.$('[data-act="call-ride"]').classList.contains('is-ready'), '叫車按鈕就緒');
+  });
+
   /* ---------------------------------------------------------------- 2. 狀態與公式 */
-  t.test('/ride 地圖：4 個景點、含今天的地方、pin 在', async function (app) {
+  t.test('/ride：叫車地圖乾淨，今天模式才顯示景點', async function (app) {
     await app.reset();
     await app.go('/ride');
     const spots = app.$$('main.view .spot');
-    t.eq(spots.length, 4, '叫車地圖 4 個景點');
+    t.eq(spots.length, 0, '叫車地圖沒有景點');
     const today = app.MOCK.TODAY.id;
+    t.includes(app.text('.sheet__greet'), app.MOCK.USER.name, '問候語有名字');
+    t.includes(app.text('.ride-banner__eyebrow'), app.APP.fmt.dist(app.APP.place(today).dist), 'banner 距離用 fmt.dist');
+    await app.click('[data-act="show-today"]');
+    t.eq(app.$$('main.view .spot').length, 10, '今天模式 10 個地方');
+    t.eq(app.route().query.get('mode'), 'today', '模式記在網址');
     const el = app.$('.spot[data-spot="' + today + '"]');
     t.ok(el && el.classList.contains('spot--today'), '今天的地方是 .spot--today');
     t.ok(app.$('main.view .pin[data-pin="pickup"]'), '上車點 pin');
     t.ok(app.$('main.view [data-recenter]'), '定位鈕');
-    t.includes(app.text('.sheet__greet'), app.MOCK.USER.name, '問候語有名字');
-    t.includes(app.text('.ride-banner__eyebrow'), app.APP.fmt.dist(app.APP.place(today).dist), 'banner 距離用 fmt.dist');
   });
 
   t.test("setDropoff('neiwan','e') → /ride 叫車鈕就緒、車資與分鐘用公式", async function (app) {
     await app.reset();
-    await app.go('/explore', { redirectOk: true });
+    await app.go('/ride?mode=today');
     app.APP.ride.setDropoff('neiwan', 'e');
     await app.at('/ride');
     const A = app.APP;
@@ -90,17 +113,17 @@ T.spec('ride', function (t) {
 
   t.test('點景點 → 小卡名字正確 → 設為下車點', async function (app) {
     await app.reset();
-    await app.go('/ride');
-    await app.click('.spot[data-spot="moat"]');
+    await app.go('/ride?mode=today');
+    await app.click('.spot[data-spot="lake"]');
     const peek = app.$('[data-peek]');
     t.ok(peek && peek.classList.contains('is-on'), '小卡出現');
-    t.eq(app.text('[data-peek-name]'), app.APP.place('moat').name, '小卡名字');
-    t.includes(app.text('[data-peek-meta]'), app.APP.fmt.dist(app.APP.place('moat').dist), '小卡距離');
+    t.eq(app.text('[data-peek-name]'), app.APP.place('lake').name, '小卡名字');
+    t.includes(app.text('[data-peek-meta]'), app.APP.fmt.dist(app.APP.place('lake').dist), '小卡距離');
     await app.click('[data-act="set-dropoff"]');
-    await app.waitFor(function () { const d = app.APP.store.get('dropoff'); return d && d.id === 'moat'; }, 2000, 'dropoff=moat');
+    await app.waitFor(function () { const d = app.APP.store.get('dropoff'); return d && d.id === 'lake'; }, 2000, 'dropoff=lake');
     await app.at('/ride');
     t.eq(app.APP.store.get('dropoff').via, 'e', 'via=e');
-    t.eq(app.text('[data-drop-name]'), app.APP.place('moat').name, '下車點欄位是護城河');
+    t.eq(app.text('[data-drop-name]'), app.APP.place('lake').name, '下車點欄位是青草湖');
     await app.click('[data-act="clear-dropoff"]');
     await app.waitFor(function () { return !app.$('[data-act="clear-dropoff"]'); }, 2000, '清除後重畫');
     t.eq(app.APP.store.get('dropoff'), null, '清除 → dropoff null');
@@ -108,7 +131,7 @@ T.spec('ride', function (t) {
 
   t.test('小卡「看看這個地方」→ /place/:id', async function (app) {
     await app.reset();
-    await app.go('/ride');
+    await app.go('/ride?mode=today');
     await app.click('.spot[data-spot="market"]');
     await app.click('[data-act="peek-place"]');
     await app.at('/place/market');

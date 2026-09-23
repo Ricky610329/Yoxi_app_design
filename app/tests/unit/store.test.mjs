@@ -12,7 +12,7 @@ test('預設值齊全', () => {
   assert.equal(s.get('trip'), null);
   assert.equal(s.get('pushes').length, 0);
   assert.equal(s.get('arrivedDemo'), null);
-  assert.deepEqual({ ...s.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  assert.deepEqual({ ...s.get('tabPaths') }, { ride: '/ride', album: '/album' });
 });
 
 test('讀到舊版（少鍵）會跟預設合併', () => {
@@ -101,11 +101,29 @@ test('on 回傳 off；listener 丟錯不影響其他人', () => {
 test('tabPaths 只收「/ 開頭的字串」：舊版或手改的怪值退回預設', () => {
   const bad = { onboarded: true, tabPaths: { ride: null, explore: 42, album: 'javascript:alert(1)', extra: '/x' } };
   const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(bad) }) });
-  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride', album: '/album' });
   const str = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify({ tabPaths: 'abc' }) }) }).APP;
-  assert.deepEqual({ ...str.store.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  assert.deepEqual({ ...str.store.get('tabPaths') }, { ride: '/ride', album: '/album' });
   const ok = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify({ tabPaths: { album: '/album?tab=journal' } }) }) }).APP;
   assert.equal(ok.store.get('tabPaths').album, '/album?tab=journal');
+});
+
+test('舊版探索記錄不蓋掉有效的地圖 tab 偏好', () => {
+  const prior = { tabPaths: { ride: '/ride?mode=today', explore: '/explore/map', album: '/week' } };
+  const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(prior) }) });
+  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride?mode=today', album: '/week' });
+});
+
+test('只有舊探索記錄時，搬到地圖的今天模式', () => {
+  const prior = { tabPaths: { explore: '/explore/map?from=card', album: '/album' } };
+  const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(prior) }) });
+  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride?from=card&mode=today', album: '/album' });
+});
+
+test('叫車欄位若誤存舊探索網址，也轉成今天模式', () => {
+  const prior = { tabPaths: { ride: '/explore?from=push', explore: '/explore/map' } };
+  const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(prior) }) });
+  assert.equal(APP.store.get('tabPaths').ride, '/ride?from=push&mode=today');
 });
 
 test('APP.place：Object 原型上的名字不算認得的 id', () => {

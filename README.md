@@ -15,7 +15,7 @@
 | 看 demo、聽講稿 | `prototype/index.html` → 三條流程各有「開始導覽」，手機旁邊會出現講的人看的字幕列，鍵盤 ← → 翻頁 |
 | 評估某個畫面、寫評語 | `prototype/overview.html`：整個系統的層級樹，點節點在右邊打分、寫評語（存在你的瀏覽器，右上「匯出評語」給我） |
 | 看「真的會長怎樣」 | `prototype/concept.html`：真實新竹地圖的六種質感、單／雙地圖、微 3D、好友系統，附五張 1600×1000 概念板 |
-| 想真的用一遍 | `app/index.html`：web app，合一版（三分頁、E＋K1＋S3＋X4＋X2、三幕解鎖），走得完一圈；說明在 `app/README.md` |
+| 想真的用一遍 | `app/index.html`：web app，F 雙模式版（叫車／收藏；首頁切叫車／今天），走得完一圈；說明在 `app/README.md` |
 
 其他兩頁：`prototype/variants.html`（依軸線分區的變體卡牆）、`prototype/vision.html`（願景探索稿）。
 
@@ -93,7 +93,7 @@ Yoxi_app截圖.zip    yoxi 現有 app 的截圖（還原用）
 
 ## web app 版（`app/`）
 
-`app/` 把提案推薦的那一組決定（合一版）做成一個真的能用的單頁 web app：叫車、探索、收藏三分頁，三條 demo 流程都走得完，狀態會記住，可以裝到手機主畫面。
+`app/` 現在是 F 雙模式版：底部叫車／收藏，首頁在叫車／今天間切換，探索內容整合進今天的地圖與底部面板。三條 demo 流程都走得完，狀態會記住，可以裝到手機主畫面。
 桌機把 `app/index.html` 拖進 Chrome 就能用；手機跑 `python app/tools/serve.py` 後同 Wi-Fi 開它印的網址。
 測試：`python app/tests/run.py`（node 單元測試＋headless Chrome，每條 route 驗死按鈕、禁用詞、可按數、公式數字）。細節看 `app/README.md`，契約在 `app/ARCHITECTURE.md`；原型 `prototype/` 一個字沒動。
 

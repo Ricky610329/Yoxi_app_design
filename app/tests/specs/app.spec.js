@@ -22,8 +22,9 @@ T.spec('app', function (t) {
       { path: '/points' },
       { path: '/notify' },
       { path: '/trips' },
-      { path: '/explore' },
-      { path: '/explore/map' },
+      { path: '/ride?mode=today' },
+      { path: '/explore', expect: '/ride', flow: true },
+      { path: '/explore/map', expect: '/ride', flow: true },
       { path: '/place/glass-kiln' },
       { path: '/place/neiwan' },
       { path: '/going/glass-kiln', flow: true },
@@ -78,8 +79,8 @@ T.spec('app', function (t) {
     t.eq(left.length, 0, '還是 placeholder 的 route：' + left.join('、'));
   }, 30000);
 
-  /* §6.3-4：/explore 與 /album 兩個索引頁 ≤ 12，其餘 ≤ 10 */
-  const TAP_MAX = { '/explore': 12, '/album': 12 };
+  /* 今天模式與收藏索引頁 ≤ 12，其餘 ≤ 10 */
+  const TAP_MAX = { '/ride': 12, '/album': 12 };
   t.test('每個 route 可按數 ≤ 10（索引頁 ≤ 12；景點與 tab bar 不算）', async function (app) {
     const list = routes(app);
     const over = [];
@@ -121,7 +122,7 @@ T.spec('app', function (t) {
   }
 
   t.test('tab bar：tab 根出現、tab 為 null 的 view 隱藏', async function (app) {
-    const roots = ['/ride', '/explore', '/album'];
+    const roots = ['/ride', '/ride?mode=today', '/album'];
     for (let i = 0; i < roots.length; i++) {
       await app.go(roots[i]);
       t.ok(tabbarShown(app), 'tab bar 在 ' + roots[i] + ' 應該顯示');
@@ -145,12 +146,42 @@ T.spec('app', function (t) {
     t.eq(app.doc.body.getAttribute('data-tab'), 'album', 'body[data-tab]');
   });
 
+  t.test('底欄只有叫車和收藏；今天模式仍屬叫車', async function (app) {
+    await app.go('/ride?mode=today');
+    const tabs = app.$$('#tabbar [data-tab-id]');
+    t.eq(tabs.length, 2, '底欄兩個 tab');
+    t.eq(tabs.map(function (a) { return a.textContent.trim(); }).join('/'), '叫車/收藏', 'tab 名稱');
+    t.eq(app.doc.body.getAttribute('data-tab'), 'ride', '今天模式的 tab');
+    app.APP.nav.tab('explore');
+    await app.tick(40);
+    t.eq(app.route().path, '/ride', '不存在的 explore tab 不改路由');
+    t.eq(app.route().query.get('mode'), 'today', '不存在的 explore tab 不改模式');
+    app.APP.nav.tab('ride');
+    await app.tick(40);
+    t.eq(app.route().query.get('mode'), 'today', '重按叫車保留今天模式');
+    await app.go('/album');
+    app.APP.nav.tab('ride');
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'today', '收藏切回叫車記得今天模式');
+  });
+
+  t.test('舊探索網址以 replace 導向今天模式，刷新後保留', async function (app) {
+    await app.reset({ hash: '/explore/map?from=postcard' });
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'today', '舊網址改為今天模式');
+    t.eq(app.route().query.get('from'), 'postcard', '保留其他參數');
+    t.ok(app.win.location.hash.indexOf('#/ride?') === 0, '網址已替換');
+    await app.reload(app.win.location.hash.slice(1));
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'today', '刷新保留今天模式');
+  });
+
   t.test('nav.back 回到來處', async function (app) {
-    await app.go('/explore');
+    await app.go('/ride?mode=today');
     await app.go('/place/glass-kiln');
     app.APP.nav.back('/ride');
-    await app.at('/explore');
-    t.eq(app.route().path, '/explore', 'back 回 /explore（不是 fallback 的 /ride）');
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'today', 'back 回今天模式（不是 fallback 的 /ride）');
   });
 
   t.test('data-back 返回鍵回到來處', async function (app) {
@@ -167,7 +198,8 @@ T.spec('app', function (t) {
     await app.reset({ hash: '/place/neiwan' });
     await app.at('/place/neiwan');
     app.APP.nav.back('/explore');
-    await app.at('/explore');
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'today', '舊 fallback 回今天模式');
   });
 
   t.test('404：未知 path 有畫面且能回叫車', async function (app) {

@@ -1,8 +1,6 @@
-# yoxi 城事 — web app（合一版）
+# yoxi 城事 — web app（地圖雙模式版）
 
-![](assets/shots/board.png)
-
-`prototype/` 是 102 張各自獨立的設計原型；`app/` 是把提案裡的**一組決定**（合一版）做成一個真的走得完一圈的單頁 web app：
+`prototype/` 是 102 張各自獨立的設計原型；`app/` 採用地圖雙模式版（F），做成一個真的走得完一圈的單頁 web app：
 hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒動，app 只從 `../prototype` 讀共用的樣式、假資料與地圖。
 
 > 不用安裝任何東西。把 `app/index.html` 拖進 Chrome 就能用；全部離線。
@@ -22,17 +20,17 @@ hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒�
 
 ## 選了哪一版
 
-照 `prototype/proposal.html` 決策矩陣的推薦；原本未定的軸線在這裡拍板（完整版見 `ARCHITECTURE.md` §0）。
+以 `prototype/proposal.html` 的決策矩陣為基礎，選定地圖雙模式版（F）；完整契約見 `ARCHITECTURE.md` §0。
 
 | 軸線 | 選 | 在 app 裡長什麼樣 |
 |---|---|---|
-| 入口 | tab bar 三分頁 | 叫車／探索／收藏三個根；抽屜與推播也能進 |
-| 地圖歸誰 | E 景點常駐 | 叫車首頁是真實新竹地圖，最多 4 個景點，小卡上「設為下車點」 |
+| 入口 | 地圖雙模式版 F | 底部只有「叫車／收藏」；叫車地圖內可切「叫車／今天」 |
+| 地圖歸誰 | E 的景點小卡放在今天模式 | 叫車模式只有上車點；今天模式顯示最多 10 個地方，可從小卡前往或設下車點 |
 | 轉換點 | K1 內容頁 | 地方詳情 ≤ 3 km 主「走路前往」、次「設為下車點」；走不到就對調 |
 | 收藏組織 | S3 路線書架 | pill 切「明信片／獎章／日誌／這一週」 |
 | 獎章呈現 | X4 勳章牆 | 沒有進度環、沒有集點卡；寫「收集 4/8」 |
-| 探索敘事 | X2 缺口導向 | 「今天的地方」大卡＋「你還沒有 ○○ 類」 |
-| 認知負擔 | L1 一屏一事 | 可按數 ≤ 10；探索與收藏兩個索引頁 ≤ 12 |
+| 今天敘事 | X2 缺口導向 | 「今天的地方」大卡；展開地圖 sheet 看收藏缺口、路線與還沒去的地方 |
+| 認知負擔 | L1 一屏一事 | 一般畫面可按數 ≤ 10；叫車兩種模式與收藏首頁 ≤ 12 |
 | 儀式 | 三幕解鎖 | 灰點爆開上色 → AI 生成中 → 成品；點畫面跳到成品 |
 | 家人 | 分享選項 | 分享面板第一格是長輩圖；沒有家人模式 |
 | 好康任務 | 不同頁 | 不合併 |
@@ -40,17 +38,17 @@ hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒�
 
 ## 三條 demo 怎麼走
 
-**A 不搭車的日常**（推播早 → 探索 → 地方 → 前往 → 解鎖 → 收藏）
+**A 不搭車的日常**（推播早 → 今天模式 → 地方 → 前往 → 解鎖 → 收藏）
 
-1. demo 工具按「早上推播」，點浮層上的推播 → 進探索。
-2. 看「今天的地方」大卡與下面的缺口區塊，按大卡的「先看看這是什麼地方」進地方詳情。
+1. 在叫車地圖按「今天」，或從 demo 工具按「早上推播」再點推播 → 進同一張地圖的今天模式。
+2. 看「今天的地方」大卡，按「先看看這是什麼地方」進地方詳情；展開 sheet 把手可看收藏缺口等更多內容。
 3. 距離 ≤ 3 km，主要按鈕是「走路前往」→ 前往中（這一頁刻意什麼都不做）。
 4. demo 工具按「模擬抵達」→ 三幕解鎖；點畫面可直接跳到成品。
 5. 按「收進收藏」→ 收藏頁，新卡在書架上。
 
 **B 搭車的轉換**（路線 → 內灣 → 設為下車點 → 叫車 → 行程 → 評分 → 限定版 → 點數）
 
-1. 探索 → 這個月的路線 →「沿著鐵道走：內灣線的六個站」。
+1. 在叫車地圖按「今天」，展開 sheet 把手 → 這個月的路線 →「沿著鐵道走：內灣線的六個站」。
 2. 內灣老街是「腳到不了的一段」（28 公里），按「設為下車點 · 約 $…」→ 回叫車首頁，叫車鈕就緒、車資是公式算的。
 3. 按叫車 → 配對中約 1 秒後轉行程中，看「這條路上」內容卡。
 4. 按「模擬抵達」（頁上或 demo 工具）→ 行程結束頁；先評分，金色橫幅才出現。按「回首頁」也不會丟：叫車首頁會多一列金色入口。
@@ -70,17 +68,17 @@ demo 前的提醒：先按「重設 demo」讓數字跟講稿一致；投影用 
 
 ## 畫面地圖
 
-25 條 route（`/` 導到 `/ride`，第一次開先到 `/welcome`；其餘 path 是 404）。來源原型都在 `prototype/screens/`。
+`/` 導到 `/ride`，第一次開先到 `/welcome`。`/ride?mode=today` 是同一個首頁的今天模式；舊 `/explore` 和 `/explore/map` 會轉到該模式。來源原型都在 `prototype/screens/`。
 
 | path | 畫面 | 來源原型 |
 |---|---|---|
 | `/welcome` | onboarding 三張 | 新 |
-| `/ride` | 叫車首頁（E＋真實地圖＋sheet） | `variant-e-home`、`concept-map-home`、`variant-k-ride` |
+| `/ride` | 共用地圖的叫車模式 | `variant-e-home`、`concept-map-home`、`variant-k-ride` |
+| `/ride?mode=today` | 同一地圖的今天模式（最多 10 個地方＋可展開內容） | `variant-x2-explore`、`explore`、`variant-l1-explore` |
 | `/dropoff`、`/pickup` | 下車地點（清單＋搜尋）、上車地點 | 新（參考 `pickup`）、`pickup` |
 | `/trip`、`/trip/done` | 配對中→行程中；行程結束頁＋評分＋金色橫幅 | `ride`、`ride-done` |
 | `/drawer`、`/points`、`/notify`、`/trips` | 抽屜、和泰 Points、通知、行程紀錄 | `drawer`、`points`、`notify`、`trips` |
-| `/explore` | 探索（X2＋今天的地方） | `variant-x2-explore`、`explore`、`variant-l1-explore` |
-| `/explore/map` | 探索地圖（≤ 10 景點） | `map`、`concept-map-explore` |
+| `/explore`、`/explore/map` | 舊連結，轉到 `/ride?mode=today`；沒有獨立畫面 | — |
 | `/place/:id` | 地方詳情（K1） | `variant-k1-place`、`place` |
 | `/going/:id`、`/unlock/:id` | 前往中；三幕解鎖（`?ride=1` 金框） | `going`、`unlock` |
 | `/routes`、`/route/:id` | 路線列表；路線詳情（斷點可設為下車點） | `routes`；`route`、`variant-k4-route` |
@@ -100,14 +98,14 @@ python app/tools/check-sw.py         # sw.js 的快取清單與實際檔案對�
 python app/tools/shoot-app.py        # 每條 route 用手機寬度拍一張（app/assets/shots/），另拼一張 board.png
 ```
 
-目前瀏覽器測試 187 條（app 43、system 20、ride 25、explore 37、album 15、flows 47）＋node 單元測試 34 條，全綠。測的東西：
+測試涵蓋：
 
 | 測什麼 | 怎麼量 |
 |---|---|
 | 每條 route 都 render | 不丟例外、`main.view[data-view]` 在、沒有「尚未建檔」卡 |
 | 死按鈕 | 每個 `a`／`button` 都要有 href（已註冊的 route）、`onclick` 或 `data-toast` 等 |
 | 禁用詞 | 掃算繪後的文字與 `title`／`aria-label`／`placeholder` |
-| 可按數 | 一般畫面 ≤ 10，`/explore`、`/album` ≤ 12（量法同 `prototype/tools/audit-load.html`） |
+| 可按數 | 一般畫面 ≤ 10，`/ride` 兩種模式與 `/album` ≤ 12（量法同 `prototype/tools/audit-load.html`） |
 | 公式數字 | 車資、分鐘、距離、收集 n/m、點數＝明細相加、覆蓋率 |
 | 三條流程端到端 | A／B／C 從推播或路線一路點到收藏、點數、長輩圖 |
 | 其他 | 返回鍵回到來處、狀態持久化、CSS 沒有 hex、首屏 3 秒內 |

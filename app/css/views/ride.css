@@ -16,6 +16,30 @@
   background: var(--map-land);
 }
 
+/* F：同一張首頁用叫車／今天切換；底部仍是叫車／收藏。 */
+.ride-sheet { --sheet-min: 420px; --sheet-max: 76%; padding-top: 0; }
+.ride-sheet.is-collapsed { max-height: 58%; overflow-y: auto; }
+.ride-sheet__grip {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; min-height: 44px; background: none;
+  color: var(--yoxi-navy); touch-action: none;
+}
+.ride-sheet__grip .sheet__handle { display: block; margin: 0; border-radius: var(--r-pill); }
+.ride-sheet__grip .sheet__handle::after { display: none; }
+.ride-modes { margin-bottom: var(--sp-4); }
+.ride-modes .pill { min-width: 62px; justify-content: center; }
+.ride-banner { flex: none; }
+.ride-banner__today { width: 100%; }
+.ride-sheet--today .ex-block { padding-left: 0; padding-right: 0; }
+.ride-sheet--today .ex-block--white { padding-top: 0; padding-bottom: 0; }
+.ride-sheet--today .ex-cta { grid-template-columns: 1fr 1fr; }
+.ride-sheet--today .ex-cta .btn-primary,
+.ride-sheet--today .ex-cta .btn-ghost { padding: var(--sp-2); min-height: 44px; font-size: var(--fs-cap); }
+.ride-sheet--today [data-expand-only] { margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); background: var(--yoxi-mist); }
+.ride-peek [data-peek-next] { display: flex; }
+.ride-peek [data-peek-next] > * { width: 100%; }
+.ride-sheet__grip:focus-visible { outline: 2px solid var(--yoxi-navy); outline-offset: -2px; }
+
 .ride-fab--menu { top: calc(var(--statusbar-h) + 12px); left: var(--gutter); }
 .ride-fab--scan { top: calc(var(--statusbar-h) + 16px); right: 76px; }
 .ride-fab--bell { top: calc(var(--statusbar-h) + 16px); right: var(--gutter); }

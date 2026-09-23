@@ -16,7 +16,7 @@
 | 第二輪 | 層級樹＋評語（`overview.html`）、變體註冊表、收藏 S1–S5、探索 X1–X5、T1、低認知負擔 L1–L6（可按數／到達步數自動量測）、願景探索稿 12 張 | `overview.html`、`variants.html`、`vision.html` |
 | 第三輪 | 真實 OSM 地圖引擎與六種底圖、單／雙地圖、微 3D、實景照片、好友系統六頁＋AI 鄰居、五張概念板；轉換點 K1–K7 | `concept.html`、`variants.html#axis-conv` |
 | 提案 | 提案總覽頁、README、本交接 | `proposal.html` |
-| web app | 合一版做成單頁 web app：25 條 route、hash 路由、localStorage 狀態、PWA；瀏覽器測試 187 條＋node 單元測試 34 條。見 §10 | `app/index.html`、`app/README.md` |
+| web app | F 雙模式：叫車／收藏兩分頁，首頁切叫車／今天；hash 路由、localStorage、PWA。瀏覽器測試 190 條＋node 38 條。見 §10 | `app/index.html`、`app/README.md` |
 | 介紹網站 | `site/index.html`：一頁式捲動介紹站（hero 霧地圖隨捲動散開、週曆條、三段 scrolly 手機、可點的真實新竹地圖、3 公里距離尺、AI 卡、圖層開／關對照、路線圖、影片）。見 §12 | `site/index.html`、`site/CONTRACT.md` |
 | 初賽交件 | 2026 和泰 AI 黑客松 yoxi 題的交件包：HTML 簡報（摘要 1＋正文 15＋附錄，`build-pdf.py` 印 PDF 並檢查頁數／大小／溢出／禁用詞）、3 分鐘向量動畫影片（腳本、場景、TTS 草稿配音）、六份佐證文件（資料、AI 架構與成本、商業、KPI、roadmap、差異化）。敘述立場：站在 yoxi 的角度寫成給經營層的路線圖備忘錄。見 §11 | `pitch/README.md`、`pitch/BRIEF.md` |
 
@@ -115,7 +115,7 @@ python app/tests/run.py                           # web app：node 單元＋head
 8. **web app 換真資產**：`postcardArt` 換成真的生成圖；八張對不到座標的卡補座標（或擴大底圖）。
 9. **web app 換真抵達**：geolocation（80 公尺內停 1 分鐘）取代 demo 的「模擬抵達」。
 10. **web app 換後端**：`STATE` 與 `APP.store` 的 localStorage 換成帳號＋後端，才能跨裝置。
-11. **把六條承諾搬進 app 的測試**：合一版的 `/ride` 目前只有「剛好 4 顆景點」有斷言；②tap 數、③收合態 0 像素、⑤不遮 pin 與浮動鈕、⑥兩套標記 class 交集為空，都要在 `app/tests` 重量（五份評估都點到，見 `docs/webapp-review/README.md`）。
+11. **另量 app 的保護承諾**：app 已改為 F 雙模式，目前驗證叫車模式 0 景點、今天模式 10 景點與完整流程；原型的六條量測不能直接當成 app 結果。②tap 數、③收合態尺寸、⑤不遮 pin 與浮動鈕、⑥標記區隔仍需依新設計量測。
 12. **評估提出、需要產品決定的**：探索是否退回一天一個（UX）；探索 tab 的小紅點算不算未讀提示（UX）；上線順序拆成「記錄與獎章＋K1＋抽屜入口」先上（商業）；投影用 1080p 或全螢幕（評審）。
 
 ## 9. 交給 Codex 的最短路徑
@@ -125,16 +125,18 @@ python app/tests/run.py                           # web app：node 單元＋head
 3. 從 §8 挑一項，開分支，照 `AGENTS.md` 的慣例做，做完再跑一次驗收，commit。
 4. 需要背景時：`docs/WORKLOG.md` 有每一筆 commit 做了什麼；每張畫面的檔頭註解有「為什麼這樣做」。
 
-## 10. web app（合一版）
+## 10. web app（F 雙模式版）
 
 **結論**：`app/` 是提案推薦那一組決定的可用版本；契約在 `app/ARCHITECTURE.md`，測試在 `app/tests/`，原型一個字沒動。
 
-選版（`ARCHITECTURE.md` §0）：tab bar 三分頁、E 景點常駐（叫車地圖 ≤ 4）、K1 內容頁設為下車點、S3 路線書架、X4 勳章牆、X2 缺口導向、L1 一屏一事、三幕解鎖、家人＝分享選項、好康任務不同頁、好友不做。
+目前選版（`ARCHITECTURE.md` §0）：底部叫車／收藏，圖示為叫車與收藏；F 叫車／今天共用地圖首頁。叫車模式不顯示景點，今天模式最多 10 個。K1 地方詳情、S3 書架、X4 勳章牆、X2 缺口、三幕解鎖與分享流程保留。
+
+2026-09-23 互動設計修訂：`/ride?mode=today` 收納今天卡、推薦理由與行動；把手可點、鍵盤操作或拖曳展開缺口、路線與還沒去的地方。舊 `/explore`、`/explore/map` 都轉址到今天模式。模式切換不清空下車點、行程或收藏。只有 app 改動；原型 F 與提案仍保留原設計供比較。
 §6 裡原本未決、在 app 拍板的：
 
 | 未決 | app 的選擇 |
 |---|---|
-| 城事從哪裡進（G 抽屜 vs tab bar） | tab bar 三分頁 |
+| 城事從哪裡進 | 叫車首頁的今天模式；底部只有叫車／收藏 |
 | K1 門檻 3 km vs 10 km | 統一 3 km（`APP.fmt.WALK_MAX_M`） |
 | 家人（分享選項 vs 候選 L 模式） | 分享選項：分享面板第一格是長輩圖 |
 | 儀式長度 | 三幕（點畫面可跳到成品） |
@@ -156,7 +158,7 @@ python app/tests/run.py                           # web app：node 單元＋head
 - **內灣在底圖外**：底圖只有新竹 11×12 km，內灣在 28 km 外，行程與路線上會夾到地圖邊緣（`.spot--edge`）。
 - **城市足跡少算八張卡**：22 張明信片裡 8 張（p10 合興、p12 九讚頭、p13 橫山、p14 玻璃工藝博物館、p15 春池玻璃、p16 舊社的矽砂場、p17 水源地的窯口、p18 頭前溪河口）對不到地圖座標，收了也不進覆蓋率（`album.js` 的 `placeOfCard`）。
 - 叫車、抵達、推播都是模擬；PWA 只能在 localhost 或 https 安裝。
-- **六條承諾在 app 只有④有斷言**：合一版動了叫車首頁（tab bar、4 顆景點、banner 第一格），驗收數字量的是原型的 `home.html`。講的時候要說清楚（`docs/narratives/zero-harm.md`）。
+- **六條承諾量的是原型**：app 已改為 F 雙模式首頁，不能把 `home.html` 的六條原型量測數字當成 app 的量測。app 另驗雙分頁、叫車模式無景點／今天最多 10 個、模式與行程狀態、完整流程。
 - **桌機縮放後拖曳跟手 80%**：1280×720 投影時 `.device` 用 `transform: scale()` 縮到約 0.8，`interact.js` 的平移與 sheet 拖曳用 clientX／Y 差值換算，沒有除以 scale。要修得動 `prototype/js/interact.js`。
 - **+50 點與金框只給走不到（> 3 km）的地方**：近的地方搭車抵達照實記 `by:'ride'`，但只算一般搭車回饋（每 20 元 1 點，無條件捨去）。`STATE.points` 是原型算法（所有 ride 卡 ×50），app 的點數頁用 `APP.ride.pointsTotal` 自己算；初始兩張搭車卡都走不到，兩邊目前一致。
 - **轉換歸因**：`store.trip.via` 與 `store.rideVia[cardId]` 記下車點來源（k1／e／route／search），行程紀錄顯示；原型的 `state.js` 卡片欄位不能加，所以放在 app 的 store。

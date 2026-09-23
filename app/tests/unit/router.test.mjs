@@ -65,6 +65,13 @@ test('結尾斜線與空 hash', () => {
   assert.equal(APP.parse('#').path, '/');
 });
 
+test('舊探索連結解析到叫車根畫面', () => {
+  const APP = withViews();
+  assert.equal(APP.resolve('/explore').name, 'ride');
+  assert.equal(APP.resolve('/explore/map?from=card').name, 'ride');
+  assert.equal(APP.resolve('/explore/unknown').name, '_404');
+});
+
 test('未知 path → 404（pattern /*）', () => {
   const APP = withViews();
   const m = APP.resolve('/no/such/page');

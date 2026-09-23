@@ -1,18 +1,16 @@
 /* ==========================================================================
-   yoxi 城事 web app — explore 區塊（探索分頁）
+   yoxi 城事 web app — 今天內容與地方探索流程
    契約：app/ARCHITECTURE.md §3、§4、§5、§7、§8。只用 APP.view() 註冊，不改 app.js。
 
-   這支檔案註冊七個畫面，並提供 APP.explore.collect()（ride 的限定版解鎖也用）：
+   今天內容嵌入 /ride?mode=today；另註冊地方詳情、前往、解鎖與路線畫面。
+   提供 APP.explore.renderToday()、mountToday()、collect()（ride 的限定版解鎖也用）。
 
-   /explore        探索首頁（X2 缺口導向＋今天的地方）
+   /ride?mode=today 地圖首頁的今天 sheet（X2 缺口導向＋今天的地方）
      回答什麼：今天出門去哪？收藏裡還缺什麼、可以順便補哪一張？
      原型：variant-x2-explore.html（缺口）、explore.html（今天的地方、路線、還沒去）、
-           variant-l1-explore.html（一屏一事：可按數 ≤ 12，超過就砍列而不是塞更多）
+           variant-l1-explore.html（一屏一事：摘要可按數 ≤ 10，其他內容收進展開區）
      刻意沒有：百分比、進度環、勾選清單、「最快集滿」的排序理由、倒數與限量。
                缺口是一句陳述（你還沒有『水路』這一組的 1 張），不是一張待辦清單。
-   /explore/map    探索地圖（真實新竹 HSMAP paper，≤ 10 景點，點圖釘浮出小卡）
-     原型：map.html、concept-map-explore.html
-     刻意沒有：超過 10 顆的景點、隨縮放長出來的東西、「X 分鐘後消失」。
    /place/:id      地方詳情（K1：內容頁設為下車點）
      原型：variant-k1-place.html、place.html（?id=neiwan 的主次對調）
      門檻統一 3 km（APP.fmt.WALK_MAX_M）：走得到主「走路前往」、次「設為下車點」；走不到對調。
@@ -49,11 +47,8 @@ const ARRIVE_STAY_MIN = 1;
 function ridePoints() {
   return (window.MOCK && MOCK.FAR_PLACE && MOCK.FAR_PLACE.ridePoints) || 50;
 }
-/* 探索首頁的可按數上限（L1 一屏一事；§6.3 第 4 條） */
-const EXPLORE_TAP_MAX = 12;
-/* 探索地圖的視野寬度（公尺）。新竹市區五個景點擠在 800 公尺內，
-   框到南寮與竹中就會疊成一團；6.5 km 讓市區分得開，框外兩顆夾到邊緣標 edge。 */
-const MAP_SPAN_M = 6500;
+/* 今天展開區中的清單保持精簡；地圖上的十個地點由 ride.js 管理。 */
+const TODAY_PENDING_MAX = 3;
 /* 你的位置：東區水利路（MOCK.USER.home）。hs-places 沒有這一筆，沿用 concept-map-explore 的座標 */
 const HOME_LL = [24.7990, 120.9800];
 
@@ -78,8 +73,8 @@ function notFound(o) {
       '<p class="app-empty__eyebrow">' + esc(o.eyebrow || '找不到') + '</p>' +
       '<h1 class="app-empty__t">' + esc(o.title) + '</h1>' +
       '<p class="app-empty__p">' + esc(o.text || '') + '</p>' +
-      '<a class="btn-primary" href="#' + (o.href || '/explore') + '" data-act="go-explore">' +
-        esc(o.cta || '回探索') + '</a>' +
+      '<a class="btn-primary" href="#' + (o.href || '/ride?mode=today') + '" data-act="go-today">' +
+        esc(o.cta || '回地圖') + '</a>' +
     '</div></div>';
 }
 
@@ -160,6 +155,8 @@ function collect(placeId, opt) {
 
 APP.explore = Object.assign(APP.explore || {}, {
   collect: collect,
+  renderToday: renderToday,
+  mountToday: mountToday,
   /* 給別的區塊與測試用的純計算（沒有副作用） */
   gap: gapPick,
   breakpoint: function (routeId) {
@@ -188,25 +185,9 @@ function gapPick() {
   return best;
 }
 
-/* ---------------------------------------------------------------- /explore */
+/* ---------------------------------------------------------------- 今天 sheet 的內容（由 ride.js 嵌入共用地圖） */
 
-function exploreHeader(on) {
-  const cards = '<span data-icon="viewCards" class="ex-vt-ic"></span>卡片';
-  const map = '<span data-icon="viewMap" class="ex-vt-ic"></span>地圖';
-  return '<header class="hdr-red hdr-red--compact">' +
-    '<div class="hdr-red__bar">' +
-      '<h1 class="hdr-red__title">探索</h1>' +
-      '<nav class="viewtoggle ex-viewtoggle" aria-label="檢視方式">' +
-        (on === 'cards'
-          ? '<span class="is-on" aria-current="page">' + cards + '</span>' +
-            '<a href="#/explore/map" data-act="view-map">' + map + '</a>'
-          : '<a href="#/explore" data-act="view-cards">' + cards + '</a>' +
-            '<span class="is-on" aria-current="page">' + map + '</span>') +
-      '</nav>' +
-    '</div></header>';
-}
-
-function renderExplore() {
+function renderToday() {
   const T = M().TODAY;
   const tp = APP.place(T.id);
   const got = collected(tp);
@@ -259,16 +240,13 @@ function renderExplore() {
       '<div class="ex-cta">' + cta + '</div>' +
     '</section>';
 
-  /* ---- 可按數預算：固定 = 切換 1 ＋ 為什麼 1 ＋ 雙 CTA 2 ＋ 路線（2 張＋全部）3 ---- */
   const routes = pickRoutes();
-  let used = 1 + 1 + (got && !tp.card ? 1 : 2) + routes.length + 1;
 
   /* ---- X2 缺口 ---- */
   const g = gapPick();
   let gapHTML = '';
   if (g) {
     const chips = g.places.slice(0, 3);
-    used += chips.length;
     gapHTML =
       '<section class="ex-block ex-gap" data-gap="' + esc(g.badge.id) + '">' +
         '<div class="sec"><h2 class="sec__t">你的收藏還缺什麼</h2></div>' +
@@ -307,17 +285,15 @@ function renderExplore() {
       '</div>' +
     '</section>';
 
-  /* ---- 還沒去的地方：剩下的預算給它（至少一列，最多三列） ---- */
-  used += 1;   /* 在地圖上看 */
-  const rows = Math.max(1, Math.min(3, EXPLORE_TAP_MAX - used));
+  /* ---- 還沒去的地方：在展開內容裡精簡列出 ---- */
+  const rows = TODAY_PENDING_MAX;
   const pending = (M().PENDING || []).filter(function (p) {
     const q = APP.place(p.id);
     return q && !collected(q);
   }).slice(0, rows);
   const pendHTML =
     '<section class="ex-block ex-block--last">' +
-      '<div class="sec"><h2 class="sec__t">還沒去的地方</h2>' +
-        '<a class="sec__m u-row u-gap2" href="#/explore/map" data-act="view-map">在地圖上看 <span class="arrow"></span></a></div>' +
+      '<div class="sec"><h2 class="sec__t">還沒去的地方</h2></div>' +
       (pending.length
         ? '<div class="card">' + pending.map(function (p, i) {
             const q = APP.place(p.id);
@@ -332,8 +308,8 @@ function renderExplore() {
       '<p class="ex-note">推薦過的地方會一直留在這裡，不會過期。</p>' +
     '</section>';
 
-  return exploreHeader('cards') +
-    '<div class="scroll ex-scroll">' + today + gapHTML + routeHTML + pendHTML + '</div>';
+  return '<div class="ex-today-content">' + today +
+    '<div class="ex-today-more" data-expand-only>' + gapHTML + routeHTML + pendHTML + '</div></div>';
 }
 
 /* 首頁放兩條：還沒走完的優先，其餘照 MOCK 順序補 */
@@ -344,7 +320,7 @@ function pickRoutes() {
   return open.concat(rest).slice(0, 2);
 }
 
-function mountExplore(root) {
+function mountToday(root) {
   const btn = root.querySelector('[data-act="toggle-why"]');
   const list = root.querySelector('[data-why-list]');
   if (btn && list) {
@@ -359,131 +335,7 @@ function mountExplore(root) {
   if (dd) dd.onclick = function () { setDropoff(M().TODAY.id, 'k1'); };
 }
 
-/* ---------------------------------------------------------------- /explore/map */
-
-function renderMap() {
-  return exploreHeader('map') +
-    '<div class="ex-mapwrap" data-ex-map>' +
-      '<div class="peek peek--stack ex-peek" data-peek aria-live="polite">' +
-        '<div class="ex-peek__top">' +
-          '<span class="peek__img" data-peek-img></span>' +
-          '<span class="u-fill ex-peek__txt">' +
-            '<span class="ex-peek__name" data-peek-name></span>' +
-            '<span class="ex-peek__meta" data-peek-meta></span>' +
-            '<span class="ex-peek__hook" data-peek-hook></span>' +
-          '</span>' +
-        '</div>' +
-        '<div class="peek__acts" data-peek-acts></div>' +
-      '</div>' +
-    '</div>';
-}
-
-function mountMap(root) {
-  const wrap = root.querySelector('[data-ex-map]');
-  const peek = root.querySelector('[data-peek]');
-  const spots = (M().SPOTS || []).slice(0, 10);
-  let openId = null;
-
-  function show(s) {
-    const p = APP.place(s.id);
-    if (!p) return;
-    if (openId === p.id && peek.classList.contains('is-on')) {
-      peek.classList.remove('is-on'); openId = null; return;
-    }
-    openId = p.id;
-    const got = collected(p) || s.state === 'seen';
-    const img = peek.querySelector('[data-peek-img]');
-    img.innerHTML = SHELL.postcardArt(p.art, { seed: 2 });
-    img.classList.toggle('is-gray', !got);
-    peek.querySelector('[data-peek-name]').textContent = p.name;
-    peek.querySelector('[data-peek-meta]').innerHTML = esc(p.type) + ' · ' + distHTML(p.dist);
-    peek.querySelector('[data-peek-hook]').textContent = p.hook || s.hook || '';
-    const acts = peek.querySelector('[data-peek-acts]');
-    const walk = fmt.canWalk(p.dist);
-    acts.innerHTML =
-      '<a class="btn-ghost" href="#/place/' + esc(p.id) + '" data-act="open-place">看看這個地方</a>' +
-      (walk
-        ? '<a class="btn-primary" href="#/going/' + esc(p.id) + '" data-act="go-walk">走路前往</a>'
-        : '<button class="btn-primary" type="button" data-act="set-dropoff">設為下車點</button>');
-    const dd = acts.querySelector('[data-act="set-dropoff"]');
-    if (dd) dd.onclick = function () { setDropoff(p.id, 'e'); };
-    peek.setAttribute('data-peek-id', p.id);
-    peek.classList.add('is-on');
-  }
-
-  const m = APP.map.mount(wrap, {
-    style: 'paper',
-    center: 'station',
-    spanM: MAP_SPAN_M,
-    spots: spots,
-    max: 10,
-    pan: true,
-    overlay:
-      '<div class="pin ex-me" data-ex-me><span class="pin__drop ex-me__drop"><span data-icon="hail" class="ex-ic20"></span></span></div>' +
-      '<button class="fab ex-locate" type="button" data-recenter aria-label="回到你的位置"><span data-icon="locate"></span></button>',
-    onSpot: function (s) { show(s); },
-  });
-  placeMe(m, root.querySelector('[data-ex-me]'));
-  SHELL.injectIcons(wrap);
-  spreadSpots(m);
-
-  /* 一打開就有一個明確的答案：先開今天的地方 */
-  const today = m.spots.filter(function (s) { return s.state === 'today'; })[0] || m.spots[0];
-  if (today) show(today);
-
-  return function () { m.destroy(); };
-}
-
-/* 市中心的景點（舊城區一帶）真實座標只差一兩百公尺，縮圖會疊成一團。
-   mount 後量每顆 .spot 的實際大小，兩兩重疊就沿著圓心連線各推開一半，反覆幾輪；
-   推的時候夾在地圖框內（頂部留給頁首）。跟 ride.js 的 keepClear 同一個想法：寧可離真實位置遠一點，也不要疊。 */
-function spreadSpots(m) {
-  const layer = m.spotsEl;
-  const box = layer.getBoundingClientRect();
-  if (!box.width || !box.height) return;
-  const els = Array.prototype.slice.call(layer.querySelectorAll('.spot'));
-  const it = els.map(function (el) {
-    const r = el.getBoundingClientRect();
-    return { el: el, w: r.width, h: r.height,
-             x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2,
-             dx: 0, dy: 0 };
-  });
-  const GAP = 4;
-  for (let round = 0; round < 60; round++) {
-    let moved = false;
-    for (let i = 0; i < it.length; i++) for (let j = i + 1; j < it.length; j++) {
-      const a = it[i], b = it[j];
-      const ox = (a.w + b.w) / 2 + GAP - Math.abs(a.x - b.x);
-      const oy = (a.h + b.h) / 2 + GAP - Math.abs(a.y - b.y);
-      if (ox <= 0 || oy <= 0) continue;
-      moved = true;
-      /* 沿重疊較小的軸推開（位移最少）；完全同點時往左右分 */
-      if (ox < oy) {
-        const sx = (a.x < b.x || (a.x === b.x && i < j)) ? -1 : 1;
-        a.x += sx * ox / 2; b.x -= sx * ox / 2;
-      } else {
-        const sy = (a.y < b.y || (a.y === b.y && i < j)) ? -1 : 1;
-        a.y += sy * oy / 2; b.y -= sy * oy / 2;
-      }
-    }
-    it.forEach(function (s) {
-      s.x = Math.max(s.w / 2 + 4, Math.min(box.width - s.w / 2 - 4, s.x));
-      s.y = Math.max(s.h / 2 + 64, Math.min(box.height - s.h / 2 - 4, s.y));
-    });
-    if (!moved) break;
-  }
-  it.forEach(function (s) {
-    const r = s.el.getBoundingClientRect();
-    const cx = r.left - box.left + r.width / 2, cy = r.top - box.top + r.height / 2;
-    const dx = s.x - cx, dy = s.y - cy;
-    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-    const L = parseFloat(s.el.style.left) || 0, T = parseFloat(s.el.style.top) || 0;
-    s.el.style.left = (L + dx / box.width * 100).toFixed(2) + '%';
-    s.el.style.top = (T + dy / box.height * 100).toFixed(2) + '%';
-  });
-}
-
-/* 你的位置：投影到地圖上；出框或壓在某顆景點上（HOME 跟玻璃窯幾乎同一點）就不畫 */
+/* 地圖上的位置圖釘由共用首頁管理；前往畫面仍沿用 placeMe。 */
 function placeMe(m, pin, xy) {
   if (!pin) return;
   const q = xy ? m.handle.projectM(xy[0], xy[1]) : m.handle.project(HOME_LL[0], HOME_LL[1]);
@@ -502,8 +354,8 @@ function placeMe(m, pin, xy) {
 function renderPlace(params) {
   const p = APP.place(params.id);
   if (!p) {
-    return backFabBar('/explore') + notFound({ title: '找不到這個地方',
-      text: '這個地方可能還沒寫好內容，或網址打錯了。先回探索看看今天的地方。' });
+    return backFabBar('/ride?mode=today') + notFound({ title: '找不到這個地方',
+      text: '這個地方可能還沒寫好內容，或網址打錯了。先回地圖看看今天的地方。' });
   }
   const got = collected(p);
   const hasDist = p.dist != null;
@@ -562,7 +414,7 @@ function renderPlace(params) {
         '<div class="ex-hero__art" data-art="' + esc(p.art) + '" data-seed="1" data-wide></div>' +
         '<span class="ai-mark ex-hero__mark">AI 生成示意</span>' +
         (got ? '' : '<span class="ex-hero__lock"><span data-icon="lock" class="ex-ic36"></span>到了才上色</span>') +
-        backFab('/explore') +
+        backFab('/ride?mode=today') +
       '</div>' +
       '<section class="ex-pad ex-head">' +
         '<span class="ex-eyebrow">' + esc(p.type) + (p.area ? ' · ' + esc(p.area) : '') + '</span>' +
@@ -630,12 +482,12 @@ function activeTrip() {
 function renderGoing(params) {
   const p = APP.place(params.id);
   if (!p) {
-    return backFabBar('/explore') + notFound({ title: '找不到這個地方', text: '沒有目的地就沒辦法帶路。先回探索挑一個。' });
+    return backFabBar('/ride?mode=today') + notFound({ title: '找不到這個地方', text: '沒有目的地就沒辦法帶路。先回地圖挑一個。' });
   }
   const trip = activeTrip();
   if (trip) {
     const dest = APP.place(trip.placeId);
-    return backFabBar('/explore') +
+    return backFabBar('/ride?mode=today') +
       '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-trip>' +
         '<p class="app-empty__eyebrow">行程進行中</p>' +
         '<h1 class="app-empty__t">你正在搭車前往 ' + esc(dest ? dest.name : '目的地') + '</h1>' +
@@ -700,7 +552,7 @@ function mountGoing(root, params) {
     APP.nav.go('/unlock/' + encodeURIComponent(p.id));
   };
   root.querySelector('[data-act="cancel-going"]').onclick = function () {
-    APP.nav.back('/explore');
+    APP.nav.back('/ride?mode=today');
   };
   return function () { if (m) m.destroy(); };
 }
@@ -730,7 +582,7 @@ function limitedPlace(p) {
 function renderUnlock(params, ctx) {
   const p = APP.place(params.id);
   if (!p) {
-    return backFabBar('/explore') + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
+    return backFabBar('/ride?mode=today') + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回地圖看看。' });
   }
   const trip = rideTripFor(p, ctx);
   const isRide = !!trip;
@@ -749,7 +601,7 @@ function renderUnlock(params, ctx) {
     ? '<p class="ex-unlock__have">已在收藏裡</p>' +
       '<div class="ex-unlock__acts">' +
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看這張明信片</a>' : '') +
-        '<a class="btn-link ex-center ex-unlock__link" href="#/explore" data-act="go-explore">回探索</a>' +
+        '<a class="btn-link ex-center ex-unlock__link" href="#/ride?mode=today" data-act="go-today">回地圖</a>' +
       '</div>'
     : (gold
         ? '<div class="ex-unlock__gold" data-gold-note>' +
@@ -882,7 +734,7 @@ function mountUnlock(root, params, ctx) {
 function renderRoutes() {
   return '<header class="hdr-red hdr-red--compact">' +
       '<div class="hdr-red__bar">' +
-        '<a class="hdr-red__close" href="#" data-back="/explore" aria-label="返回"><span data-icon="close"></span></a>' +
+        '<a class="hdr-red__close" href="#" data-back="/ride?mode=today" aria-label="返回"><span data-icon="close"></span></a>' +
         '<h1 class="hdr-red__title ex-hdr-title">這個月的路線</h1>' +
       '</div></header>' +
     '<div class="scroll ex-scroll">' +
@@ -1013,18 +865,8 @@ function mountRoute(root, params) {
 
 /* ---------------------------------------------------------------- 註冊 */
 
-APP.view('explore', {
-  path: '/explore', tab: 'explore', status: 'light', root: true, title: '探索',
-  render: renderExplore, mount: mountExplore,
-});
-
-APP.view('explore-map', {
-  path: '/explore/map', tab: 'explore', status: 'light', title: '探索地圖',
-  render: renderMap, mount: mountMap,
-});
-
 APP.view('place', {
-  path: '/place/:id', tab: 'explore', status: 'light',
+  path: '/place/:id', tab: 'ride', status: 'light',
   title: function (params) { const p = APP.place(params.id); return p ? p.name : '找不到這個地方'; },
   render: renderPlace, mount: mountPlace,
 });
@@ -1041,12 +883,12 @@ APP.view('unlock', {
 });
 
 APP.view('routes', {
-  path: '/routes', tab: 'explore', status: 'light', title: '這個月的路線',
+  path: '/routes', tab: 'ride', status: 'light', title: '這個月的路線',
   render: renderRoutes,
 });
 
 APP.view('route', {
-  path: '/route/:id', tab: 'explore', status: 'light',
+  path: '/route/:id', tab: 'ride', status: 'light',
   title: function (params) {
     const R = (M().ROUTES || []).filter(function (r) { return r.id === params.id; })[0];
     return R ? R.name : '找不到這條路線';

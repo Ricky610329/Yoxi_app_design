@@ -8,17 +8,27 @@
 `prototype/` 是 102 張各自獨立的 HTML 設計原型；`app/` 是把其中**一組決定**做成一個真的能用的
 單頁 web app（hash 路由、狀態持久、可安裝 PWA），手機直接開、桌機看得到手機外框。
 
-選的版本叫「**合一版**」（照 `prototype/proposal.html` 決策矩陣的推薦，未定的軸線在這裡拍板）：
+選的版本叫「**地圖雙模式版（F）**」（2026-09-23 使用者依變體 F 畫面選定）：底部只有叫車／收藏，叫車與今天共用地圖首頁。
+
+### 本輪導航與整合契約
+
+- `#/ride` 是地圖的叫車模式；`#/ride?mode=today` 是同一個地圖首頁的今天模式。模式按鈕使用 `data-act="show-ride"／"show-today"`，切換以 replace 更新網址，保留目的地、行程與收藏狀態。
+- 底部 tab ID 保留 `ride／album`，使用 `tabRide／tabAlbum` 圖示，顯示「叫車／收藏」。移除探索分頁與探索提示點。地方詳情、路線、前往及解鎖流程均歸叫車 tab。
+- 舊 `#/explore` 與 `#/explore/map` 以 replace 轉到 `#/ride?mode=today`，沒有獨立探索頁。推播、抽屜與其他內部入口直接使用新網址。
+- 叫車模式地圖只有上車點及既有浮動鈕；今天模式在相同頁面顯示最多 10 個地方。`rideSpots` 舊設定鍵沿用，現在控制今天模式景點顯示。
+- `APP.explore.renderToday()` 提供今天的地方、推薦理由、行動與更多內容；`APP.explore.mountToday(root)` 綁定內容互動。`ride.js` 擁有模式切換、共用地圖與 sheet。更多內容置於 `data-expand-only`，可用 sheet 把手展開。
+- `.ride-sheet--today` 為今天模式，`data-act="toggle-map-sheet"` 是可鍵盤操作的展開／收合把手。地圖小卡保留 `peek-place`，附近提供 `go-walk`，遠地提供 `set-dropoff`；設下車點一律回叫車模式。
+- 共用導覽由 `js/app.js` 維護；`prototype/` 與 `pitch/` 保持只讀。
 
 | 軸線 | 選 | 在 app 裡長什麼樣 |
 |---|---|---|
-| 入口 | tab bar 三分頁（叫車／探索／收藏） | `#/ride`、`#/explore`、`#/album` 三個根；抽屜與推播也能進 |
-| 地圖歸誰 | **E** 景點常駐＋一鍵設為下車點 | 叫車首頁的地圖是真實新竹（`HSMAP` paper），同時最多 **4** 個景點，小卡上有「設為下車點」 |
+| 入口 | 地圖雙模式版 **F** | 底部「叫車／收藏」兩個 tab；`#/ride` 與 `#/ride?mode=today` 在同一張地圖上切換，`#/album` 是收藏 |
+| 地圖歸誰 | **E** 的景點小卡沿用於今天模式 | 共用地圖是真實新竹（`HSMAP` paper）；叫車模式不顯示景點，今天模式最多 10 個地方，小卡可走路前往或設為下車點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
 | 收藏組織 | **S3** 路線書架 | 收藏首頁以路線書架為骨架；pill 切「明信片／獎章／日誌／這一週」 |
 | 獎章呈現 | **X4** 勳章牆 | 沒有進度環、沒有集點卡；寫「收集 4/8」 |
-| 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
-| 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/explore`／`/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
+| 今天敘事 | **X2** 缺口導向 | 今天模式先顯示「今天的地方」大卡；展開 sheet 可看收藏缺口、這個月的路線、還沒去的地方 |
+| 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/ride` 兩種模式與 `/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
 | 儀式 | 三幕解鎖（主線） | 灰點爆開上色 → AI 生成中 → 成品；點畫面可跳到成品 |
 | 家人 | 分享選項 | 長輩圖在分享面板第一格；沒有「家人模式」 |
 | 好康任務 | 不同頁 | 原封不動，不合併 |
@@ -44,8 +54,8 @@ app/
   css/views/{system,ride,explore,album}.css   各區塊自己的樣式（各區塊 agent 只動自己那支）
   js/app.js                 核心：window.APP（router、view registry、store、fmt、nav、ui、map）
   js/views/system.js        設定、onboarding、推播浮層、demo 工具、分享
-  js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
-  js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、解鎖三幕、路線列表／詳情
+  js/views/ride.js          共用地圖首頁（叫車／今天模式）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
+  js/views/explore.js       今天模式內容（X2，嵌入 ride.js）、地方詳情（K1）、前往中、解鎖三幕、路線列表／詳情
   js/views/album.js         收藏（S3＋X4）、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   tools/serve.py            本機靜態伺服器（測 PWA 用）
@@ -86,7 +96,7 @@ tab bar 由 app 自己畫。`shell.js` 的連結改寫只碰 `.html` 結尾的 h
 ```js
 APP.view('place', {
   path: '/place/:id',            // 或 ['/place/:id', '/place']；:id 進 params
-  tab: 'explore',                // 'ride' | 'explore' | 'album' | null（null＝不顯示 tab bar，全螢幕流程）
+  tab: 'ride',                   // 'ride' | 'album' | null（null＝不顯示 tab bar，全螢幕流程）
   status: 'light',               // 狀態列字色：'light'（在紅／深底上）| 'dark'
   title: p => '地方詳情',        // 字串或函式；document.title = `${title} — yoxi 城事`
   root: false,                   // true＝tab 根（back 不會離開 app）
@@ -105,13 +115,13 @@ render／mount 丟例外時畫面換成錯誤卡（`[data-app-error]`）、錯�
 ```js
 APP.nav.go('/place/glass-kiln');            // push
 APP.nav.go('/ride', { replace: true });
-APP.nav.back('/explore');                   // 有歷史就 history.back()，沒有就 go(fallback, {replace:true})
+APP.nav.back('/ride?mode=today');           // 有歷史就 history.back()，沒有就 go(fallback, {replace:true})
 APP.nav.current();                          // { path:'/place/glass-kiln', pattern:'/place/:id', params:{id}, query, name, tab }
 APP.nav.go('/trip', { dir:'back' });        // dir 可覆寫轉場：'push'|'back'|'tab'|'none'
 ```
 前進／返回靠 `history.state.i`（app 自己蓋的序號）判斷；`nav.back` 在序號 > 0 時才 `history.back()`，否則 replace 到 fallback。
-`nav.tab(id)`：已經在該 tab 時回到該 tab 的根，否則回到 `tabPaths[id]`。除錯用：`APP.resolve(path)`、`APP.routes()`、`APP.PLANNED`。
-連結寫 `<a href="#/place/glass-kiln">` 就會走 router；返回鍵寫 `<a href="#" data-back="/explore">`（router 攔 data-back）。
+`nav.tab(id)` 只接受 `ride` 或 `album`：已在該 tab 時回到根頁（在 `/ride?mode=today` 重按叫車會保留今天模式），否則回到 `tabPaths[id]`。除錯用：`APP.resolve(path)`、`APP.routes()`、`APP.PLANNED`。
+連結寫 `<a href="#/place/glass-kiln">` 就會走 router；返回鍵寫 `<a href="#" data-back="/ride?mode=today">`（router 攔 data-back）。舊 `#/explore` 與 `#/explore/map` 只作相容入口，replace 到今天模式。
 tab 切換：`APP.nav.tab('album')` 記住各 tab 最後停的 path（切回來還在同一頁）。
 頁內狀態（例：收藏的 pill）要寫回網址時用 `APP.nav.replaceQuery('tab=journal')`：只換目前這頁的 query，不重畫、不新增歷史，同步 `current()` 與 `tabPaths`（切 tab 再回來停在同一段）。不要自己呼叫 `history.replaceState`，router 看不到。
 mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initSheet／initPan`）由 router 記下，離開該頁時自動移除。
@@ -128,7 +138,7 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   APP.store.reset()                   // 只清 app 狀態；STATE.reset() 另外呼叫
   APP.store.all                       // 整個物件（唯讀用）；APP.store.reload() 重新讀 localStorage
   ```
-  `tabPaths` 由 router 安靜寫入（不 emit）。
+  `tabPaths` 由 router 安靜寫入（不 emit）；舊 `explore` 記錄只在沒有有效 `ride` 記錄時遷到今天模式。
   鍵與型別（預設值在 app.js 的 `fresh()`）：
   | 鍵 | 型別 | 說明 |
   |---|---|---|
@@ -137,9 +147,9 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   | `trip` | `{ placeId, phase:'matching'|'riding'|'done', startedAt, rated:bool, km }` 或 null | 進行中的叫車 |
   | `pushes` | `[{ when:'am'|'pm', at:ISO }]` | 今天發過的推播（最多兩則） |
   | `arrivedDemo` | string 或 null | demo「模擬抵達」暫存的 placeId |
-  | `tabPaths` | `{ ride, explore, album }` | 各 tab 最後停的 path（由 nav 維護） |
+  | `tabPaths` | `{ ride, album }` | 各 tab 最後停的 path（由 nav 維護） |
 - 事件：`APP.on('store:change'|'state:change'|'route:change', fn)`／`APP.emit(...)`。
-  任何寫 `STATE.*` 的地方請跟著 `APP.emit('state:change')`，tab bar 的小紅點與統計才會更新。
+  任何寫 `STATE.*` 的地方請跟著 `APP.emit('state:change')`，讓畫面統計更新。
 
 ### 3.4 格式與公式（不准手寫數字）
 ```js
@@ -170,8 +180,7 @@ APP.ui.share(opt)                                 // SHELL.shareSheet；第一�
 APP.ui.push({ when:'am'|'pm' })                   // 推播浮層（system.js 實作並掛到 APP.ui.push）
 APP.ui.setStatus(tone)                            // 切狀態列字色
 ```
-tab bar：`<nav class="tabbar" id="tabbar">` 沿用 chengshi.css 樣式與 `TABSETS.default` 的圖示；
-探索 tab 在「今天的地方還沒收」時有 `.tabbar__dot`（不是未讀數字）。
+tab bar：`<nav class="tabbar" id="tabbar">` 沿用 chengshi.css 樣式，只有「叫車」（`tabRide`）與「收藏」（`tabAlbum`）；沒有探索提示點。
 
 ### 3.6 地圖
 ```js
@@ -179,9 +188,9 @@ const m = APP.map.mount(containerEl, {
   style: 'paper',            // hsmap preset；叫車首頁 paper、足跡 fog、夜間回顧可 navy
   center: 'station' | [lat, lon] | placeId,
   spanM: 1800,
-  spots: MOCK.SPOTS | false, // 要疊哪些景點；叫車首頁 ≤ 4、探索地圖 ≤ 10（超過就 throw）
-  max: 4,
-  compact: true,             // .spot--compact（叫車首頁用）
+  spots: MOCK.SPOTS | false, // 要疊哪些景點；/ride 的叫車模式用 false，今天模式最多 10 個（超過就 throw）
+  max: 10,
+  compact: true,             // .spot--compact（需要較小景點標記時用）
   fog: false | { seen:[...], fade:[...] },
   pan: true,                 // 加 data-pan 並 INTERACT.initPan
   onSpot(spot, el) {}        // 點景點（小卡由呼叫端畫；可用 SHELL.bindPeek）
@@ -203,7 +212,7 @@ max 預設 10；`spots.length > max` 直接 throw。
 
 ```
 html[data-app-ready="1"][data-view-ready="1"]
-body[data-view="place"][data-tab="explore"][data-route="/place/:id"]
+body[data-view="place"][data-tab="ride"][data-route="/place/:id"]
 #app > .stage > .device > .device__screen > #view > main.view[data-view]
                                   .device > nav.tabbar#tabbar（tab 為 null 時 hidden）
 #demo-panel（.stage 內、.device 的旁邊；桌機才顯示；內容空的時候 :empty 隱藏）
@@ -225,7 +234,7 @@ demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-pane
 - 數字不手寫：統計、車資、時間、距離、覆蓋率全從 `STATE／MOCK／APP.fmt` 算。
 - 不加 CDN、不加 webfont、不連網（sw.js 只快取同源檔）。
 - 隱私分軌：日誌／心情／照片只有你（沒有分享鍵）；明信片／獎章／週回顧／長輩圖才可分享。
-- 推播一天最多兩則；叫車地圖 ≤ 4 景點；探索地圖 ≤ 10；抵達驗證 80 公尺內停 1 分鐘（文案用）。
+- 推播一天最多兩則；`/ride` 叫車模式不疊景點、今天模式最多 10 個；抵達驗證 80 公尺內停 1 分鐘（文案用）。
 - 用 `element.onclick`，不用 `addEventListener` 綁按鈕（測試的攔截器裝在後面）。
 - 每個 view 檔頭用中文註解寫：回答什麼／從哪張原型來／刻意沒有的東西。
 
@@ -272,7 +281,7 @@ T.spec('ride', function (t) {
 1. 該區塊每個 route 都能 render（`await app.go(path)` 不丟例外、`main.view[data-view]` 存在、`t.noDeadButtons`、`t.noBannedWords`）。
 2. 每個主要互動改到狀態（例：collect 之後 `STATE.count()` +1；set-dropoff 之後 `store.dropoff.id` 對）。
 3. 畫面上的數字跟公式一致（車資、分鐘、距離、收集 n/m、點數＝明細相加）。
-4. 可按數：`/explore` 與 `/album` 兩個索引頁 ≤ 12，其餘畫面 ≤ 10（`t.countTappables(app)`；地圖上的景點與 tab bar 不算；清單超過就收成「更多」或「全部」）。
+4. 可按數：`/ride` 的叫車／今天模式與 `/album` 索引頁 ≤ 12，其餘畫面 ≤ 10（`t.countTappables(app)`；地圖上的景點與 tab bar 不算；清單超過就收成「更多」或「全部」）。
 5. 返回鍵回到正確的來處（從 A 進 B 再 back，回 A）。
 
 ## 7. 誰動哪些檔（並行時不要踩到別人）
@@ -289,7 +298,8 @@ T.spec('ride', function (t) {
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
 - `APP.explore.collect(placeId, { by, note, km })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）
-- `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/explore`（早）或 `#/lookback`（晚））
+- `APP.explore.renderToday()`／`APP.explore.mountToday(root)`：產生今天模式內容與綁定互動；`ride.js` 把內容放進共用地圖 sheet。
+- `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=today`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用）
 
 ## 8. 路由總表
@@ -298,7 +308,8 @@ T.spec('ride', function (t) {
 |---|---|---|---|---|
 | `/` | 導到 `/ride`（第一次開先 `/welcome`） | — | — | core |
 | `/welcome` | onboarding 三張 | null | 新 | system |
-| `/ride` | 叫車首頁（E＋真實地圖＋sheet） | ride | `variant-e-home.html`、`concept-map-home.html`、`variant-k-ride.html` | ride |
+| `/ride` | 共用地圖的叫車模式（上車點＋sheet） | ride | `variant-e-home.html`、`concept-map-home.html`、`variant-k-ride.html` | ride |
+| `/ride?mode=today` | 同一地圖的今天模式（最多 10 個地方＋可展開內容） | ride | `variant-x2-explore.html`、`explore.html`、`variant-l1-explore.html` | ride＋explore |
 | `/dropoff` | 設定下車地點（清單＋搜尋） | ride | 新（參考 `pickup.html` 版型） | ride |
 | `/pickup` | 設定上車地點 | ride | `pickup.html` | ride |
 | `/trip` | 配對中→行程中（「這條路上」卡） | null | `ride.html` | ride |
@@ -307,13 +318,12 @@ T.spec('ride', function (t) {
 | `/points` | 和泰 Points（總數＝明細相加） | ride | `points.html` | ride |
 | `/notify` | 通知中心 | ride | `notify.html` | ride |
 | `/trips` | 行程紀錄 | ride | `trips.html` | ride |
-| `/explore` | 探索（X2 缺口導向＋今天的地方） | explore | `variant-x2-explore.html`、`explore.html`、`variant-l1-explore.html` | explore |
-| `/explore/map` | 探索地圖（真實地圖 ≤ 10 景點、小卡） | explore | `map.html`、`concept-map-explore.html` | explore |
-| `/place/:id` | 地方詳情（K1） | explore | `variant-k1-place.html`、`place.html` | explore |
+| `/explore`、`/explore/map` | 舊連結；replace 到 `/ride?mode=today`，不註冊獨立 view | — | — | core |
+| `/place/:id` | 地方詳情（K1） | ride | `variant-k1-place.html`、`place.html` | explore |
 | `/going/:id` | 前往中（走路） | null | `going.html` | explore |
 | `/unlock/:id` | 抵達解鎖三幕（`?ride=1` 金框限定版） | null | `unlock.html` | explore |
-| `/routes` | 路線列表 | explore | `routes.html` | explore |
-| `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
+| `/routes` | 路線列表 | ride | `routes.html` | explore |
+| `/route/:id` | 路線詳情（斷點處可設為下車點） | ride | `route.html`、`variant-k4-route.html` | explore |
 | `/album` | 收藏（S3 書架＋pill：明信片／獎章 X4／日誌／這一週） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
 | `/postcard/:id` | 明信片詳情（翻面） | album | `postcard.html` | album |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
@@ -338,4 +348,4 @@ T.spec('ride', function (t) {
 
 1. `python app/tests/run.py` 全綠。
 2. `python prototype/tools/verify-quiet.py` 八段 PASS，六條承諾數字與基準相同（app 不動 prototype，所以理論上不可能變；變了就是有人碰了）。
-3. 手動：桌機 Chrome 開 `app/index.html`，走完 A（推播早→探索→地方→前往→解鎖→收藏）、B（路線→內灣→設為下車點→叫車→行程→評分→限定版→點數）、C（推播晚→回顧→日誌→週回顧→長輩圖）。
+3. 手動：桌機 Chrome 開 `app/index.html`，走完 A（推播早→今天模式→地方→前往→解鎖→收藏）、B（今天模式展開 sheet→路線→內灣→設為下車點→叫車→行程→評分→限定版→點數）、C（推播晚→回顧→日誌→週回顧→長輩圖）。
