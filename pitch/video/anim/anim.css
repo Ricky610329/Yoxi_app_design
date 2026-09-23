@@ -1,0 +1,7 @@
+/* 舞台外框與開發 HUD。場景不用 CSS 做動畫（所有動作都在 JS 裡是 t 的函數）。 */
+html, body { margin: 0; background: var(--yoxi-navy); }
+body { width: 1920px; height: 1080px; overflow: hidden; }
+#stage { display: block; width: 1920px; height: 1080px; }
+#mapHolder { position: absolute; left: -99999px; top: 0; width: 1920px; height: 1080px; }
+#hud { position: fixed; left: 8px; top: 8px; padding: 4px 8px; background: rgba(6, 32, 64, .8); color: #fff;
+       font: 14px/1.4 monospace; z-index: 9; pointer-events: none; }

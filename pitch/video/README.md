@@ -1,73 +1,99 @@
 # 方案說明影片（初賽）
 
 初賽第二件交件：**3 分鐘以內**、YouTube「不公開」、標題 `yoxi_城事_2026 和泰 AI 黑客松`、連結到 11/21 都要看得到（`../docs/competition.md` §5.2）。
-這個資料夾有兩樣東西：一支**草稿影片**（截圖＋標題卡＋Windows TTS，拿來對長度、順序、字幕），和做**正式版**需要的腳本、分鏡、字幕檔。
+影片是一支**向量動畫**：`anim/index.html` 在 1920×1080 的 SVG 上把每一格畫成「時間 t 的純函數」，`build-video.py` 用 headless Chrome 逐格截圖、合上旁白，編成 MP4。
+**影片畫面本身就是最終畫面**；正式版只把 Windows TTS 換成真人配音，不用另外錄螢幕或剪接。
 
 | 檔 | 是什麼 | 誰寫 |
 |---|---|---|
-| `shots.json` | 鏡頭表的機器真相：每格的段落、畫面、旁白、字幕、正式版怎麼錄、算式 | 人 |
-| `script.md` | 旁白逐字稿＋分鏡表（人看的真相）；`BEGIN:shots`～`END:shots` 之間由腳本依 TTS 實測長度重寫 | 人＋腳本 |
-| `storyboard.html` | 分鏡板，`file://` 直接開；顏色讀 `prototype/css/tokens.css` | 腳本 |
-| `build-video.py` | 產草稿影片、分鏡表、分鏡板、字幕檔 | 人 |
-| `shoot-extra.py` | 影片要、但 `app/assets/shots/` 沒有的 4 個狀態，另外拍到 `assets/`（不動 `app/`） | 人 |
-| `assets/*.png` | 那 4 張：`ride-dropoff-neiwan`（下車點＝內灣 $691）、`route-brk`（捲到「腳到不了的一段」）、`explore-why`（推薦依據展開）、`points-after`（搭車後的點數明細） | 腳本 |
-| `out/draft.mp4` | 草稿影片 1920×1080、30 fps、H.264＋AAC | 腳本 |
-| `out/draft.srt` | 旁白字幕（每句一條） | 腳本 |
-| `out/frames/*.png` | 抽出來檢查的畫格 | 手動 |
-| `out/build/` | 中間檔（每格 PNG、wav、短片）；可以整個刪 | 腳本 |
+| `shots.json` | 鏡頭表的機器真相：每格的段落、場景名、深淺色、旁白、字幕、畫面描述、hold、算式 | 人 |
+| `anim/` | 向量動畫舞台：`index.html`（舞台）、`lib.js`（共用零件、地圖層、字幕條、交叉淡接）、`scenes-a.js`／`scenes-b.js`（13 個場景）、`CONTRACT.md`（契約） | 人 |
+| `anim/timeline.js` | `window.TIMELINE`：每格起訖秒數、字幕時間、公式算好的數字（車資、分鐘、點數、路線圖） | 腳本（不要手改） |
+| `build-video.py` | 管線：檢查 → TTS／配音 → timeline.js → 逐格截圖 → ffmpeg；另寫分鏡表、分鏡板、字幕檔 | 人 |
+| `script.md` | 旁白逐字稿＋分鏡表（人看的真相）；`BEGIN:shots`～`END:shots` 之間由腳本重寫 | 人＋腳本 |
+| `storyboard.html` | 分鏡板，`file://` 直接開；縮圖是動畫在每格 55% 處的畫面 | 腳本 |
+| `out/draft.mp4` | 影片 1920×1080、30 fps、H.264（CRF 18）＋AAC 160k 48 kHz 立體聲 | 腳本 |
+| `out/draft.srt` | 旁白字幕（每句一條，時間＝timeline 的字幕時間） | 腳本 |
+| `out/board/NN-<id>.png` | 分鏡縮圖 480×270 | 腳本 |
+| `out/frames/tNNN.N.png` | `--frame` 截的單張 1920×1080 | 腳本 |
+| `out/build/` | 中間檔（TTS wav 快取、音軌、ffmpeg 記錄）；可以整個刪 | 腳本 |
+| `out/preview.mp4` | `--only` 的預覽（不進版控） | 腳本 |
 
-## 草稿影片怎麼重產
+## 怎麼重產
 
-需要：Python 3＋Pillow、ffmpeg（`PATH` 上的，或 WinGet 的 Gyan.FFmpeg.Essentials）、Windows 內建的 `Microsoft Hanhan Desktop` 語音（zh-TW）。
+需要：Python 3＋Pillow（只用來查缺字、縮分鏡圖）、Chrome 或 Edge（路徑清單沿用 `app/tools/shoot-app.py`）、ffmpeg（`PATH` 上的，或 WinGet 的 Gyan.FFmpeg.Essentials）、Windows 內建的 `Microsoft Hanhan Desktop` 語音（zh-TW）、字型 `C:/Windows/Fonts/NotoSansTC-VF.ttf`。
+**不需要**任何 pip 套件：跟 Chrome 講話用的是腳本裡用標準庫寫的最小 WebSocket 用戶端。
 
 ```bash
-python pitch/video/shoot-extra.py                 # 只有 app 改了畫面才要重拍（用 headless Chrome，不關任何瀏覽器）
-python pitch/video/build-video.py                 # 全部：TTS → 畫面 → 短片 → out/draft.mp4（約 30 秒）
-python pitch/video/build-video.py --no-tts        # 不跑 TTS，靜音＋依字數估秒數
-python pitch/video/build-video.py --only 5,9      # 只產第 5、9 格 → out/preview.mp4（draft.mp4 不動）
-python pitch/video/build-video.py --docs          # 只重寫 script.md 分鏡表、storyboard.html、draft.srt
-python pitch/video/build-video.py --rate 1        # TTS 語速（預設 2；越大越快）
+python pitch/video/build-video.py                   # 全部：TTS → timeline.js → 逐格截圖 → out/draft.mp4＋分鏡縮圖
+python pitch/video/build-video.py --docs            # 只寫 timeline.js／script.md／storyboard.html／draft.srt，不開 Chrome（幾秒）
+python pitch/video/build-video.py --frame 12.5,40   # 只截那幾秒 → out/frames/t012.5.png、t040.0.png
+python pitch/video/build-video.py --only 5 --fps 10 # 只算第 5 格、10 fps → out/preview.mp4（draft.mp4 不動）
+python pitch/video/build-video.py --board           # 只重截分鏡縮圖
+python pitch/video/build-video.py --check           # 每格同一個 t 截兩次比 bytes，證明畫面是 t 的純函數
 ```
 
-改稿的流程：改 `shots.json` → 跑 `build-video.py` → 看 `script.md` 的總長與段落小計、開 `storyboard.html`。
-腳本會先檢查，不過就 exit 1：禁用詞（任務／完成／達成／挑戰／每日）、每句旁白 ≤ 25 字、旁白唸的車資／車程／點數／走路分鐘要等於 app 公式（`calc` 欄位）、畫面上的字字型都有（`≈`、`⌊` 這類 msjh 沒有的字會畫成方框）、總長 ≤ 180 秒。
-每格秒數＝0.25 秒前導＋TTS 實際長度＋0.65 秒尾巴（＋`hold`，字多的卡片多停一下）。wav 依「語音＋語速＋文字」雜湊快取，文字沒變不重念。
+| 參數 | 作用 |
+|---|---|
+| `--no-tts` | 不跑 TTS，靜音＋依字數估秒數（4.6 字／秒）；排版迭代用。**會把 timeline.js、script.md 改成估計的秒數**，交件前要不帶它再跑一次 |
+| `--rate N` | TTS 語速（-10～10，預設 2） |
+| `--only 3,5-7` | 只算那些格，接成 `out/preview.mp4`；音軌也只有那些格 |
+| `--fps N` | 幀率（預設 30；預覽用 5–10） |
+| `--frame 12.5,40` | 只截那幾秒的 1920×1080 PNG |
+| `--docs` | 只寫文件，不開 Chrome |
+| `--board` | 只重截 `out/board/`（可配 `--only`） |
+| `--check` | 每格中間那一秒：截一次 → 跳到別處（含倒退）→ 跳回來再截，bytes 必須相同 |
+| `--audio-dir DIR` | 正式版真人配音（見下） |
+| `--jpeg` | 截圖改用 JPEG q95（見「速度」） |
+
+改稿的流程：改 `shots.json` → `build-video.py --docs` 看 `script.md` 的總長與段落小計 → `--frame`／`--only` 看畫面 → 全部重產。
+開發時也可以直接用 Chrome 開 `anim/index.html?t=12.5`、`?shot=5`、`?play=1&hud=1`（見 `anim/CONTRACT.md`）。
+
+### 腳本會檢查什麼（不過就 exit 1）
+
+- 禁用詞（任務／完成／達成／挑戰／每日）：掃旁白、字幕（caption）、段落名，以及路線圖名稱等畫面會出現的 calc 字串。
+- 每句旁白 ≤ 25 字（去標點算）。
+- `calc` 的 `say_km／say_fare／say_min／say_pts／say_walk`：旁白要唸出 app 公式算出的中文數字（車資 `75 + 22 × km`、車程 `3 + 2.2 × km`、走路 `m ÷ 75`、搭車回饋 `⌊車資 ÷ 20⌋`、走不到 +50、走路門檻 3 km）。
+- Noto Sans TC 缺字（會畫成方框）。
+- `scene` 名稱要在 `anim/scenes-a.js`＋`scenes-b.js` 以 `ANIM.scene('名字'` 註冊（regex 掃；動態註冊的檔只確認名字字串在，會印「注意」）。
+- 總長 ≤ 180 秒；Chrome 裡 `data-error` 或任何 JS 例外；成片 ffprobe 長度 ≤ 180 秒。
+
+### 時間怎麼算
+
+每格秒數＝0.25 秒前導＋旁白長度＋0.65 秒尾巴＋`hold`；下一格在這格結束時開始，0.5 秒交叉淡接（由 `lib.js` 做）。
+旁白 wav 依「語音＋語速＋文字」雜湊快取在 `out/build/`，文字沒變不重念。字幕依字數把旁白長度分給每一句。
+畫面上的數字全部在 `timeline.js` 的 `calc`：內灣 28.0 km → $691、65 分、34 點、+50；玻璃窯 900 m → 走路 12 分；路線圖五步的名稱讀 `prototype/js/catalog.js` 的 ROADMAP，季度照 `pitch/docs/roadmap.md`。
+
+### 速度
+
+截圖用 DevTools 協定：`ANIM.seek(t)` → `Page.captureScreenshot`（PNG、`optimizeForSpeed`）→ 直接寫進 ffmpeg 的 stdin（`image2pipe`），**不落地**。
+實測（這台機器，Chrome headless，x264 同時編碼）：
+
+- stub 場景：約 19–20 幀／秒。
+- 壓力測試（真實地圖三組 set＋霧洞＋三張明信片＋大字，每格都有交叉淡接）：PNG 約 13 幀／秒、JPEG q95 約 16 幀／秒。
+- **30 fps 全片（約 128 秒 ≈ 3,850 幀）估 4–5 分鐘**（PNG）；`--fps 10` 的預覽不到 1 分半。
+
+PNG 是無損的，預設用它；JPEG 只快兩成左右，而且紅字邊緣會有極輕微的壓縮痕跡，所以只留 `--jpeg` 當選項。
 
 ## 正式版怎麼做
 
-草稿只證明「長度、順序、字」可行。正式版把截圖換成**真實操作的錄影**、TTS 換成**真人配音**。
+畫面不用重做；只把旁白換成真人配音，重編一次。
 
-### 1. 錄畫面
+1. **錄音**：照 `script.md`「旁白全文」逐段錄，**一格一個檔**，檔名是 `NN-<id>.wav`（例如 `01-s01-quiet.wav`，清單上已經寫好檔名），也可以是 `.m4a`／`.mp3`。手機錄音 App 或 Audacity 都可以，48 kHz、單聲道即可。安靜房間、離嘴一個拳頭；檔頭檔尾留白不要超過半秒（腳本不會自動切靜音，留白會算進秒數）。
+   - 數字照中文讀法：「二十八公里」「十二週」。不要唸成英文或阿拉伯數字讀法。
+2. **重編**：把檔案放在同一個資料夾，跑
 
-- 開 `app/index.html`（Chrome，拖進去即可）。先在右側 demo 工具按「**重設 demo**」，再略過三張介紹；數字才會跟稿子一致（點數起點以重設後為準）。
-- 視窗全螢幕（F11）、1920×1080；只錄手機外框那一塊或整個畫面再裁，後製放大到跟草稿一樣（手機約 460×996，左側）。
-- 錄影工具擇一：
-  - **OBS Studio**：來源用「視窗擷取」選 Chrome，畫布 1920×1080、30 fps、輸出 MP4（x264、CRF 18–20）。每條流程錄一段，失手就重錄那段。
-  - **Windows 遊戲列**（Win＋G → 擷取 → 錄製，或 Win＋Alt＋R）：只能錄整個視窗，事後裁切。
-- 照 `script.md` 分鏡表「正式版怎麼錄」一欄逐格按；`data-act` 是按鈕的屬性名，找不到可以按 F12 查。黃底四格（#5、#6、#8、#15）草稿是靜態圖，**正式版一定要錄到動作**：設為下車點的點擊、配對中→行程中、兩次三幕解鎖。
-- 三幕解鎖約 5 秒，第一次讓它跑完；配對約 1.2 秒，不要剪掉（它證明叫車流程沒被改）。
-- 抵達是「模擬抵達」，畫面要疊一行小字「模擬抵達」。
+   ```bash
+   python pitch/video/build-video.py --audio-dir D:/yoxi-voice
+   ```
 
-### 2. 配音
+   腳本用 ffprobe 量每個檔的長度，重算每格秒數、字幕時間、`timeline.js`，動畫會自動跟著伸縮（場景是「長度無關」寫的）。缺的格退回 TTS 並印警告。真人通常比 TTS 快，總長會變短。
+3. **檢查**：開 `out/draft.mp4` 從頭看一次；`--check` 再跑一次。
 
-- 照 `script.md`「旁白全文」逐段錄，一格一個檔（手機錄音 App 或 Audacity，48 kHz、單聲道即可）。安靜房間、離嘴一個拳頭。
-- 數字照中文讀法：「六百九十一元」「六十五分鐘」「三十四點」「五十點」。不要唸成「691 塊」。
-- 真人比 TTS 快，總長大概落在 2:30–2:40；有餘裕可以讓 #5（設為下車點）與 #9（點數）的畫面多停一秒。
+### 字幕檔
 
-### 3. 剪接
-
-- 順序完全照 `script.md` 分鏡表。剪接軟體不限（Clipchamp 是 Windows 內建、DaVinci Resolve 免費）。
-- 標題卡（#1、#2、#21、#22、#23）直接用草稿的畫格：`out/build/NN-*.png` 就是 1920×1080 的成品圖。
-- 右側的字幕與算式可沿用草稿版面，或只留畫面＋底部字幕。
-- 每張有明信片的畫面，畫面裡已經有「AI 生成示意」標；結尾卡寫了「明信片與插圖為 AI 生成示意；地圖 © OpenStreetMap 貢獻者」，不要剪掉。
-- 輸出：1920×1080、30 fps、H.264、AAC 160 kbps 以上。
-
-### 4. 字幕檔
-
-- `out/draft.srt` 是依 TTS 時間產的，正式版配音時間不同，要重對：
-  - 最快：YouTube Studio → 字幕 → 新增 → 「上傳檔案（含時間）」上傳 `draft.srt`，再在編輯器裡拖時間。
-  - 或：上傳「沒有時間的逐字稿」＝ `script.md` 的「旁白全文」，讓 YouTube 自動對時間，再人工檢查。
-- 字幕語言選「中文（台灣）」。
+`out/draft.srt` 的時間跟著這次的旁白音檔走（用 `--audio-dir` 重跑，字幕時間就是真人配音的），YouTube Studio → 字幕 → 新增 → 「上傳檔案（含時間）」上傳 `draft.srt`，語言選「中文（台灣）」，再在編輯器裡把句子拖準。
+字幕條已經燒在畫面裡（`lib.js` 畫的），SRT 是給關掉畫面字幕、或需要 CC 的人看的；兩者文字相同。
 
 ## YouTube 上傳設定
 
@@ -76,7 +102,7 @@ python pitch/video/build-video.py --rate 1        # TTS 語速（預設 2；越�
 | 標題 | `yoxi_城事_2026 和泰 AI 黑客松`（一字不改，官方規定格式「出題企業_作品名稱_2026 和泰 AI 黑客松」） |
 | 瀏覽權限 | **不公開**（Unlisted）。不要選「私人」，評審會看不到 |
 | 觀眾 | 「否，這不是為兒童打造的內容」 |
-| 說明欄 | 一句產品說明＋GitHub 連結＋「畫面為原型；明信片與插圖為 AI 生成示意；地圖資料 © OpenStreetMap 貢獻者（ODbL）」 |
+| 說明欄 | 一句產品說明＋GitHub 連結＋「畫面為向量示意；明信片為 AI 生成示意；地圖資料 © OpenStreetMap 貢獻者（ODbL）」 |
 | 字幕 | 上傳 SRT（見上） |
 | 留言 | 可關閉 |
 | 有效期 | 連結要到 **2026-11-21（決賽）** 都能看；這段期間不要刪、不要改成私人、不要重新上傳換網址 |
@@ -85,21 +111,21 @@ python pitch/video/build-video.py --rate 1        # TTS 語速（預設 2；越�
 
 ## 上傳前檢查清單
 
-- [ ] 長度 ≤ 3:00（YouTube 顯示的長度，不是剪接軟體的）；目標 2:40–2:50
+- [ ] 長度 ≤ 3:00（YouTube 顯示的長度，不是本機播放器的）
 - [ ] 標題完全等於 `yoxi_城事_2026 和泰 AI 黑客松`；權限是「不公開」
-- [ ] 旁白與字幕沒有禁用詞：任務／完成／達成／挑戰／每日（`build-video.py` 會掃 shots.json；正式版字幕若有改，手動再掃一次）
-- [ ] 畫面裡的 app 字：#7 行程結束頁的頁首是 yoxi 既有介面的「行程完成」四個字（app 的 `ride.js` 標題），不是城事的文案；若要完全避開，錄到評分後把頁首裁掉或用字幕條蓋住
-- [ ] 數字與 app 一致：內灣 28.0 km → $691、65 分；搭車回饋 34 點；抵達解鎖 +50；玻璃窯 900 m → 走路 12 分鐘。錄影前按過「重設 demo」
-- [ ] 旁白說「承諾量在原型上」，沒有說「app 全部量過」；「設為下車點」沒有被說成 AI
-- [ ] 有明信片／插圖的畫面看得到「AI 生成示意」；結尾卡有 AI 生成示意與 OpenStreetMap 署名
-- [ ] 模擬的東西有標：模擬抵達、推播是 app 內浮層
-- [ ] 若用了 `prototype/assets/photos/` 的實景照片，畫面或說明欄要列作者與授權（`credits.js`）；目前草稿沒有用
+- [ ] 旁白與字幕沒有禁用詞：任務／完成／達成／挑戰／每日（`build-video.py` 會掃 shots.json；字幕若在 YouTube 上改過，手動再掃一次）
+- [ ] 數字與 app 一致：內灣 28.0 km → $691、65 分；搭車回饋 34 點；抵達解鎖 +50；玻璃窯 900 m → 走路 12 分鐘；獎章寫「收集 4/8」；新竹試辦 12 週
+- [ ] 「設為下車點」沒有被說成 AI；沒有連續天數、倒數、限量、排名、未讀數字
+- [ ] 明信片畫面看得到「AI 生成示意」
+- [ ] 地圖畫面左下有「地圖 © OpenStreetMap 貢獻者」署名（`lib.js` 在字幕條左邊的署名列自動畫）
+- [ ] 結尾卡有署名：「畫面為向量示意 · 明信片為 AI 生成示意 · 地圖資料 © OpenStreetMap 貢獻者（ODbL）」
+- [ ] 若用了 `prototype/assets/photos/` 的實景照片，畫面或說明欄要列作者與授權（`credits.js`）；目前沒有用
 - [ ] 無痕視窗開得到、有聲音、字幕對得上
 - [ ] 連結貼進報名表，並記在 `pitch/README.md` 交件清單
 
 ## 已知限制
 
-- 草稿是 Windows TTS（Hanhan），「yoxi」「Points」「app」這類英文字的念法不自然，只拿來對長度。
-- 截圖上的問候語與日期跟著拍攝當天走（例如「午安」「9月23日」），重拍會變。
-- 草稿沒有推近（zoompan）效果：放大會讓畫面上的小字每格重新取樣而閃，靜態比較清楚；正式版用錄影就有動態。
-- 1080 高放不下 2 倍的手機（844 × 2 = 1688），所以手機是 1.18 倍（460×996）。
+- 草稿是 Windows TTS（Hanhan），「yoxi」「AI」「Points」「app」這類英文字的念法不自然，只拿來對長度；正式版用真人配音。
+- 沒有配樂。正式版可以加無版權配樂（例如 YouTube 音效庫），音量壓在旁白之下（約 -20 dB 以下），用 ffmpeg 或剪接軟體混進 `draft.mp4` 的音軌即可。
+- `--no-tts` 會把 `timeline.js`／`script.md`／`storyboard.html` 改成估計秒數；交件前一定要不帶 `--no-tts` 重產。
+- 成片長度以幀為單位截斷，會比 `timeline.js` 的 `total` 短不到一幀（30 fps 時 < 0.034 秒）。
