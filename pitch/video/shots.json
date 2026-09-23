@@ -1,0 +1,241 @@
+{
+  "_readme": "影片的鏡頭表（機器讀的真相）。build-video.py 讀它產生草稿影片，同時重寫 script.md 的分鏡表、storyboard.html、out/draft.srt。改旁白就改這裡，然後重跑 build-video.py。image 是相對 repo 根目錄的路徑；calc 讓腳本用 app 的公式算數字並檢查旁白唸的中文數字對不對。",
+  "title": "yoxi_城事_2026 和泰 AI 黑客松",
+  "shots": [
+    {
+      "id": "open-pain",
+      "section": "開場",
+      "kind": "card",
+      "card": {"eyebrow": "yoxi 的題目", "title": "叫車 app，只有要出門時才被打開", "lines": ["不搭車的日子，yoxi 沒有被打開的理由"]},
+      "narration": ["叫車 app，只有要出門的那一刻才被打開。", "不搭車的日子，yoxi 就安靜了。"],
+      "caption": "叫車 app 只在有需求時被打開",
+      "record": "標題卡（剪接軟體或本腳本產生）",
+      "note": "站在 yoxi 的角度講痛點，不講「我們相信」。"
+    },
+    {
+      "id": "open-answer",
+      "section": "開場",
+      "kind": "card",
+      "card": {"eyebrow": "yoxi 城事", "title": "城事負責想去，yoxi 負責到得了", "lines": ["不搭車也會打開的城市探索與收藏", "發現一個地方 → 叫車去那裡 → 點數回流和泰 Points"]},
+      "narration": ["yoxi 城事，讓不搭車的日子也有理由打開。", "城事負責想去，yoxi 負責到得了。"],
+      "caption": "城事負責想去，yoxi 負責到得了",
+      "record": "標題卡",
+      "note": "產品一句話照 BRIEF §1，不改。"
+    },
+    {
+      "id": "b-routes",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "app/assets/shots/routes.png",
+      "narration": ["先看怎麼變成訂單。", "探索裡有這個月的路線，例如內灣線。"],
+      "caption": "探索 → 這個月的路線",
+      "record": "/explore → data-act=open-routes → /routes",
+      "note": "正式版錄製前先按 demo 工具「重設 demo」。"
+    },
+    {
+      "id": "b-break",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "pitch/video/assets/route-brk.png",
+      "narration": ["走得到的幾站，車一個字都不提。", "內灣老街二十八公里，是腳到不了的一段。"],
+      "caption": "腳到不了的一段：內灣老街 28 公里",
+      "record": "/route/rail，捲到「腳到不了的一段」",
+      "note": "門檻 3 km：超過才建議叫車。",
+      "calc": {"km": 28.0, "say_km": true}
+    },
+    {
+      "id": "b-setdrop",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "pitch/video/assets/ride-dropoff-neiwan.png",
+      "narration": ["按一下設為下車點，回到叫車首頁。", "下車點填好，約六百九十一元、六十五分鐘。"],
+      "caption": "一鍵設為下車點：約 $691 · 65 分",
+      "record": "需錄製：/route/rail 按 data-act=set-dropoff → 自動回 /ride（草稿用靜態截圖代替點擊的瞬間）",
+      "note": "車資與車程是公式，換成 yoxi 真實估價就能接。",
+      "calc": {"km": 28.0, "say_fare": true, "say_min": true}
+    },
+    {
+      "id": "b-riding",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "app/assets/shots/trip-riding.png",
+      "narration": ["車上的六十五分鐘，也是內容時間。", "這條路上，講內灣線為什麼為木材而蓋。"],
+      "caption": "車上的 65 分鐘也是內容時間",
+      "record": "需錄製：/ride 按 data-act=call-ride → 配對約 1.2 秒 → /trip 行程中，按 data-act=toggle-story",
+      "note": "配對畫面約 1.2 秒，正式版保留。",
+      "calc": {"km": 28.0, "say_min": true}
+    },
+    {
+      "id": "b-rated",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "app/assets/shots/trip-done-rated.png",
+      "narration": ["抵達後先評分，限定版才出現。", "yoxi 要的資料排前面，獎勵排後面。"],
+      "caption": "先評分，限定版才出現",
+      "record": "/trip 按 data-act=arrive（模擬抵達）→ /trip/done 按 data-act=rate 五星",
+      "note": "截圖頁首是 yoxi 既有的「行程完成」字樣（見 README 檢查清單）。"
+    },
+    {
+      "id": "b-unlock",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "app/assets/shots/unlock-ride.png",
+      "narration": ["金框限定版，只有搭車才拿得到。", "它是去遠方的理由，不是折價券。"],
+      "caption": "金框限定版：只給走不到的地方",
+      "record": "需錄製：/trip/done 點金色橫幅 → /unlock/neiwan?ride=1 三幕解鎖（約 5 秒）→ data-act=collect",
+      "note": "明信片是 AI 生成示意，畫面左上有標。"
+    },
+    {
+      "id": "b-points",
+      "section": "B 搭車的轉換",
+      "kind": "shot",
+      "image": "pitch/video/assets/points-after.png",
+      "narration": ["點數明細多兩列：搭車三十四點，解鎖五十點。", "總數等於明細相加，回流和泰 Points。"],
+      "caption": "搭車 +34、抵達解鎖 +50",
+      "record": "/drawer → data-act=open-points → /points",
+      "note": "搭車回饋每 20 元 1 點無條件捨去；走不到的地方搭車抵達另 +50（約佔這趟車資 7%）。",
+      "calc": {"km": 28.0, "say_pts": true}
+    },
+    {
+      "id": "a-push",
+      "section": "A 不搭車的日常",
+      "kind": "shot",
+      "image": "app/assets/shots/push-am.png",
+      "narration": ["不搭車的日子，早上八點十分一則推播。", "一天最多兩則，都能關。"],
+      "caption": "早上一則：今天的地方",
+      "record": "demo 工具 data-act=push-am → 點推播 data-act=open-push",
+      "note": "推播上限：一天最多兩則。"
+    },
+    {
+      "id": "a-today",
+      "section": "A 不搭車的日常",
+      "kind": "shot",
+      "image": "app/assets/shots/explore.png",
+      "narration": ["一天只給一個地方：水利路的老玻璃窯。", "離你九百公尺，走路十二分鐘。"],
+      "caption": "一天一個地方，離你 900 m",
+      "record": "/explore（推播點進來）",
+      "note": "走路分鐘＝公尺 ÷ 75。",
+      "calc": {"walk_m": 900, "say_walk": true}
+    },
+    {
+      "id": "a-why",
+      "section": "A 不搭車的日常",
+      "kind": "shot",
+      "image": "pitch/video/assets/explore-why.png",
+      "narration": ["為什麼推薦給你，每一條都有依據。", "常用地點、常用時段、收集缺口、天氣。"],
+      "caption": "AI 推薦：理由攤開給你看",
+      "record": "/explore 按 data-act=toggle-why",
+      "note": "AI 角色一：個人化推薦。原型的理由是示意資料，正式版由叫車時段與足跡算出。"
+    },
+    {
+      "id": "a-place",
+      "section": "A 不搭車的日常",
+      "kind": "shot",
+      "image": "app/assets/shots/place.png",
+      "narration": ["每個地方都有三段故事。", "走得到，主按鈕就是走路前往。"],
+      "caption": "走得到，主按鈕是「走路前往」",
+      "record": "/explore 按 data-act=open-place → /place/glass-kiln",
+      "note": "≤ 3 km 主鈕走路、次鈕設為下車點；走不到就對調。"
+    },
+    {
+      "id": "a-going",
+      "section": "A 不搭車的日常",
+      "kind": "shot",
+      "image": "app/assets/shots/going.png",
+      "narration": ["前往中刻意什麼都不做，到了會自動響。"],
+      "caption": "這段路不是拿來滑的",
+      "record": "/place/glass-kiln 按 data-act=go-walk → /going/glass-kiln",
+      "note": ""
+    },
+    {
+      "id": "a-unlock",
+      "section": "A 不搭車的日常",
+      "kind": "shot",
+      "image": "app/assets/shots/unlock.png",
+      "narration": ["路過一百次都是灰的，走進去一次才上色。"],
+      "caption": "到了才上色",
+      "record": "需錄製：demo 工具 data-act=arrive（模擬抵達）→ /unlock/glass-kiln 三幕（灰點爆開上色 → AI 生成中 → 成品）",
+      "note": "抵達是模擬的，正式版字幕要標「模擬抵達」。"
+    },
+    {
+      "id": "c-push",
+      "section": "C 晚上的回顧",
+      "kind": "shot",
+      "image": "app/assets/shots/push-pm.png",
+      "narration": ["晚上九點半，第二則：今天走了四點三公里。"],
+      "caption": "晚上一則：今天發生了什麼",
+      "record": "demo 工具 data-act=push-pm → 點推播",
+      "note": ""
+    },
+    {
+      "id": "c-lookback",
+      "section": "C 晚上的回顧",
+      "kind": "shot",
+      "image": "app/assets/shots/lookback.png",
+      "narration": ["回顧幾乎是自動帶入的，你只選心情。", "這一頁只有你看得到，沒有分享。"],
+      "caption": "只有你看得到",
+      "record": "/lookback 按 data-act=next ×2、data-act=skip-photo，停在心情頁",
+      "note": "AI 角色四：回顧的自動敘事。"
+    },
+    {
+      "id": "c-journal",
+      "section": "C 晚上的回顧",
+      "kind": "shot",
+      "image": "app/assets/shots/album-journal.png",
+      "narration": ["日誌沒有分享鍵，這是只有你的那一軌。"],
+      "caption": "隱私分軌之一：只有你",
+      "record": "心情頁按 data-act=mood 或「先不選」→ /album?tab=journal",
+      "note": ""
+    },
+    {
+      "id": "c-share",
+      "section": "C 晚上的回顧",
+      "kind": "shot",
+      "image": "app/assets/shots/share.png",
+      "narration": ["週回顧才長出分享，這是你可分享的一軌。", "第一格就是傳給家人。"],
+      "caption": "隱私分軌之二：你可分享",
+      "record": "/album?tab=week → data-act=go-week → /week 右上 data-act=share",
+      "note": "存成圖片不含位置資訊。"
+    },
+    {
+      "id": "c-elder",
+      "section": "C 晚上的回顧",
+      "kind": "shot",
+      "image": "app/assets/shots/elder.png",
+      "narration": ["同一張明信片，換個排版就是長輩圖。"],
+      "caption": "同一批明信片，換個排版給爸媽",
+      "record": "分享面板 data-act=share-family → /elder",
+      "note": "AI 角色三：明信片與長輩圖生成（標 AI 生成示意）。"
+    },
+    {
+      "id": "ai-roles", "hold": 1.5,
+      "section": "AI 與路線圖",
+      "kind": "card",
+      "card": {"eyebrow": "AI 在城事裡做四件事", "title": "推薦・內容・明信片・回顧", "lines": ["① 依叫車時段、熱點與你的足跡，推薦今天的地方", "② 地方內容：AI 起草 → 城市編輯審 → 有出處才上架", "③ 依地點、季節、光線生成明信片與長輩圖", "④ 把一天、一週自動寫成回顧"]},
+      "narration": ["AI 做四件事：推薦今天的地方，", "起草地方內容給編輯審，生成明信片，", "還有把一天寫成回顧。"],
+      "caption": "AI 的四個角色",
+      "record": "標題卡",
+      "note": "「設為下車點」是產品設計，不是 AI，別誇大。"
+    },
+    {
+      "id": "roadmap", "hold": 1.5,
+      "section": "AI 與路線圖",
+      "kind": "card",
+      "card": {"eyebrow": "路線圖第 0 步", "title": "不動分頁、不動叫車首頁，今天就能上", "lines": ["六條防護承諾：叫車關鍵路徑 4 下不變、收合態 0 像素改動…", "量在原型的保守版，每一條都能當場重跑"]},
+      "narration": ["第零步不動叫車首頁，今天就能上。", "六條防護承諾量在原型上，每條都能重跑。"],
+      "caption": "第 0 步今天就能上",
+      "record": "標題卡",
+      "note": "誠實：承諾量在 prototype/screens/home.html；合一版 app 只有「最多 4 個景點」有測試。"
+    },
+    {
+      "id": "end", "hold": 3.0,
+      "section": "結尾",
+      "kind": "card",
+      "card": {"eyebrow": "yoxi 題：不搭車，也打開 yoxi", "title": "yoxi 城事", "lines": ["github.com/Ricky610329/Yoxi_app_design", "畫面為原型；明信片與插圖為 AI 生成示意；地圖 © OpenStreetMap 貢獻者"]},
+      "narration": ["yoxi 城事。不搭車的日子，替搭車的日子養訂單。"],
+      "caption": "yoxi 城事",
+      "record": "結尾卡",
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# build-video.py 的中間檔（每格 PNG、wav、短片）與 --only 的預覽，可隨時重產
+out/build/
+out/preview.mp4
