@@ -28,6 +28,14 @@
 - 返回鍵用 `data-back`；`shell.js` 的 `rewriteHref` 會帶 `?from=`，`../` 開頭的路徑會保留。
 - 縮圖：`python prototype/tools/shoot.py`（全部）／`--only a,b`／`--mini`／`--board`。要拍固定狀態就在 URL 帶參數並在 `THUMB_ALIAS` 登記別名。
 
+## `pitch/`（初賽交件）的規矩
+
+- **真相在 `pitch/BRIEF.md`**（立場、數字紀律、檔案歸屬）與 `pitch/docs/competition.md`（官方原文）；改立場先改 BRIEF。
+- **簡報是 HTML**：`pitch/deck/index.html`，`python pitch/deck/build-pdf.py` 印 PDF 並檢查摘要 1 頁／正文 ≤ 15／頁數對得上／≤ 15 MB／無溢出／無禁用詞；官方欄位名與題目原文放 `.official` 才不被禁用詞掃到。
+- **影片**：`pitch/video/shots.json` 是鏡頭表真相，`build-video.py` 會檢查每句旁白 ≤ 25 字、中文數字等於 app 公式、總長 ≤ 180 秒。
+- **數字**：簡報每個數字要能回溯到 `pitch/docs/*.md`；外部數字附 URL 與查詢日期，沒有就標「假設」。內容量假設以 `business.md` 為準、雲端成本以 `ai-architecture.md` 為準。
+- **不動 `prototype/`、`app/`**；yoxi 寄來的解題資料不進 repo。
+
 ## `app/`（web app）的規矩
 
 - **契約在 `app/ARCHITECTURE.md`**：API、DOM、測試、分工、路由總表都在那裡；改契約先改那份。人看的在 `app/README.md`。

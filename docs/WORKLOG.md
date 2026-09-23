@@ -58,3 +58,18 @@
 | `26c8e4d` | 第二波：叫車／探索／收藏／系統四個區塊並行建置，25 條 route；測試 140/140 |
 | `eefd15b` | 第三波：三條流程端到端測試 `flows.spec.js`（19 條，含限定版沒收就回首頁／再叫車的兩條路）、QA 縫合（router 自動移除 mount 期間的 window listener、`nav.replaceQuery`、收卡與設下車點防連點、足跡覆蓋率改固定範圍、探索地圖景點推開）、視覺 QA（42 張手機寬度截圖工具 `shoot-app.py`、六處 CSS 修正）；文件（`app/README.md`、根 README、HANDOFF §10、AGENTS、本檔）。瀏覽器測試 159/159 |
 | `d65a42a` | 第四波：來回檢查。乾淨 clone 重跑抓到順序相依的 flaky（/trip 配對中改由 startedAt 推導）；逐行審查修 8 個 bug（手打 `?ride=1` 就能拿金框＋50 點、返回鍵連按退出 app、確認框疊開、原型鏈 id、壞 store 值、harness 逾時污染）；亂按 QA 17 項（內灣頁兩個分鐘數、清除足跡真的清空、1280×720 縮放、行程中不能改下車點、週回顧數字不倒退…）；五個視角評估 `docs/webapp-review/` 引出 5 項（+50 只給走不到的地方、trip 帶 via 歸因、叫車地圖景點開關、VERSION 單一來源、週標題終點）；無障礙 6 項（對比 ≥ 4.5、對話框焦點與 Esc、toast aria-live、44×44 命中區）；五種敘述方向 `docs/narratives/`。瀏覽器測試 187/187、單元 34/34、sw v4 |
+
+## 2026-09-23 初賽交件：`pitch/`（2026 和泰 AI 黑客松 · yoxi 題）
+
+六個 Opus agent 並行：資料規劃、AI 架構與成本、商業與 KPI、roadmap 與差異化、影片、簡報；主 agent 寫共用簡報與交件清單。敘述立場改為「站在 yoxi 的角度、給經營層的路線圖備忘錄」。
+
+| commit | 做了什麼 |
+|---|---|
+| `5273fc4` | `pitch/BRIEF.md` 共用工作簡報、`pitch/docs/competition.md` 官方事實 |
+| `638aeea` | `roadmap.md`（五階段時間軸、19 條風險）、`competitive.md`、交件清單 `pitch/README.md`、摘要頁 `summary.md` |
+| `172d28c` | `data-plan.md`：現況與痛點（400 則評論分佈）、三種人物、資料盤點、推薦怎麼算、隱私治理、拿到真資料後兩週 |
+| `0a6faa0` | `ai-architecture.md`：AI 四角色、架構圖、模型選用（只用有智財賠償的 GA 模型）、三情境成本、決賽前接真 AI 的最短路徑 |
+| `f164a30` | `business.md`（發現 yoxi 收入是每趟派遣費 10 元 → 點數改三級＋上限）、`kpi.md`（北極星非叫車開啟週活躍率、K1 對 K7） |
+| `eaba103` | 影片：`script.md`／`shots.json`／`storyboard.html`／`build-video.py`（TTS＋ffmpeg，2:45.5，23 鏡頭）／`README.md` |
+| `aa95b8e` | 簡報 HTML 框架＋初稿（摘要 1＋正文 15＋附錄 5）、`build-pdf.py` 六項硬檢查 |
+

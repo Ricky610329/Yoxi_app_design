@@ -20,6 +20,7 @@
 
 要接手開發（人或 AI agent）：先讀 `AGENTS.md`（規矩與慣例），再讀 `docs/HANDOFF.md`（架構、驗收、未決、下一步）與 `docs/WORKLOG.md`（每一筆 commit 做了什麼）。
 要提案：`docs/narratives/` 有五種敘述方向（情感、商業轉換、零傷害、世代、城市）與對應 app 按法的 demo 講稿；`docs/webapp-review/` 有五個視角（yoxi 產品、UX、工程、無障礙、評審）的評估。
+要交初賽（2026 和泰 AI 黑客松 · yoxi 題，10/14 13:00 截止）：`pitch/` 是交件包——HTML 簡報印成 PDF（`pitch/deck/`）、3 分鐘影片的腳本與草稿（`pitch/video/`）、每個數字的佐證（`pitch/docs/`）、上傳前打勾清單（`pitch/README.md`）。
 
 ## 三條 demo 流程
 
