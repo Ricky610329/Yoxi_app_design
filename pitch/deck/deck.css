@@ -189,3 +189,15 @@ figcaption.cap { font-size: 17px; line-height: 1.4; margin-top: 8px; color: var(
 .todo--team { background: var(--gold); color: var(--yoxi-navy); border: 2px solid var(--yoxi-navy); font-weight: var(--fw-heavy); font-size: 1em; padding: 0 12px; }
 .tb--src th, .tb--src td { font-size: 16px; padding: 6px 12px; line-height: 1.35; }
 .tb--src code { font-size: 14px; }
+
+/* 第 11 頁：三張大卡 */
+.card--big { padding: 30px 32px; display: flex; flex-direction: column; }
+.card--big .why { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--yoxi-line); font-size: 22px; color: var(--yoxi-navy); }
+.card--big h3 { font-size: 34px; margin-bottom: 18px; }
+.card--big li { font-size: 27px !important; line-height: 1.5; }
+.card--big .dots li + li { margin-top: 14px; }
+/* 第 5 頁：字放大 */
+.big5 .rm__c .one { font-size: 21px; }
+.big5 .rm__c dd { font-size: 20px; }
+.tb--ledger th, .tb--ledger td { font-size: 19px; }
+.col14 .card p, .col14 .card li { font-size: 21px; }
