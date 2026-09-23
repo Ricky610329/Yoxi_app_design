@@ -97,6 +97,9 @@ def run_browser(only=None, keep=False, budget=180000, app=None, page='runner.htm
     uri = (HERE / page).resolve().as_uri() + ('?' + '&'.join(q) if q else '')
     cmd = [exe, '--headless=new', '--disable-gpu', '--hide-scrollbars',
            '--allow-file-access-from-files', '--force-device-scale-factor=1',
+           # 這台機器（或 CI）若關了動畫效果，headless 會回報 prefers-reduced-motion: reduce，
+           # 非 still 的流程測試就測不到動畫與計時器；減少動態效果的路徑另有 test 用 matchMedia 替身驗
+           '--force-prefers-no-reduced-motion',
            '--window-size=1280,1000',
            '--virtual-time-budget=%d' % budget, '--dump-dom', uri]
     try:

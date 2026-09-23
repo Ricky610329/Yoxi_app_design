@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v1';
+const VERSION = 'chengshi-app-v4';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -69,7 +69,10 @@ function lastWorkPath() {
 /* 模擬抵達：回傳 null 表示現在沒有可以抵達的東西 */
 function arriveTarget(cur) {
   cur = cur || lastWorkPath();
-  if (cur && cur.pattern === '/going/:id' && cur.params && cur.params.id) {
+  const t0 = APP.store.get('trip');
+  const riding = t0 && t0.phase !== 'done';
+  /* 行程進行中的 /going 顯示的是「你正在搭車」卡，模擬抵達要抵達的是那一趟 */
+  if (cur && cur.pattern === '/going/:id' && cur.params && cur.params.id && !riding) {
     const id = cur.params.id;
     return function () { APP.store.set('arrivedDemo', id); APP.nav.go('/unlock/' + encodeURIComponent(id)); };
   }
@@ -83,12 +86,34 @@ function arriveTarget(cur) {
   return null;
 }
 
+/* 浮層一律從這裡拆：順便還焦點、拿掉 Esc 的 listener */
+function dropOverlay(el) {
+  if (!el) return;
+  el.remove();
+  if (typeof el._release === 'function') el._release();
+}
 function closeOverlays() {
-  document.querySelectorAll('.device > .pushmock, .device > .sys-share').forEach(function (el) { el.remove(); });
+  document.querySelectorAll('.device > .pushmock, .device > .sys-share').forEach(dropOverlay);
+}
+
+/* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。
+   state.js 沒有清空的 API；STATE.all 回傳的是活物件，改完用 setToday() 觸發 save。 */
+function wipeFootprint() {
+  if (window.STATE) {
+    const A = STATE.all;
+    A.cards = {};
+    A.km = 0;
+    A.lastCard = null;
+    A.lastSeen = null;
+    A.today = { photo: null, mood: null, done: false };
+    STATE.setToday({ photo: null, mood: null, done: false });
+  }
+  APP.store.patch({ dropoff: null, trip: null, arrivedDemo: null });
+  emitState();
 }
 
 function resetDemo() {
-  return APP.ui.confirm({ text: '清掉所有明信片、獎章、點數與設定？', yes: '重設', no: '先不要' })
+  return APP.ui.confirm({ text: '回到 demo 初始狀態（8 張明信片、原本的點數與設定）？', yes: '重設', no: '先不要' })
     .then(function (yes) {
       if (!yes) return false;
       closeOverlays();
@@ -132,7 +157,7 @@ function push(opt) {
   }
 
   /* 同一時間只有一張浮層 */
-  document.querySelectorAll('.device > .pushmock').forEach(function (el) { el.remove(); });
+  document.querySelectorAll('.device > .pushmock').forEach(dropOverlay);
 
   const el = document.createElement('div');
   el.className = 'pushmock sys-push';
@@ -155,13 +180,16 @@ function push(opt) {
 
   el.querySelector('[data-act="open-push"]').onclick = function (e) {
     if (e) e.preventDefault();
-    el.remove();
+    dropOverlay(el);
+    /* 在 /welcome 用 demo 面板發推播、點進 app：等於看過介紹了，不然之後回 / 又被帶去 onboarding */
+    if (!APP.store.get('onboarded')) APP.store.set('onboarded', true);
     APP.nav.go(to);
   };
-  el.querySelector('[data-act="close-push"]').onclick = function () { el.remove(); };
+  el.querySelector('[data-act="close-push"]').onclick = function () { dropOverlay(el); };
 
   const host = $('.device') || document.body;
   host.appendChild(el);
+  el._release = APP.ui.a11yDialog(el, { label: '推播通知：' + title, onEsc: function () { dropOverlay(el); } });
 
   if (!sent) {
     APP.store.set('pushes', todayPushes().concat([{ when: when, at: new Date().toISOString() }]).slice(-PUSH_MAX));
@@ -176,7 +204,7 @@ function share(opt) {
   opt = opt || {};
   const host = $('.device') || document.body;
   const old = host.querySelector(':scope > .sys-share');
-  if (old) old.remove();
+  if (old) dropOverlay(old);
 
   const title = opt.title ||
     (opt.kind === 'postcard' ? '分享這張明信片' : opt.kind === 'week' ? '分享這一週' : '分享');
@@ -190,7 +218,7 @@ function share(opt) {
   const scrim = document.createElement('div');
   scrim.className = 'scrim sys-share';
   scrim.innerHTML =
-    '<div class="sharesheet" role="dialog" aria-label="' + esc(title) + '">' +
+    '<div class="sharesheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
       '<div class="sharesheet__handle"></div>' +
       '<div class="sharesheet__t">' + esc(title) + '</div>' +
       rows.map(function (r, i) {
@@ -204,7 +232,7 @@ function share(opt) {
       '<div class="sharesheet__note">日誌與心情不會被分享</div>' +
     '</div>';
 
-  const close = function () { scrim.remove(); };
+  const close = function () { dropOverlay(scrim); };
   scrim.onclick = function (e) { if (e.target === scrim) close(); };
   scrim.querySelector('[data-act="share-family"]').onclick = function () {
     close();
@@ -228,6 +256,7 @@ function share(opt) {
 
   if (window.SHELL) SHELL.injectIcons(scrim);
   host.appendChild(scrim);
+  scrim._release = APP.ui.a11yDialog(scrim.querySelector('.sharesheet'), { label: title, onEsc: close });
   return scrim;
 }
 
@@ -304,7 +333,7 @@ APP.view('welcome', {
     function goTo(i) {
       show(i);
       const w = track.clientWidth || 1;
-      try { track.scrollTo({ left: idx * w, behavior: document.documentElement.hasAttribute('data-still') ? 'auto' : 'smooth' }); }
+      try { track.scrollTo({ left: idx * w, behavior: APP.reduceMotion() ? 'auto' : 'smooth' }); }
       catch (e) { track.scrollLeft = idx * w; }
     }
     track.onscroll = function () {
@@ -334,7 +363,15 @@ const DATA = [
   ['steps',  '步數',     '用來畫今天的回顧的路徑，資料留在手機上；關掉回顧就沒有路線', 'steps'],
   ['camera', '相簿',     '只在今天的回顧才讀取當天照片，不會上傳；關掉回顧就只有明信片', 'photos'],
   ['route',  '行程紀錄', '用來知道你搭車去過哪裡；關掉搭車抵達就不會自動收進足跡', 'trips'],
+  ['place',  '叫車地圖上的景點', '叫車首頁的地圖疊最多 4 個城事的地方；關掉就只剩原本的叫車地圖', 'rideSpots'],
 ];
+/* 這些開關存在 app 自己的 store（不是 STATE.settings） */
+const STORE_SWITCH = { rideSpots: true };
+function switchOn(key) {
+  if (STORE_SWITCH[key]) return APP.store.get(key) !== false;
+  const s = (window.STATE && STATE.all.settings) || {};
+  return !!s[key];
+}
 
 function switchRow(icon, name, sub, key) {
   return '<div class="row-nav sys-set__row">' +
@@ -360,9 +397,8 @@ function creditsHTML() {
 }
 
 function syncSwitches(root) {
-  const s = (window.STATE && STATE.all.settings) || {};
   root.querySelectorAll('[data-switch]').forEach(function (el) {
-    const on = !!s[el.getAttribute('data-switch')];
+    const on = switchOn(el.getAttribute('data-switch'));
     el.classList.toggle('is-on', on);
     el.setAttribute('aria-checked', on ? 'true' : 'false');
   });
@@ -416,14 +452,14 @@ APP.view('settings', {
           '</div>' +
         '</section>' +
 
-        '<section class="sys-set__sec">' +
-          '<button class="btn-ghost sys-set__wipe" type="button" data-act="wipe">清除我的足跡</button>' +
-        '</section>' +
-
         '<section class="sys-set__sec sys-set__sec--last">' +
           '<button class="sys-set__more" type="button" data-act="more" aria-expanded="false">' +
-            '<span>demo 工具與關於</span><span class="sys-set__chev" aria-hidden="true"></span></button>' +
+            '<span>清除足跡、demo 工具與關於</span><span class="sys-set__chev" aria-hidden="true"></span></button>' +
           '<div class="sys-set__morebox" data-more hidden>' +
+            /* 可按數 ≤ 10：多了「叫車地圖上的景點」開關，清除足跡收進展開區（它本來就不是常用的動作） */
+            '<div class="sys-set__sec">' +
+              '<button class="btn-ghost sys-set__wipe" type="button" data-act="wipe">清除我的足跡</button>' +
+            '</div>' +
             '<div class="sec"><h2 class="sec__t sec__t--sm">demo 工具</h2><span class="sec__m">提案現場用</span></div>' +
             '<div class="sys-set__demo">' +
               '<button class="btn-ghost" type="button" data-act="push-am">早上推播</button>' +
@@ -451,8 +487,9 @@ APP.view('settings', {
     root.querySelectorAll('[data-switch]').forEach(function (el) {
       el.onclick = function () {
         const k = el.getAttribute('data-switch');
-        const on = !(window.STATE && STATE.all.settings[k]);
-        if (window.STATE) STATE.setSetting(k, on);
+        const on = !switchOn(k);
+        if (STORE_SWITCH[k]) APP.store.set(k, on);
+        else if (window.STATE) STATE.setSetting(k, on);
         el.classList.toggle('is-on', on);
         el.setAttribute('aria-checked', on ? 'true' : 'false');
         emitState();
@@ -463,8 +500,7 @@ APP.view('settings', {
       APP.ui.confirm({ text: '會清掉這一個月的明信片、獎章、點數與日誌，而且不能復原。確定要清除？', yes: '清除', no: '先不要' })
         .then(function (yes) {
           if (!yes) return;
-          if (window.STATE) STATE.reset();
-          emitState();
+          wipeFootprint();
           syncSwitches(root);
           APP.ui.toast('足跡已清除');
         });
@@ -555,6 +591,6 @@ APP.on('route:change', function (cur) {
 });
 APP.on('state:change', prunePushes);
 
-APP.system = { VERSION: VERSION, resetDemo: resetDemo, prunePushes: prunePushes, arriveTarget: arriveTarget };
+APP.system = { VERSION: VERSION, resetDemo: resetDemo, wipeFootprint: wipeFootprint, prunePushes: prunePushes, arriveTarget: arriveTarget };
 
 })();

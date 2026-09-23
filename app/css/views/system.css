@@ -91,7 +91,7 @@
   margin-top: var(--sp-3);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
 }
 
 .sys-welcome__foot {
@@ -103,10 +103,11 @@
   background: var(--yoxi-paper);
 }
 .sys-welcome__foot [hidden] { display: none; }
-.sys-welcome__dots { display: flex; justify-content: center; gap: var(--sp-1); }
+.sys-welcome__dots { display: flex; justify-content: center; gap: 0; }
 .sys-welcome__dot {
-  width: 28px;
-  height: 28px;
+  /* 命中區 44×44（點點本身仍是 ::after 畫的 8px） */
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
 }
@@ -165,7 +166,7 @@
   margin-top: var(--sp-3);
   font-size: var(--fs-cap);
   line-height: 1.7;
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
 }
 
 .sys-set__wipe,
@@ -203,7 +204,7 @@
   gap: var(--sp-2);
 }
 .sys-set__demo .btn-ghost { min-height: 44px; font-size: var(--fs-sm); }
-.sys-set__demo .btn-ghost.is-off { border-color: var(--yoxi-slate-lite); color: var(--yoxi-slate); }
+.sys-set__demo .btn-ghost.is-off { border-color: var(--yoxi-slate-lite); color: var(--app-muted); }
 .sys-set__demo .sys-set__danger { grid-column: 1 / -1; }
 
 .sys-set__abouthd { margin-top: var(--sp-5); }
@@ -216,7 +217,7 @@
   list-style: none;
   font-size: var(--fs-xs);
   line-height: 1.6;
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
 }
 .sys-set__credits li + li { margin-top: var(--sp-1); }
 .sys-set__credits b { color: var(--yoxi-navy); }
@@ -229,7 +230,7 @@
 .sys-push__meta {
   display: block;
   font-size: var(--fs-xs);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
   margin-bottom: 2px;
 }
 .sys-push__note {

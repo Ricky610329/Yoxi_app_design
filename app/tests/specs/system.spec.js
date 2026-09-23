@@ -58,7 +58,7 @@ T.spec('system', function (t) {
     const v = app.view();
     t.ok(v && v.getAttribute('data-view') === 'settings', 'view=settings');
     t.ok(app.$('#tabbar').hidden, 'tab bar 隱藏');
-    t.eq(app.$$('main.view [data-switch]').length, 7, '七個開關');
+    t.eq(app.$$('main.view [data-switch]').length, 8, '八個開關（含叫車地圖上的景點）');
     t.ok(app.text('main.view').indexOf('一天最多兩則') >= 0, '說出上限');
     t.ok(app.text('main.view').indexOf('只有你') >= 0 && app.text('main.view').indexOf('你可分享') >= 0, '隱私分軌');
     t.noDeadButtons(app);
@@ -68,7 +68,7 @@ T.spec('system', function (t) {
     /* 展開 demo 工具與關於：內容都在、仍然沒有死按鈕與禁用詞 */
     await app.click('[data-act="more"]');
     t.ok(!app.$('[data-more]').hidden, '展開');
-    t.eq(app.text('[data-version]'), 'chengshi-app-v1', '版本字串');
+    t.eq(app.text('[data-version]'), 'chengshi-app-v4', '版本字串');
     t.ok(app.text('main.view').indexOf('OpenStreetMap') >= 0, '地圖署名');
     const P = app.win.PHOTOS_DATA || {};
     const nPhotos = Object.keys(P).reduce(function (a, k) { return a + (P[k] || []).length; }, 0);
@@ -206,14 +206,17 @@ T.spec('system', function (t) {
     t.eq(app.route().path, '/settings', '還在設定');
   });
 
-  t.test('清除我的足跡：確認後只 STATE.reset', async function (app) {
+  t.test('清除我的足跡：確認後真的清空（明信片 0、點數 0、下車點與行程一起清）', async function (app) {
     await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' } } });
     app.STATE.collect('glass-kiln', {});
     await app.go('/settings');
+    await app.click('[data-act="more"]');       /* 清除足跡收在展開區（設定頁可按數 ≤ 10） */
     await app.click('[data-act="wipe"]');
     await app.click('[data-act="confirm-yes"]');
-    t.eq(app.STATE.count(), 8, 'STATE 重設');
-    t.ok(app.APP.store.get('dropoff') && app.APP.store.get('dropoff').id === 'neiwan', 'app store 不動');
+    t.eq(app.STATE.count(), 0, 'STATE 清空');
+    t.eq(app.STATE.points, 0, '點數 0');
+    t.eq(app.APP.store.get('dropoff'), null, '下車點一起清');
+    t.eq(app.STATE.all.settings.pushAm, true, '設定不動');
   });
 
   t.test('設定頁的模擬抵達：沒有前往或叫車時 toast、不導走', async function (app) {

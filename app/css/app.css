@@ -9,12 +9,61 @@
 /* --------------------------------------------------------------------------
    外框（桌機 ≥ 560px：沿用 .stage > .device，旁邊一條 demo 面板）
    -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   可讀性（WCAG AA 4.5:1）
+   tokens 的 slate 在白底只有 3.5:1、在 mist 底 3.1:1，拿來當「次要文字」不夠。
+   app 內的次要文字一律用 --app-muted（slate 七成＋navy 三成：白底 5.5:1、mist 底 4.8:1）。
+   原型 css 用到 slate 當字色、而 app 也有用到的 class 在這裡覆寫（不動 prototype/）。
+   紅底上的白字、placecard 圖上的字不在此列。
+   -------------------------------------------------------------------------- */
+:root { --app-muted: color-mix(in srgb, var(--yoxi-slate) 70%, var(--yoxi-navy)); }
+
+.u-muted, .btn-link, .row-nav__sub, .route-input__label, .tabbar__item,
+.story__note, .postcard--locked .postcard__foot, .ai-note, .badge__prog, .fogmap__legend,
+.privacy-note, .statbar__k, .sec__m, .demo-btn, .postcard__back small, .sharesheet__note,
+.empty-state__mark, .wallgroup__empty { color: var(--app-muted); }
+.tabbar__item.is-active { color: var(--yoxi-navy); }
+
+/* 叫車首頁「要去哪裡？」：叫車唯一的入口，原型用 slate-lite（1.6:1） */
+.route-input__value--ph { color: var(--app-muted); }
+
+/* 小的可按元素（關閉鍵 34px、頁首文字鈕、開關、「全部」連結…）：視覺大小不變，
+   命中區用 ::before 撐到至少 44×44（WCAG 2.5.8；::after 已被開關的圓鈕用掉，所以統一用 ::before） */
+.hdr-red__close, .ride-back, .alb-fp__back, .ride-drawer__close, .ride-drop__clear,
+.pushmock__close, .sys-welcome__skip, .sw-toggle, .viewtoggle a, .btn-link, .hdr-red__action,
+a.sec__m, .alb-shelf__all, .alb-lb__exit, .ride-drawer__pts-btn { position: relative; }
+.hdr-red__close::before, .ride-back::before, .alb-fp__back::before, .ride-drawer__close::before,
+.ride-drop__clear::before, .pushmock__close::before, .sys-welcome__skip::before, .sw-toggle::before,
+.viewtoggle a::before, .btn-link::before, .hdr-red__action::before, a.sec__m::before,
+.alb-shelf__all::before, .alb-lb__exit::before, .ride-drawer__pts-btn::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: max(100%, 44px); height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+/* 區塊標題旁的「全部 ›」緊貼下面的卡片列，撐出來的命中區會被卡片蓋住：直接把連結本身做成 44 高 */
+a.sec__m { min-height: 44px; display: inline-flex; align-items: center; }
+
 html, body { height: 100%; }
 #app { min-height: 100%; }
 
 .stage {
   gap: var(--sp-6);
   flex-wrap: wrap;
+}
+
+/* 桌機螢幕矮（1280×720、1366×768）時整支手機等比縮小，tab bar 才看得到。
+   --device-scale 由 app.js 的 fitDevice() 依 innerHeight 算（手機模式固定 1）。
+   transform 不改版面佔位，所以用負 margin 把佔位一起縮掉：置中、demo 面板的間距都照縮放後的大小排。 */
+@media (min-width: 560px) {
+  .device {
+    transform: scale(var(--device-scale, 1));
+    transform-origin: top center;
+    margin-bottom: calc(var(--device-h) * (var(--device-scale, 1) - 1));
+    margin-left: calc(var(--device-w) * (var(--device-scale, 1) - 1) / 2);
+    margin-right: calc(var(--device-w) * (var(--device-scale, 1) - 1) / 2);
+  }
 }
 
 /* view 的容器：填滿狀態列以下、tab bar 以上（has-tabbar 由 app.js 切） */
@@ -78,7 +127,7 @@ main.view[data-leaving] { pointer-events: none; }
 .demo-panel__t {
   font-size: var(--fs-cap);
   font-weight: var(--fw-heavy);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
   letter-spacing: .04em;
   margin-bottom: var(--sp-1);
 }
@@ -98,7 +147,7 @@ main.view[data-leaving] { pointer-events: none; }
 }
 .demo-panel__btn:active { background: var(--yoxi-navy-soft); }
 .demo-panel__btn:disabled,
-.demo-panel__btn[aria-disabled="true"] { background: var(--yoxi-line); color: var(--yoxi-slate); cursor: default; }
+.demo-panel__btn[aria-disabled="true"] { background: var(--yoxi-line); color: var(--app-muted); cursor: default; }
 .demo-panel__btn--ghost {
   background: var(--yoxi-white);
   color: var(--yoxi-navy);
@@ -107,7 +156,7 @@ main.view[data-leaving] { pointer-events: none; }
 .demo-panel__note {
   font-size: var(--fs-xs);
   line-height: var(--lh-body);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
 }
 
 /* --------------------------------------------------------------------------
@@ -130,7 +179,7 @@ main.view[data-leaving] { pointer-events: none; }
 .app-empty__eyebrow {
   font-size: var(--fs-xs);
   font-weight: var(--fw-heavy);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
   letter-spacing: .06em;
   margin-bottom: var(--sp-2);
 }
@@ -143,7 +192,7 @@ main.view[data-leaving] { pointer-events: none; }
 }
 .app-empty__p {
   font-size: var(--fs-sm);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
   margin-bottom: var(--sp-5);
   word-break: break-all;
 }
@@ -202,7 +251,7 @@ main.view[data-leaving] { pointer-events: none; }
   z-index: 1;
   font-size: var(--fs-xs);
   font-weight: var(--fw-heavy);
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
 }
 .ph > img {
   position: absolute;
@@ -231,7 +280,7 @@ main.view[data-leaving] { pointer-events: none; }
   margin-top: 4px;
   font-size: 10px;
   line-height: 1.4;
-  color: var(--yoxi-slate);
+  color: var(--app-muted);
 }
 .photo__credit a { text-decoration: underline; }
 

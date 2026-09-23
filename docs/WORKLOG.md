@@ -57,3 +57,4 @@
 | `d193bce` | 第一波：核心殼（hash router、view registry、store、`APP.fmt` 公式、地圖包裝、tab bar、桌機外框）、測試框架（node 單元＋headless Chrome）、PWA（manifest、sw.js、圖示、serve.py）；契約 `app/ARCHITECTURE.md` |
 | `26c8e4d` | 第二波：叫車／探索／收藏／系統四個區塊並行建置，25 條 route；測試 140/140 |
 | `eefd15b` | 第三波：三條流程端到端測試 `flows.spec.js`（19 條，含限定版沒收就回首頁／再叫車的兩條路）、QA 縫合（router 自動移除 mount 期間的 window listener、`nav.replaceQuery`、收卡與設下車點防連點、足跡覆蓋率改固定範圍、探索地圖景點推開）、視覺 QA（42 張手機寬度截圖工具 `shoot-app.py`、六處 CSS 修正）；文件（`app/README.md`、根 README、HANDOFF §10、AGENTS、本檔）。瀏覽器測試 159/159 |
+| （本輪） | 第四波：來回檢查。乾淨 clone 重跑抓到順序相依的 flaky（/trip 配對中改由 startedAt 推導）；逐行審查修 8 個 bug（手打 `?ride=1` 就能拿金框＋50 點、返回鍵連按退出 app、確認框疊開、原型鏈 id、壞 store 值、harness 逾時污染）；亂按 QA 17 項（內灣頁兩個分鐘數、清除足跡真的清空、1280×720 縮放、行程中不能改下車點、週回顧數字不倒退…）；五個視角評估 `docs/webapp-review/` 引出 5 項（+50 只給走不到的地方、trip 帶 via 歸因、叫車地圖景點開關、VERSION 單一來源、週標題終點）；無障礙 6 項（對比 ≥ 4.5、對話框焦點與 Esc、toast aria-live、44×44 命中區）；五種敘述方向 `docs/narratives/`。瀏覽器測試 187/187、單元 34/34、sw v4 |

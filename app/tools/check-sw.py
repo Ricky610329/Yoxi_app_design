@@ -4,6 +4,7 @@
   1. 清單裡的每個路徑都要存在（'./' 視為 index.html）。
   2. app/css、app/js、app/assets/icons、prototype/assets/map、prototype/assets/photos
      底下的檔案都要在清單裡。
+  3. sw.js 與 js/views/system.js 的 VERSION 字串相同。
 不一致就印出來並 exit 1。
 例外：core 負責、契約已承諾但可能還沒建的入口檔（PENDING），缺檔只警告不算失敗；
       全部建好之後這個例外自然不會再觸發。
@@ -47,6 +48,17 @@ def main():
         for f in sorted(d.rglob('*')) if d.is_dir() else []:
             if f.is_file() and f.resolve() not in listed:
                 print(f'  檔案有、清單沒有：{f.relative_to(ROOT).as_posix()}'); bad += 1
+
+    # VERSION 單一來源：sw.js 的快取版本與設定頁「關於」顯示的版本（system.js）必須相同
+    vre = re.compile(r"^const VERSION = '([^']+)';", re.M)
+    sw_v = vre.search(src)
+    sys_v = vre.search((APP / 'js' / 'views' / 'system.js').read_text(encoding='utf-8'))
+    if not sw_v or not sys_v:
+        print('  找不到 VERSION：' + ('sw.js ' if not sw_v else '') + ('js/views/system.js' if not sys_v else '')); bad += 1
+    elif sw_v.group(1) != sys_v.group(1):
+        print(f'  VERSION 不一致：sw.js={sw_v.group(1)}、system.js={sys_v.group(1)}'); bad += 1
+    else:
+        print(f'  VERSION：{sw_v.group(1)}（sw.js＝system.js）')
 
     print(f'check-sw：{len(entries)} 筆，' + ('PASS' if not bad else f'FAIL（{bad} 處）'))
     return 1 if bad else 0
