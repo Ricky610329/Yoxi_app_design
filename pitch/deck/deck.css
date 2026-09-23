@@ -184,3 +184,8 @@ figcaption.cap { font-size: 17px; line-height: 1.4; margin-top: 8px; color: var(
 .big .card p, .big .card li { font-size: 24px; }
 .big .card p + p { margin-top: 4px; }
 .tb--dense th, .tb--dense td { padding: 10px 14px; font-size: 19px; }
+
+/* 隊名佔位：交件前一定要填，印出來要很顯眼 */
+.todo--team { background: var(--gold); color: var(--yoxi-navy); border: 2px solid var(--yoxi-navy); font-weight: var(--fw-heavy); font-size: 1em; padding: 0 12px; }
+.tb--src th, .tb--src td { font-size: 16px; padding: 6px 12px; line-height: 1.35; }
+.tb--src code { font-size: 14px; }
