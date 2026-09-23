@@ -17,6 +17,8 @@
 | 第三輪 | 真實 OSM 地圖引擎與六種底圖、單／雙地圖、微 3D、實景照片、好友系統六頁＋AI 鄰居、五張概念板；轉換點 K1–K7 | `concept.html`、`variants.html#axis-conv` |
 | 提案 | 提案總覽頁、README、本交接 | `proposal.html` |
 | web app | 合一版做成單頁 web app：25 條 route、hash 路由、localStorage 狀態、PWA；瀏覽器測試 187 條＋node 單元測試 34 條。見 §10 | `app/index.html`、`app/README.md` |
+| 介紹網站 | `site/index.html`：一頁式捲動介紹站（hero 霧地圖隨捲動散開、週曆條、三段 scrolly 手機、可點的真實新竹地圖、3 公里距離尺、AI 卡、圖層開／關對照、路線圖、影片）。見 §12 | `site/index.html`、`site/CONTRACT.md` |
+| 初賽交件 | 2026 和泰 AI 黑客松 yoxi 題的交件包：HTML 簡報（摘要 1＋正文 15＋附錄，`build-pdf.py` 印 PDF 並檢查頁數／大小／溢出／禁用詞）、3 分鐘向量動畫影片（腳本、場景、TTS 草稿配音）、六份佐證文件（資料、AI 架構與成本、商業、KPI、roadmap、差異化）。敘述立場：站在 yoxi 的角度寫成給經營層的路線圖備忘錄。見 §11 | `pitch/README.md`、`pitch/BRIEF.md` |
 
 規模：102 張畫面檔（33 主線＋43 變體＋12 願景稿＋14 概念稿，含 `variant-k-ride` 落點頁）、10 條設計軸線 36 個變體、5 張概念板、10 張 CC 照片。
 
@@ -160,3 +162,35 @@ python app/tests/run.py                           # web app：node 單元＋head
 - **轉換歸因**：`store.trip.via` 與 `store.rideVia[cardId]` 記下車點來源（k1／e／route／search），行程紀錄顯示；原型的 `state.js` 卡片欄位不能加，所以放在 app 的 store。
 
 五個視角的評估（商業、UX、工程、無障礙、評審）在 `docs/webapp-review/`（索引 `README.md` 有交叉整理與已回應清單）；五種敘述方向與 demo 講稿在 `docs/narratives/`。
+
+## 11. 初賽交件（`pitch/`）
+
+**結論**：`pitch/` 是 2026 和泰 AI 黑客松 yoxi 題「不搭車，也打開 yoxi」的初賽交件包；官方事實在 `pitch/docs/competition.md`，工作簡報（立場、數字紀律、檔案歸屬）在 `pitch/BRIEF.md`，上傳前清單在 `pitch/README.md`。
+
+| 要找 | 在哪 |
+|---|---|
+| 簡報 HTML 與 PDF 管線 | `pitch/deck/index.html`、`deck.css`、`deck.js`、`build-pdf.py` → `out/yoxi_城事_初賽提案.pdf`（out/ 不進版控） |
+| 影片（向量動畫） | `pitch/video/shots.json`（旁白與每格畫面指示，機器真相）、`anim/`（`CONTRACT.md` 契約、`lib.js` 共用零件與地圖層、`scenes-a.js`／`scenes-b.js` 十三格場景、`index.html` 舞台）、`build-video.py`（TTS → 逐格 DevTools 截圖 → ffmpeg）→ `out/draft.mp4`；`script.md`、`storyboard.html` 由腳本重寫 |
+| 每個數字的出處 | `pitch/docs/{data-plan,ai-architecture,business,kpi,roadmap,competitive}.md`，每份開頭三行寫回答哪幾頁／結論／未決 |
+| 摘要頁文字 | `pitch/summary.md`（官方七欄，順序不能改） |
+
+規矩：`prototype/`、`app/` 不動（要新截圖跑工具，PNG 放 `pitch/deck/assets/`；影片不用截圖，畫面全是 `anim/` 的向量場景）；簡報只用 `tokens.css` 的色票、不加 CDN 與 webfont；外部數字沒有 URL 就標「假設」；yoxi 寄來的解題資料不進 repo（注意事項第 9 條）。
+
+幾個在交件包裡拍板、與 repo 先前寫法不同的決定：點數改為 3 km 以上按距離三級（20／35／50 點）＋每人每月上限（原型畫面仍是固定 +50，簡報有註明）；新竹 12 週試辦範圍＝第 0 步＋地方頁「用 yoxi 前往」（K1）＋「今天的地方」最小版（抽屜內每天一張卡＋早上一則可關推播，不動 tab bar），完整探索頁與 tab bar 決定移到 2027 Q2；簡報正文不用內部代號（K1／K7／E／G／合一版），只在附錄 A-3 保留對照；北極星「非叫車開啟週活躍率」；內容供給每城 1 位編輯（內容量假設以 `business.md` §4 為準、雲端成本以 `ai-architecture.md` §4 為準）。
+
+還沒有答案的：隊名與成員；GitHub 是否公開（第 15 頁與附錄直接寫了網址）；+50 級距與每月上限由誰簽核；yoxi 真資料的欄位（決定第 4 頁要不要換成真圖）；影片要不要換真人配音（每格一個音檔 → `build-video.py --audio-dir`）。
+
+## 12. 介紹網站（`site/`）
+
+**結論**：`site/index.html` 是給第一次聽到「城事」的人看的一頁式介紹站，`file://` 直接開；沒有 build、框架、CDN、webfont。契約在 `site/CONTRACT.md`。
+
+| 要找 | 在哪 |
+|---|---|
+| 骨架與各段文案 | `site/index.html`（section 的 id 與掛載點固定；scrolly 用 `data-scrolly／.step[data-step]／img[data-shot]`） |
+| 捲動框架 | `site/js/scroll.js`：reveal、`--p` 進度、scrolly 步驟、導覽列高亮、`data-fmt` 填公式數字、`?y=／?reveal=all／?nomotion=1` |
+| 資料與公式 | `site/js/data.js`（`SITE_DATA`：與 `app/js/app.js` 同一套公式、10 個地點、內灣、深連結；內容區塊追加在檔尾） |
+| 互動元件 | `site/js/widgets.js`（hero 霧地圖、可點的真實地圖、距離尺、圖層對照）、`site/js/postcard.js`（抄 shell.js 的明信片 SVG） |
+| 各段樣式 | `site/css/site.css`（基底）、`sections.css`（各段）、`widgets.css`（互動元件） |
+| 截圖驗收 | `python site/tools/shoot-site.py`（借 `pitch/video/build-video.py` 的 DevTools 用戶端；輸出 `site/tools/.shots/` 不進版控） |
+
+規矩：只讀 `prototype/`、`app/assets/shots/`、`pitch/video/out/` 不改；不寫 hex；數字走 `data-fmt`；禁用詞與誠實標示同全站。

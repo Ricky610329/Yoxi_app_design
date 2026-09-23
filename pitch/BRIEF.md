@@ -1,0 +1,72 @@
+# 初賽交件工作簡報（所有 agent 先讀這份）
+
+這份是 `pitch/` 底下所有交件的共同真相。競賽官方事實在 `docs/competition.md`（先讀）。
+產品本身的真相在 repo：`README.md`、`docs/HANDOFF.md`、`prototype/js/catalog.js`（ROADMAP／AXES／VARIANTS）、`app/ARCHITECTURE.md`、
+五種敘述 `docs/narratives/`、五個視角評估 `docs/webapp-review/`（尤其 `judge.md` 的 10 個問題與 `business.md` 的「我會怎麼排 roadmap」）。
+
+## 0. 我們交什麼（初賽，10/14 13:00 前）
+
+| 交件 | 檔案 | 規格 |
+|---|---|---|
+| 提案簡報 | `pitch/deck/index.html` → `pitch/deck/out/yoxi_城事_初賽提案.pdf` | 摘要頁 1 頁（不計）＋正文 **≤ 15 頁**＋附錄若干；PDF ≤ 15 MB；七大章節都要有；yoxi 題的四項（情境與資料、商業轉換、技術架構與成本、成效驗證）都要有 |
+| 方案說明影片 | `pitch/video/`（腳本、分鏡、草稿影片產生腳本） | ≤ 3:00；YouTube 不公開；標題 `yoxi_城事_2026 和泰 AI 黑客松` |
+| 佐證文件 | `pitch/docs/*.md` | 簡報每一頁的數字與主張都能回溯到這裡；這裡的每個數字都要有來源或標「假設」 |
+| 交件清單 | `pitch/README.md` | 上傳前逐項打勾 |
+
+## 1. 產品一句話（不要再改）
+
+**yoxi 城事**：把 yoxi 從「有需求才打開的叫車工具」變成「不搭車也會打開的城市探索與收藏工具」，再把「發現一個地方 → 叫車去那裡」接回本業，
+點數回流和泰 Points。三條主線：A 不搭車的日常（推播 → 今天的地方 → 走路 → 抵達解鎖 → 收藏）、B 搭車的轉換（路線 → 腳到不了的一段 → 一鍵設為下車點 → 叫車 → 限定版明信片 → 點數）、C 晚上的回顧（自動帶入的四幕 → 日誌只有你 → 週回顧 → 長輩圖）。
+
+## 2. 敘述立場：站在 yoxi 的角度，寫成 roadmap（使用者明確要求）
+
+- **我們不是「來提案的學生」，是「替 yoxi 產品部寫下一年路線圖的人」。** 每一頁回答 yoxi 主管會問的問題：這對開啟率有什麼用、動了叫車主畫面沒有、要幾個人、要多少錢、什麼時候能看到數字、看到什麼數字就停。
+- **語氣**：產品決策備忘錄。不用「我們相信」「將會顛覆」；用「第 0 步不動 tab bar，今天就能上」「這個決定的到期條件是…」。
+- **結構感**：一條有階段、有前提、有 KPI、有停損點的 roadmap。階段沿用 `catalog.js` 的 ROADMAP 五步（0 記錄與獎章 → 1 探索 → 2 轉換 → 3 分享與世代 → 4 整合），但要**加上時間軸**（以 2027 為主，季度為單位，從初賽後 pilot 算起）、**資源**（人、雲端、內容）、**每步的守門指標**。
+- **誠實**：六條防護承諾量的是原型的保守版（`home.html`），合一版 app 只有「叫車地圖最多 4 個景點」有測試。內容供給成本、+50 點誰付、防刷、AI 圖像權利是 `judge.md` 點名的洞，簡報要正面回答（用假設＋驗證法），不能跳過。
+- **AI 的角色要關鍵、不是裝飾**（評分 20%）：AI 做四件事——(a) 個人化推薦「今天的地方」（用 yoxi 提供的叫車時段／頻率、POI、熱門上下車、樞紐與活動熱點＋使用者自己的足跡）；(b) 地方內容產線（AI 草稿 → 城市編輯審 → 有出處才上架）；(c) 明信片／長輩圖生成（依地點、季節、光線）；(d) 回顧的自動敘事（四幕、週回顧、日誌摘要）。轉換點（設為下車點）本身**不是** AI，是產品設計，別誇大。
+
+## 3. 數字紀律（違反就是錯）
+
+- **app 裡的數字都是公式**，簡報引用時照公式：車資 `75 + 22 × km` 元、車程 `3 + 2.2 × km` 分、走路 `m ÷ 75` 分、走路門檻 **3 km**（超過才建議叫車、才有 +50 與金框）、搭車回饋每 20 元 1 點（無條件捨去）、走不到的地方搭車抵達另 **+50 點**（1 點 = 1 元）。範例：內灣 28.0 km → $691、65 分；+50 佔 $691 約 7%，佔短程 $141 約 35%。
+- **六條防護承諾（量在原型 home.html）**：① 圖層關閉時 DOM 464 節點逐節點相同；② 叫車關鍵路徑 tap 數 4 不變；③ 收合態 sheet 0 像素改動；④ 叫車地圖同時最多 4 個景點；⑤ 遮住 pin／浮動鈕 0 px²；⑥ 上下車 pin 與景點縮圖 class 交集為空。第七條（足跡上色的干擾）還沒量，寫出來。
+- **推播上限**：一天最多兩則（早上的地方、晚上的回顧），各自可關。探索地圖最多 10 個景點。
+- **原型規模**（可引用）：102 張畫面檔、10 條設計軸線 36 個變體、web app 25 條 route、瀏覽器測試 187 條＋單元測試 34 條、真實 OSM 新竹地圖、22 張明信片、10 張 CC 照片。
+- **市場／公司數字**：只能用查得到來源的（例如 yoxi 車隊規模、和泰 Points 可折抵範圍、台灣叫車市場公開報導）。每個外部數字附 URL 放附錄；查不到就標「假設」並說明怎麼驗。**不准編造用戶數、留存率、市佔**。預期效益一律寫成「目標值＋驗證法」，不寫成事實。
+- **成本試算**：要有算式（單價 × 量），單價標來源日期（Google Cloud／Vertex AI 官方定價頁、Gemini 定價頁；人力用台灣行情並標「假設」）。用 Google Cloud 為主（競賽合作夥伴、有點數），模型可寫 Vertex AI 上的 Gemini（多模態、便宜的分類與摘要）與 Model Garden 上的其他模型（例如 Claude，長文編輯品質）為選項，但不要寫死一家；圖像生成寫 Imagen（Vertex）為主。
+
+## 4. 產品性格（簡報與影片都要守）
+
+- **禁用詞**：任務／完成／達成／挑戰／每日。城事沒有連續天數、倒數、限量、排名、未讀數字；獎章寫「收集 4/8」。簡報**內文**講產品時也不用這些字；但引用官方題目、評分名稱（例如「企業挑戰題目」）時是引用，可以。
+- **顏色**：紅 = 品牌情緒（頁首、pin、強調數字），海軍藍 = 可按的東西。簡報沿用 `prototype/css/tokens.css` 的色票（讀那個檔，不要自己發明 hex）。
+- **不加 CDN、不加 webfont、不連網**：簡報 HTML 全部本機資源；字體用系統的 Noto Sans TC／Microsoft JhengHei／PingFang 後援鏈。
+
+## 5. 已有素材（直接用，不要重畫）
+
+- `app/assets/shots/*.png`：web app 43 張 390×844 截圖（ride、explore、place、route、ride-dropoff、trip、trip-done-rated、unlock-ride、points、album、week、elder、push-am、push-pm…）＋ `desktop-ride.png`、`board.png`。
+- `prototype/assets/boards/*.png`：五張 1600×1000 概念板（地圖質感、單雙地圖、微 3D、好友）。
+- `prototype/assets/thumbs/*.png`：133 張原型畫面縮圖（430×912）。
+- `prototype/assets/photos/*.jpg`：10 張 Wikimedia Commons CC 照片，**用了必須顯示 `credits.js` 的作者與授權**。
+- `brain_strom.png`：最初的腦力激盪圖。
+- 需要新截圖：`python app/tools/shoot-app.py --only <stem>`（看檔頭）；概念板 `python prototype/tools/shoot.py --board`。
+
+## 6. 檔案歸屬（同一波的 agent 只動自己的檔）
+
+| agent | 產出 | 不准動 |
+|---|---|---|
+| data-plan | `pitch/docs/data-plan.md` | 其他 docs |
+| ai-arch | `pitch/docs/ai-architecture.md`（技術架構＋AI 應用方法＋成本試算） | 其他 docs |
+| business-kpi | `pitch/docs/business.md`、`pitch/docs/kpi.md` | 其他 docs |
+| roadmap-risk | `pitch/docs/roadmap.md`、`pitch/docs/competitive.md` | 其他 docs |
+| video | `pitch/video/**` | deck、docs |
+| deck | `pitch/deck/**` | docs、video |
+| 主 agent | `pitch/README.md`、`pitch/summary.md`、根 README／HANDOFF／WORKLOG 的指向 | |
+
+`prototype/`、`app/` 一個字都不動（要新截圖就跑工具，產出的 PNG 可以進 `pitch/deck/assets/`）。
+
+## 7. 語言與格式
+
+- 全部繁體中文（台灣用語），英文術語第一次出現附中文。
+- 每份 `pitch/docs/*.md` 開頭三行：這份回答簡報哪幾頁、結論三句、還沒有答案的事。
+- 表格優先於長段落；每個數字後面括號寫來源或「假設」。
+- 檔案大小：docs 每份 300–900 行之間即可，不要寫成論文。

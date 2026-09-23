@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>yoxi 城事 · 方案說明影片（向量動畫舞台）</title>
+<!--
+  回答什麼：影片的每一格畫面。1920×1080 的 <svg>，每一格都是時間 t 的純函數（ANIM.seek(t)）。
+  動了什麼：只讀 prototype 的 tokens.css／icons.js／hsmap.js 與地圖資料；不動 prototype、app。
+  刻意沒有的東西：CSS animation、requestAnimationFrame（只有 ?play=1 給人眼看時用）、Math.random、Date、CDN、webfont。
+  怎麼看：?t=12.5 停在那一秒；?shot=5 停在第 5 格開頭；?play=1 從頭播；?hud=1 顯示 t／格號；?nosub=1 不畫字幕。
+  契約：CONTRACT.md。
+-->
+<link rel="stylesheet" href="../../../prototype/css/tokens.css">
+<link rel="stylesheet" href="anim.css">
+</head>
+<body>
+<div id="mapHolder" aria-hidden="true"></div>
+<svg id="stage" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <rect id="bg" x="0" y="0" width="1920" height="1080"></rect>
+  <g id="mapLayer"></g>
+  <g id="shots"></g>
+  <g id="ui"></g>
+</svg>
+<div id="hud" hidden></div>
+
+<script src="../../../prototype/js/icons.js"></script>
+<script src="../../../prototype/assets/map/hs-places.js"></script>
+<script src="../../../prototype/assets/map/hs-core.js"></script>
+<script src="../../../prototype/assets/map/hs-wide.js"></script>
+<script src="../../../prototype/js/hsmap.js"></script>
+<script src="timeline.js"></script>
+<script src="lib.js"></script>
+<script src="scenes-a.js"></script>
+<script src="scenes-b.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const hud = document.getElementById('hud');
+  if (q.get('hud')) hud.hidden = false;
+  if (q.get('nosub')) ANIM.setSubtitles(false);
+  function show(t) {
+    ANIM.seek(t);
+    if (!hud.hidden) {
+      const s = ANIM.shotAt(t);
+      hud.textContent = t.toFixed(2) + 's  #' + s.i + ' ' + s.id + '  u=' + (t - s.start).toFixed(2) + '/' + s.dur;
+    }
+  }
+  ANIM.ready.then(() => {
+    let t0 = 0;
+    if (q.get('shot')) { const s = TIMELINE.shots[+q.get('shot') - 1]; if (s) t0 = s.start + 0.5; }
+    if (q.get('t')) t0 = parseFloat(q.get('t')) || 0;
+    show(t0);
+    document.documentElement.setAttribute('data-ready', '1');
+    if (q.get('play')) {
+      const wall = performance.now();
+      const tick = () => {
+        const t = t0 + (performance.now() - wall) / 1000;
+        show(Math.min(t, ANIM.duration));
+        if (t < ANIM.duration) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+  }).catch(e => {
+    document.documentElement.setAttribute('data-error', String(e && e.message || e));
+    hud.hidden = false; hud.textContent = '錯誤：' + (e && e.stack || e);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>yoxi 城事 初賽提案</title>
+<!--
+  yoxi 城事 — 2026 和泰 AI 黑客松初賽提案簡報（HTML 原稿；PDF 由 build-pdf.py 印出）
+
+  立場：替 yoxi 產品部寫給經營層的路線圖備忘錄。每頁標題是一句結論，章節名放左上角標，
+        右上角標「這頁講第 n 步」與「對應題目要求 ①～④」。
+  結構：摘要 1 頁（官方欄位，不計頁）→ 正文 15 頁（data-kind="main"）→ 附錄（data-kind="appendix"）。
+  數字：全部照 pitch/BRIEF.md §3 的公式；待佐證文件補的數字用 <span class="todo" data-doc="…">，
+        build-pdf.py 會列出剩幾個。
+  圖片：直接引用 ../../app/assets/shots、../../prototype/assets/boards、../../brain_strom.png，不複製。
+  沒有 CDN、沒有 webfont、不連網。
+-->
+<link rel="stylesheet" href="../../prototype/css/tokens.css">
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+
+<!-- ======================================================= 摘要（不計頁） -->
+<section class="slide" data-kind="summary">
+  <div class="meta"><span class="meta__ch">提案摘要</span><span class="meta__sp"></span><span class="meta__step">本頁不計入 15 頁</span></div>
+  <h1 class="t">yoxi 城事：讓 yoxi 在不搭車的日子也被打開</h1>
+  <div class="body" style="margin-top:26px">
+    <div class="sum grow">
+      <div class="k official">團隊名稱</div>
+      <div><span class="todo todo--team" data-doc="team">【待填】隊名</span>　成員：<span class="todo todo--team" data-doc="team">【待填】成員</span></div>
+
+      <div class="k official">產品/服務名稱</div>
+      <div><b>yoxi 城事</b>：yoxi 裡的城市探索與收藏——一天一個地方，走得到就走，走不到就用 yoxi 去，點數回流和泰 Points</div>
+
+      <div class="k official">企業挑戰題目</div>
+      <div class="official">yoxi：不搭車，也打開 yoxi —— 打造高頻互動的AI出行夥伴</div>
+
+      <div class="k official">目標對象</div>
+      <div>已經裝了 yoxi、但一週只在要出門時才打開的都市乘客，以及收到他們分享的家人（長輩）。</div>
+
+      <div class="k official">解決方案設計重點(至多3項)</div>
+      <div><ol>
+        <li><i>1</i>一天一個地方：AI 依 yoxi 的叫車時段、熱門上下車點、活動熱點與你的足跡推薦，走得到就走，到了才收成明信片；推播一天最多兩則，各自可關。</li>
+        <li><i>2</i>走不到才叫車：3 km 以上的地方一鍵設為下車點，車資與分鐘當場算好；搭車抵達依距離回饋 20／35／50 點到和泰 Points（原型畫面為固定 +50）。</li>
+        <li><i>3</i>分五步上線、叫車主畫面不動：新竹試辦只加在抽屜、地方頁與行程結束頁（記錄與獎章＋地方頁「用 yoxi 前往」＋每天一張「今天的地方」卡）；防護承諾量在原型 home.html、一個指令可重跑，web app 原型只有「最多 4 個景點」有測試。</li>
+      </ol></div>
+
+      <div class="k official">運用到的AI技術、服務或模型等資源</div>
+      <div>Google Cloud Vertex AI：Gemini 分級使用（Flash-Lite 寫推薦理由與回顧、Flash＋Grounding 寫附出處的地方草稿，Model Garden 的 Claude 當草稿對照組）、Imagen 4（明信片與長輩圖，圖庫預生成、編輯審過、標示 AI 生成；只用智財賠償範圍內的 GA 模型）；BigQuery（去識別化叫車與 POI 資料）＋BigQuery ML 排序；Cloud Run、Firestore。試辦（新竹 1 萬 MAU）雲端與 AI 每月約 US$522（每 MAU 約 US$0.05，上限假設）。</div>
+
+      <div class="k official">預期效益簡述</div>
+      <div>新竹試辦 12 週（假設，對照組驗證）：非叫車開啟週活躍率高 <b>5 個百分點</b>；有叫車鈕組每人總訂單高 <b>5%</b>；叫車點數在 yoxi 以外折抵的比例 <b>≥ 30%</b>（目標值）；守門指標任一變差就停。</div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n">摘要</span></footer>
+</section>
+
+<!-- ======================================================= 1 提案概述 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>1</i>提案概述</span><span class="meta__sp"></span><span class="meta__step">這頁講：五步全貌</span></div>
+  <h1 class="t">讓 yoxi 在不搭車的日子也被打開，再把「想去」<em>接回叫車</em></h1>
+  <p class="sub">不搭車的日子打開 app，才有搭車的日子的訂單。城事負責「想去」，yoxi 負責「到得了」。</p>
+  <div class="body">
+    <div class="col" style="width:820px">
+      <svg viewBox="0 0 820 690" width="820" height="690" role="img" aria-label="城事的閉環">
+        <ellipse cx="410" cy="345" rx="262" ry="248" class="sv-ring"/>
+        <g class="sv-arrow">
+          <polygon points="-13,-11 13,0 -13,11" transform="translate(563 143) rotate(35)"/>
+          <polygon points="-13,-11 13,0 -13,11" transform="translate(657 422) rotate(109)"/>
+          <polygon points="-13,-11 13,0 -13,11" transform="translate(410 593) rotate(180)"/>
+          <polygon points="-13,-11 13,0 -13,11" transform="translate(163 422) rotate(251)"/>
+          <polygon points="-13,-11 13,0 -13,11" transform="translate(257 143) rotate(325)"/>
+        </g>
+        <g class="sv-node">
+          <rect x="275" y="44" width="270" height="104" rx="8"/>
+          <text x="410" y="86" class="sv-h">早上一則推播</text>
+          <text x="410" y="120" class="sv-s">今天的地方，附推薦理由</text>
+        </g>
+        <g class="sv-node sv-node--hot">
+          <rect x="530" y="222" width="276" height="104" rx="8"/>
+          <text x="668" y="264" class="sv-h">走路或叫車抵達</text>
+          <text x="668" y="298" class="sv-s">3 km 內走路，超過才叫車</text>
+        </g>
+        <g class="sv-node">
+          <rect x="428" y="500" width="270" height="104" rx="8"/>
+          <text x="563" y="542" class="sv-h">到了才上色</text>
+          <text x="563" y="576" class="sv-s">明信片、獎章「收集 3/4」</text>
+        </g>
+        <g class="sv-node">
+          <rect x="122" y="500" width="270" height="104" rx="8"/>
+          <text x="257" y="542" class="sv-h">晚上的回顧</text>
+          <text x="257" y="576" class="sv-s">週回顧、傳給家人</text>
+        </g>
+        <g class="sv-node">
+          <rect x="14" y="222" width="276" height="104" rx="8"/>
+          <text x="152" y="264" class="sv-h">和泰 Points</text>
+          <text x="152" y="298" class="sv-s">yoxi／iRent／HOTAI 購</text>
+        </g>
+        <text x="410" y="332" class="sv-center">不搭車的日子，</text>
+        <text x="410" y="378" class="sv-center">替搭車的日子<tspan class="sv-red">養訂單</tspan></text>
+      </svg>
+    </div>
+    <div class="col grow">
+      <div class="card card--mist">
+        <div class="lbl">要解決的核心問題（題目原文）</div>
+        <blockquote class="official">傳統叫車平台的使用場景高度集中在「有明確出行需求時」，這導致APP開啟頻率低、用戶黏著度有限。</blockquote>
+      </div>
+      <div class="card">
+        <div class="lbl">這份備忘錄的建議</div>
+        <ul class="dots">
+          <li>給 yoxi 一個<b>不花錢、五分鐘內</b>的打開理由：今天的地方、晚上的回顧。</li>
+          <li>把「發現一個地方」接回本業：走不到的一段，一鍵設為下車點。</li>
+          <li>分五步上線，第 0 步<b>不動叫車主畫面</b>，每一步有守門指標與停損點。</li>
+        </ul>
+      </div>
+      <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
+        <div class="tile"><b>3 km</b><span>以內主按鈕是走路，超過才叫車</span></div>
+        <div class="tile"><b>≤ 50</b><span>點：3 km 以上搭車抵達，依距離 20／35／50</span></div>
+        <div class="tile"><b>4</b><span>叫車關鍵路徑 tap 數，不變</span></div>
+        <div class="tile"><b>2</b><span>則推播一天最多，各自可關</span></div>
+      </div>
+      <p class="small">三條主線：A 不搭車的日常（推播 → 走路 → 解鎖 → 收藏）／B 搭車的轉換（路線 → 腳到不了的一段 → 下車點 → 點數）／C 晚上的回顧（四幕 → 日誌只有你 → 週回顧 → 長輩圖）。</p>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 2 目標對象與痛點 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>2</i>目標對象與痛點分析</span><span class="meta__sp"></span><span class="meta__step">這頁講：為什麼要有第 0 步</span><span class="meta__req">對應題目要求 ① 情境</span></div>
+  <h1 class="t">yoxi 的開啟理由只有「要出門」，不出門的日子就沒被打開</h1>
+  <p class="sub">目標優化單位：<b class="navy">非叫車日的開啟</b>。現況的三個現象，和三種要服務的人。</p>
+  <div class="body">
+    <div class="col" style="width:900px">
+      <div class="card">
+        <h3><span class="num">①</span> 每一次打開，都是一次「要花錢」的決定</h3>
+        <p>叫車 app 沒有零成本的打開理由；題目也點名開啟頻率低、黏著度有限。叫車首頁是 yoxi 最貴的畫面，不能拿來放雜訊。</p>
+        <p class="small">車隊 8,500 輛（2024 年 2 月報導，同篇提到年底目標 1.1 萬）；LINE GO 1.3 萬、台灣大車隊 2.5 萬（數位時代 2024-02-16）。拼不過密度，就拼出門的理由。app 開啟次數沒有公開數字（假設待驗）。</p>
+      </div>
+      <div class="card">
+        <h3><span class="num">②</span> 在地合作停在「一檔一檔的優惠碼」</h3>
+        <p>忠泰看展、喜歡趣高雄這類合作以優惠碼呈現，看完就沒了。「只好看著滿滿的優惠券嘆氣，然後轉頭用 Uber 叫車」（App Store 評論，2025-08）。</p>
+        <p class="small">最新 400 則評論：叫不到車 70 則、取消 66 則、優惠券 36 則（評論偏向不滿，只看抱怨集中在哪）。</p>
+      </div>
+      <div class="card">
+        <h3><span class="num">③</span> 和泰 Points 只在付錢時出現</h3>
+        <p>1 點 = 1 元，能在 yoxi（單趟最高折 50 元）、iRent、HOTAI 購、原廠保養折抵；但它只跟叫車付款綁在一起，不搭車的日子跟它無關。</p>
+        <p class="small">和泰 Points 2025 年單年發放破 7 億點、兌換率九成以上；集團會員近 400 萬（和泰新聞稿 2026-01-15）。</p>
+      </div>
+    </div>
+    <div class="col grow">
+      <div class="lbl" style="margin:0">三種要服務的人</div>
+      <div class="card card--cream">
+        <h3>城市通勤者 <span class="tag tag--navy">主要</span></h3>
+        <p>住在市區，一個月叫車 ≤ 2 次（假設，待解題資料驗證）。每天經過同幾條街，沒進去過。<br><b>要的是：</b>一個不花錢、走路就到的理由。</p>
+      </div>
+      <div class="card card--cream">
+        <h3>週末出門的家長</h3>
+        <p>週末去哪是固定的煩惱；28 km 外的內灣不在清單上。<br><b>要的是：</b>一個值得坐車去的理由。</p>
+      </div>
+      <div class="card card--cream">
+        <h3>他們的家人（長輩）</h3>
+        <p>不用裝 app，從 LINE 收到一張長輩圖。<br><b>要的是：</b>看得懂的問候，不是子女的行蹤。</p>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 3 情境：一天的時間軸 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>2</i>目標對象與痛點分析 · 情境</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～3 步在一週裡的樣子</span><span class="meta__req">對應題目要求 ① 情境</span></div>
+  <h1 class="t">一週裡有六個打開 yoxi 的時刻，<em>只有一個</em>需要叫車</h1>
+  <p class="sub">同一位新竹使用者的一週（web app 實際畫面）。其他五個時刻，就是我們要替 yoxi 養出來的開啟。</p>
+  <div class="body" style="gap:18px; align-items:flex-start; justify-content:space-between; margin-top:22px">
+    <figure class="phone" style="--pw:246px"><div class="lbl">週三 08:10 · 通勤者</div><div class="phone__f"><img src="../../app/assets/shots/push-am.png" alt=""></div>
+      <figcaption><b>早上一則推播</b><small>今天的地方；一天最多兩則</small></figcaption></figure>
+    <figure class="phone" style="--pw:246px"><div class="lbl">週三 12:20 · 通勤者</div><div class="phone__f"><img src="../../app/assets/shots/explore.png" alt=""></div>
+      <figcaption><b>離你 900 m，走路 12 分</b><small>附「為什麼推薦給你」</small></figcaption></figure>
+    <figure class="phone" style="--pw:246px"><div class="lbl">週三 12:35 · 通勤者</div><div class="phone__f"><img src="../../app/assets/shots/unlock.png" alt=""></div>
+      <figcaption><b>到了才上色</b><small>80 m 內停 1 分鐘才算抵達</small></figcaption></figure>
+    <figure class="phone" style="--pw:246px"><div class="lbl" style="color:var(--yoxi-red)">週日 13:00 · 叫車</div><div class="phone__f" style="border-color:var(--yoxi-red)"><img src="../../app/assets/shots/place-far.png" alt=""></div>
+      <figcaption><b>內灣 28 km：用 yoxi 前往</b><small>約 $691 · 65 分</small></figcaption></figure>
+    <figure class="phone" style="--pw:246px"><div class="lbl">週日 21:30 · 回顧</div><div class="phone__f"><img src="../../app/assets/shots/lookback.png" alt=""></div>
+      <figcaption><b>晚上一則回顧</b><small>心情只有你看得到</small></figcaption></figure>
+    <figure class="phone" style="--pw:246px"><div class="lbl">週日 21:40 · 家人</div><div class="phone__f"><img src="../../app/assets/shots/elder.png" alt=""></div>
+      <figcaption><b>傳給家人：長輩圖</b><small>送出的是圖，不是位置</small></figcaption></figure>
+  </div>
+  <div class="card card--cream" style="flex:none; margin-top:14px; display:flex; gap:28px; align-items:center">
+    <p style="font-size:24px"><b>其中五次開啟不花錢、不叫車</b>——這是題目要的「不搭車也打開」。第六次是週日 28 km 的內灣：走不到，才叫車。</p>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 4 資料怎麼用 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 資料應用</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 1 步的推薦從哪來</span><span class="meta__req">對應題目要求 ① 資料應用</span></div>
+  <h1 class="t">yoxi 已經有的資料，各自決定畫面上的一件事</h1>
+  <p class="sub">官方解題資源四種＋使用者自己的足跡＋公開資料。解題數據依注意事項第 9 條只用於本競賽、賽後銷毀。</p>
+  <div class="body" style="gap:32px">
+    <div class="col grow">
+      <table class="tb">
+        <thead><tr><th style="width:17%">資料</th><th style="width:24%">用來決定</th><th style="width:31%">畫面上長怎樣</th><th>處理原則</th></tr></thead>
+        <tbody>
+          <tr><th>叫車時段與頻率趨勢</th><td>推播時間；今天推走路還是推搭車</td><td>「你常在週日下午出門」寫進推薦理由</td><td>群體趨勢排程；個人時段要使用者開關</td></tr>
+          <tr><th>乘車場域屬性（POI）</th><td>地方的類別與「還沒去過哪一類」</td><td>「還沒有『水路』這一組的 1 張」</td><td>類別層級，不存個人軌跡</td></tr>
+          <tr><th>熱門上下車地點</th><td>地方候選池；運力調度理由</td><td>「週日下午往內灣方向回程車較多，較好媒合」</td><td>250 m 網格，每格 &lt; 10 人次不顯示（假設）</td></tr>
+          <tr><th>交通樞紐與活動熱點</th><td>「為什麼是今天」；路線的斷點</td><td>路線上「腳到不了的一段」</td><td>活動資料要有出處才上架</td></tr>
+          <tr><th>你自己的足跡與收藏</th><td>從你走過的路長出推薦；回顧</td><td>明信片、週回顧、城市足跡</td><td>只有你；設定頁五種資料各自可關</td></tr>
+          <tr><th>公開資料</th><td>地圖、地方故事骨架、天氣過濾</td><td>真實新竹地圖、「以前的它」、大雨不推戶外</td><td>OSM、觀光署、文化部、氣象署開放資料，標署名</td></tr>
+        </tbody>
+      </table>
+      <p class="small">每一筆資料都有退路：關掉它，功能降級但不壞。收到資料後兩週驗 7 個假設，決定 3 km 門檻、推播時段與冷啟動名單；欄位與粒度等 yoxi 寄來再定。</p>
+    </div>
+    <figure class="phone" style="--pw:290px"><div class="phone__f"><img src="../../app/assets/shots/settings.png" alt=""></div>
+      <figcaption><b>城事設定</b><small>推播兩則、五種資料各自可關</small></figcaption></figure>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 5 roadmap 五階段 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 總覽</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～4 步</span></div>
+  <h1 class="t">分五步上線：<em>第 0 步不動叫車主畫面</em>，每一步都有停損點</h1>
+  <p class="sub">2026 Q4 簽核入口、點數預算與資料介接；2027 Q1 新竹試辦第 0 步，地方頁的「用 yoxi 前往」與每天一張「今天的地方」卡一起上。</p>
+  <div class="body big5" style="flex-direction:column; gap:12px">
+    <div class="rm__axis">
+      <div class="rm__node now"><i>0</i><span>2027 Q1 · 新竹 12 週</span></div>
+      <div class="rm__node"><i>1</i><span>2027 Q2</span></div>
+      <div class="rm__node"><i>2</i><span>2027 Q3</span></div>
+      <div class="rm__node"><i>3</i><span>2027 Q3–Q4</span></div>
+      <div class="rm__node"><i>4</i><span>2028 起</span></div>
+    </div>
+    <div class="rm">
+      <div class="rm__c now"><h3>記錄與獎章</h3>
+        <p class="one">行程結束後收明信片、獎章；抽屜內每天一張「今天的地方」卡＋早上一則可關的推播；地方頁可「用 yoxi 前往」。</p>
+        <dl><dt>前提</dt><dd>沒有前提；點數改距離三級＋每月上限；保留 10% 對照組</dd>
+            <dt>守門指標</dt><dd>上車率、配對時間、取消率、評分填寫率、客服進線</dd>
+            <dt>停損</dt><dd class="stop">守門任一變差即關；第 6 週北極星差距 &lt; 1 個百分點，只留記錄與獎章</dd></dl></div>
+      <div class="rm__c"><h3>探索＋tab bar 決定</h3>
+        <p class="one">完整探索頁：地圖、路線、缺口導向；晚上的回顧推播；AI 每月從活動與熱點重生內容。</p>
+        <dl><dt>前提</dt><dd>北極星比對照組高 5 個百分點；守門無一變差</dd>
+            <dt>守門指標</dt><dd>推播關閉率、系統推播退訂、城事退出率</dd>
+            <dt>停損</dt><dd class="stop">推播關閉率超過 15% 就降為一則；內容每月產不出一條路線就停</dd></dl></div>
+      <div class="rm__c"><h3>叫車地圖上顯示景點</h3>
+        <p class="one">叫車地圖最多 4 個景點（先預設關、灰度）＋一鍵設為下車點；路線斷點、回程。</p>
+        <dl><dt>前提</dt><dd>有叫車鈕組每人總訂單比沒有叫車鈕的對照組高 5%；防護承諾在正式程式重量全綠</dd>
+            <dt>守門指標</dt><dd>每人總訂單（顯示景點組 vs 只有地方頁叫車鈕組）；叫車 4 下不變</dd>
+            <dt>停損</dt><dd class="stop">誤觸（3 秒內關閉）&gt; 10% 降到 2 顆；叫車變慢即關圖層</dd></dl></div>
+      <div class="rm__c"><h3>分享與世代</h3>
+        <p class="one">週回顧、長輩圖、「傳給家人」；好友這一期不做。同期擴六都第一波（高雄、台中）。</p>
+        <dl><dt>前提</dt><dd>每人明信片中位數 ≥ 4 張；隱私分軌已上線</dd>
+            <dt>守門指標</dt><dd>分享數；經分享回流的新裝置；長輩端週開啟</dd>
+            <dt>停損</dt><dd class="stop">分享內容含位置資訊的事件必須是 0；長輩端週開啟不成立就不做家人模式</dd></dl></div>
+      <div class="rm__c"><h3>整合</h3>
+        <p class="one">大型活動、健檢出行、多點行程交給 yoxi、預約叫車。</p>
+        <dl><dt>前提</dt><dd>前三步的資料成立；活動與醫療有合作方</dd>
+            <dt>守門指標</dt><dd>活動期間訂單；多點行程使用率</dd>
+            <dt>停損</dt><dd class="stop">沒有合作方就不排進本期</dd></dl></div>
+    </div>
+    <p class="small"><b>本頁目標值全為假設，第 0 週以 yoxi 基準替換。</b>團隊（新增投入，假設）：試辦約 7 FTE，每月含人力約 NT$81.9 萬；六都約 14.2 FTE；六都第二波（台北、新北、桃園、台南）2027 Q4 → 2028 Q2。</p>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 6 三條主線 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 流程</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～3 步的主線</span></div>
+  <h1 class="t">三條主線各證明一件事：<em>會打開、會叫車、會回來</em></h1>
+  <p class="sub">全部是 web app 原型的實際畫面（390×844）；插圖沿用 app 裡「AI 生成示意」的標示。</p>
+  <div class="body tight" style="gap:30px">
+    <div class="col grow">
+      <h3 style="font-size:26px">A 不搭車的日常 <span class="tag">第 0、1 步</span></h3>
+      <div style="display:flex; gap:6px">
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="assets/explore-why.png" alt=""></div><figcaption><b>為什麼推薦給你</b></figcaption></figure>
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/place.png" alt=""></div><figcaption><b>走路前往</b></figcaption></figure>
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/album-new.png" alt=""></div><figcaption><b>收進收藏</b></figcaption></figure>
+      </div>
+      <div class="card card--mist"><p><b>證明：</b>全程沒碰叫車鈕，也有打開的理由。</p></div>
+    </div>
+    <div class="col grow">
+      <h3 style="font-size:26px">B 搭車的轉換 <span class="tag tag--red">第 0、2 步</span></h3>
+      <div style="display:flex; gap:6px">
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="assets/route-brk.png" alt=""></div><figcaption><b>腳到不了的一段</b></figcaption></figure>
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="assets/ride-dropoff-neiwan.png" alt=""></div><figcaption><b>下車點已填</b></figcaption></figure>
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="assets/points-after.png" alt=""></div><figcaption><b>點數明細</b></figcaption></figure>
+      </div>
+      <div class="card card--mist"><p><b>證明：</b>從內容到訂單一步；點數總數＝明細相加。</p></div>
+    </div>
+    <div class="col grow">
+      <h3 style="font-size:26px">C 晚上的回顧 <span class="tag">第 1、3 步</span></h3>
+      <div style="display:flex; gap:6px">
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/push-pm.png" alt=""></div><figcaption><b>晚上一則</b></figcaption></figure>
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/album-journal.png" alt=""></div><figcaption><b>日誌只有你</b></figcaption></figure>
+        <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/share.png" alt=""></div><figcaption><b>第一格傳給家人</b></figcaption></figure>
+      </div>
+      <div class="card card--mist"><p><b>證明：</b>日誌沒有分享鍵，週回顧右上才有。</p></div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 7 第 0 步與第 1 步 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 體驗規劃</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0 步與第 1 步</span></div>
+  <h1 class="t">第 0 步只加在抽屜、地方頁與行程結束頁，<em>不必動叫車主畫面就能上</em></h1>
+  <p class="sub">上線版不是 web app 原型：原型用三分頁 tab bar 示範終局，第一個上線的是抽屜入口，先拿開啟數據再談 tab bar。</p>
+  <div class="body" style="gap:32px">
+    <div class="card" style="flex:none; align-self:flex-start">
+      <div class="lbl">第 0 步 · 新竹試辦</div>
+      <div style="display:flex; gap:12px">
+        <figure class="phone" style="--pw:196px"><div class="phone__f"><img src="../../app/assets/shots/drawer.png" alt=""></div><figcaption><b>抽屜多一列</b><small>入口在這裡（截圖是原型）</small></figcaption></figure>
+        <figure class="phone" style="--pw:196px"><div class="phone__f"><img src="../../app/assets/shots/unlock-ride.png" alt=""></div><figcaption><b>搭 yoxi 抵達版</b><small>金框、依距離回饋點數</small></figcaption></figure>
+        <figure class="phone" style="--pw:196px"><div class="phone__f"><img src="../../app/assets/shots/album-badges.png" alt=""></div><figcaption><b>獎章</b><small>「收集 3/4」，沒有進度環</small></figcaption></figure>
+      </div>
+    </div>
+    <div class="col grow">
+      <table class="tb tb--dense">
+        <thead><tr><th style="width:52%">第 0 步動了</th><th>第 0 步沒動</th></tr></thead>
+        <tbody>
+          <tr><td>抽屜多一列「城事」，裡面每天一張「今天的地方」卡</td><td>叫車主畫面收合態（0 像素）</td></tr>
+          <tr><td>早上一則推播（可關）</td><td>叫車關鍵路徑（4 下）、tab bar</td></tr>
+          <tr><td>行程結束頁：評分之後才出現一條金色橫幅</td><td>好康專區、優惠券、企業簽單、預約叫車</td></tr>
+          <tr><td>地方頁 3 km 外的主按鈕「用 yoxi 前往」</td><td>叫車地圖（顯示景點是第 2 步）</td></tr>
+          <tr><td>收藏頁：明信片、獎章</td><td>探索頁、地圖、路線（第 1 步）</td></tr>
+        </tbody>
+      </table>
+      <div class="card card--cream" style="display:flex; gap:22px; align-items:center">
+        <figure class="phone" style="--pw:140px"><div class="phone__f"><img src="../../app/assets/shots/explore-map.png" alt=""></div></figure>
+        <div>
+          <div class="lbl">第 1 步 · 完整探索頁（2027 Q2）</div>
+          <p>地圖、這個月的路線、缺口導向；探索地圖最多 10 個景點；晚上的回顧推播。</p>
+          <p style="margin-top:8px"><b>待決：</b>城事從哪裡進（抽屜 vs tab bar）。<b>到期條件：</b>第 1 步上線前決定；試辦 12 週的開啟數據先出來，再談 tab bar。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 8 商業轉換閉環 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 商業轉換</span><span class="meta__sp"></span><span class="meta__step">這頁講：地方頁叫車鈕（第 0 步）與第 2 步</span><span class="meta__req">對應題目要求 ② 商業轉換</span></div>
+  <h1 class="t">車只出現在腳到不了的地方：內灣 28 km，<em>一鍵設為下車點</em></h1>
+  <p class="sub">3 km 內主按鈕是「走路前往」；超過 3 km 才把「用 yoxi 前往」放第一顆。按下去只填好下車點，還沒叫車。</p>
+  <div class="body" style="gap:28px">
+    <div class="col" style="flex:none; width:960px; gap:14px">
+    <div style="display:flex; gap:6px; align-items:flex-start; flex:none">
+      <figure class="phone" style="--pw:180px"><div class="phone__f"><img src="../../app/assets/shots/route.png" alt=""></div><figcaption><b>路線的斷點</b><small>內灣線六個站</small></figcaption></figure>
+      <span class="arrow" style="margin-top:170px">›</span>
+      <figure class="phone" style="--pw:180px"><div class="phone__f"><img src="../../app/assets/shots/place-far.png" alt=""></div><figcaption><b>用 yoxi 前往</b><small>約 $691 · 65 分</small></figcaption></figure>
+      <span class="arrow" style="margin-top:170px">›</span>
+      <figure class="phone" style="--pw:180px"><div class="phone__f"><img src="../../app/assets/shots/trip-done-rated.png" alt=""></div><figcaption><b>評分在前，獎勵在後</b><small>不搶 yoxi 要的資料</small></figcaption></figure>
+      <span class="arrow" style="margin-top:170px">›</span>
+      <figure class="phone" style="--pw:180px"><div class="phone__f"><img src="../../app/assets/shots/points.png" alt=""></div><figcaption><b>點數明細</b><small>總數＝明細相加</small></figcaption></figure>
+    </div>
+    <table class="tb tb--dense tb--ledger">
+      <thead><tr><th style="width:22%">回收的帳</th><th>假設值（pitch/docs/business.md）</th></tr></thead>
+      <tbody>
+        <tr><th>增量訂單</th><td>有叫車鈕組每人總訂單比對照組高 5%；每張增量訂單的平台收入以派遣費 NT$10 計</td></tr>
+        <tr><th>合作方內容位</th><td>每個地方 NT$3,000–10,000／月；10 家 × NT$5,000 ＝ NT$5 萬／月，約抵一城內容成本的 57%</td></tr>
+        <tr><th>集團點數留存</th><td>每 50 點面額，集團實際成本約 NT$32（逾期 20%、兌換成本比 0.8）；目標 30% 在 yoxi 以外折抵</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="col grow">
+      <div class="card">
+        <div class="lbl">這一趟怎麼算（公式，不是 yoxi 真實費率）</div>
+        <p>車資 75 ＋ 22 × 28.0 km ＝ <b class="num">$691</b>；車程 ≈ 65 分</p>
+        <p>搭車回饋 ⌊691 ÷ 20⌋ ＝ <b class="num">34</b> 點；城事點數依距離 3–10 km <b class="num">20</b>、10–20 km <b class="num">35</b>、20 km 以上 <b class="num">50</b> → 內灣 <b class="num">50</b> 點</p>
+        <p class="small" style="margin-top:4px">畫面是原型的固定 +50 版；原型畫面字樣為「限定版」，法務過字前沿用，正式名稱「搭 yoxi 抵達版」。</p>
+      </div>
+      <div class="card card--cream">
+        <div class="lbl">誰付這些點數</div>
+        <p>試辦由 yoxi 行銷預算出（12 週約 NT$10.5 萬，每人每月最多 4 次）；2027 Q2 起合作地點由合作方分攤一半。</p>
+        <p style="margin-top:6px">以每趟 10 元派遣費計，點數不靠單趟回收；回收靠非叫車日開啟帶來的中長程增量訂單、合作方分攤與集團點數留存。<b>第 6 週若每張增量訂單的點數成本 &gt; 30 元就砍半級距。</b></p>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 9 AI 的四個角色 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>4</i>AI 應用方法</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 1～3 步背後的引擎</span></div>
+  <h1 class="t">AI 做四件事：<em>決定今天推哪裡</em>，把去過變成內容</h1>
+  <p class="sub">「設為下車點」是產品設計，不是 AI。AI 用在人做不到規模的地方，而且每一件都有人工關卡。</p>
+  <div class="body big" style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:20px">
+    <div class="card">
+      <h3><span class="num">a</span>　推薦「今天的地方」 <span class="tag">第 0、1 步</span></h3>
+      <p><b>輸入：</b>yoxi 叫車時段、POI、熱門上下車、樞紐與活動熱點＋你的足跡、天氣</p>
+      <p><b>輸出：</b>一天一個地方，附五條「為什麼推薦給你」</p>
+      <p><b>模型：</b>先規則、再 BigQuery ML 排序；Gemini Flash-Lite 夜間批次寫理由</p>
+      <p><b>選用原因：</b>排序要能回測、能解釋；理由交給生成模型才讀得像人話</p>
+      <p class="small">沒有 AI：每人每天不同的推薦，規則寫不完。關卡：整修、夜間、距離先用規則濾掉。</p>
+    </div>
+    <div class="card">
+      <h3><span class="num">b</span>　地方內容產線 <span class="tag">第 1 步</span></h3>
+      <p><b>流程：</b>公開資料＋活動＋合作方供稿 → Gemini 起草三段（現在的它／以前的它／為什麼是今天）→ 城市編輯審 → 有出處才上架</p>
+      <p><b>模型：</b>Gemini 3.5 Flash＋Grounding 附出處；Claude（Model Garden）當對照，編輯盲評</p>
+      <p><b>選用原因：</b>多模態，讀得了活動海報與照片；長文品質可換模型比較</p>
+      <p class="small">沒有 AI：每城一位編輯寫不出一天一個。關卡：AI 不直接上架，每段附出處。</p>
+    </div>
+    <div class="card">
+      <h3><span class="num">c</span>　明信片與長輩圖 <span class="tag">第 0、3 步</span></h3>
+      <p><b>輸入：</b>地點、季節、光線；使用者寫的一句話</p>
+      <p><b>模型：</b>Imagen 4（每張約 US$0.04）；地標用 Gemini Flash Image 餵參考照片。圖庫預生成，執行期不生圖</p>
+      <p><b>選用原因：</b>同一平台、風格可固定，標示與抽審流程可控</p>
+      <p class="small">沒有 AI：每個地方要請插畫家畫四季版，一城 60 個地方就做不起來。每張標 <span class="aimark">AI 生成示意</span>、編輯抽審；只用智財賠償範圍內的 GA 模型。</p>
+    </div>
+    <div class="card">
+      <h3><span class="num">d</span>　回顧的自動敘事 <span class="tag">第 3 步</span></h3>
+      <p><b>輸入：</b>今天的步數、多的那張卡、選的照片（可跳過）</p>
+      <p><b>輸出：</b>晚上四幕、週回顧、日誌摘要；人只選心情</p>
+      <p><b>模型：</b>Gemini Flash-Lite；每天的回顧先用模板，LLM 先寫週回顧</p>
+      <p><b>選用原因：</b>短摘要量大、要快，輕量模型最省</p>
+      <p class="small">沒有 AI：回顧只能是固定模板的流水帳，沒有「你這週走了哪條街」的敘事。只讀使用者自己的資料；日誌留在「只有你」這一軌。</p>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 10 技術架構與成本 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>4</i>AI 應用方法 · 技術架構</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～3 步要蓋的東西</span><span class="meta__req">對應題目要求 ③ 技術架構與成本</span></div>
+  <h1 class="t">叫車核心一行不改；城事是旁掛的服務，<em>AI 在支線上</em></h1>
+  <p class="sub">雲端每月約 US$522（NT$1.67 萬），約佔含人力總成本（NT$81.9 萬／月，見 14/15）的 2%；內容的瓶頸在編輯產能。</p>
+  <div class="body" style="gap:36px">
+    <div style="flex:none; width:1060px">
+      <svg viewBox="0 0 1060 700" width="1060" height="700" role="img" aria-label="技術架構">
+        <!-- 欄標 -->
+        <text x="150" y="24" class="sv-col">yoxi 既有（不改）</text>
+        <text x="530" y="24" class="sv-col">城事服務（Cloud Run）</text>
+        <text x="910" y="24" class="sv-col">資料與 AI（BigQuery・Vertex AI）</text>
+        <!-- 左欄 -->
+        <g class="sv-old">
+          <rect x="0" y="44" width="300" height="96" rx="8"/><text x="150" y="84" class="sv-h2">叫車主畫面</text><text x="150" y="116" class="sv-s2">收合態不動・4 tap</text>
+          <rect x="0" y="160" width="300" height="96" rx="8"/><text x="150" y="200" class="sv-h2">叫車與車資估算</text><text x="150" y="232" class="sv-s2">下車點欄位（城事只填值）</text>
+          <rect x="0" y="276" width="300" height="96" rx="8"/><text x="150" y="316" class="sv-h2">行程紀錄</text><text x="150" y="348" class="sv-s2">行程結束事件</text>
+          <rect x="0" y="392" width="300" height="96" rx="8"/><text x="150" y="432" class="sv-h2">和泰 Points</text><text x="150" y="464" class="sv-s2">發放：搭車回饋、城事點數</text>
+          <rect x="0" y="508" width="300" height="96" rx="8"/><text x="150" y="548" class="sv-h2">推播</text><text x="150" y="580" class="sv-s2">一天最多兩則</text>
+        </g>
+        <!-- 中欄 -->
+        <g class="sv-new">
+          <rect x="380" y="44" width="300" height="96" rx="8"/><text x="530" y="84" class="sv-h2">城事模組（app 內）</text><text x="530" y="116" class="sv-s2">抽屜入口・探索・收藏</text>
+          <rect x="380" y="160" width="300" height="96" rx="8"/><text x="530" y="200" class="sv-h2">城事 API</text><text x="530" y="232" class="sv-s2">地方、路線、收藏、來源歸因</text>
+          <rect x="380" y="276" width="300" height="96" rx="8"/><text x="530" y="316" class="sv-h2">抵達判定</text><text x="530" y="348" class="sv-s2">80 m 停 1 分；搭車看行程紀錄</text>
+          <rect x="380" y="392" width="300" height="96" rx="8"/><text x="530" y="432" class="sv-h2">Firestore</text><text x="530" y="464" class="sv-s2">收藏、設定、只有你的日誌</text>
+          <rect x="380" y="508" width="300" height="96" rx="8"/><text x="530" y="548" class="sv-h2">Cloud Scheduler</text><text x="530" y="580" class="sv-s2">早上的地方、晚上的回顧</text>
+        </g>
+        <!-- 右欄 -->
+        <g class="sv-ai">
+          <rect x="760" y="44" width="300" height="96" rx="8"/><text x="910" y="84" class="sv-h2">BigQuery</text><text x="910" y="116" class="sv-s2">解題資料（去識別化）</text>
+          <rect x="760" y="160" width="300" height="96" rx="8"/><text x="910" y="200" class="sv-h2">a 推薦批次（每晚）</text><text x="910" y="232" class="sv-s2">排序模型＋Gemini 寫理由</text>
+          <rect x="760" y="276" width="300" height="96" rx="8"/><text x="910" y="316" class="sv-h2">b 內容產線</text><text x="910" y="348" class="sv-s2">Gemini 草稿 → 編輯審</text>
+          <rect x="760" y="392" width="300" height="96" rx="8"/><text x="910" y="432" class="sv-h2">c 明信片（Imagen）</text><text x="910" y="464" class="sv-s2">→ Cloud Storage＋CDN</text>
+          <rect x="760" y="508" width="300" height="96" rx="8"/><text x="910" y="548" class="sv-h2">d 回顧敘事</text><text x="910" y="580" class="sv-s2">Gemini 短摘要</text>
+        </g>
+        <!-- 連線 -->
+        <g class="sv-link">
+          <line x1="380" y1="92" x2="306" y2="92"/>
+          <line x1="380" y1="208" x2="306" y2="208"/>
+          <line x1="300" y1="324" x2="374" y2="324"/>
+          <line x1="380" y1="440" x2="306" y2="440"/>
+          <line x1="380" y1="556" x2="306" y2="556"/>
+          <line x1="760" y1="208" x2="686" y2="208"/>
+          <line x1="760" y1="324" x2="686" y2="324"/>
+          <line x1="760" y1="440" x2="686" y2="440"/>
+          <line x1="760" y1="556" x2="686" y2="556"/>
+          <line x1="910" y1="140" x2="910" y2="154"/>
+        </g>
+        <g class="sv-arrow">
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(306 208) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(374 324)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(306 440) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(306 556) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(686 208) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(686 324) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(686 440) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(686 556) rotate(180)"/>
+          <polygon points="-9,-7 9,0 -9,7" transform="translate(910 154) rotate(90)"/>
+        </g>
+        <g class="sv-lab">
+          <text x="340" y="198">填值</text>
+          <text x="340" y="314">事件</text>
+          <text x="340" y="430">點數</text>
+          <text x="340" y="546">排程</text>
+          <text x="720" y="198">清單</text>
+          <text x="720" y="314">內容</text>
+          <text x="720" y="430">圖檔</text>
+          <text x="720" y="546">文字</text>
+        </g>
+        <!-- 圖例 -->
+        <g transform="translate(0 640)">
+          <rect x="0" y="0" width="30" height="22" rx="4" class="sv-old-k"/><text x="42" y="18" class="sv-leg">yoxi 既有，不改</text>
+          <rect x="260" y="0" width="30" height="22" rx="4" class="sv-new-k"/><text x="302" y="18" class="sv-leg">城事新增</text>
+          <rect x="470" y="0" width="30" height="22" rx="4" class="sv-ai-k"/><text x="512" y="18" class="sv-leg">資料與 AI 支線（a～d 對應上一頁）</text>
+        </g>
+      </svg>
+    </div>
+    <div class="col grow">
+      <div class="lbl" style="margin:0">試辦每月成本（新竹 1 萬 MAU；單價查自官方定價頁 2026-09-23）</div>
+      <table class="tb tb--dense">
+        <thead><tr><th>項目</th><th style="width:36%">每月</th></tr></thead>
+        <tbody>
+          <tr><th>a 推薦理由</th><td>US$136</td></tr>
+          <tr><th>b 內容草稿（34 篇）</th><td>US$3</td></tr>
+          <tr><th>c 明信片圖庫（20 個地方）</th><td>US$71</td></tr>
+          <tr><th>d 回顧敘事</th><td>US$171</td></tr>
+          <tr><th>基礎設施（Cloud Run、Firestore、CDN、BigQuery、監控）</th><td>US$141</td></tr>
+          <tr><th>雲端與 AI 合計</th><td><b class="num">US$522</b><br>≈ NT$1.67 萬</td></tr>
+          <tr><th>城市編輯 1 人＋外包</th><td>NT$8.65 萬</td></tr>
+          <tr><th>城事點數</th><td>NT$3.5 萬</td></tr>
+        </tbody>
+      </table>
+      <p class="small">上限假設：每位 MAU 每天推薦 1 次、回顧 1 次；1 USD = NT$32。六都 20 萬 MAU 每月 US$7,319、全台 100 萬 MAU US$34,836（每 MAU US$0.035–0.052）；一次性建庫每城 US$217。</p>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 11 六條承諾與產品性格 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>5</i>獨特優勢與差異化</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～2 步的護欄</span></div>
+  <h1 class="t">叫車沒有變難用、城事不像集點、<em>隱私分兩軌</em></h1>
+  <p class="sub">三件事都寫成自動測試或畫面規則，不是口號；別家要複製畫面容易，要複製這套紀律難。</p>
+  <div class="body" style="display:grid; grid-template-columns:repeat(3,1fr); gap:24px">
+    <div class="card card--big">
+      <h3>叫車沒變難用</h3>
+      <ul class="dots">
+        <li>關掉城事圖層，叫車首頁跟今天一模一樣</li>
+        <li>叫車還是 4 下，一下都沒多</li>
+        <li>叫車地圖同時最多 4 個景點</li>
+        <li>景點不遮上下車 pin 與按鈕</li>
+      </ul>
+      <p class="why"><b>為什麼：</b>叫車首頁是 yoxi 最貴的畫面；公開評論裡最尖銳的抱怨就是廣告與推播關不掉。</p>
+      <p class="small" style="margin-top:14px">以自動測試鎖住，一個指令重跑；量在原型 home.html，web app 原型目前只有景點數有測試。還沒量的「足跡上色的干擾」也寫出來。量法與數字見附錄 A-4。</p>
+    </div>
+    <div class="card card--big">
+      <h3>不像集點</h3>
+      <ul class="dots">
+        <li>禁用詞（<span class="official">任務／完成／達成／挑戰／每日</span>）由測試掃過每個畫面</li>
+        <li>沒有連續天數、倒數、限量、排名、未讀數字</li>
+        <li>獎章寫「收集 4/8」，沒有進度環</li>
+        <li>推播一天最多兩則，各自可關</li>
+      </ul>
+      <p class="why"><b>為什麼：</b>一被讀成集點，城事就變成另一種優惠券；打開的理由要來自地方本身。</p>
+    </div>
+    <div class="card card--big">
+      <h3>隱私分軌</h3>
+      <ul class="dots">
+        <li><b>只有你：</b>日誌、心情、照片、走過的路線</li>
+        <li><b>你可分享：</b>明信片、獎章、週回顧、長輩圖</li>
+        <li>日誌沒有分享鍵；分享圖不含位置</li>
+        <li>五種資料在設定頁各自可關</li>
+      </ul>
+      <p class="why"><b>為什麼：</b>足跡是敏感資料；家人看到的只能是對方按過分享的那張圖，不是位置。</p>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 12 差異化比較 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>5</i>獨特優勢與差異化</span><span class="meta__sp"></span><span class="meta__step">這頁講：為什麼只有 yoxi 做得起來</span></div>
+  <h1 class="t">別家能抄畫面，抄不走「探索 → 叫車 → <em>和泰 Points</em>」這條迴路</h1>
+  <p class="sub">比較的是「不搭車的日子有沒有理由打開」與「打開之後能不能接回訂單」。</p>
+  <div class="body" style="flex-direction:column; gap:16px">
+    <table class="tb">
+      <thead><tr><th style="width:15%">比較</th><th class="us" style="width:21%">yoxi 城事</th><th>Google Maps 儲存地點</th><th>Pikmin Bloom</th><th>LINE GO 與 LINE Points</th><th>叫車優惠券</th></tr></thead>
+      <tbody>
+        <tr><th>誰先開口</th><td class="us">城市先開口：一天一個，附理由</td><td>你自己存</td><td>走路種花，地點不是主角</td><td>你要叫車才打開</td><td>發券時才打開</td></tr>
+        <tr><th>不搭車的日子</th><td class="us">今天的地方、晚上的回顧</td><td>有需要才開</td><td>有（走路）</td><td>沒有理由</td><td>沒有理由</td></tr>
+        <tr><th>接回叫車</th><td class="us">腳到不了的一段一鍵設為下車點</td><td>導航，不導向叫車</td><td>沒有</td><td>本業</td><td>折價後叫車</td></tr>
+        <tr><th>點數去哪</th><td class="us">和泰 Points：yoxi／iRent／HOTAI 購</td><td>沒有</td><td>遊戲內</td><td>LINE POINTS（規則待核對）</td><td>單次折抵</td></tr>
+        <tr><th>動機來源</th><td class="us">地方內容；點數是回饋，不是動機</td><td>工具</td><td>遊戲化收集</td><td>折扣</td><td>折扣</td></tr>
+      </tbody>
+    </table>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px">
+      <div class="card card--cream"><h3>① 點數跨出行與用車</h3><p>點數回到和泰 Points：yoxi、iRent、HOTAI 購、原廠保養都能折抵。</p></div>
+      <div class="card card--cream"><h3>② 叫車端資料變理由</h3><p>熱門上下車與回程運力寫進推薦理由，只有叫車平台有。</p></div>
+      <div class="card card--cream"><h3>③ 節制寫進按鈕</h3><p>3 km 內叫你走路。不賣每一趟，才可信。</p></div>
+    </div>
+    <p class="small">競品描述依各家官方說明與媒體報導（查詢 2026-09-23，URL 見附錄 A-2）；LINE POINTS 規則是第三方整理，正式引用前核對官方。</p>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 13 KPI 指標樹與實驗設計 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>6</i>預期效益與落地評估 · 成效驗證</span><span class="meta__sp"></span><span class="meta__step">這頁講：每一步要看的數字</span><span class="meta__req">對應題目要求 ④ 成效驗證</span></div>
+  <h1 class="t">三層指標決定要不要走下一步：<em>開啟、訂單、叫車守門</em></h1>
+  <p class="sub">試辦範圍：第 0 步＋地方頁「用 yoxi 前往」＋每天一張「今天的地方」卡。括號裡的目標值全是假設，第 0 週用 yoxi 基準替換。</p>
+  <div class="body" style="gap:32px">
+    <div class="col" style="width:1120px">
+      <div class="card card--navy" style="text-align:center">
+        <div class="lbl">北極星</div>
+        <p style="font-size:28px; font-weight:800">非叫車開啟週活躍率：一週內至少一次「打開但沒叫車」的使用者比例</p>
+        <p class="small" style="color:var(--yoxi-slate-lite)">目標：比 10% 對照組高 5 個百分點（假設）；第 6 週差距 &lt; 1 個百分點就退回第 0 步</p>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; flex:1">
+        <div class="card">
+          <h3>開啟與參與 <span class="tag">第 0、1 步</span></h3>
+          <ul class="dots"><li>推播開啟率（早上 ≥ 8%）</li><li>走路抵達（≥ 30 次／千人／週）</li><li>「一天一個」採用率（≥ 25%）</li><li>回顧開啟率（≥ 20%）</li><li>分享數、長輩端週開啟</li></ul>
+        </div>
+        <div class="card">
+          <h3>轉換 <span class="tag tag--red">第 0 步起</span></h3>
+          <ul class="dots"><li><b>每人總訂單：有叫車鈕組比對照組高 5%</b></li><li>設為下車點 → 30 分內送出（≥ 30%）</li><li>探索訂單里程中位數 ≥ 8 km</li><li>點數成本 ≤ 單張平台收入</li><li>點數在 yoxi 以外折抵 ≥ 30%</li></ul>
+        </div>
+        <div class="card" style="border-color:var(--yoxi-red)">
+          <h3>守門：變差就停</h3>
+          <ul class="dots"><li>叫車 tap 數 = 4，不允許變</li><li>上車率（送出到上車）、配對時間</li><li>取消率、客訴率</li><li>推播關閉率 &lt; 15%</li><li>城事退出率 &lt; 5%</li></ul>
+        </div>
+      </div>
+    </div>
+    <div class="col grow">
+      <div class="card card--cream">
+        <h3>實驗設計</h3>
+        <ul class="dots">
+          <li>以使用者隨機：對照 10%（看不到城事）、沒有叫車鈕組 45%、有叫車鈕組 45%</li>
+          <li>新竹 12 週：第 2 週看守門、第 6 週看北極星、第 12 週看訂單</li>
+          <li>每組約 6,400 人可偵測 +5%（Lehr 經驗式，基準為假設）；新竹活躍數不足時，改看 +10%（約 3,600 人）或延長到 16 週，基底由 yoxi 資料定案</li>
+          <li>只在第 6、12 週看顯著性；不中途換主要指標</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>怎麼證明是新增，不是換入口</h3>
+        <p>比<b>每人總訂單</b>，不比帶標籤的訂單；訂單帶來源欄位（地方頁／叫車地圖／路線／搜尋）與地點。</p>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 14 落地評估 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>6</i>預期效益與落地評估</span><span class="meta__sp"></span><span class="meta__step">這頁講：第一期（新竹試辦）</span></div>
+  <h1 class="t">第一期只在新竹試辦 12 週，<em>守門指標一變差就停</em></h1>
+  <p class="sub">外部審查最常問的四個洞（內容成本、點數誰付、防刷、AI 圖像權利）都在這張表上，用假設＋驗證法回答。</p>
+  <div class="body" style="gap:32px">
+    <div class="col col14" style="width:680px">
+      <div class="card">
+        <h3>時程與資源</h3>
+        <p><b>範圍：</b>第 0 步＋地方頁「用 yoxi 前往」＋每天一張「今天的地方」卡與早上一則推播</p>
+        <p><b>時程：</b>2026 Q4 簽核 → 2027 Q1 新竹 12 週 → 第 12 週決定擴城</p>
+        <p><b>人力：</b>約 7 FTE：6 位全職＋資料、QA、法遵部分工時（假設）</p>
+        <p><b>雲端：</b>US$522／月（約 NT$1.67 萬）；含人力每月約 NT$81.9 萬，雲端佔約 2%（假設）</p>
+        <p><b>內容：</b>每城 1 位編輯＋外包約 NT$8.65 萬／月；每月 20 個新地方＋10 個翻新（34 篇草稿）；種子庫 60 個地方（假設）</p>
+      </div>
+      <div class="card card--cream">
+        <h3>停損與升級條件</h3>
+        <ul class="dots">
+          <li>守門指標任一項變差 → 停，關掉開關</li>
+          <li>地方頁叫車鈕上線一個月，探索訂單低於走路抵達的一成 → 叫車地圖不顯示景點</li>
+          <li>抵達解鎖流失高於兩成 → 儀式改一秒版</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col grow">
+      <table class="tb">
+        <thead><tr><th style="width:22%">風險</th><th style="width:45%">對策</th><th>怎麼驗</th></tr></thead>
+        <tbody>
+          <tr><th>內容供給成本</th><td>AI 草稿＋每城一位編輯審；先一城、每月一條路線</td><td>每篇約 NT$2,900（假設）；第 4 週實測工時</td></tr>
+          <tr><th>點數誰付</th><td>3 km 以上分三級、每月 4 次；試辦 yoxi 行銷出，Q2 起合作方分攤一半</td><td>每張增量訂單點數成本 &gt; 30 元就砍半級距</td></tr>
+          <tr><th>刷點</th><td>點數只來自真的訂單（行程紀錄驗）；走路抵達只給明信片、不給點</td><td>異常領取率</td></tr>
+          <tr><th>AI 圖像權利</th><td>固定風格、不寫實、不畫商標與人臉；人工抽審；標 AI 生成</td><td>只用智財賠償範圍內的 GA 模型</td></tr>
+          <tr><th>動到叫車首頁</th><td>第一期不動；叫車地圖顯示景點與 tab bar 等實驗數字</td><td>守門指標</td></tr>
+          <tr><th>個資與法遵</th><td>隱私分軌；五種資料各自可關；存圖不含位置</td><td>個資法：新目的單獨告知、單獨同意</td></tr>
+          <tr><th>字眼像促銷</th><td>「限定版」改稱「搭 yoxi 抵達版」；不寫限量</td><td>法務過字</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 15 補充資料 -->
+<section class="slide" data-kind="main">
+  <div class="meta"><span class="meta__ch"><i>7</i>補充資料</span><span class="meta__sp"></span><span class="meta__step">這頁講：已經做到哪、試辦前補什麼</span></div>
+  <h1 class="t">原型已能走完三條主線；試辦前要補的是<em>真實數字</em>，不是畫面</h1>
+  <p class="sub">程式碼：<code>github.com/Ricky610329/Yoxi_app_design</code>　·　全部離線可開，不用安裝。</p>
+  <div class="body" style="gap:36px">
+    <figure style="flex:none; width:760px">
+      <div class="shot"><img src="../../app/assets/shots/desktop-ride.png" alt=""></div>
+      <figcaption class="cap">web app 桌機版：<code>app/index.html</code> 拖進 Chrome 即可走完 A／B／C；右側是 demo 面板（模擬推播、模擬抵達）。</figcaption>
+    </figure>
+    <div class="col grow">
+      <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+        <div class="tile"><b>102</b><span>張原型畫面檔</span></div>
+        <div class="tile"><b>36</b><span>個變體、10 條設計軸線</span></div>
+        <div class="tile"><b>25</b><span>條 web app route</span></div>
+        <div class="tile"><b>187</b><span>條瀏覽器測試＋34 條單元測試</span></div>
+        <div class="tile"><b>22</b><span>張明信片、真實 OSM 新竹地圖</span></div>
+        <div class="tile"><b>6</b><span>條承諾一個指令重跑</span></div>
+      </div>
+      <div class="card">
+        <h3>試辦前要補的</h3>
+        <ul class="dots">
+          <li>用解題資料離線跑推薦，看「今天的地方」的命中與分布</li>
+          <li>六條承諾移進 app 測試；叫車首頁加開關</li>
+          <li>AI 內容已設計為離線預生成，接上 Vertex AI 約 US$90、11.5 人天（決賽展示用實際生成結果）</li>
+          <li>使用者訪談：缺口會不會被讀成清單（人數待定）</li>
+        </ul>
+      </div>
+      <p class="small">來源、決策矩陣全表、承諾量法、更多畫面見附錄。</p>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 附錄 A-1 來源與公式 -->
+<section class="slide" data-kind="appendix">
+  <div class="meta"><span class="meta__ch"><i>7</i>補充資料 · 參考來源</span></div>
+  <h1 class="t">參考來源、程式碼與公式</h1>
+  <div class="body" style="gap:40px">
+    <div class="col grow">
+      <div class="lbl" style="margin:0">官方</div>
+      <ul class="refs dots">
+        <li>2026 和泰 AI 黑客松官網 <code>https://ht-hackathon.tw/tw/home</code></li>
+        <li><span class="official">企業挑戰題目</span> PDF（yoxi 題在第 6 頁）<code>https://cdn.bountyhunter.co/file-presign/d382a46c-1ca6-4363-8e03-1481260d5c9f.pdf</code></li>
+        <li>參賽注意事項（第 9 條：解題數據賽後銷毀）<code>https://cdn.bountyhunter.co/file-presign/23513098-c468-4a37-9e60-4592009711c4.pdf</code></li>
+      </ul>
+      <div class="lbl" style="margin:8px 0 0">程式碼與原型</div>
+      <ul class="refs dots">
+        <li>GitHub <code>https://github.com/Ricky610329/Yoxi_app_design</code></li>
+        <li>web app <code>app/index.html</code>；提案總覽 <code>prototype/proposal.html</code>；承諾驗收 <code>prototype/tools/verify-quiet.py</code>；app 測試 <code>app/tests/run.py</code></li>
+      </ul>
+      <div class="lbl" style="margin:8px 0 0">素材授權</div>
+      <ul class="refs dots">
+        <li>地圖資料 © OpenStreetMap 貢獻者，ODbL 1.0</li>
+        <li>明信片與插圖：程式生成示意，標「AI 生成示意」；正式版改由 Imagen 依地點生成</li>
+        <li>色票：yoxi 官方 logo SVG、App Store 截圖與官網 CSS 取樣（<code>prototype/css/tokens.css</code>）</li>
+      </ul>
+      <div class="lbl" style="margin:8px 0 0">外部數字</div>
+      <ul class="refs dots">
+        <li>市場、yoxi、競品數字的出處見附錄 A-2（查詢日期 2026-09-23）</li>
+      </ul>
+    </div>
+    <div class="col" style="width:640px">
+      <div class="card card--cream">
+        <h3>原型的公式（不是 yoxi 真實費率）</h3>
+        <table class="tb" style="background:transparent">
+          <tbody>
+            <tr><th>車資</th><td>75 ＋ 22 × km 元</td></tr>
+            <tr><th>車程</th><td>3 ＋ 2.2 × km 分</td></tr>
+            <tr><th>走路</th><td>公尺 ÷ 75 分</td></tr>
+            <tr><th>走路門檻</th><td>3 km（超過才建議叫車、才有城事點數）</td></tr>
+            <tr><th>搭車回饋</th><td>每 20 元 1 點，無條件捨去</td></tr>
+            <tr><th>走不到的地方</th><td>原型固定 +50；建議版 3–10 km 20、10–20 km 35、20 km 以上 50 點</td></tr>
+            <tr><th>內灣</th><td>28.0 km → $691、65 分；34＋50 點</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 附錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 附錄 A-2 外部數字與來源 -->
+<section class="slide" data-kind="appendix">
+  <div class="meta"><span class="meta__ch"><i>7</i>補充資料 · 外部數字</span></div>
+  <h1 class="t">簡報裡的外部數字，全部查得到出處</h1>
+  <div class="body" style="margin-top:20px; flex-direction:column; gap:10px">
+    <table class="tb tb--dense tb--src">
+      <thead><tr><th style="width:44%">數字或事實</th><th style="width:17%">來源</th><th>URL（查詢 2026-09-23）</th></tr></thead>
+      <tbody>
+        <tr><td>yoxi 車隊 8,500 輛（2024 年 2 月報導，同篇提到年底目標 1.1 萬）；LINE GO 1.3 萬輛、380 萬會員；台灣大車隊 2.5 萬輛</td><td>數位時代 2024-02-16</td><td><code>https://www.bnext.com.tw/article/78389/yoxi-uuber</code></td></tr>
+        <tr><td>yoxi 每趟派遣費 10 元（2024 年報導，實際以 yoxi 提供為準）；LINE GO 抽成 15%、Uber 25%</td><td>數位時代（LINE TODAY 轉載）</td><td><code>https://today.line.me/tw/v2/article/2DRMjXa</code></td></tr>
+        <tr><td>和泰 Points 1 點 = 1 元、yoxi 單趟最高折 50 元、聯名卡最高 10% 回饋</td><td>yoxi 官網</td><td><code>https://www.yoxi.app/promotion/984</code></td></tr>
+        <tr><td>和泰 Points 可折抵保養、HOTAI 購、iRent、yoxi</td><td>和泰會員</td><td><code>https://www.hotaimember.com.tw/hotaipoints</code></td></tr>
+        <tr><td>集團會員近 400 萬；Points 2025 年發放破 7 億點、兌換率九成以上</td><td>和泰新聞稿 2026-01-15</td><td><code>https://www.hotaimotor.com.tw/News/Details/325</code></td></tr>
+        <tr><td>App Store 4.8 分、約 5.3 萬則評分</td><td>App Store</td><td><code>https://apps.apple.com/tw/app/yoxi/id1521393667</code></td></tr>
+        <tr><td>最新 400 則評論：叫不到車 70、取消 66、優惠券 36（2024-04～2026-09）</td><td>App Store 評論 RSS</td><td><code>https://itunes.apple.com/tw/rss/customerreviews/page=1/id=1521393667/sortby=mostrecent/json</code></td></tr>
+        <tr><td>Google Maps 清單與時間軸</td><td>Google 說明</td><td><code>https://support.google.com/maps/answer/9948049</code></td></tr>
+        <tr><td>Pikmin Bloom 玩法（走路種花、明信片）</td><td>官方</td><td><code>https://pikminbloom.com/en/gameplay</code></td></tr>
+        <tr><td>LINE GO 與 LINE POINTS（第三方整理，正式引用前核對官方）</td><td>Money101</td><td><code>https://www.money101.com.tw/blog/line-taxi-%E8%A9%95%E5%83%B9-%E5%84%AA%E6%83%A0</code></td></tr>
+        <tr><td>公開資料：觀光署景點／活動、文化部藝文活動、氣象署鄉鎮預報</td><td>政府資料開放平台</td><td><code>data.gov.tw/dataset/7777、7778、6478、9307</code></td></tr>
+        <tr><td>個人資料保護法</td><td>全國法規資料庫</td><td><code>https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=I0050021</code></td></tr>
+        <tr><td>Gemini、Imagen 4、Claude（Model Garden）單價</td><td>Vertex AI 生成式 AI 定價</td><td><code>https://cloud.google.com/vertex-ai/generative-ai/pricing</code></td></tr>
+        <tr><td>Cloud Run、Firestore、CDN、BigQuery 單價</td><td>Google Cloud 定價頁</td><td><code>cloud.google.com/run/pricing、/firestore/pricing、/cdn/pricing、/bigquery/pricing</code></td></tr>
+        <tr><td>樣本數經驗式（Lehr's rule：α = 0.05、檢定力 80%）</td><td>統計常用近似式</td><td><code>pitch/docs/kpi.md §2.3</code></td></tr>
+        <tr><td>生成式 AI 智財賠償範圍（GA 版 Gemini、Imagen）</td><td>Google Cloud 條款</td><td><code>https://cloud.google.com/terms/generative-ai-indemnified-services</code></td></tr>
+      </tbody>
+    </table>
+    <p class="small">標「假設」的數字（叫車頻率、目標值、級距、人力、編輯薪資）都附驗證法，見 pitch/docs/ 各份文件的假設清單。</p>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 附錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 附錄 A-3 決策矩陣 -->
+<section class="slide" data-kind="appendix">
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 決策矩陣全表</span></div>
+  <h1 class="t">十條設計軸線：我們選什麼，什麼時候回頭看</h1>
+  <div class="body" style="margin-top:22px">
+    <table class="tb tb--dense">
+      <thead><tr><th style="width:18%">問題</th><th style="width:26%">我們選</th><th>什麼時候回頭看（這個決定的到期條件）</th></tr></thead>
+      <tbody>
+        <tr><th>地圖該歸誰？</th><td>E＝叫車地圖上顯示景點＋一鍵設為下車點（D 預設關是降落傘）</td><td>D 以「預設關」灰度上線後看叫車頁停留與誤觸；E 的足跡上色先量再開。</td></tr>
+        <tr><th>轉換點在哪？</th><td>K1＝地方頁的「用 yoxi 前往」（K7＝沒有叫車鈕的對照組）</td><td>K1 上線一個月，探索產生的訂單低於走路抵達的一成，或 yoxi 允許動叫車首頁時，升級成 E。</td></tr>
+        <tr><th>城事從哪裡進？</th><td>未定：抽屜入口（候選 G）vs 三分頁 tab bar</td><td>第 1 步上線前必決；先用 G 拿到開啟數據，再談 tab bar。</td></tr>
+        <tr><th>收藏怎麼組織？</th><td>S3 路線書架</td><td>路線超過 10 條、散片比路線多的時候，看時間牆或圖鑑缺口。</td></tr>
+        <tr><th>探索的主敘事？</th><td>X2 缺口導向</td><td>使用者訪談若把「還沒有 X 類」讀成清單，退回一天一個。</td></tr>
+        <tr><th>獎章怎麼呈現？</th><td>X4 勳章牆</td><td>有人要求看進度時才看進度環；集點卡永遠不做。</td></tr>
+        <tr><th>好康專區同頁嗎？</th><td>不同頁（T1 是對照組）</td><td>業務要求合併時拿 T1 出來，證明合併會破壞好康專區自己的語氣。</td></tr>
+        <tr><th>畫面放多少東西？</th><td>L1 一屏一事</td><td>第一次可用性測試看「找不到入口」的次數；到達步數變多就退回主線。</td></tr>
+        <tr><th>儀式要多長？</th><td>未定：三幕 vs 一秒版</td><td>抵達解鎖的流失率高於兩成就看一秒版。</td></tr>
+        <tr><th>家人是模式還是選項？</th><td>分享選項（長輩圖）</td><td>第 3 步時決定；「模式」只在長輩端的開啟數據成立時做。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 附錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 附錄 A-4 六條承諾的量法 -->
+<section class="slide" data-kind="appendix">
+  <div class="meta"><span class="meta__ch"><i>5</i>獨特優勢與差異化 · 承諾的量法</span></div>
+  <h1 class="t">防護承諾怎麼量、數字是多少、web app 原型的狀態</h1>
+  <div class="body" style="flex-direction:column; gap:14px; margin-top:20px">
+    <table class="tb tb--dense">
+      <thead><tr><th style="width:19%">承諾</th><th style="width:9%">數字</th><th style="width:29%">量什麼</th><th style="width:16%">原型（變體 E）</th><th>web app 原型</th></tr></thead>
+      <tbody>
+        <tr><th>① DOM 逐節點相同</th><td><b class="num">464</b></td><td>圖層關閉時與 home.html 的 464 個節點逐行比對</td><td>只有 D 成立（E 多 3 處）</td><td>不適用：原型選 E，沒有圖層開關</td></tr>
+        <tr><th>② 叫車 tap 數不變</th><td><b class="num">4</b></td><td>收合態 sheet 可按元素的順序、文字、目的地</td><td>PASS（4 個）</td><td>要重量</td></tr>
+        <tr><th>③ 收合態 0 改動</th><td><b class="num">0</b></td><td>展開態元素外洩到收合態的數量</td><td>PASS（0 個）</td><td>要重量（下車點提示字有改）</td></tr>
+        <tr><th>④ 最多 4 個景點</th><td><b class="num">4</b></td><td>地圖上的景點數</td><td>PASS</td><td>成立：ride.spec.js 斷言剛好 4 個</td></tr>
+        <tr><th>⑤ 不遮 pin／浮動鈕</th><td><b class="num">0 px²</b></td><td>景點與 6 個受保護元素的重疊面積</td><td>PASS</td><td>要重量（底圖換成 OSM）</td></tr>
+        <tr><th>⑥ 兩套標記</th><td><b class="num">∅</b></td><td>上下車 pin 與景點的 class 交集</td><td>PASS（交集空）</td><td>沿用兩套 class；沒有交集斷言</td></tr>
+        <tr><th>⑦ 足跡上色</th><td>—</td><td>還沒定義</td><td>沒量</td><td>沒量</td></tr>
+      </tbody>
+    </table>
+    <p class="small">重跑：<code>python prototype/tools/verify-quiet.py</code>，約 4 分鐘（八段：幾何③④⑤⑥、DOM①、結構②、互動、全站、圍牆、層級樹、功能數）。web app 原型：<code>python app/tests/run.py</code>，每條 route 驗死按鈕、禁用詞、可按數、數字對公式、返回鍵。上線前把 ②③⑤⑥ 移進正式測試，並加伺服器端開關。</p>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 附錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 附錄 A-5 更多畫面（app） -->
+<section class="slide" data-kind="appendix">
+  <div class="meta"><span class="meta__ch"><i>7</i>補充資料 · 模擬畫面</span></div>
+  <h1 class="t">更多 web app 畫面</h1>
+  <div class="body" style="flex-direction:column; gap:18px; margin-top:22px">
+    <div style="display:flex; justify-content:space-between">
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/ride.png" alt=""></div><figcaption><b>叫車首頁（web app 原型）</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/ride-peek.png" alt=""></div><figcaption><b>地圖景點小卡</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/ride-dropoff.png" alt=""></div><figcaption><b>下車點已填</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/trip-riding.png" alt=""></div><figcaption><b>行程中「這條路上」</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/explore-map.png" alt=""></div><figcaption><b>探索地圖</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/going.png" alt=""></div><figcaption><b>走路前往中</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/routes.png" alt=""></div><figcaption><b>這個月的路線</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/postcard.png" alt=""></div><figcaption><b>明信片</b></figcaption></figure>
+    </div>
+    <div style="display:flex; justify-content:space-between">
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/album.png" alt=""></div><figcaption><b>收藏：路線書架</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/album-journal.png" alt=""></div><figcaption><b>日誌（只有你）</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/footprint.png" alt=""></div><figcaption><b>城市足跡</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/share.png" alt=""></div><figcaption><b>分享面板</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/push-pm.png" alt=""></div><figcaption><b>晚上推播</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/trips.png" alt=""></div><figcaption><b>行程紀錄</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/notify.png" alt=""></div><figcaption><b>通知中心</b></figcaption></figure>
+      <figure class="phone" style="--pw:150px"><div class="phone__f"><img src="../../app/assets/shots/welcome.png" alt=""></div><figcaption><b>第一次打開</b></figcaption></figure>
+    </div>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 附錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<!-- ======================================================= 附錄 A-6 概念板與腦力激盪 -->
+<section class="slide" data-kind="appendix">
+  <div class="meta"><span class="meta__ch"><i>7</i>補充資料 · 概念原型</span></div>
+  <h1 class="t">第 4 步的方向：真實地圖質感、單雙地圖、微 3D，以及最初的腦力激盪</h1>
+  <div class="body" style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px 28px; margin-top:22px">
+    <figure><div class="shot"><img src="../../prototype/assets/boards/board-map-styles.png" alt=""></div><figcaption class="cap">同一份 OSM 幾何的六種底圖（紙感、夜間、插畫、微 3D、傾斜、霧化）</figcaption></figure>
+    <figure><div class="shot"><img src="../../prototype/assets/boards/board-map-single.png" alt=""></div><figcaption class="cap">單地圖：探索與足跡在同一張圖</figcaption></figure>
+    <figure><div class="shot"><img src="../../prototype/assets/boards/board-map-dual.png" alt=""></div><figcaption class="cap">雙地圖對照</figcaption></figure>
+    <figure><div class="shot"><img src="../../prototype/assets/boards/board-map-3d.png" alt=""></div><figcaption class="cap">微 3D：建物高度多為推估，只當畫法看</figcaption></figure>
+    <figure><div class="shot"><img src="../../prototype/assets/boards/board-friends.png" alt=""></div><figcaption class="cap">好友系統概念稿：本期不做，五個問題未決</figcaption></figure>
+    <figure><div class="shot" style="height:333px; display:flex; align-items:center; background:var(--yoxi-white)"><img src="../../brain_strom.png" alt=""></div><figcaption class="cap">最初的腦力激盪圖（原稿，保留當時用字）</figcaption></figure>
+  </div>
+  <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 附錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
+</section>
+
+<script src="deck.js"></script>
+</body>
+</html>

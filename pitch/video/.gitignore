@@ -1,0 +1,4 @@
+# build-video.py 的中間檔（TTS wav 快取、音軌、ffmpeg 記錄）、--only 的預覽、--frame 截的檢查畫格，可隨時重產
+out/build/
+out/preview.mp4
+out/frames/

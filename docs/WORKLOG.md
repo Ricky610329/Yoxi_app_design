@@ -58,3 +58,45 @@
 | `26c8e4d` | 第二波：叫車／探索／收藏／系統四個區塊並行建置，25 條 route；測試 140/140 |
 | `eefd15b` | 第三波：三條流程端到端測試 `flows.spec.js`（19 條，含限定版沒收就回首頁／再叫車的兩條路）、QA 縫合（router 自動移除 mount 期間的 window listener、`nav.replaceQuery`、收卡與設下車點防連點、足跡覆蓋率改固定範圍、探索地圖景點推開）、視覺 QA（42 張手機寬度截圖工具 `shoot-app.py`、六處 CSS 修正）；文件（`app/README.md`、根 README、HANDOFF §10、AGENTS、本檔）。瀏覽器測試 159/159 |
 | `d65a42a` | 第四波：來回檢查。乾淨 clone 重跑抓到順序相依的 flaky（/trip 配對中改由 startedAt 推導）；逐行審查修 8 個 bug（手打 `?ride=1` 就能拿金框＋50 點、返回鍵連按退出 app、確認框疊開、原型鏈 id、壞 store 值、harness 逾時污染）；亂按 QA 17 項（內灣頁兩個分鐘數、清除足跡真的清空、1280×720 縮放、行程中不能改下車點、週回顧數字不倒退…）；五個視角評估 `docs/webapp-review/` 引出 5 項（+50 只給走不到的地方、trip 帶 via 歸因、叫車地圖景點開關、VERSION 單一來源、週標題終點）；無障礙 6 項（對比 ≥ 4.5、對話框焦點與 Esc、toast aria-live、44×44 命中區）；五種敘述方向 `docs/narratives/`。瀏覽器測試 187/187、單元 34/34、sw v4 |
+
+## 2026-09-23 初賽交件：`pitch/`（2026 和泰 AI 黑客松 · yoxi 題）
+
+六個 Opus agent 並行：資料規劃、AI 架構與成本、商業與 KPI、roadmap 與差異化、影片、簡報；主 agent 寫共用簡報與交件清單。敘述立場改為「站在 yoxi 的角度、給經營層的路線圖備忘錄」。
+
+| commit | 做了什麼 |
+|---|---|
+| `5273fc4` | `pitch/BRIEF.md` 共用工作簡報、`pitch/docs/competition.md` 官方事實 |
+| `638aeea` | `roadmap.md`（五階段時間軸、19 條風險）、`competitive.md`、交件清單 `pitch/README.md`、摘要頁 `summary.md` |
+| `172d28c` | `data-plan.md`：現況與痛點（400 則評論分佈）、三種人物、資料盤點、推薦怎麼算、隱私治理、拿到真資料後兩週 |
+| `0a6faa0` | `ai-architecture.md`：AI 四角色、架構圖、模型選用（只用有智財賠償的 GA 模型）、三情境成本、決賽前接真 AI 的最短路徑 |
+| `f164a30` | `business.md`（發現 yoxi 收入是每趟派遣費 10 元 → 點數改三級＋上限）、`kpi.md`（北極星非叫車開啟週活躍率、K1 對 K7） |
+| `eaba103` | 影片：`script.md`／`shots.json`／`storyboard.html`／`build-video.py`（TTS＋ffmpeg，2:45.5，23 鏡頭）／`README.md` |
+| `aa95b8e` | 簡報 HTML 框架＋初稿（摘要 1＋正文 15＋附錄 5）、`build-pdf.py` 六項硬檢查 |
+| `3ec8ad9` | 對齊內容量假設（每城 60 個地方、每月 34 篇草稿、1 位編輯）；README／AGENTS／HANDOFF §11／WORKLOG 指向 pitch/ |
+| `85e1b73` | 摘要頁補目標值與成本；影片腳本註明點數級距 |
+| `8cb1ee2` | 簡報第二波：用六份佐證文件補齊全部數字佔位；附錄 A-2 外部數字出處 15 列 |
+| `ec3a212` | 跨文件一致性稽核：人力約 7 FTE／每月 NT$81.9 萬、推播停損 15%、第 1 步前提改北極星、K1 提前到第 0 步，另 15 處小不一致 |
+| `1048465` | 簡報第三波：評審 12 點修正（代號換白話、第 8 頁攤開派遣費 vs 點數的帳、第 11 頁改人看得懂的三張卡…）；試辦範圍拍板為第 0 步＋K1＋今天的地方最小版 |
+
+評審視角試打分：73.5／100（主題 8、創意 7、可行性 8、AI 整合 6），預估入圍 15 隊；第三波已針對其 12 點修正。交件前仍要人做的：隊名與成員、GitHub 公開與否、影片要不要換真人配音、拿到 yoxi 真資料後是否換第 4 頁（見 `pitch/README.md`）。
+
+## 2026-09-23 初賽影片重做：向量動畫＋願景版
+
+使用者要求：影片用向量動畫風格重做、少自我解釋、講願景；子 agent 一律開 Opus 5.5。主 agent 寫願景版腳本（13 格、旁白約 430 字）、動畫契約 `pitch/video/anim/CONTRACT.md` 與共用程式庫 `lib.js`，三個 Opus agent 並行：管線（`build-video.py` 重寫）、第 1–7 格場景、第 8–13 格場景。
+
+| commit | 做了什麼 |
+|---|---|
+| `6aa1e31` | 四張 web app 截圖搬到 `pitch/deck/assets/`（只剩簡報第 6 頁在用）；刪影片舊管線的 `shoot-extra.py` 與舊畫格，舊鏡頭表改名 `shots-draft-v1.json` |
+| `8777ec5` | 影片：`shots.json` 願景版 13 格；`anim/`（SVG 舞台、每格畫面是 t 的純函數、真實新竹街道三組地圖、共用零件、字幕條、交叉淡接、兩支場景檔）；`build-video.py`（檢查 → TTS → timeline.js → 標準庫 WebSocket 走 DevTools 逐格截圖餵 ffmpeg → 音軌對齊；`--frame／--only／--fps／--check／--audio-dir`）；README／script.md／storyboard 改版。成片 2:08.2、30 fps、13.4 MB；`--check` 13/13 格純函數；verify-quiet 八段 PASS 且六條承諾與基準相同；build-pdf PASS |
+
+畫面規矩：顏色只讀 `tokens.css`、數字只讀 `timeline.js` 的 `calc`（公式算）、地圖格自動署名 OpenStreetMap、明信片格標「AI 生成示意」。全片 30 fps 約 4 分鐘可重產；正式版只換真人配音（每格一個音檔 → `--audio-dir`）。
+
+## 2026-09-23 介紹網站：`site/`
+
+使用者要「專門介紹這個 app 的本機網站，捲動式、可互動」。主 agent 寫骨架（section 與掛載點、`scroll.js` 捲動框架、`data.js` 公式與地點、`site.css` 基底、`tools/shoot-site.py` 截圖驗收、`CONTRACT.md`），兩個 Opus agent 並行：內容 agent（各段文案、週曆條、三條線卡、19 個 scrolly 步驟、AI 卡、承諾清單、路線圖、影片、入口與頁尾）、互動 agent（hero 霧地圖、可點的真實地圖＋明信片、3 公里距離尺、叫車首頁圖層開／關對照）。
+
+| commit | 做了什麼 |
+|---|---|
+| `6a7070b` | `site/`：十三段一頁式介紹站，`file://` 直接開，沒有 build／框架／CDN／webfont；只讀 prototype、app 截圖、pitch 影片。CSS 不寫 hex、數字走 `data-fmt`／`SITE_DATA.fmt`、禁用詞掃過；手機寬度可看。README／AGENTS／HANDOFF §12 指向。shoot-site 十三段＋整頁＋互動後截圖無 JS 例外；verify-quiet 八段 PASS 且六條承諾與基準相同 |
+
+已知不夠好的：六條承諾的量測值是寫在 HTML 的字面值（它們是 verify-quiet 的量測結果，不是公式）；路線圖第 0 步守門指標「叫車完成率」為避禁用詞改寫成「叫車成功率」；hero 霧散開的效果偏含蓄；探索地圖把 2.5 km 外的地點夾到邊緣標「圖外」。

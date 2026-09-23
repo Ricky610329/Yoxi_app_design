@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>城事影片分鏡</title>
+<!-- 由 pitch/video/build-video.py 從 shots.json 產生，不要手改。縮圖＝向量動畫在每格 55% 處的畫面（out/board/）。顏色讀 prototype/css/tokens.css 的變數。 -->
+<link rel="stylesheet" href="../../prototype/css/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--yoxi-mist); color: var(--yoxi-navy);
+         font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; }
+  header { background: var(--yoxi-red); color: var(--yoxi-white); padding: var(--sp-6) var(--gutter); }
+  header h1 { margin: 0 0 var(--sp-2); font-size: var(--fs-h1); }
+  header p { margin: 0; font-size: var(--fs-sm); opacity: .92; }
+  main { max-width: 1440px; margin: 0 auto; padding: var(--sp-5) var(--gutter) var(--sp-7);
+         display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: var(--sp-5); }
+  .shot { background: var(--yoxi-paper); border-radius: var(--r-card); box-shadow: var(--sh-card); overflow: hidden; }
+  .shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--yoxi-navy); }
+  .meta { padding: var(--sp-4); }
+  .meta p { margin: 0 0 var(--sp-2); }
+  .tc { font-size: var(--fs-sm); color: var(--yoxi-slate); }
+  .tc b { color: var(--yoxi-navy); }
+  .tc span { float: right; }
+  .sec { display: inline-block; font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--yoxi-red);
+         background: var(--yoxi-red-soft); border-radius: var(--r-pill); padding: 2px var(--sp-2); }
+  .scene { font-size: var(--fs-xs); color: var(--yoxi-slate); }
+  .theme { font-size: var(--fs-xs); color: var(--yoxi-slate); }
+  .cap { font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
+  .nar { font-size: var(--fs-sm); line-height: var(--lh-body); border-left: 3px solid var(--yoxi-line); padding-left: var(--sp-2); }
+  .vis { font-size: var(--fs-cap); color: var(--yoxi-slate); line-height: var(--lh-body); }
+  .calc { margin: 0 0 var(--sp-2); padding-left: var(--sp-4); color: var(--yoxi-red); font-size: var(--fs-cap); font-weight: var(--fw-bold); }
+  .note { font-size: var(--fs-cap); color: var(--yoxi-slate); }
+</style>
+</head>
+<body>
+<header>
+  <h1>yoxi 城事 · 方案說明影片分鏡</h1>
+  <p>總長 2:08.2（128.2 秒，實測（TTS wav 長度＋前後留白 0.25／0.65 秒）），13 個鏡頭 · 上限 3:00 · 向量動畫（pitch/video/anim/）· 旁白與數字的真相在 shots.json／script.md</p>
+</header>
+<main>
+<article class="shot">
+  <img src="out/board/01-s01-quiet.png" alt="#1 s01-quiet" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#1</b> 0:00.0–0:10.0 <span>10.0 秒</span></p>
+    <p><span class="sec">開場</span> <code class="scene">quiet</code> <span class="theme">淺色</span></p>
+    <p class="cap">只有要出門那一刻，才被打開</p>
+    <p class="nar">一座城市，你每天經過，卻很少真的走進去。<br>叫車 app 也一樣，只有要出門那一刻才被打開。</p>
+    <p class="vis">淡霧下的真實新竹街道（HSMAP fog 風格）慢慢平移。前景一排 7 個「日子」方塊，只有 2 格亮起 yoxi 紅色 app 圖示，其餘灰；第二句時大字浮現。</p>
+    
+    <p class="note">站在 yoxi 的角度講痛點，不講「我們相信」。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/02-s02-question.png" alt="#2 s02-question" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#2</b> 0:10.0–0:19.1 <span>9.1 秒</span></p>
+    <p><span class="sec">開場</span> <code class="scene">question</code> <span class="theme">深色</span></p>
+    <p class="cap">給它一個跟車無關的理由</p>
+    <p class="nar">不搭車的日子，yoxi 能不能還是被打開？<br>我們的答案是：給它一個跟車無關的理由。</p>
+    <p class="vis">海軍藍底。題目「不搭車，也打開 yoxi」逐字打出，停一拍；第二句時「一個跟車無關的理由」以紅色強調滑入，題目退淡。</p>
+    
+    <p class="note">題目原文只在畫面引用，不改字。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/03-s03-name.png" alt="#3 s03-name" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#3</b> 0:19.1–0:28.0 <span>8.9 秒</span></p>
+    <p><span class="sec">願景</span> <code class="scene">name</code> <span class="theme">淺色</span></p>
+    <p class="cap">一天一個地方 · 走得到就走 · 走不到就用 yoxi 去</p>
+    <p class="nar">yoxi 城事，一天只給你一個地方。<br>走得到就走，走不到，就用 yoxi 去。</p>
+    <p class="vis">字標「yoxi 城事」放大定住，下方三個短句依序亮起（走得到就走＝步行小人；走不到就用 yoxi 去＝小車）。背景霧地圖只開一個洞。</p>
+    
+    <p class="note">產品一句話照 BRIEF §1，不改。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/04-s04-morning.png" alt="#4 s04-morning" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#4</b> 0:28.0–0:37.1 <span>9.1 秒</span></p>
+    <p><span class="sec">A 不搭車的日常</span> <code class="scene">morning</code> <span class="theme">淺色</span></p>
+    <p class="cap">一天就這一個</p>
+    <p class="nar">早上一則提醒，說今天有個地方離你不遠。<br>它不催你，也不排名，一天就這一個。</p>
+    <p class="vis">晨光色。一張卡從下方升起：「今天的地方 · 水利路的老玻璃窯 · 900 m · 走路 12 分」（數字讀 TIMELINE.calc.kiln）。地圖上對應的灰 pin 呼吸發亮。沒有徽章、沒有倒數、沒有紅點。</p>
+    <ul class="calc"><li>走路 900 m ÷ 75 = 12 分鐘</li></ul>
+    <p class="note">走路分鐘＝公尺 ÷ 75，畫面上的數字由 timeline 帶入，不手寫。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/05-s05-walk.png" alt="#5 s05-walk" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#5</b> 0:37.1–0:47.1 <span>10.1 秒</span></p>
+    <p><span class="sec">A 不搭車的日常</span> <code class="scene">walk</code> <span class="theme">淺色</span></p>
+    <p class="cap">到了才上色</p>
+    <p class="nar">走過去。路過一百次都是灰的地方，<br>走進去一次，才上色，變成一張明信片。</p>
+    <p class="vis">步行小點沿真實街道從車站走到玻璃窯，霧沿路開；抵達瞬間灰 pin 爆開變紅、周圍一圈上色、一張明信片從 pin 升起（角落小字「AI 生成示意」）。</p>
+    
+    <p class="note">抵達是示意；明信片是 AI 生成示意，畫面要有標。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/06-s06-lightup.png" alt="#6 s06-lightup" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#6</b> 0:47.1–0:57.7 <span>10.5 秒</span></p>
+    <p><span class="sec">A 不搭車的日常</span> <code class="scene">lightup</code> <span class="theme">淺色</span></p>
+    <p class="cap">你的城市，一格一格亮起來</p>
+    <p class="nar">日子一天天過，你的城市一格一格亮起來。<br>這是 yoxi 在不搭車的日子裡，被打開的理由。</p>
+    <p class="vis">鏡頭拉遠到整個新竹（wide 資料集），霧上的洞一個接一個開、灰 pin 依序變紅；右上小小的「收集 4/8」獎章；第二句時大字浮現。</p>
+    
+    <p class="note">沒有連續天數、沒有排名；獎章寫「收集 4/8」。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/07-s07-far.png" alt="#7 s07-far" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#7</b> 0:57.7–1:05.7 <span>8.1 秒</span></p>
+    <p><span class="sec">B 搭車的轉換</span> <code class="scene">far</code> <span class="theme">淺色</span></p>
+    <p class="cap">腳到不了的一段</p>
+    <p class="nar">總有些地方，腳到不了。<br>內灣老街，二十八公里，走一天也走不到。</p>
+    <p class="vis">再拉遠，地圖邊緣之外是留白；一條虛線從城市伸向右邊很遠的一顆 pin「內灣老街 · 28 km」；步行小點在地圖邊緣停下。3 km 的小尺標對比。</p>
+    <ul class="calc"><li>車資 75 + 22 × 28.0 km = $691</li><li>車程 3 + 2.2 × 28.0 km → 約 65 分</li><li>搭車回饋 $691 ÷ 20 無條件捨去 = 34 點；走不到（&gt; 3 km）搭車抵達 +50 點</li></ul>
+    <p class="note">走路門檻 3 km：超過才建議叫車。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/08-s08-ride.png" alt="#8 s08-ride" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#8</b> 1:05.7–1:14.7 <span>9.0 秒</span></p>
+    <p><span class="sec">B 搭車的轉換</span> <code class="scene">ride</code> <span class="theme">淺色</span></p>
+    <p class="cap">探索的終點，就是叫車的起點</p>
+    <p class="nar">按一下，它變成下車點，yoxi 帶你去。<br>探索的終點，就是叫車的起點。</p>
+    <p class="vis">左側向量手機：yoxi 叫車首頁（紅頁首、地圖、底部拉把）一個像素不動，只有「下車點」欄位被填上「內灣老街 · 約 $691 · 65 分」（數字讀 TIMELINE.calc.neiwan）。右側小車沿虛線滑到遠方 pin。</p>
+    <ul class="calc"><li>車資 75 + 22 × 28.0 km = $691</li><li>車程 3 + 2.2 × 28.0 km → 約 65 分</li><li>搭車回饋 $691 ÷ 20 無條件捨去 = 34 點；走不到（&gt; 3 km）搭車抵達 +50 點</li></ul>
+    <p class="note">車資與車程是公式；「設為下車點」是產品設計，不說成 AI。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/09-s09-gold.png" alt="#9 s09-gold" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#9</b> 1:14.7–1:24.9 <span>10.2 秒</span></p>
+    <p><span class="sec">B 搭車的轉換</span> <code class="scene">gold</code> <span class="theme">淺色</span></p>
+    <p class="cap">去遠方，變成一種收藏</p>
+    <p class="nar">搭 yoxi 抵達的地方，明信片鑲金框，<br>點數回到和泰 Points。去遠方，變成一種收藏。</p>
+    <p class="vis">一張明信片放大，金框從四角合攏；幾枚點數硬幣飛進「和泰 Points」圓環；背景是一排已收藏的明信片（其中一張金框）。</p>
+    
+    <p class="note">「限定版」在簡報改稱「搭 yoxi 抵達版」；點數級距在簡報講，影片不唸數字。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/10-s10-night.png" alt="#10 s10-night" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#10</b> 1:24.9–1:35.0 <span>10.1 秒</span></p>
+    <p><span class="sec">C 晚上的回顧</span> <code class="scene">night</code> <span class="theme">深色</span></p>
+    <p class="cap">只有你的那一軌，和可分享的那一軌</p>
+    <p class="nar">晚上，今天走過的路，自己變成一則回顧。<br>日誌只有你看得到；週回顧，可以傳給爸媽。</p>
+    <p class="vis">海軍藍夜色。今天的路線在地圖上自己畫出來，收成四格小畫面（四幕）；第二句時畫面分兩軌：左「日誌 · 只有你」帶鎖頭，右「週回顧 · 傳給爸媽」變成一張暖色大字的長輩圖。</p>
+    
+    <p class="note">日誌沒有分享鍵；分享的圖不含位置資訊。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/11-s11-ai.png" alt="#11 s11-ai" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#11</b> 1:35.0–1:47.0 <span>12.0 秒</span></p>
+    <p><span class="sec">AI</span> <code class="scene">ai</code> <span class="theme">淺色</span></p>
+    <p class="cap">AI 的四個角色：推薦 · 內容 · 明信片 · 回顧</p>
+    <p class="nar">AI 在後面安靜做四件事：<br>挑今天的地方、寫地方的故事、畫明信片、寫回顧。<br>它不搶戲，只讓每一天都有一個理由。</p>
+    <p class="vis">城市縮成一個圓，四個小圖示繞著它依序亮起：推薦（pin＋理由條）、內容（草稿 → 編輯審 → 有出處才上架）、明信片（畫筆）、回顧（四格）。每個圖示下一行小字。</p>
+    
+    <p class="note">「設為下車點」不是 AI。內容產線要看得到「編輯審」。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/12-s12-roadmap.png" alt="#12 s12-roadmap" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#12</b> 1:47.0–1:56.9 <span>9.8 秒</span></p>
+    <p><span class="sec">路線圖</span> <code class="scene">roadmap</code> <span class="theme">淺色</span></p>
+    <p class="cap">第 0 步不動叫車首頁 · 新竹 12 週 · 看到數字再走</p>
+    <p class="nar">第零步不動叫車首頁，新竹先試十二週。<br>看到數字再走下一步；看不到，就停。</p>
+    <p class="vis">一條向量道路從左到右，五個里程碑依序立起：0 記錄與獎章（2027 Q1 新竹 12 週）→ 1 探索（Q2）→ 2 轉換（Q3）→ 3 分享與世代（Q3–Q4）→ 4 整合（2028）。第 0 步旁有一支不動的叫車首頁小手機加盾牌；每個里程碑之間有一道「看到數字才開」的閘門。</p>
+    
+    <p class="note">階段名照 catalog.js ROADMAP；季度照 pitch/docs/roadmap.md。試辦週數讀 TIMELINE.calc.pilotWeeks。</p>
+  </div>
+</article>
+<article class="shot">
+  <img src="out/board/13-s13-end.png" alt="#13 s13-end" width="480" height="270" loading="lazy">
+  <div class="meta">
+    <p class="tc"><b>#13</b> 1:56.9–2:08.2 <span>11.3 秒</span></p>
+    <p><span class="sec">結尾</span> <code class="scene">end</code> <span class="theme">深色</span></p>
+    <p class="cap">yoxi 城事</p>
+    <p class="nar">yoxi 城事。<br>不搭車的日子，也有打開 yoxi 的理由。<br>而搭車的日子，會因此多起來。</p>
+    <p class="vis">海軍藍底，字標放大置中；兩行標語依序浮現；下方小字：題目全名、「畫面為向量示意 · 明信片為 AI 生成示意 · 地圖資料 © OpenStreetMap 貢獻者（ODbL）」。</p>
+    
+    <p class="note">結尾卡的署名不要剪掉。</p>
+  </div>
+</article>
+</main>
+</body>
+</html>
