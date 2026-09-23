@@ -30,26 +30,26 @@
       <div><span class="todo todo--team" data-doc="team">【待填】隊名</span>　成員：<span class="todo todo--team" data-doc="team">【待填】成員</span></div>
 
       <div class="k official">產品/服務名稱</div>
-      <div><b>yoxi 城事</b>（yoxi 裡的城市探索與收藏：一天一個地方，走得到就走，走不到就用 yoxi 去）</div>
+      <div><b>yoxi 城事</b>：yoxi 裡的城市探索與收藏——一天一個地方，走得到就走，走不到就用 yoxi 去，點數回流和泰 Points</div>
 
       <div class="k official">企業挑戰題目</div>
       <div class="official">yoxi：不搭車，也打開 yoxi —— 打造高頻互動的AI出行夥伴</div>
 
       <div class="k official">目標對象</div>
-      <div>住在城市裡、一週只在要出門時才打開 yoxi 的乘客，以及收到他們分享的家人。</div>
+      <div>已經裝了 yoxi、但一週只在要出門時才打開的都市乘客，以及收到他們分享的家人（長輩）。</div>
 
       <div class="k official">解決方案設計重點(至多3項)</div>
       <div><ol>
-        <li><i>1</i>一天一個地方：AI 依 yoxi 的叫車時段、熱門上下車點與你的足跡推薦，走得到就走，到了才收成明信片。</li>
-        <li><i>2</i>走不到才叫車：腳到不了的一段一鍵設為下車點、車資當場算好，搭車抵達回饋和泰 Points。</li>
-        <li><i>3</i>分五步上線、叫車主畫面不動：第 0 步只加在抽屜與行程結束頁，六條防護承諾一個指令可重跑。</li>
+        <li><i>1</i>一天一個地方：AI 依 yoxi 的叫車時段、熱門上下車點、活動熱點與你的足跡推薦，走得到就走，到了才收成明信片；推播一天最多兩則，各自可關。</li>
+        <li><i>2</i>走不到才叫車：3 km 以上的地方一鍵設為下車點，車資與分鐘當場算好；搭車抵達依距離回饋 20／35／50 點到和泰 Points（原型畫面為固定 +50）。</li>
+        <li><i>3</i>分五步上線、叫車主畫面不動：第 0 步（含 K1）只加在抽屜、地方頁與行程結束頁；六條防護承諾量在原型 home.html、一個指令可重跑，合一版 app 只有「最多 4 個景點」有測試。</li>
       </ol></div>
 
       <div class="k official">運用到的AI技術、服務或模型等資源</div>
-      <div>Google Cloud Vertex AI：Gemini 分級使用（Flash-Lite 寫推薦理由與回顧、Flash＋Grounding 寫附出處的地方草稿）、Imagen 4（明信片與長輩圖，圖庫預生成、編輯審過、標示 AI 生成）；BigQuery（去識別化叫車與 POI 資料）＋BigQuery ML 排序；Model Garden 的 Claude 當草稿對照組。試辦（新竹 1 萬 MAU）雲端與 AI 每月約 US$522（上限假設）。</div>
+      <div>Google Cloud Vertex AI：Gemini 分級使用（Flash-Lite 寫推薦理由與回顧、Flash＋Grounding 寫附出處的地方草稿，Model Garden 的 Claude 當草稿對照組）、Imagen 4（明信片與長輩圖，圖庫預生成、編輯審過、標示 AI 生成；只用智財賠償範圍內的 GA 模型）；BigQuery（去識別化叫車與 POI 資料）＋BigQuery ML 排序；Cloud Run、Firestore。試辦（新竹 1 萬 MAU）雲端與 AI 每月約 US$522（每 MAU 約 US$0.05，上限假設）。</div>
 
       <div class="k official">預期效益簡述</div>
-      <div>新竹試辦 12 週的目標（假設，以 10% 對照組驗證）：非叫車開啟週活躍率比對照組高 <b>5 個百分點</b>；轉換點組（K1）每人總訂單比不轉換組（K7）高 <b>5%</b>；點數流回和泰 Points 的出行與用車通路。叫車守門指標任一變差就停。</div>
+      <div>新竹試辦 12 週的目標（假設，以 10% 對照組驗證）：非叫車開啟週活躍率比對照組高 <b>5 個百分點</b>；轉換點組（K1）每人總訂單比不轉換組（K7）高 <b>5%</b>；叫車 tap 數維持 4、上車率不降，守門指標任一變差就停。點數流回和泰 Points 的出行與用車通路；內容側 AI 只佔一城編輯人力的 2.7%，瓶頸在編輯、不在 AI。</div>
     </div>
   </div>
   <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n">摘要</span></footer>
@@ -235,17 +235,17 @@
       <div class="rm__c now"><h3>記錄與獎章 <span class="tag tag--red">＋K1</span></h3>
         <p class="one">行程結束後記錄去過哪裡、抵達解鎖明信片、收集獎章；地方頁可「設為下車點」。入口只在抽屜與行程結束頁。</p>
         <dl><dt>前提</dt><dd>沒有前提；點數改距離三級＋每月上限；保留 10% 對照組</dd>
-            <dt>守門指標</dt><dd>配對時間、取消率、評分填寫率、客服進線</dd>
+            <dt>守門指標</dt><dd>上車率、配對時間、取消率、評分填寫率、客服進線</dd>
             <dt>停損</dt><dd class="stop">守門任一變差即關；第 6 週北極星差距 &lt; 1 個百分點只留記錄與獎章</dd></dl></div>
       <div class="rm__c"><h3>探索</h3>
         <p class="one">今天的地方、路線、早晚兩則推播；AI 每月從活動與熱點重生內容。入口仍是抽屜。</p>
         <dl><dt>前提</dt><dd>北極星比對照組高 5 個百分點（假設）；守門無一變差</dd>
             <dt>守門指標</dt><dd>推播關閉率、系統推播退訂、城事退出率</dd>
-            <dt>停損</dt><dd class="stop">推播關閉率 &gt; 20% 降為一則；內容產線每月產不出一條路線就停</dd></dl></div>
+            <dt>停損</dt><dd class="stop">推播關閉率超過 15% 就降為一則；內容產線每月產不出一條路線就停</dd></dl></div>
       <div class="rm__c"><h3>轉換（升級 E）</h3>
         <p class="one">叫車地圖最多 4 個景點（E，先預設關、灰度）＋一鍵設為下車點；路線斷點、回程。</p>
-        <dl><dt>前提</dt><dd>K1 組每人總訂單 ≥ K7 組；六條承諾在正式程式重量全綠</dd>
-            <dt>守門指標</dt><dd>每人總訂單（K1 vs 沒有轉換點的 K7）；tap 數仍是 4</dd>
+        <dl><dt>前提</dt><dd>K1 組每人總訂單高於沒有轉換點的 K7 組（目標 +5%）；六條承諾在正式程式重量全綠</dd>
+            <dt>守門指標</dt><dd>每人總訂單（E 組 vs K1 組）；tap 數仍是 4</dd>
             <dt>停損</dt><dd class="stop">誤觸（3 秒內關閉）&gt; 10% 降到 2 顆；叫車首頁到送出變慢即關圖層</dd></dl></div>
       <div class="rm__c"><h3>分享與世代</h3>
         <p class="one">週回顧、長輩圖、「傳給家人」；好友這一期不做。同期擴六都第一波（高雄、台中）。</p>
@@ -258,7 +258,7 @@
             <dt>守門指標</dt><dd>活動期間訂單；多點行程使用率</dd>
             <dt>停損</dt><dd class="stop">沒有合作方就不排進本期</dd></dl></div>
     </div>
-    <p class="small">團隊（新增投入，假設）：試辦約 7.2 FTE、六都約 14.2 FTE；六都第二波（台北、新北、桃園、台南）2027 Q4 → 2028 Q2。成本見第 10、14 頁，指標見第 13 頁。</p>
+    <p class="small">團隊（新增投入，假設）：試辦約 7 FTE（6 位全職＋資料／QA／法遵部分工時），每月含人力約 NT$81.9 萬；六都約 14.2 FTE；六都第二波（台北、新北、桃園、台南）2027 Q4 → 2028 Q2。成本見第 10、14 頁，指標見第 13 頁。</p>
   </div>
   <footer class="foot"><span class="foot__brand"><b>yoxi</b> 城事 · 給 yoxi 經營層的路線圖備忘錄</span><span class="foot__sp"></span><span class="foot__n"></span></footer>
 </section>
@@ -279,7 +279,7 @@
       <div class="card card--mist"><p><b>證明：</b>全程沒碰叫車鈕，也有打開的理由。</p></div>
     </div>
     <div class="col grow">
-      <h3 style="font-size:26px">B 搭車的轉換 <span class="tag tag--red">第 2 步</span></h3>
+      <h3 style="font-size:26px">B 搭車的轉換 <span class="tag tag--red">K1 第 0 步・路線斷點第 2 步</span></h3>
       <div style="display:flex; gap:6px">
         <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/route.png" alt=""></div><figcaption><b>腳到不了的一段</b></figcaption></figure>
         <figure class="phone" style="--pw:170px"><div class="phone__f"><img src="../../app/assets/shots/trip-done-rated.png" alt=""></div><figcaption><b>評分後才有金框</b></figcaption></figure>
@@ -303,7 +303,7 @@
 <!-- ======================================================= 7 第 0 步與第 1 步 -->
 <section class="slide" data-kind="main">
   <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 體驗規劃</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0 步與第 1 步</span></div>
-  <h1 class="t">第 0 步只加在抽屜與行程結束頁，<em>今天就能上</em></h1>
+  <h1 class="t">第 0 步只加在抽屜、地方頁與行程結束頁，<em>今天就能上</em></h1>
   <p class="sub">上線版不是合一版：web app 用三分頁 tab bar 當北極星，第一個上線的是抽屜入口（候選 G），先拿開啟數據再談 tab bar。</p>
   <div class="body" style="gap:36px">
     <div class="card" style="flex:none; align-self:flex-start">
@@ -321,6 +321,7 @@
           <tr><td>抽屜多一列「城事」</td><td>叫車主畫面收合態（0 像素）</td></tr>
           <tr><td>行程結束頁：評分之後才出現一條金色橫幅</td><td>叫車關鍵路徑（4 tap）、tab bar</td></tr>
           <tr><td>新的收藏頁：明信片、獎章、這一週</td><td>好康專區、優惠券、企業簽單、預約叫車</td></tr>
+          <tr><td>地方頁 3 km 外的主按鈕「設為下車點」（K1）</td><td>叫車首頁地圖（景點常駐是第 2 步）</td></tr>
         </tbody>
       </table>
       <div class="card card--cream" style="display:flex; gap:22px; align-items:center">
@@ -338,7 +339,7 @@
 
 <!-- ======================================================= 8 商業轉換閉環 -->
 <section class="slide" data-kind="main">
-  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 商業轉換</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 2 步</span><span class="meta__req">對應題目要求 ② 商業轉換</span></div>
+  <div class="meta"><span class="meta__ch"><i>3</i>解決方案設計 · 商業轉換</span><span class="meta__sp"></span><span class="meta__step">這頁講：K1（第 0 步）與第 2 步</span><span class="meta__req">對應題目要求 ② 商業轉換</span></div>
   <h1 class="t">車只出現在腳到不了的地方：內灣 28 km，<em>一鍵設為下車點</em></h1>
   <p class="sub">3 km 內主按鈕是「走路前往」；超過 3 km 才把「用 yoxi 前往」放第一顆。按下去只填好下車點，還沒叫車。</p>
   <div class="body" style="gap:30px">
@@ -419,7 +420,7 @@
 <section class="slide" data-kind="main">
   <div class="meta"><span class="meta__ch"><i>4</i>AI 應用方法 · 技術架構</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～3 步要蓋的東西</span><span class="meta__req">對應題目要求 ③ 技術架構與成本</span></div>
   <h1 class="t">叫車核心一行不改；城事是旁掛的服務，<em>AI 在支線上</em></h1>
-  <p class="sub">建在 Google Cloud；Vertex AI 同一平台可換模型。試辦雲端每月約 US$522，只佔總成本 2.4%：瓶頸在編輯，不在雲端。</p>
+  <p class="sub">建在 Google Cloud；Vertex AI 同一平台可換模型。試辦雲端每月約 US$522，只佔含人力總成本約 2%：瓶頸在編輯，不在雲端。</p>
   <div class="body" style="gap:36px">
     <div style="flex:none; width:1060px">
       <svg viewBox="0 0 1060 700" width="1060" height="700" role="img" aria-label="技術架構">
@@ -518,7 +519,7 @@
 <section class="slide" data-kind="main">
   <div class="meta"><span class="meta__ch"><i>5</i>獨特優勢與差異化</span><span class="meta__sp"></span><span class="meta__step">這頁講：第 0～2 步的護欄</span></div>
   <h1 class="t">叫車沒有變難用，而且<em>一個指令就能重跑</em>來證明</h1>
-  <p class="sub"><code>python prototype/tools/verify-quiet.py</code>，約 4 分鐘。量在原型的保守版叫車首頁；合一版 app 目前只有 ④ 有測試。</p>
+  <p class="sub"><code>python prototype/tools/verify-quiet.py</code>，約 4 分鐘。量在原型 home.html（保守版叫車首頁）；合一版 app 只有 ④ 有測試。</p>
   <div class="body">
     <div class="col" style="width:1000px">
       <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
@@ -604,7 +605,7 @@
           <ul class="dots"><li>推播開啟率（早上 ≥ 8%）</li><li>走路抵達（≥ 30 次／千人／週）</li><li>「一天一個」採用率（≥ 25%）</li><li>回顧開啟率（≥ 20%）</li><li>分享數、長輩端週開啟</li></ul>
         </div>
         <div class="card">
-          <h3>轉換 <span class="tag tag--red">第 2 步</span></h3>
+          <h3>轉換 <span class="tag tag--red">K1 從第 0 步起</span></h3>
           <ul class="dots"><li><b>每人總訂單：K1 比 K7 高 5%</b></li><li>設為下車點 → 30 分內送出（≥ 30%）</li><li>探索訂單里程中位數 ≥ 8 km</li><li>點數成本 ≤ 單張平台收入</li><li>點數在 yoxi 以外折抵 ≥ 30%</li></ul>
         </div>
         <div class="card" style="border-color:var(--yoxi-red)">
@@ -643,9 +644,9 @@
       <div class="card">
         <h3>時程與資源</h3>
         <p><b>時程：</b>2026 Q4 簽核 → 2027 Q1 新竹 12 週 → 第 12 週決定擴城</p>
-        <p><b>人力：</b>約 7.2 FTE（產品、設計、app 2、後端、資料 0.5、QA 0.5、編輯 1、法遵 0.2；假設）</p>
-        <p><b>雲端：</b>US$522／月（約 NT$1.67 萬）；含工程人力每月約 NT$70.1 萬，雲端佔 2.4%（假設）</p>
-        <p><b>內容：</b>每城 1 位編輯約 NT$8.7 萬／月、每月 30 篇、種子庫 60 個地方（假設）</p>
+        <p><b>人力：</b>約 7 FTE：6 位全職（產品、設計、app 2、後端、編輯）＋資料 0.5、QA 0.5、法遵 0.2（假設）</p>
+        <p><b>雲端：</b>US$522／月（約 NT$1.67 萬）；含人力每月約 NT$81.9 萬，雲端佔約 2%（假設）</p>
+        <p><b>內容：</b>每城 1 位編輯＋外包約 NT$8.65 萬／月；每月 20 個新地方＋10 個翻新（34 篇草稿）；種子庫 60 個地方（假設）</p>
       </div>
       <div class="card card--cream">
         <h3>停損與升級條件</h3>
