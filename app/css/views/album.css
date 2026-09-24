@@ -32,7 +32,6 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 /* 雙主頁第一版：借用摘要式層級，內容仍是城市收藏。 */
 .alb-v2__scroll { background: var(--yoxi-paper); }
 .alb-v2__header { padding: var(--sp-5) var(--gutter) var(--sp-4); }
-.alb-v2__back { display: block; min-height: 44px; color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
 .alb-v2__brand { color: var(--yoxi-red); font-size: var(--fs-cap); font-weight: var(--fw-heavy); letter-spacing: .04em; }
 .alb-v2__header h1 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-display); line-height: var(--lh-tight); }
 .alb-v2__header p { color: var(--app-muted); font-size: var(--fs-sm); }

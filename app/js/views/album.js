@@ -380,8 +380,7 @@ function albumV2Render() {
   const badges = badgeCount();
   const recent = got.slice(-3).reverse();
   return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
-      '<header class="alb-v2__header"><a class="alb-v2__back" href="#/explore" data-act="back-explore">← 探索</a>' +
-        '<span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
+      '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
         '<p>走過的地方，都留在這裡。</p></header>' +
       '<section class="alb-v2__hero" aria-label="明信片摘要">' +
         '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
@@ -418,7 +417,8 @@ function albumV2Mount(root) {
 
 APP.view('album', {
   path: '/album',
-  tab: null,
+  tab: 'album',
+  root: true,
   status: 'dark',
   title: '收藏',
   render: albumV2Render,

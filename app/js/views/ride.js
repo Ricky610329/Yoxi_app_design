@@ -2,22 +2,22 @@
    yoxi 城事 web app — ride（叫車區）
 
    回答什麼：
-     叫車這一條線在 app 裡真的走得完：預設搭車首頁保持乾淨，探索模式才顯示卡片地點
+     叫車這一條線在 app 裡真的走得完：叫車首頁（E：景點常駐＋一鍵設為下車點）
      → 設定下車地點 → 叫車 → 配對中 → 行程中（「這條路上」內容卡）→ 行程完成
      → 評分之後才出現金色橫幅 → 限定版解鎖（explore 接手）→ 點數 +50。
      旁邊掛著叫車 app 原本就有的幾頁：抽屜、和泰 Points、通知中心、行程紀錄、上車點。
 
    從哪張原型來：
-     /ride        variant-f-home.html（叫車模式）、home.html（上下車點）、variant-k-ride.html（車資／分鐘公式）
-     /explore     variant-f-home.html（雙模式結構）、既有地圖資料與卡片狀態
+     /ride        variant-e-home.html（小卡＋設為下車點）、home.html（收合態 sheet）、
+                  concept-map-home.html（真實地圖的中心與視野）、variant-k-ride.html（車資／分鐘公式）
      /dropoff     新（版型參考 pickup.html）            /pickup     pickup.html
      /trip        ride.html                              /trip/done  ride-done.html
      /drawer      drawer.html                            /points     points.html
      /notify      notify.html                            /trips      trips.html
 
    刻意沒有的東西：
-     - 搭車 sheet 固定，沒有探索的上下拉手勢；地圖上沒有卡片景點。
-     - 探索地圖同時最多 4 個地點；沒有數字徽章、沒有未讀數字。
+     - 收合態 sheet 不多長東西：城事新增的「今天的地方」列與叫車鈕都是 data-expand-only。
+     - 叫車地圖同時最多 4 個景點；沒有開關、沒有數字徽章、沒有未讀數字。
      - 金色橫幅只在評分之後出現（評分與付款是 yoxi 的既有職責，城事排在它們後面）。
      - 行程地圖上不畫路線：這份原型沒有做路徑規劃，一條假的線等於一個沒算過的數字。
      - 車資、分鐘、公里、點數沒有一個是手寫的：全部 APP.fmt／STATE／MOCK 算。
@@ -164,7 +164,8 @@ function setDropoff(placeId, via) {
   });
   APP.ui.toast('已設為下車點');
   const cur = APP.nav.current();
-  if (cur && cur.path === '/ride') APP.nav.go('/ride', { replace: true, dir: 'none' });
+  const area = cur && cur.path === '/ride' && cur.query.get('area');
+  if (cur && cur.path === '/ride') APP.nav.go('/ride' + (area ? '?area=' + encodeURIComponent(area) : ''), { replace: true, dir: 'none' });
   else APP.nav.go('/ride');
   return true;
 }
@@ -172,7 +173,8 @@ function setDropoff(placeId, via) {
 function clearDropoff() {
   store().set('dropoff', null);
   const cur = APP.nav.current();
-  if (cur && cur.path === '/ride') APP.nav.go('/ride', { replace: true, dir: 'none' });
+  const area = cur && cur.path === '/ride' && cur.query.get('area');
+  if (cur && cur.path === '/ride') APP.nav.go('/ride' + (area ? '?area=' + encodeURIComponent(area) : ''), { replace: true, dir: 'none' });
 }
 
 function arrive() {
@@ -305,7 +307,20 @@ function rideOverlay() {
     '<div class="pin ride-pin" data-pin="pickup" style="left:50%; top:60%">' +
       '<span class="pin__label">' + esc(home()) + '</span>' +
       '<span class="pin__drop"><span data-icon="hail"></span></span>' +
-      '<span class="pin__dot"></span></div>';
+      '<span class="pin__dot"></span></div>' +
+    '<div class="peek ride-peek" data-peek aria-live="polite">' +
+      '<div class="ride-peek__top">' +
+        '<span class="peek__img ride-peek__img" data-peek-img></span>' +
+        '<span class="ride-peek__txt">' +
+          '<span class="ride-peek__name" data-peek-name></span>' +
+          '<span class="ride-peek__meta" data-peek-meta></span>' +
+        '</span>' +
+      '</div>' +
+      '<div class="ride-peek__acts">' +
+        '<button class="btn-ghost" type="button" data-act="peek-place">看看這個地方</button>' +
+        '<button class="btn-primary" type="button" data-act="set-dropoff">設為下車點</button>' +
+      '</div>' +
+    '</div>';
 }
 
 /* 真地圖的代價（concept-map-home ②③④）：玻璃窯在 hs-places 跟家同一個座標、
@@ -352,6 +367,8 @@ function keepClear(map, me) {
 }
 
 function rideRender() {
+  const m = M();
+  const today = APP.place(m.TODAY.id);
   let trip = tripNow();
   const pend = pendingUnlock();
   if (trip && trip.phase === 'done') trip = null;      /* 已抵達：不是「回到行程」；限定版另有金色入口 */
@@ -383,12 +400,20 @@ function rideRender() {
     '<div class="ride-map" data-ride-map></div>' +
 
     '<div class="banner ride-banner">' +
+      '<a class="banner__item ride-banner__today" href="#/place/' + esc(today.id) + '" data-act="open-today">' +
+        '<span class="ride-banner__art" data-art="' + esc(today.art) + '" data-seed="1" data-wide></span>' +
+        '<span class="ride-banner__txt">' +
+          '<span class="ride-banner__eyebrow">今天的地方 · 離你 ' + esc(F.dist(today.dist)) + '</span>' +
+          '<span class="ride-banner__hook">' + esc(today.hook) + '</span>' +
+        '</span>' +
+        '<span class="arrow arrow--onred"></span></a>' +
       '<div class="banner__item ride-banner__promo">' +
         '<span><span class="ride-em">點</span>從天降 · 趟趟送最高 <span class="num ride-em ride-banner__big">99</span> 點</span>' +
       '</div>' +
     '</div>' +
 
-    '<div class="sheet ride-sheet">' +
+    '<div class="sheet sheet--drag is-collapsed ride-sheet" data-drag style="--sheet-min:420px">' +
+      '<div class="sheet__handle"></div>' +
       '<h1 class="sheet__greet">' + esc(F.greet(new Date().getHours())) + '，' + esc(M().USER.name) + ' 今天要去哪？</h1>' +
       '<div class="card">' +
         '<div class="route-input">' +
@@ -402,12 +427,22 @@ function rideRender() {
             dropField +
           '</div>' +
         '</div>' +
+        '<div class="divider" data-expand-only></div>' +
+        '<a class="row-nav ride-today-row" data-expand-only href="#/place/' + esc(today.id) + '" data-act="open-today-row">' +
+          '<span class="tile-icon tile-icon--sm">' + icon('place', 22) + '</span>' +
+          '<span class="row-nav__body">' +
+            '<span class="row-nav__title">今天的地方 · ' + esc(F.dist(today.dist)) + '</span>' +
+            '<span class="row-nav__sub">' + esc(today.name) + '</span></span>' +
+          '<span class="arrow"></span></a>' +
       '</div>' +
       '<div class="ride-sheet__row">' +
         '<button class="btn-pill" type="button" data-toast="' + TOAST_NA + '">' + icon('plane', 18) + '機場接送</button>' +
       '</div>' +
-      (dp || trip ? '<button class="btn-primary ride-call is-ready" type="button" data-act="call-ride">' +
-        esc(callText) + '</button>' : '') +
+      /* 下車點填好之後叫車鈕在收合態就看得到（sheet 不必展開，地圖不被壓扁）；
+         沒填時它只在展開態出現，收合態維持 home.html 的樣子 */
+      '<button class="btn-primary ride-call' + (dp || trip ? ' is-ready' : '') + '" type="button" data-act="call-ride"' +
+        (dp || trip ? '' : ' data-expand-only') + '>' +
+        esc(callText) + '</button>' +
       /* 評分完直接回首頁的人：限定明信片還沒收，收合態就看得到回去解鎖的入口 */
       (pend
         ? '<a class="banner--gold ride-unlock" href="' + pend.href + '" data-act="unlock-ride">' +
@@ -427,6 +462,7 @@ function rideRender() {
 }
 
 function rideMount(root) {
+  const m = M();
   const offs = [];
   const tb = document.getElementById('tabbar');
 
@@ -437,12 +473,16 @@ function rideMount(root) {
 
   /* ---- 地圖 ---- */
   const host = root.querySelector('[data-ride-map]');
-  /* 搭車模式固定是原本乾淨的地圖；卡片 pin 只在探索模式出現。 */
+  /* 設定頁可以把叫車地圖上的景點關掉：地圖照畫，景點與小卡都不出現 */
+  const showSpots = store().get('rideSpots') !== false;
+  const near = showSpots ? rideSpots() : false;
+  let current = null;
   const map = APP.map.mount(host, {
     style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
-    spots: false, pan: true,
+    spots: near, max: 4, compact: true, pan: true,
     layers: { label: true },
     overlay: rideOverlay(),
+    onSpot: function (s) { togglePeek(s); },
   });
   offs.push(function () { map.destroy(); });
 
@@ -455,13 +495,38 @@ function rideMount(root) {
     pin.style.top = (me[1] / H.height * 100).toFixed(1) + '%';
   }
   SHELL.injectIcons(root);
+  keepClear(map, me);
   bindToasts(root);
 
-  /* ---- 固定的搭車欄位 ---- */
+  /* ---- 小卡 ---- */
+  const peek = root.querySelector('[data-peek]');
+  function togglePeek(s) {
+    if (current && current.id === s.id && peek.classList.contains('is-on')) {
+      peek.classList.remove('is-on'); current = null; return;
+    }
+    current = s;
+    const p = APP.place(s.id) || s;
+    const img = peek.querySelector('[data-peek-img]');
+    img.innerHTML = SHELL.postcardArt(p.art, { seed: 1 });
+    img.classList.toggle('is-gray', s.state === 'new');
+    peek.querySelector('[data-peek-name]').textContent = p.name;
+    peek.querySelector('[data-peek-meta]').textContent = p.type + ' · ' + F.dist(p.dist);
+    peek.setAttribute('data-peek-id', s.id);
+    peek.classList.add('is-on');
+  }
+  peek.querySelector('[data-act="peek-place"]').onclick = function () {
+    if (current) APP.nav.go('/place/' + encodeURIComponent(current.id));
+  };
+  peek.querySelector('[data-act="set-dropoff"]').onclick = function () {
+    if (current) setDropoff(current.id, 'e');
+  };
+
+  /* ---- sheet ---- */
+  const sheet = root.querySelector('.ride-sheet');
+  INTERACT.initSheet(sheet);
   const clr = root.querySelector('[data-act="clear-dropoff"]');
   if (clr) clr.onclick = function () { clearDropoff(); };
-  const call = root.querySelector('[data-act="call-ride"]');
-  if (call) call.onclick = function () { callRide(); };
+  root.querySelector('[data-act="call-ride"]').onclick = function () { callRide(); };
 
   return function () {
     offs.forEach(function (f) { try { f(); } catch (e) { /* ignore */ } });
@@ -470,7 +535,7 @@ function rideMount(root) {
 }
 
 /* ==========================================================================
-   探索模式：沿用同一張地圖與上拉面板，搭車首頁保持乾淨。
+   雙主頁第一版：叫車地圖選地點，同一張上滑面板看周邊卡片。
    四組卡片是展示用的明確對應；收集狀態仍由 STATE 決定。
    ========================================================================== */
 const CARD_AREAS = [
@@ -513,7 +578,7 @@ function areaCardsHTML(a) {
     '<button class="btn-primary ride-v2__set" type="button" data-act="set-area-dropoff">設為下車點 · ' + esc(p.name) + '</button>';
 }
 function areaIntroHTML(a) {
-  if (!a) return '<div class="ride-v2__eyebrow">yoxi 城事</div><h1>今天想看看哪裡？</h1>' +
+  if (!a) return '<div class="ride-v2__eyebrow">yoxi 城事</div><h1>今天想去哪裡？</h1>' +
     '<button class="ride-v2__teaser" type="button" data-act="expand-cards">' +
       '<span data-icon="postcard"></span><span>附近有卡片可以收集</span><span class="arrow"></span></button>';
   const r = areaProgress(a), p = APP.place(a.id);
@@ -526,8 +591,6 @@ function areaIntroHTML(a) {
 function rideV2Overlay() {
   return '<a class="fab fab--navy ride-fab ride-fab--menu" href="#/drawer" aria-label="選單" data-act="open-drawer">' +
       '<span data-icon="menu"></span></a>' +
-    '<a class="fab ride-fab ride-fab--album" href="#/album" aria-label="我的收藏" data-act="open-album">' +
-      '<span data-icon="tabAlbum"></span></a>' +
     '<button class="fab ride-fab ride-fab--loc" type="button" data-recenter aria-label="定位">' +
       '<span data-icon="locate"></span></button>' +
     '<div class="pin ride-pin" data-pin="pickup" style="left:50%;top:60%">' +
@@ -536,10 +599,29 @@ function rideV2Overlay() {
 }
 function rideV2Render(params, ctx) {
   const a = cardArea(ctx.query.get('area'));
+  const trip = tripActive(), d = store().get('dropoff');
+  const dp = trip ? tripPlace(trip) : d && d.id ? APP.place(d.id) : null;
+  const km = dp ? (trip && trip.km != null ? trip.km : F.km(dp.dist)) : 0;
+  const pend = pendingUnlock();
   return '<div class="ride-map ride-v2__map" data-ride-map></div>' +
-    '<section class="sheet sheet--drag is-collapsed ride-sheet ride-v2__sheet" style="--sheet-min:395px">' +
+    '<section class="sheet sheet--drag is-collapsed ride-sheet ride-v2__sheet" data-drag style="--sheet-min:395px">' +
       '<div class="sheet__grip"><div class="sheet__handle"></div></div>' +
       '<div class="ride-v2__intro" data-area-intro>' + areaIntroHTML(a) + '</div>' +
+      '<div class="ride-v2__ride">' +
+        '<a class="ride-v2__field" href="#/pickup" data-act="pick-pickup"><span class="ride-v2__dot"></span>' +
+          '<span><small>上車點</small><strong data-pickup-name>' + esc(home()) + '</strong></span></a>' +
+        (dp ? '<div class="ride-v2__field"><span class="ride-v2__dot ride-v2__dot--red"></span>' +
+            '<a href="' + (trip ? '#/trip' : '#/dropoff') + '" data-act="pick-dropoff"><small>下車點</small>' +
+              '<strong data-drop-name>' + esc(dp.name) + '</strong><span class="ride-v2__fare">' + esc(F.dist(dp.dist)) + ' · 預估 $<b data-fare>' + F.fare(km) +
+              '</b> · <b data-min>' + F.rideMin(km) + '</b> 分鐘</span></a>' +
+            (trip ? '' : '<button type="button" data-act="clear-dropoff" aria-label="清除下車點">×</button>') + '</div>'
+          : '<a class="ride-v2__field" href="#/dropoff" data-act="pick-dropoff"><span class="ride-v2__dot ride-v2__dot--red"></span>' +
+              '<span><small>下車點</small><strong>要去哪裡？</strong></span></a>') +
+        (dp ? '<button class="btn-primary ride-v2__call is-ready" type="button" data-act="call-ride">' +
+          (trip ? '回到行程' : '叫車前往 ' + esc(dp.name)) + '</button>' : '') +
+        (pend ? '<a class="ride-v2__pending" href="' + pend.href + '" data-act="unlock-ride">' +
+          '上一趟的明信片還在等你收下 <span class="arrow"></span></a>' : '') +
+      '</div>' +
       '<div class="ride-v2__expanded" data-expand-only data-area-expanded>' + (a ? areaCardsHTML(a) : areaListHTML()) + '</div>' +
     '</section>';
 }
@@ -559,35 +641,11 @@ function rideV2Mount(root, params, ctx) {
   if (pin) { pin.style.left = (me[0] / H.width * 100).toFixed(1) + '%'; pin.style.top = (me[1] / H.height * 100).toFixed(1) + '%'; }
   SHELL.injectIcons(root);
   keepClear(map, me);
+  INTERACT.initSheet(sheet);
   function setOpen(open) {
     sheet.classList.toggle('is-collapsed', !open);
     if (tabbar) tabbar.classList.toggle('is-yield', open);
   }
-  /* 探索專用手勢：下拉只收合並留在探索，離開頁面時拆掉 window 事件。 */
-  const grip = sheet.querySelector('.sheet__grip');
-  let y0 = null, moved = 0, base = 0;
-  grip.onpointerdown = function (e) {
-    y0 = e.clientY;
-    moved = 0;
-    base = sheet.getBoundingClientRect().height;
-    sheet.style.transition = 'none';
-  };
-  const move = function (e) {
-    if (y0 === null) return;
-    moved = y0 - e.clientY;
-    if (Math.abs(moved) > 4) e.preventDefault();
-    const max = sheet.parentElement.getBoundingClientRect().height * 0.82;
-    sheet.style.maxHeight = Math.max(120, Math.min(max, base + moved)) + 'px';
-  };
-  const up = function () {
-    if (y0 === null) return;
-    sheet.style.transition = '';
-    sheet.style.maxHeight = '';
-    setOpen(Math.abs(moved) > 24 ? moved > 0 : sheet.classList.contains('is-collapsed'));
-    y0 = null;
-  };
-  window.addEventListener('pointermove', move, { passive: false });
-  window.addEventListener('pointerup', up);
   function paint() {
     intro.innerHTML = areaIntroHTML(selected);
     expanded.innerHTML = selected ? areaCardsHTML(selected) : areaListHTML();
@@ -614,22 +672,15 @@ function rideV2Mount(root, params, ctx) {
     if (fromMap) setOpen(false);
   }
   paint();
-  return function () {
-    map.destroy();
-    window.removeEventListener('pointermove', move);
-    window.removeEventListener('pointerup', up);
-    grip.onpointerdown = null;
-    if (tabbar) tabbar.classList.remove('is-yield');
-  };
+  const clear = root.querySelector('[data-act="clear-dropoff"]');
+  if (clear) clear.onclick = clearDropoff;
+  const call = root.querySelector('[data-act="call-ride"]');
+  if (call) call.onclick = callRide;
+  return function () { map.destroy(); if (tabbar) tabbar.classList.remove('is-yield'); };
 }
 
 APP.view('ride', {
   path: '/ride', tab: 'ride', status: 'dark', root: true, title: '叫車',
-  render: rideRender, mount: rideMount,
-});
-
-APP.view('explore', {
-  path: '/explore', tab: 'explore', status: 'dark', root: true, title: '探索',
   render: rideV2Render, mount: rideV2Mount,
 });
 
@@ -651,7 +702,7 @@ APP.view('dropoff', {
         '</label>' +
       '</div>' +
       '<div class="scroll ride-list">' +
-        '<a class="row-nav" href="#/explore" data-act="pick-on-map">' +
+        '<a class="row-nav" href="#/ride" data-act="pick-on-map">' +
           '<span class="tile-icon tile-icon--lg tile-icon--round ride-tile--navy"><span class="ic-ondark" data-icon="place"></span></span>' +
           '<span class="row-nav__body"><span class="row-nav__title">在地圖上挑</span>' +
           '<span class="row-nav__sub">在地圖選附近有卡片的地方</span></span>' +
@@ -1108,7 +1159,7 @@ APP.view('notify', {
         '<span class="row-nav__body"><span class="row-nav__title">' + esc(o.t) + '</span>' +
         '<span class="row-nav__sub">' + esc(o.sub) + '</span></span><span class="arrow"></span></a>';
     };
-    const AM = { href: '#/explore?area=' + today.id, act: 'open-today', icon: 'place', t: '今天的地方',
+    const AM = { href: '#/ride?area=' + today.id, act: 'open-today', icon: 'place', t: '今天的地方',
                  sub: today.name + ' · 離你 ' + F.dist(today.dist) };
     const PM = { href: '#/lookback', act: 'open-lookback', icon: 'postcard', t: '今天的回顧準備好了',
                  sub: '走了 ' + F.num(LB.steps) + ' 步，經過 ' + (LB.places || []).length + ' 個地方' };

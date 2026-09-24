@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v6';
+const VERSION = 'chengshi-app-v5';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -148,7 +148,7 @@ function push(opt) {
   if (when === 'am') {
     title = '今天的地方：' + ((M.TODAY && M.TODAY.name) || '');
     body = (M.TODAY && M.TODAY.hook) || '';
-    to = '/explore?area=' + encodeURIComponent((M.TODAY && M.TODAY.id) || 'glass-kiln');
+    to = '/ride?area=' + encodeURIComponent((M.TODAY && M.TODAY.id) || 'glass-kiln');
   } else {
     const L = M.LOOKBACK || { km: 0, places: [] };
     title = '今天走了 ' + L.km + ' km，經過 ' + (L.places || []).length + ' 個地方';
@@ -363,7 +363,7 @@ const DATA = [
   ['steps',  '步數',     '用來畫今天的回顧的路徑，資料留在手機上；關掉回顧就沒有路線', 'steps'],
   ['camera', '相簿',     '只在今天的回顧才讀取當天照片，不會上傳；關掉回顧就只有明信片', 'photos'],
   ['route',  '行程紀錄', '用來知道你搭車去過哪裡；關掉搭車抵達就不會自動收進足跡', 'trips'],
-  ['place',  '探索地圖上的地點', '探索地圖顯示附近有卡片的地方；關掉後地圖仍可使用', 'rideSpots'],
+  ['place',  '叫車地圖上的景點', '叫車首頁的地圖疊最多 4 個城事的地方；關掉就只剩原本的叫車地圖', 'rideSpots'],
 ];
 /* 這些開關存在 app 自己的 store（不是 STATE.settings） */
 const STORE_SWITCH = { rideSpots: true };
@@ -456,7 +456,7 @@ APP.view('settings', {
           '<button class="sys-set__more" type="button" data-act="more" aria-expanded="false">' +
             '<span>清除足跡、demo 工具與關於</span><span class="sys-set__chev" aria-hidden="true"></span></button>' +
           '<div class="sys-set__morebox" data-more hidden>' +
-            /* 可按數 ≤ 10：多了「探索地圖上的地點」開關，清除足跡收進展開區（它本來就不是常用的動作） */
+            /* 可按數 ≤ 10：多了「叫車地圖上的景點」開關，清除足跡收進展開區（它本來就不是常用的動作） */
             '<div class="sys-set__sec">' +
               '<button class="btn-ghost sys-set__wipe" type="button" data-act="wipe">清除我的足跡</button>' +
             '</div>' +
