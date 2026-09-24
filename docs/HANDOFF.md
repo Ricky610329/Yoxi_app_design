@@ -1,6 +1,6 @@
 # 交接文件 — yoxi 城事設計原型
 
-最後更新：2026-09-23（branch `feat/webapp`，`26c8e4d` 之後）。這份文件給接手的人或 AI agent：專案是什麼、做到哪裡、東西放哪裡、怎麼驗、哪些還沒決定。
+最後更新：2026-09-24（branch `feat/two-page-card-sheet`；目前雙主頁 UI 見 §13）。這份文件給接手的人或 AI agent：專案是什麼、做到哪裡、東西放哪裡、怎麼驗、哪些還沒決定。
 人看的導覽在 `README.md`，agent 的規矩在 `AGENTS.md`，時間線在 `docs/WORKLOG.md`。
 
 ## 1. 專案一句話
@@ -16,7 +16,7 @@
 | 第二輪 | 層級樹＋評語（`overview.html`）、變體註冊表、收藏 S1–S5、探索 X1–X5、T1、低認知負擔 L1–L6（可按數／到達步數自動量測）、願景探索稿 12 張 | `overview.html`、`variants.html`、`vision.html` |
 | 第三輪 | 真實 OSM 地圖引擎與六種底圖、單／雙地圖、微 3D、實景照片、好友系統六頁＋AI 鄰居、五張概念板；轉換點 K1–K7 | `concept.html`、`variants.html#axis-conv` |
 | 提案 | 提案總覽頁、README、本交接 | `proposal.html` |
-| web app | 合一版做成單頁 web app：25 條 route、hash 路由、localStorage 狀態、PWA；瀏覽器測試 187 條＋node 單元測試 34 條。見 §10 | `app/index.html`、`app/README.md` |
+| web app | 合一版的底層流程仍在；目前主畫面改為叫車／收藏雙主頁，叫車頁內切搭車／探索，探索面板展開後保留地點資訊並顯示卡片。hash 路由、localStorage 與 PWA 繼續運作；瀏覽器測試 189 條＋node 單元測試 34 條。見 §10、§13 | `app/index.html`、`app/README.md` |
 | 介紹網站 | `site/index.html`：一頁式捲動介紹站（hero 霧地圖隨捲動散開、週曆條、三段 scrolly 手機、可點的真實新竹地圖、3 公里距離尺、AI 卡、圖層開／關對照、路線圖、影片）。見 §12 | `site/index.html`、`site/CONTRACT.md` |
 | 初賽交件 | 2026 和泰 AI 黑客松 yoxi 題的交件包：HTML 簡報（摘要 1＋正文 15＋附錄，`build-pdf.py` 印 PDF 並檢查頁數／大小／溢出／禁用詞）、3 分鐘向量動畫影片（腳本、場景、TTS 草稿配音）、六份佐證文件（資料、AI 架構與成本、商業、KPI、roadmap、差異化）。敘述立場：站在 yoxi 的角度寫成給經營層的路線圖備忘錄。見 §11 | `pitch/README.md`、`pitch/BRIEF.md` |
 
@@ -52,7 +52,7 @@ app/               web app（合一版）；只讀 ../prototype，原型一個�
   tests/           run.py 總入口｜harness.js｜runner.html｜specs/*.spec.js（瀏覽器）｜unit/*.test.mjs（node）
   sw.js、manifest.webmanifest、assets/icons/   PWA
   tools/           serve.py（本機／區網伺服器）｜make-icons.py｜check-sw.py（快取清單對帳）｜shoot-app.py（每條 route 的截圖）
-docs/              本交接、工作時間線
+docs/              本交接、工作時間線、references/（使用者提供的版面參考與回饋圖）
 brain_strom.png    最初的腦力激盪圖      Yoxi_app截圖.zip  yoxi 現有 app 截圖（還原用）
 ```
 
@@ -105,6 +105,8 @@ python app/tests/run.py                           # web app：node 單元＋head
 
 ## 8. 下一步（建議順序）
 
+以下是原型與提案時期留下的議題，不是這輪雙主頁 UI 的待辦；目前 app 狀態與交接重點以 §13 為準。
+
 1. **入口決定**（G 抽屜 vs tab bar）：影響第 1 步能不能上；先用 G 拿開啟數據的論述在 `variants.html#axis-entry`。
 2. **量 E 的足跡上色**：補第七條承諾的判準（叫車模式下地圖非道路著色面積上限），寫進 `tools/audit-quiet.html`。
 3. **K1 門檻重談**：3 km／10 km 統一到一個地方（`place.html`、`variant-k1-place.html`、`variant-k-ride.html`）。
@@ -120,16 +122,16 @@ python app/tests/run.py                           # web app：node 單元＋head
 
 ## 9. 交給 Codex 的最短路徑
 
-1. 讀 `AGENTS.md` → 本文件 §3、§4、§5。
+1. 讀 `AGENTS.md` → 本文件 §13，再看 §3、§4、§5 與 `app/ARCHITECTURE.md`。
 2. 跑 `python prototype/tools/verify-quiet.py` 拿基準。
-3. 從 §8 挑一項，開分支，照 `AGENTS.md` 的慣例做，做完再跑一次驗收，commit。
+3. 依使用者下一輪的方向開分支；§8 是原型／提案議題清單，不代表已授權的 app 改動。照 `AGENTS.md` 的慣例做，做完再跑一次驗收並 commit。
 4. 需要背景時：`docs/WORKLOG.md` 有每一筆 commit 做了什麼；每張畫面的檔頭註解有「為什麼這樣做」。
 
 ## 10. web app（合一版）
 
-**結論**：`app/` 是提案推薦那一組決定的可用版本；契約在 `app/ARCHITECTURE.md`，測試在 `app/tests/`，原型一個字沒動。
+**目前狀態**：`app/` 從這個合一版演進成雙主頁 UI；現行的互動決定在 §13 與 `app/ARCHITECTURE.md`。本節以下保留合一版當時的選版與技術背景，供理解舊路由和提案對照；原型仍未因這輪 app 改版而修改。
 
-選版（`ARCHITECTURE.md` §0）：tab bar 三分頁、E 景點常駐（叫車地圖 ≤ 4）、K1 內容頁設為下車點、S3 路線書架、X4 勳章牆、X2 缺口導向、L1 一屏一事、三幕解鎖、家人＝分享選項、好康任務不同頁、好友不做。
+當時的選版（現為歷史背景）：tab bar 三分頁、E 景點常駐（叫車地圖 ≤ 4）、K1 內容頁設為下車點、S3 路線書架、X4 勳章牆、X2 缺口導向、L1 一屏一事、三幕解鎖、家人＝分享選項、好康任務不同頁、好友不做。
 §6 裡原本未決、在 app 拍板的：
 
 | 未決 | app 的選擇 |
@@ -194,3 +196,24 @@ python app/tests/run.py                           # web app：node 單元＋head
 | 截圖驗收 | `python site/tools/shoot-site.py`（借 `pitch/video/build-video.py` 的 DevTools 用戶端；輸出 `site/tools/.shots/` 不進版控） |
 
 規矩：只讀 `prototype/`、`app/assets/shots/`、`pitch/video/out/` 不改；不寫 hex；數字走 `data-fmt`；禁用詞與誠實標示同全站。
+
+## 13. 2026-09-24 雙主頁與探索卡片面板（目前 app 主畫面）
+
+使用者希望日常叫車幾乎不受探索影響，因此 `app/index.html` 的底欄現在只有「叫車／收藏」。叫車頁預設「搭車」，面板頂部按變體 F 的結構放「搭車／探索」兩個模式按鈕。收藏頁維持摘要、明信片與獎章的主頁結構。舊 `/explore`、`/place/:id` 等路由仍可用深連結進入，供既有流程對照，主頁入口不導向它們。
+
+| 狀態／動作 | 現行行為 |
+|---|---|
+| 搭車 | 地圖沒有探索圖釘；面板只接受向下拉收合，點「展開搭車」平順恢復。 |
+| 切到探索 | `#/ride?mode=explore&area=<id>`；四個展示地區中依 `APP.place(id).dist` 預選最近的。地圖圖釘可改選地區，選後面板先收合。 |
+| 探索收合態 | 顯示一張精簡地點資訊卡與「用 yoxi／收集」。用 yoxi 回搭車並填下車點；收集打開卡片面板。 |
+| 探索上拉 | 地點資訊卡、兩個按鈕留在上方；下方直接接所選地區的疊放卡片。沒有「附近的地方」清單，也不進地點詳情頁。內容超過面板高度時可捲動。 |
+| 點卡片 | 在原頁打開可翻面的懸浮小卡，背面只有簡短收藏狀態。這裡的「收集」是查看卡片的入口；真正收下卡片仍走抵達／既有 `STATE` 流程。 |
+| 探索下拉 | 只收合面板，仍留在探索與原選定地區。 |
+
+實作入口：`app/js/views/ride.js` 的 `rideV2Render／rideV2Mount`、`CARD_AREAS`、`bindExploreSheet`，樣式在 `app/css/views/ride.css` 的 `.ride-v2__*`；搭車的跟手收合在同檔的 `bindRideDownSheet`。收藏在 `app/js/views/album.js` 與 `app/css/views/album.css`。主路由與資料契約以 `app/ARCHITECTURE.md` 為準，使用說明在 `app/README.md`。PWA 快取版號目前是 `chengshi-app-v9`（`app/sw.js` 與 `app/js/views/system.js` 需同步）。
+
+目前畫面截圖：`app/assets/shots/ride.png`（預設搭車）、`ride-peek.png`（探索收合）、`ride-cards.png`（預選地區展開，保留上方資訊卡）、`ride-float.png`／`ride-float-back.png`（卡片互動）、`album.png`（收藏）。使用者原始排版圖、草圖與四輪回饋截圖集中在 [`docs/references/README.md`](references/README.md)；參考圖不是 app 資產。重拍用 `python app/tools/shoot-app.py --only ride,ride-peek,ride-cards,ride-float,ride-float-back,album`。
+
+交接驗證：`python app/tests/run.py` 是 node 34/34、瀏覽器 189/189；`python app/tools/check-sw.py` 是 45 筆 PASS；`python prototype/tools/verify-quiet.py` 八段全 PASS，六條承諾的數字與改版前相同。`verify-quiet.py` 會改寫 `prototype/assets/load.js` 與 `load.json` 的 `generatedAt`，若只有時間戳差異，檢查後還原即可。本輪變更留在 `app/`、文件與參考圖，沒有改 `prototype/`、`pitch/` 或 `site/`。
+
+下一位 agent 請從本節、`app/ARCHITECTURE.md` §0 與 `app/README.md` 的「這版怎麼看」開始。這輪 UI 已按最後回饋收束；接下來先等使用者的新調整方向。`docs/WORKLOG.md` 記有這輪各個 commit 與回滾原因。

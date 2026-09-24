@@ -20,6 +20,7 @@
 其他兩頁：`prototype/variants.html`（依軸線分區的變體卡牆）、`prototype/vision.html`（願景探索稿）。
 
 要接手開發（人或 AI agent）：先讀 `AGENTS.md`（規矩與慣例），再讀 `docs/HANDOFF.md`（架構、驗收、未決、下一步）與 `docs/WORKLOG.md`（每一筆 commit 做了什麼）。
+目前雙主頁 UI 的狀態與檔案入口在 `docs/HANDOFF.md` §13；Apple 健身排版、腦力激盪與使用者逐輪回饋圖在 [`docs/references/`](docs/references/README.md)。
 要提案：`docs/narratives/` 有五種敘述方向（情感、商業轉換、零傷害、世代、城市）與對應 app 按法的 demo 講稿；`docs/webapp-review/` 有五個視角（yoxi 產品、UX、工程、無障礙、評審）的評估。
 要介紹給別人：`site/index.html` 是介紹站（`file://` 直接開，讀 `prototype/`、`app/assets/shots/` 與 `pitch/video/` 的共用檔，規矩在 `site/CONTRACT.md`）。
 要交初賽（2026 和泰 AI 黑客松 · yoxi 題，10/14 13:00 截止）：`pitch/` 是交件包——HTML 簡報印成 PDF（`pitch/deck/`）、3 分鐘影片的腳本與草稿（`pitch/video/`）、每個數字的佐證（`pitch/docs/`）、上傳前打勾清單（`pitch/README.md`）。
@@ -88,6 +89,7 @@ prototype/
   tools/            驗收與截圖腳本（見上）
 app/                web app（合一版）：index.html 單一入口｜js/app.js 核心｜js/views/ 四個區塊｜tests/ 自動測試｜ARCHITECTURE.md 契約
 brain_strom.png     最初的腦力激盪圖
+docs/references/   這輪雙主頁的參考圖與使用者回饋截圖（索引在 README.md）
 Yoxi_app截圖.zip    yoxi 現有 app 的截圖（還原用）
 ```
 
