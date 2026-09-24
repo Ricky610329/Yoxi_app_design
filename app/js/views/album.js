@@ -355,12 +355,78 @@ function weekPanel() {
       '<span class="arrow"></span></a>';
 }
 
+/* 雙主頁第一版：摘要、統計、明信片、獎章直接往下看。舊的細節 view 仍可讀舊連結。 */
+function albumV2CardHTML(p) {
+  const got = STATE.card(p.id);
+  const fresh = !!got && STATE.lastIsNew && STATE.all.lastCard === p.id;
+  return '<div class="alb-v2__postcard' + (got ? ' is-collected' : '') + (fresh ? ' postcard--fresh' : '') + '" data-card="' + esc(p.id) + '">' +
+    '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '">' +
+      '<span class="ai-mark">AI 生成示意</span>' + (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
+    '<strong>' + esc(p.name) + '</strong>' +
+    '<small>' + (got ? (fresh ? '新收下' : '已收藏') : '還沒收下') + '</small></div>';
+}
+function albumV2CardsHTML(all) {
+  const cards = M().POSTCARDS || [];
+  const got = cards.filter(function (p) { return STATE.has(p.id); });
+  const list = all ? cards : got.slice(-4).reverse();
+  return '<div class="alb-v2__card-grid">' + list.map(albumV2CardHTML).join('') + '</div>' +
+    (cards.length > list.length
+      ? '<button class="alb-v2__more" type="button" data-act="show-all-cards">全部 ' + cards.length + ' 張明信片</button>'
+      : '<button class="alb-v2__more" type="button" data-act="show-recent-cards">收起來</button>');
+}
+function albumV2Render() {
+  const cards = M().POSTCARDS || [];
+  const got = cards.filter(function (p) { return STATE.has(p.id); });
+  const badges = badgeCount();
+  const recent = got.slice(-3).reverse();
+  return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
+      '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
+        '<p>走過的地方，都留在這裡。</p></header>' +
+      '<section class="alb-v2__hero" aria-label="明信片摘要">' +
+        '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
+          '<strong data-stat="cards">' + got.length + '</strong><span>／' + cards.length + ' 張</span></div>' +
+          '<p>一張卡，記下一個到過的地方。</p></div>' +
+        '<div class="alb-v2__stack" aria-hidden="true">' + recent.map(function (p, i) {
+          return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + '" data-art="' + esc(p.art) +
+            '" data-seed="' + cardIdx(p) + '"></span>';
+        }).join('') + '</div>' +
+      '</section>' +
+      '<div class="alb-v2__stats">' +
+        '<div class="alb-v2__stat"><span>去過的地方</span><strong data-stat="places">' + STATE.count() + '</strong><small>個地方</small></div>' +
+        '<div class="alb-v2__stat"><span>留下的距離</span><strong data-stat="km">' + esc(STATE.all.km) + '</strong><small>公里</small></div>' +
+      '</div>' +
+      '<section class="alb-v2__section"><div class="alb-v2__section-head"><h2>明信片</h2><span>收集 ' + got.length + '/' + cards.length + '</span></div>' +
+        '<div data-alb-v2-cards>' + albumV2CardsHTML(false) + '</div></section>' +
+      '<section class="alb-v2__section alb-v2__section--badges"><div class="alb-v2__section-head"><h2>獎章</h2>' +
+        '<span data-stat="badges">' + badges.got + '/' + badges.total + '</span></div>' + badgesPanel() + '</section>' +
+    '</div></div>';
+}
+function albumV2Mount(root) {
+  const host = root.querySelector('[data-alb-v2-cards]');
+  function paint(all) {
+    host.innerHTML = albumV2CardsHTML(all);
+    SHELL.injectArt(host);
+    const more = host.querySelector('[data-act="show-all-cards"]');
+    if (more) more.onclick = function () { paint(true); };
+    const less = host.querySelector('[data-act="show-recent-cards"]');
+    if (less) less.onclick = function () { paint(false); };
+  }
+  paint(false);
+  if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+}
+
 APP.view('album', {
   path: '/album',
   tab: 'album',
   root: true,
-  status: 'light',
+  status: 'dark',
   title: '收藏',
+  render: albumV2Render,
+  mount: albumV2Mount,
+});
+
+/* 舊版首頁的組織方式留作視覺對照，不註冊到主頁。 */
+const legacyAlbumHome = {
   render: function (params, ctx) {
     let tab = ctx.query.get('tab');
     if (TABS.indexOf(tab) < 0) tab = 'cards';
@@ -434,7 +500,7 @@ APP.view('album', {
     /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
     if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
   },
-});
+};
 
 /* ================================================================ /postcard/:id */
 

@@ -131,6 +131,67 @@
 .ride-call { margin-top: var(--sp-4); }
 .ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--app-muted); }
 
+/* 雙主頁第一版：地圖保留原來的拉把手感，面板改看周邊卡片。 */
+.ride-v2__map { flex: 1 1 auto; }
+.ride-v2__sheet { --sheet-max: 82%; padding-top: var(--sp-2); }
+.ride-v2__sheet .sheet__grip { height: 22px; touch-action: none; }
+.ride-v2__sheet .sheet__handle { margin-bottom: 0; }
+.ride-v2__eyebrow { color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-bold); }
+.ride-v2__intro h1 { margin: var(--sp-1) 0 var(--sp-3); font-size: var(--fs-title); line-height: var(--lh-tight); }
+.ride-v2__teaser {
+  display: flex; align-items: center; gap: var(--sp-2); width: 100%; min-height: 44px;
+  padding: 0 var(--sp-3); border-radius: var(--r-card); background: var(--yoxi-mist);
+  color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); text-align: left;
+}
+.ride-v2__teaser [data-icon] { display: block; width: 20px; height: 20px; }
+.ride-v2__teaser .arrow { margin-left: auto; transform: rotate(-90deg); }
+.ride-v2__ride { margin-top: var(--sp-3); }
+.ride-v2__field {
+  display: flex; align-items: center; gap: var(--sp-3); min-height: 50px;
+  padding: var(--sp-1) var(--sp-2); border-bottom: 1px solid var(--yoxi-line);
+}
+.ride-v2__field > span:nth-child(2), .ride-v2__field > a { flex: 1; min-width: 0; }
+.ride-v2__field small, .ride-v2__field strong { display: block; }
+.ride-v2__field small { color: var(--app-muted); font-size: var(--fs-xs); }
+.ride-v2__field strong { color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-heavy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ride-v2__field button { min-width: 44px; min-height: 44px; color: var(--yoxi-navy); font-size: var(--fs-title); }
+.ride-v2__fare { display: block; color: var(--app-muted); font-size: var(--fs-xs); }
+.ride-v2__dot { width: 12px; height: 12px; flex: none; border-radius: var(--r-pill); background: var(--yoxi-navy); }
+.ride-v2__dot--red { background: var(--yoxi-red); }
+.ride-v2__call { width: 100%; margin-top: var(--sp-3); min-height: 48px; }
+.ride-v2__area-cta { display: block; width: 100%; min-height: 44px; margin-top: var(--sp-2); border: 1px solid var(--yoxi-navy); border-radius: var(--r-btn); color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.ride-v2__pending { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-top: var(--sp-2); color: var(--yoxi-navy); font-size: var(--fs-cap); font-weight: var(--fw-bold); }
+.ride-v2__sheet:not(.is-collapsed) .ride-v2__intro,
+.ride-v2__sheet:not(.is-collapsed) .ride-v2__ride { display: none; }
+.ride-v2__expanded { padding-bottom: var(--sp-5); }
+.ride-v2__section h2 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-title); }
+.ride-v2__section p { margin: 0 0 var(--sp-4); color: var(--app-muted); font-size: var(--fs-sm); line-height: var(--lh-body); }
+.ride-v2__area-list { display: grid; gap: var(--sp-2); }
+.ride-v2__area {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%; min-height: 78px;
+  padding: var(--sp-2); border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-paper); text-align: left;
+}
+.ride-v2__area-art { position: relative; width: 48px; height: 58px; flex: none; overflow: hidden; border-radius: var(--r-img); }
+.ride-v2__area-art > * { width: 100%; height: 100%; }
+.ride-v2__area-body { flex: 1; min-width: 0; }
+.ride-v2__area-body strong, .ride-v2__area-body small { display: block; }
+.ride-v2__area-body strong { color: var(--yoxi-navy); font-size: var(--fs-sm); }
+.ride-v2__area-body small { margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-xs); line-height: 1.35; }
+.ride-v2__area-count { display: flex; align-items: center; gap: var(--sp-2); color: var(--yoxi-navy); font-weight: var(--fw-heavy); }
+.ride-v2__back { display: flex; align-items: center; gap: var(--sp-2); min-height: 44px; color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.ride-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.ride-v2__card { min-width: 0; padding: var(--sp-2); border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: var(--yoxi-paper); }
+.ride-v2__card-art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-img); }
+.ride-v2__card-art > [data-art], .ride-v2__card-art > svg { width: 100%; height: 100%; }
+.ride-v2__card:not(.is-collected) .ride-v2__card-art > :first-child { filter: grayscale(1); opacity: .65; }
+.ride-v2__card .ai-mark { position: absolute; bottom: var(--sp-1); left: var(--sp-1); z-index: 2; }
+.ride-v2__card strong, .ride-v2__card small { display: block; }
+.ride-v2__card strong { margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: 1.35; }
+.ride-v2__card small { margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-xs); }
+.ride-v2__set { width: 100%; min-height: 48px; margin-top: var(--sp-4); }
+.ride-v2__map .spot.is-selected .spot__img { outline: 3px solid var(--yoxi-navy); outline-offset: 2px; }
+
 /* --------------------------------------------------------------------------
    /dropoff、/pickup：白色頁首＋搜尋框＋清單
    -------------------------------------------------------------------------- */

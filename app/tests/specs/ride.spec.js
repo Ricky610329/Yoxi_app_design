@@ -65,8 +65,8 @@ T.spec('ride', function (t) {
     t.ok(el && el.classList.contains('spot--today'), '今天的地方是 .spot--today');
     t.ok(app.$('main.view .pin[data-pin="pickup"]'), '上車點 pin');
     t.ok(app.$('main.view [data-recenter]'), '定位鈕');
-    t.includes(app.text('.sheet__greet'), app.MOCK.USER.name, '問候語有名字');
-    t.includes(app.text('.ride-banner__eyebrow'), app.APP.fmt.dist(app.APP.place(today).dist), 'banner 距離用 fmt.dist');
+    t.includes(app.text('.ride-v2__intro'), '今天想去哪裡', '面板有叫車入口');
+    t.eq(app.$('#tabbar').querySelectorAll('[data-tab-id]').length, 2, '底欄只有兩項');
   });
 
   t.test("setDropoff('neiwan','e') → /ride 叫車鈕就緒、車資與分鐘用公式", async function (app) {
@@ -88,15 +88,14 @@ T.spec('ride', function (t) {
     t.noDeadButtons(app);
   });
 
-  t.test('點景點 → 小卡名字正確 → 設為下車點', async function (app) {
+  t.test('點景點 → 面板顯示地區 → 設為下車點', async function (app) {
     await app.reset();
     await app.go('/ride');
     await app.click('.spot[data-spot="moat"]');
-    const peek = app.$('[data-peek]');
-    t.ok(peek && peek.classList.contains('is-on'), '小卡出現');
-    t.eq(app.text('[data-peek-name]'), app.APP.place('moat').name, '小卡名字');
-    t.includes(app.text('[data-peek-meta]'), app.APP.fmt.dist(app.APP.place('moat').dist), '小卡距離');
-    await app.click('[data-act="set-dropoff"]');
+    t.eq(app.route().query.get('area'), 'moat', '選點寫入網址');
+    t.includes(app.text('[data-area-intro]'), '護城河', '面板顯示地區');
+    t.includes(app.text('[data-area-intro]'), app.APP.fmt.dist(app.APP.place('moat').dist), '距離由公式取得');
+    await app.click('[data-area-intro] [data-act="set-area-dropoff"]');
     await app.waitFor(function () { const d = app.APP.store.get('dropoff'); return d && d.id === 'moat'; }, 2000, 'dropoff=moat');
     await app.at('/ride');
     t.eq(app.APP.store.get('dropoff').via, 'e', 'via=e');
@@ -106,23 +105,44 @@ T.spec('ride', function (t) {
     t.eq(app.APP.store.get('dropoff'), null, '清除 → dropoff null');
   });
 
-  t.test('小卡「看看這個地方」→ /place/:id', async function (app) {
+  t.test('上拉面板：選點後看該地區的卡片，不開地點詳情', async function (app) {
     await app.reset();
     await app.go('/ride');
-    await app.click('.spot[data-spot="market"]');
-    await app.click('[data-act="peek-place"]');
-    await app.at('/place/market');
-    t.eq(app.route().params.id, 'market', 'params.id');
+    const grip = app.$('.ride-sheet .sheet__grip'), W = app.win, box = grip.getBoundingClientRect();
+    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: box.top + 10, pointerId: 1 }));
+    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
+    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
+    t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '向上拉後面板展開');
+    t.eq(app.$$('[data-act="select-area"]').length, 4, '附近四個地區');
+    await app.click('[data-act="select-area"][data-area="market"]');
+    t.eq(app.route().query.get('area'), 'market', '選定東門');
+    t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '東門四張卡');
+    t.ok(!app.$('[data-act="peek-place"]'), '沒有地點詳情入口');
+    await app.reload('/ride?area=market');
+    t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '重新整理仍是東門四張');
+    await app.click('[data-act="all-areas"]');
+    t.eq(app.route().query.get('area'), null, '回附近清單會清除網址選點');
   });
 
-  t.test('沒有下車點時按叫車 → toast，不叫車', async function (app) {
+  t.test('地區卡片收集狀態跟 STATE 更新', async function (app) {
+    await app.reset();
+    await app.go('/ride?area=glass-kiln');
+    t.includes(app.text('[data-area-intro]'), '收集 0/2', '初始水利路進度');
+    app.STATE.collect('glass-kiln', { date: app.APP.fmt.todayMMDD() });
+    await app.go('/album');
+    await app.go('/ride?area=glass-kiln');
+    t.includes(app.text('[data-area-intro]'), '收集 1/2', '收卡後進度更新');
+    await app.click('[data-act="expand-cards"]');
+    t.ok(app.$('[data-area-expanded] [data-card="p11"].is-collected'), '卡片上色');
+  });
+
+  t.test('沒有下車點時顯示選址入口，不能直接叫車', async function (app) {
     await app.reset();
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
-    t.eq(app.route().path, '/ride', '還在 /ride');
+    t.ok(!app.$('[data-act="call-ride"]'), '尚無叫車鈕');
     t.eq(app.APP.store.get('trip'), null, '沒有 trip');
-    const toast = app.$('.device .toast');
-    t.ok(toast && toast.textContent.indexOf('先選一個下車點') >= 0, 'toast 先選一個下車點');
+    await app.click('[data-act="pick-dropoff"]');
+    await app.at('/dropoff');
   });
 
   t.test('叫車 → 行程中 → 抵達 → 評分 → 金色橫幅（?ride=1）', async function (app) {
@@ -310,7 +330,7 @@ T.spec('ride', function (t) {
     await app.at('/dropoff');
     await app.click('main.view a[data-back]');
     await app.at('/ride');
-    await app.click('[data-act="open-notify"]');
+    await app.go('/notify');
     await app.at('/notify');
     await app.click('main.view a[data-back]');
     await app.at('/ride');

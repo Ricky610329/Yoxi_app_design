@@ -57,20 +57,15 @@ T.spec('album', function (t) {
     t.ok(t.countTappables(app) <= 12, '有「新」時可按數仍 ≤ 12：' + t.countTappables(app));
   });
 
-  t.test('書架：點書脊換層、「全部」展開', async function (app) {
+  t.test('摘要：最近明信片與全部明信片切換', async function (app) {
     await app.reset();
     await app.go('/album');
-    const spine = app.$('[data-shelf-open="water"]');
-    t.ok(spine, '有「水的三種樣子」書脊');
-    if (!spine) return;
-    await app.click(spine);
-    const open = app.$('.alb-shelf.is-open');
-    t.eq(open && open.getAttribute('data-shelf'), 'water', '攤開 water');
-    t.eq(app.$$('.alb-shelf.is-open [data-card]').length, 3, '先給 3 格');
-    await app.click('[data-act="shelf-all"]');
-    t.eq(app.$$('.alb-shelf.is-open [data-card]').length, app.STATE.routeIds('water').length, '全部展開');
-    const got = app.$('.alb-shelf.is-open a[data-card="p3"]');
-    t.eq(got && got.getAttribute('href'), '#/postcard/p3', '格子 → /postcard/:id');
+    t.eq(app.text('[data-stat="cards"]'), String(app.STATE.count()), '主卡顯示已收張數');
+    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '先顯示最近四張');
+    await app.click('[data-act="show-all-cards"]');
+    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, app.MOCK.POSTCARDS.length, '展開全部明信片');
+    await app.click('[data-act="show-recent-cards"]');
+    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '收起回最近四張');
   });
 
   /* 3. 獎章格文字＝STATE.badge */
@@ -94,13 +89,10 @@ T.spec('album', function (t) {
   });
 
   /* 隱私分軌 */
-  t.test('日誌沒有分享鍵、/week 有，並呼叫 APP.ui.share', async function (app) {
+  t.test('收藏首頁沒有私密回顧分享鍵、/week 有，並呼叫 APP.ui.share', async function (app) {
     await app.reset();
-    await app.go('/album?tab=journal');
-    const panel = app.$('[data-panel="journal"]');
-    t.ok(panel && !panel.classList.contains('u-hidden'), '?tab=journal 起始在日誌');
-    t.eq(panel ? panel.querySelectorAll('[data-act="share"], [data-share]').length : -1, 0, '日誌 panel 沒有分享');
-    t.includes(panel ? panel.textContent : '', '只有你看得到', '只有你看得到');
+    await app.go('/album');
+    t.eq(app.$$('[data-act="share"], [data-share]').length, 0, '首頁沒有分享鍵');
     await app.go('/lookback');
     t.eq(app.$$('[data-act="share"], [data-share]').length, 0, '/lookback 沒有分享');
     await app.go('/week');
@@ -115,14 +107,12 @@ T.spec('album', function (t) {
   });
 
   /* 2. 回顧走完四幕 */
-  t.test('/lookback 走完四幕：done、mood 寫入，回到收藏的日誌', async function (app) {
+  t.test('/lookback 走完四幕：done、mood 寫入，回到收藏', async function (app) {
     await app.reset();
     const html = app.doc.documentElement;
     html.removeAttribute('data-still');           /* 定格會直接跳到最後一幕；這裡要一幕一幕走 */
     try {
-      await app.go('/album?tab=journal');
-      await app.click('[data-act="go-lookback"]');
-      await app.at('/lookback');
+      await app.go('/lookback');
       const at = function () { const e = app.$('[data-lb]'); return e && e.getAttribute('data-lb-at'); };
       t.eq(at(), '0', '從第一幕開始');
       t.ok(app.text('[data-lb-steps]') === app.APP.fmt.num(app.MOCK.LOOKBACK.steps), '步數來自 LOOKBACK');
@@ -139,11 +129,8 @@ T.spec('album', function (t) {
       t.eq(T0.done, true, 'today.done');
       t.eq(T0.mood, 'ok', 'today.mood');
       t.eq(T0.photo, 1, 'today.photo');
-      t.eq(app.route().query.get('tab'), 'journal', '落在 journal pill');
-      const panel = app.$('[data-panel="journal"]');
-      t.ok(panel && !panel.classList.contains('u-hidden'), '日誌 panel 顯示中');
-      t.ok(app.$('[data-mood-now="ok"]'), '日誌顯示剛選的心情');
-      t.includes(app.text('[data-act="go-lookback"]'), '再看一次', '做過的顯示「再看一次」');
+      t.eq(app.route().path, '/album', '回到收藏主頁');
+      t.eq(app.text('[data-stat="cards"]'), String(app.STATE.count()), '摘要仍讀當前卡片數');
     } finally {
       html.setAttribute('data-still', '');
     }

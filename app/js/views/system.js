@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v4';
+const VERSION = 'chengshi-app-v5';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -148,7 +148,7 @@ function push(opt) {
   if (when === 'am') {
     title = '今天的地方：' + ((M.TODAY && M.TODAY.name) || '');
     body = (M.TODAY && M.TODAY.hook) || '';
-    to = '/explore';
+    to = '/ride?area=' + encodeURIComponent((M.TODAY && M.TODAY.id) || 'glass-kiln');
   } else {
     const L = M.LOOKBACK || { km: 0, places: [] };
     title = '今天走了 ' + L.km + ' km，經過 ' + (L.places || []).length + ' 個地方';

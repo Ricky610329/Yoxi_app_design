@@ -644,7 +644,6 @@ function reportError(e, where) {
 /* ---- tab bar ---- */
 const TABDEF = [
   { id: 'ride',    label: '叫車', icon: 'tabRide' },
-  { id: 'explore', label: '探索', icon: 'tabExplore', dot: true },
   { id: 'album',   label: '收藏', icon: 'tabAlbum' },
 ];
 

@@ -29,6 +29,52 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 
 .alb-stat__of { font-size: var(--fs-sm); font-weight: var(--fw-bold); opacity: .6; }
 
+/* 雙主頁第一版：借用摘要式層級，內容仍是城市收藏。 */
+.alb-v2__scroll { background: var(--yoxi-paper); }
+.alb-v2__header { padding: var(--sp-5) var(--gutter) var(--sp-4); }
+.alb-v2__brand { color: var(--yoxi-red); font-size: var(--fs-cap); font-weight: var(--fw-heavy); letter-spacing: .04em; }
+.alb-v2__header h1 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-display); line-height: var(--lh-tight); }
+.alb-v2__header p { color: var(--app-muted); font-size: var(--fs-sm); }
+.alb-v2__hero {
+  position: relative; display: flex; justify-content: space-between; min-height: 196px;
+  margin: 0 var(--gutter); padding: var(--sp-5); overflow: hidden;
+  border-radius: var(--r-card); background: var(--yoxi-navy); color: var(--yoxi-white);
+}
+.alb-v2__hero > div:first-child { position: relative; z-index: 2; }
+.alb-v2__label { font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.alb-v2__hero-count { display: flex; align-items: baseline; margin-top: var(--sp-3); }
+.alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.88); line-height: 1; font-weight: var(--fw-heavy); }
+.alb-v2__hero-count span { font-size: var(--fs-sm); }
+.alb-v2__hero p { max-width: 155px; margin-top: var(--sp-3); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
+.alb-v2__stack { position: absolute; width: 146px; height: 156px; right: var(--sp-2); bottom: var(--sp-2); }
+.alb-v2__stack-art { position: absolute; display: block; width: 89px; height: 126px; overflow: hidden; border: 3px solid var(--yoxi-white); border-radius: var(--r-img); box-shadow: var(--sh-lift); }
+.alb-v2__stack-art > * { width: 100%; height: 100%; }
+.alb-v2__stack-art--0 { right: 0; bottom: 0; transform: rotate(8deg); z-index: 3; }
+.alb-v2__stack-art--1 { right: 28px; bottom: 8px; transform: rotate(-7deg); z-index: 2; }
+.alb-v2__stack-art--2 { right: 49px; bottom: 15px; transform: rotate(-16deg); z-index: 1; }
+.alb-v2__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-3) var(--gutter) 0; }
+.alb-v2__stat { min-height: 128px; padding: var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }
+.alb-v2__stat span, .alb-v2__stat small { display: block; font-size: var(--fs-cap); }
+.alb-v2__stat span { font-weight: var(--fw-bold); }
+.alb-v2__stat strong { display: inline-block; margin-top: var(--sp-3); color: var(--yoxi-red); font-size: var(--fs-display); line-height: 1; }
+.alb-v2__stat small { display: inline-block; margin-left: var(--sp-1); color: var(--app-muted); }
+.alb-v2__section { padding: var(--sp-5) var(--gutter) 0; }
+.alb-v2__section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.alb-v2__section-head h2 { font-size: var(--fs-title); }
+.alb-v2__section-head span { color: var(--app-muted); font-size: var(--fs-cap); }
+.alb-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.alb-v2__postcard { min-width: 0; padding: var(--sp-2); border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: var(--yoxi-white); }
+.alb-v2__art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-img); }
+.alb-v2__art > :first-child { width: 100%; height: 100%; }
+.alb-v2__postcard:not(.is-collected) .alb-v2__art > :first-child { filter: grayscale(1); opacity: .6; }
+.alb-v2__art .ai-mark { position: absolute; left: var(--sp-1); bottom: var(--sp-1); z-index: 2; }
+.alb-v2__postcard strong, .alb-v2__postcard small { display: block; }
+.alb-v2__postcard strong { margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: 1.3; }
+.alb-v2__postcard small { margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-xs); }
+.alb-v2__more { display: block; width: 100%; min-height: 44px; margin-top: var(--sp-3); color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.alb-v2__section--badges { padding-bottom: var(--sp-5); }
+.alb-v2__section--badges .alb-badges { gap: var(--sp-3); }
+
 /* ---- 一列可按的卡（回顧入口、週回顧入口、長輩圖、所屬獎章） ---- */
 .alb-row {
   display: flex;

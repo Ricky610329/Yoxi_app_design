@@ -77,6 +77,8 @@ A_PENDING = {'trip': {'placeId': 'neiwan', 'phase': 'done', 'startedAt': T0, 'ra
 RUN_DROPOFF = ("var p=APP.place('glass-kiln');APP.store.set('dropoff',{id:p.id,name:p.name,km:APP.fmt.km(p.dist),"
                "setAt:new Date().toISOString(),via:'e'});APP.nav.go('/ride',{replace:true,dir:'none'});")
 RUN_PEEK = "var s=document.querySelector('#view .spot');if(s)s.click();"
+RUN_AREAS = "var b=document.querySelector('[data-act=\"expand-cards\"]');if(b)b.click();"
+RUN_CARDS = RUN_PEEK + RUN_AREAS
 RUN_STORY = "var b=document.querySelector('[data-act=\"toggle-story\"]');if(b)b.click();"
 
 # (stem, route, {'s':STATE, 'a':store, 'run':js} 或 None)
@@ -85,6 +87,8 @@ SHOTS = [
     ('ride',             '/ride',                 None),
     ('ride-dropoff',     '/ride',                 {'run': RUN_DROPOFF}),
     ('ride-peek',        '/ride',                 {'run': RUN_PEEK}),
+    ('ride-areas',       '/ride',                 {'run': RUN_AREAS}),
+    ('ride-cards',       '/ride',                 {'run': RUN_CARDS}),
     ('ride-pending-unlock', '/ride',              {'a': A_PENDING}),
     ('dropoff',          '/dropoff',              None),
     ('pickup',           '/pickup',               None),

@@ -68,7 +68,7 @@ T.spec('system', function (t) {
     /* 展開 demo 工具與關於：內容都在、仍然沒有死按鈕與禁用詞 */
     await app.click('[data-act="more"]');
     t.ok(!app.$('[data-more]').hidden, '展開');
-    t.eq(app.text('[data-version]'), 'chengshi-app-v4', '版本字串');
+    t.eq(app.text('[data-version]'), app.APP.system.VERSION, '版本字串');
     t.ok(app.text('main.view').indexOf('OpenStreetMap') >= 0, '地圖署名');
     const P = app.win.PHOTOS_DATA || {};
     const nPhotos = Object.keys(P).reduce(function (a, k) { return a + (P[k] || []).length; }, 0);
@@ -100,7 +100,7 @@ T.spec('system', function (t) {
     t.eq(app.storage('state').settings.pushAm, !before, '寫進 localStorage');
   });
 
-  t.test('早上推播：浮層、只記一次、點卡片到 /explore', async function (app) {
+  t.test('早上推播：浮層、只記一次、點卡片到叫車頁選定地點', async function (app) {
     await app.reset();
     await app.go('/ride');
     app.APP.ui.push({ when: 'am' });
@@ -114,7 +114,8 @@ T.spec('system', function (t) {
     t.eq(app.APP.store.get('pushes').length, 1, '再發一次不變');
     t.eq(app.$$('.device > .pushmock').length, 1, '浮層只有一張');
     await app.click('.pushmock [data-act="open-push"]');
-    await app.at('/explore');
+    await app.at('/ride');
+    t.eq(app.route().query.get('area'), app.MOCK.TODAY.id, '選定今天的地方');
     t.ok(!pushmock(app), '浮層收掉');
   });
 
