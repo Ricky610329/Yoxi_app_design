@@ -402,7 +402,7 @@ function rideRender() {
     '<div class="sheet ride-sheet ride-sheet--ride">' +
       '<div class="sheet__grip ride-mode__grip"><div class="sheet__handle"></div></div>' +
       rideModePills('ride') +
-      '<button class="ride-mode__restore" type="button" data-act="restore-ride">展開搭車 <span class="arrow"></span></button>' +
+      '<button class="ride-mode__restore" type="button" data-act="restore-ride" tabindex="-1" aria-hidden="true">展開搭車 <span class="arrow"></span></button>' +
       '<h1 class="sheet__greet">' + esc(F.greet(new Date().getHours())) + '，' + esc(M().USER.name) + ' 今天要去哪？</h1>' +
       '<div class="card">' +
         '<div class="route-input">' +
@@ -486,7 +486,7 @@ function rideMount(root) {
 }
 
 /* ==========================================================================
-   雙主頁第一版：叫車地圖選地點，同一張上滑面板看周邊卡片。
+   探索模式：預選最近地點，面板上拉看疊放卡片，點開在本頁懸浮翻面。
    四組卡片是展示用的明確對應；收集狀態仍由 STATE 決定。
    ========================================================================== */
 const CARD_AREAS = [
@@ -496,12 +496,17 @@ const CARD_AREAS = [
   { id: 'hill', name: '十八尖山', cards: ['p6', 'p21'] },
 ];
 function cardArea(id) { return CARD_AREAS.filter(function (a) { return a.id === id; })[0] || null; }
+function nearestCardArea() {
+  return CARD_AREAS.reduce(function (nearest, area) {
+    return APP.place(area.id).dist < APP.place(nearest.id).dist ? area : nearest;
+  }, CARD_AREAS[0]);
+}
 function areaProgress(a) {
   return { done: a.cards.filter(function (id) { return S().has(id); }).length, total: a.cards.length };
 }
 function areaCard(id) { return (M().POSTCARDS || []).filter(function (p) { return p.id === id; })[0] || null; }
 function areaListHTML() {
-  return '<div class="ride-v2__section"><h2>附近有卡片的地方</h2><p>選一個地方，看看周邊還有什麼可以收下。</p></div>' +
+  return '<div class="ride-v2__section"><h2>附近的地方</h2></div>' +
     '<div class="ride-v2__area-list">' + CARD_AREAS.map(function (a) {
       const p = APP.place(a.id), r = areaProgress(a);
       return '<button class="ride-v2__area" type="button" data-act="select-area" data-area="' + esc(a.id) + '">' +
@@ -517,27 +522,42 @@ function areaCardsHTML(a) {
       '<span class="arrow arrow--left"></span>附近的地方</button>' +
       '<h2>' + esc(a.name) + '的卡片</h2>' +
       '<p>收集 ' + r.done + '/' + r.total + ' · 離你 ' + esc(F.dist(p.dist)) + '</p></div>' +
-    '<div class="ride-v2__card-grid">' + a.cards.map(function (id) {
+    '<div class="ride-v2__stack" data-stack-size="' + a.cards.length + '">' + a.cards.map(function (id) {
       const c = areaCard(id);
       if (!c) return '';
       const got = S().has(id);
-      return '<div class="ride-v2__card' + (got ? ' is-collected' : '') + '" data-card="' + esc(id) + '">' +
+      return '<button class="ride-v2__card' + (got ? ' is-collected' : '') + '" type="button" data-act="open-card" data-card="' + esc(id) + '" aria-label="看看卡片：' + esc(c.name) + '">' +
         '<span class="ride-v2__card-art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '">' +
           '<span class="ai-mark">AI 生成示意</span></span>' +
-        '<strong>' + esc(c.name) + '</strong><small>' + (got ? '已收藏' : '還沒收下') + '</small></div>';
-    }).join('') + '</div>' +
-    '<button class="btn-primary ride-v2__set" type="button" data-act="set-area-dropoff">設為下車點 · ' + esc(p.name) + '</button>';
+        '<strong>' + esc(c.name) + '</strong></button>';
+    }).join('') + '</div>';
 }
 function areaIntroHTML(a) {
-  if (!a) return '<div class="ride-v2__eyebrow">yoxi 城事</div><h1>今天想去哪裡？</h1>' +
-    '<button class="ride-v2__teaser" type="button" data-act="expand-cards">' +
-      '<span data-icon="postcard"></span><span>附近有卡片可以收集</span><span class="arrow"></span></button>';
-  const r = areaProgress(a), p = APP.place(a.id);
-  return '<div class="ride-v2__eyebrow">你選的地方 · 離你 ' + esc(F.dist(p.dist)) + '</div>' +
-    '<h1>' + esc(a.name) + '</h1>' +
-    '<button class="ride-v2__teaser" type="button" data-act="expand-cards">' +
-      '<span data-icon="postcard"></span><span>周邊卡片 · 收集 ' + r.done + '/' + r.total + '</span><span class="arrow"></span></button>' +
-    '<button class="ride-v2__area-cta" type="button" data-act="set-area-dropoff">設為下車點 · ' + esc(p.name) + '</button>';
+  const p = APP.place(a.id);
+  const nearest = nearestCardArea().id === a.id;
+  const hook = p.hook && p.hook.indexOf('收集於') !== 0 ? p.hook : p.type;
+  return '<div class="ride-v2__eyebrow">' + (nearest ? '今天的地方' : '你選的地方') + '</div>' +
+    '<div class="ride-v2__feature">' +
+      '<span class="ride-v2__feature-art" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
+      '<span class="ride-v2__feature-copy"><strong>' + esc(p.name) + '</strong>' +
+        '<span class="ride-v2__feature-hook">' + esc(hook) + '</span>' +
+        '<span class="ride-v2__feature-meta">離你 ' + esc(F.dist(p.dist)) + ' · 走路 ' + F.walkMin(p.dist) + ' 分鐘</span></span>' +
+    '</div>' +
+    '<div class="ride-v2__actions">' +
+      '<button class="btn-primary" type="button" data-act="use-yoxi">用 yoxi</button>' +
+      '<button class="btn-ghost" type="button" data-act="expand-cards">收集</button>' +
+    '</div>';
+}
+function rideCardFloatHTML() {
+  return '<div class="ride-card-float" data-card-float role="dialog" aria-modal="true" aria-label="卡片" hidden>' +
+    '<div class="ride-card-float__wrap">' +
+      '<button class="ride-card-float__close" type="button" data-act="close-card" aria-label="關閉卡片">×</button>' +
+      '<button class="ride-card-float__object" type="button" data-act="flip-card" aria-label="翻到卡片背面" aria-pressed="false">' +
+        '<span class="ride-card-float__front" data-card-front></span>' +
+        '<span class="ride-card-float__back" data-card-back></span>' +
+      '</button>' +
+      '<span class="ride-card-float__hint">點卡片翻面</span>' +
+    '</div></div>';
 }
 function rideV2Overlay() {
   return '<a class="fab fab--navy ride-fab ride-fab--menu" href="#/drawer" aria-label="選單" data-act="open-drawer">' +
@@ -549,40 +569,25 @@ function rideV2Overlay() {
       '<span class="pin__drop"><span data-icon="hail"></span></span><span class="pin__dot"></span></div>';
 }
 function rideV2Render(params, ctx) {
-  const a = cardArea(ctx.query.get('area'));
-  const trip = tripActive(), d = store().get('dropoff');
-  const dp = trip ? tripPlace(trip) : d && d.id ? APP.place(d.id) : null;
-  const km = dp ? (trip && trip.km != null ? trip.km : F.km(dp.dist)) : 0;
-  const pend = pendingUnlock();
+  const a = cardArea(ctx.query.get('area')) || nearestCardArea();
   return '<div class="ride-map ride-v2__map" data-ride-map></div>' +
-    '<section class="sheet sheet--drag is-collapsed ride-sheet ride-v2__sheet" style="--sheet-min:455px">' +
+    '<section class="sheet sheet--drag is-collapsed ride-sheet ride-v2__sheet" style="--sheet-min:390px">' +
       '<div class="sheet__grip"><div class="sheet__handle"></div></div>' +
       rideModePills('explore') +
       '<div class="ride-v2__intro" data-area-intro>' + areaIntroHTML(a) + '</div>' +
-      '<div class="ride-v2__ride">' +
-        '<a class="ride-v2__field" href="#/pickup" data-act="pick-pickup"><span class="ride-v2__dot"></span>' +
-          '<span><small>上車點</small><strong data-pickup-name>' + esc(home()) + '</strong></span></a>' +
-        (dp ? '<div class="ride-v2__field"><span class="ride-v2__dot ride-v2__dot--red"></span>' +
-            '<a href="' + (trip ? '#/trip' : '#/dropoff') + '" data-act="pick-dropoff"><small>下車點</small>' +
-              '<strong data-drop-name>' + esc(dp.name) + '</strong><span class="ride-v2__fare">' + esc(F.dist(dp.dist)) + ' · 預估 $<b data-fare>' + F.fare(km) +
-              '</b> · <b data-min>' + F.rideMin(km) + '</b> 分鐘</span></a>' +
-            (trip ? '' : '<button type="button" data-act="clear-dropoff" aria-label="清除下車點">×</button>') + '</div>'
-          : '<a class="ride-v2__field" href="#/dropoff" data-act="pick-dropoff"><span class="ride-v2__dot ride-v2__dot--red"></span>' +
-              '<span><small>下車點</small><strong>要去哪裡？</strong></span></a>') +
-        (dp ? '<button class="btn-primary ride-v2__call is-ready" type="button" data-act="call-ride">' +
-          (trip ? '回到行程' : '叫車前往 ' + esc(dp.name)) + '</button>' : '') +
-        (pend ? '<a class="ride-v2__pending" href="' + pend.href + '" data-act="unlock-ride">' +
-          '上一趟的明信片還在等你收下 <span class="arrow"></span></a>' : '') +
-      '</div>' +
       '<div class="ride-v2__expanded" data-expand-only data-area-expanded>' + (a ? areaCardsHTML(a) : areaListHTML()) + '</div>' +
-    '</section>';
+    '</section>' + rideCardFloatHTML();
 }
 function rideV2Mount(root, params, ctx) {
   const sheet = root.querySelector('.ride-sheet');
   const intro = root.querySelector('[data-area-intro]');
   const expanded = root.querySelector('[data-area-expanded]');
+  const floating = root.querySelector('[data-card-float]');
+  const floatCard = floating.querySelector('[data-act="flip-card"]');
   const tabbar = document.getElementById('tabbar');
-  let selected = cardArea(ctx.query.get('area'));
+  let selected = cardArea(ctx.query.get('area')) || nearestCardArea();
+  let showAreaList = false, returnFocus = null;
+  if (!cardArea(ctx.query.get('area'))) APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
   const map = APP.map.mount(root.querySelector('[data-ride-map]'), {
     style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
     spots: store().get('rideSpots') === false ? false : rideSpots(), max: 4, compact: true, pan: true, layers: { label: true },
@@ -599,58 +604,131 @@ function rideV2Mount(root, params, ctx) {
   }
   function paint() {
     intro.innerHTML = areaIntroHTML(selected);
-    expanded.innerHTML = selected ? areaCardsHTML(selected) : areaListHTML();
+    expanded.innerHTML = showAreaList ? areaListHTML() : areaCardsHTML(selected);
+    SHELL.injectArt(intro);
     SHELL.injectArt(expanded);
     SHELL.injectIcons(sheet);
     intro.querySelector('[data-act="expand-cards"]').onclick = function () { setOpen(true); };
-    const introSet = intro.querySelector('[data-act="set-area-dropoff"]');
-    if (introSet) introSet.onclick = function () { if (selected) setDropoff(selected.id, 'e'); };
+    intro.querySelector('[data-act="use-yoxi"]').onclick = function () { setDropoff(selected.id, 'e'); };
     expanded.querySelectorAll('[data-act="select-area"]').forEach(function (b) {
       b.onclick = function () { selectArea(b.getAttribute('data-area'), false); };
     });
     const back = expanded.querySelector('[data-act="all-areas"]');
-    if (back) back.onclick = function () { selectArea(null, false); };
-    const set = expanded.querySelector('[data-act="set-area-dropoff"]');
-    if (set) set.onclick = function () { if (selected) setDropoff(selected.id, 'e'); };
+    if (back) back.onclick = function () { showAreaList = true; paint(); };
+    expanded.querySelectorAll('[data-act="open-card"]').forEach(function (b) {
+      b.onclick = function () { openCard(b.getAttribute('data-card'), b); };
+    });
     map.spotsEl.querySelectorAll('.spot').forEach(function (el) {
       el.classList.toggle('is-selected', !!selected && el.getAttribute('data-spot') === selected.id);
     });
   }
   function selectArea(id, fromMap) {
-    selected = cardArea(id);
-    APP.nav.replaceQuery('mode=explore' + (selected ? '&area=' + encodeURIComponent(selected.id) : ''));
+    selected = cardArea(id) || nearestCardArea();
+    showAreaList = false;
+    APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
     paint();
     if (fromMap) setOpen(false);
   }
+  function closeCard() {
+    floating.hidden = true;
+    if (returnFocus && returnFocus.isConnected) returnFocus.focus();
+    returnFocus = null;
+  }
+  function openCard(id, button) {
+    const c = areaCard(id);
+    if (!c) return;
+    returnFocus = button;
+    floating.setAttribute('aria-label', c.name);
+    floatCard.classList.remove('is-flipped');
+    floatCard.setAttribute('aria-pressed', 'false');
+    floatCard.setAttribute('aria-label', '翻到卡片背面');
+    floating.querySelector('[data-card-front]').innerHTML =
+      '<span class="ride-card-float__art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '"></span>' +
+      '<span class="ride-card-float__name">' + esc(c.name) + '</span><span class="ai-mark">AI 生成示意</span>';
+    floating.querySelector('[data-card-back]').innerHTML =
+      '<span class="ride-card-float__back-mark">yoxi 城事</span><strong>' + esc(c.name) + '</strong>' +
+      '<span>' + (S().has(id) ? '已收藏' : '抵達後可以收下') + '</span>';
+    SHELL.injectArt(floating);
+    floating.hidden = false;
+    floatCard.focus();
+  }
   paint();
-  const clear = root.querySelector('[data-act="clear-dropoff"]');
-  if (clear) clear.onclick = clearDropoff;
-  const call = root.querySelector('[data-act="call-ride"]');
-  if (call) call.onclick = callRide;
+  floatCard.onclick = function () {
+    const flipped = floatCard.classList.toggle('is-flipped');
+    floatCard.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+    floatCard.setAttribute('aria-label', flipped ? '翻回卡片正面' : '翻到卡片背面');
+  };
+  floating.querySelector('[data-act="close-card"]').onclick = closeCard;
+  floating.onclick = function (e) { if (e.target === floating) closeCard(); };
+  function onEscape(e) { if (e.key === 'Escape' && !floating.hidden) closeCard(); }
+  document.addEventListener('keydown', onEscape);
   const stopDrag = bindExploreSheet(sheet, setOpen);
-  return function () { stopDrag(); map.destroy(); if (tabbar) tabbar.classList.remove('is-yield'); };
+  return function () {
+    stopDrag();
+    document.removeEventListener('keydown', onEscape);
+    map.destroy();
+    if (tabbar) tabbar.classList.remove('is-yield');
+  };
 }
 
 /* 搭車只有往下收合；回到叫車欄位靠明確按鈕，沒有向上拖曳手勢。 */
 function bindRideDownSheet(sheet) {
   const grip = sheet.querySelector('.ride-mode__grip');
   const restore = sheet.querySelector('[data-act="restore-ride"]');
-  let y0 = null;
-  function down(e) { y0 = e.clientY; }
-  function move(e) { if (y0 !== null && e.clientY - y0 > 4) e.preventDefault(); }
-  function up(e) {
-    if (y0 === null) return;
-    if (e.clientY - y0 > 24) sheet.classList.add('is-condensed');
-    y0 = null;
+  const pills = sheet.querySelector('.ride-mode__pills');
+  const css = getComputedStyle(sheet);
+  const openHeight = Math.ceil(sheet.scrollHeight);
+  const closedHeight = Math.ceil(parseFloat(css.paddingTop) + grip.offsetHeight + pills.offsetHeight +
+    parseFloat(getComputedStyle(pills).marginBottom) + 44 + parseFloat(css.paddingTop));
+  sheet.style.setProperty('--ride-open-height', openHeight + 'px');
+  sheet.style.setProperty('--ride-closed-height', closedHeight + 'px');
+  let y0 = null, delta = 0, pointer = null;
+  function setCondensed(closed) {
+    sheet.classList.toggle('is-condensed', closed);
+    restore.tabIndex = closed ? 0 : -1;
+    restore.setAttribute('aria-hidden', closed ? 'false' : 'true');
   }
-  restore.onclick = function () { sheet.classList.remove('is-condensed'); };
+  function down(e) {
+    if (y0 !== null) return;
+    y0 = e.clientY;
+    pointer = e.pointerId;
+    delta = 0;
+  }
+  function move(e) {
+    if (y0 === null || e.pointerId !== pointer || sheet.classList.contains('is-condensed')) return;
+    delta = e.clientY - y0;
+    if (delta <= 4) return;
+    e.preventDefault();
+    sheet.style.transition = 'none';
+    sheet.style.maxHeight = Math.max(closedHeight, openHeight - delta) + 'px';
+  }
+  function up(e) {
+    if (y0 === null || e.pointerId !== pointer) return;
+    const wasClosed = sheet.classList.contains('is-condensed');
+    const closed = wasClosed ? Math.abs(e.clientY - y0) > 8 : e.clientY - y0 > 24;
+    if (sheet.style.maxHeight) void sheet.offsetHeight;
+    setCondensed(closed);
+    sheet.style.transition = '';
+    sheet.style.maxHeight = '';
+    y0 = null;
+    pointer = null;
+  }
+  function cancel() {
+    y0 = null;
+    pointer = null;
+    sheet.style.transition = '';
+    sheet.style.maxHeight = '';
+  }
+  restore.onclick = function () { restore.blur(); setCondensed(false); };
   grip.addEventListener('pointerdown', down);
   window.addEventListener('pointermove', move, { passive: false });
   window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', cancel);
   return function () {
     grip.removeEventListener('pointerdown', down);
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', cancel);
   };
 }
 

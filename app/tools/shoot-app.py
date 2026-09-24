@@ -76,9 +76,12 @@ A_PENDING = {'trip': {'placeId': 'neiwan', 'phase': 'done', 'startedAt': T0, 'ra
 # 下車點已填：名字與公里數從 APP 現算（不手寫），然後就地重畫 /ride（不經 setDropoff，免得拍到 toast）
 RUN_DROPOFF = ("var p=APP.place('glass-kiln');APP.store.set('dropoff',{id:p.id,name:p.name,km:APP.fmt.km(p.dist),"
                "setAt:new Date().toISOString(),via:'e'});APP.nav.go('/ride',{replace:true,dir:'none'});")
-RUN_PEEK = "var s=document.querySelector('#view .spot');if(s)s.click();"
-RUN_AREAS = "var b=document.querySelector('[data-act=\"expand-cards\"]');if(b)b.click();"
-RUN_CARDS = RUN_PEEK + RUN_AREAS
+RUN_SELECT = "var s=document.querySelector('#view .spot[data-spot=\"moat\"]');if(s)s.click();"
+RUN_STACK = "var b=document.querySelector('[data-act=\"expand-cards\"]');if(b)b.click();"
+RUN_AREAS = RUN_STACK + "var a=document.querySelector('[data-act=\"all-areas\"]');if(a)a.click();"
+RUN_CARDS = RUN_SELECT + RUN_STACK
+RUN_FLOAT = RUN_CARDS + "var c=document.querySelector('[data-act=\"open-card\"]');if(c)c.click();"
+RUN_FLOAT_BACK = RUN_FLOAT + "var f=document.querySelector('[data-act=\"flip-card\"]');if(f)f.click();"
 RUN_STORY = "var b=document.querySelector('[data-act=\"toggle-story\"]');if(b)b.click();"
 
 # (stem, route, {'s':STATE, 'a':store, 'run':js} 或 None)
@@ -86,9 +89,11 @@ SHOTS = [
     ('welcome',          '/welcome',              {'a': {'onboarded': False}}),
     ('ride',             '/ride',                 None),
     ('ride-dropoff',     '/ride',                 {'run': RUN_DROPOFF}),
-    ('ride-peek',        '/ride?mode=explore',    {'run': RUN_PEEK}),
+    ('ride-peek',        '/ride?mode=explore',    None),
     ('ride-areas',       '/ride?mode=explore',    {'run': RUN_AREAS}),
     ('ride-cards',       '/ride?mode=explore',    {'run': RUN_CARDS}),
+    ('ride-float',       '/ride?mode=explore',    {'run': RUN_FLOAT}),
+    ('ride-float-back',  '/ride?mode=explore',    {'run': RUN_FLOAT_BACK}),
     ('ride-pending-unlock', '/ride',              {'a': A_PENDING}),
     ('dropoff',          '/dropoff',              None),
     ('pickup',           '/pickup',               None),

@@ -587,7 +587,7 @@ T.spec('flows', function (t) {
       await app.go('/explore');
       t.eq(live, 0, '離開有 sheet／地圖的畫面之後，pointer listener 全數拆掉（剩 ' + live + '）');
       await app.go('/ride');
-      t.ok(live > 0 && live <= 4, '/ride 上只有這一頁的 listener（' + live + '）');
+      t.ok(live > 0 && live <= 5, '/ride 上只有這一頁的 listener（' + live + '）');
     } finally {
       delete W.addEventListener; delete W.removeEventListener;
     }
@@ -955,7 +955,7 @@ T.spec('flows', function (t) {
     t.eq(app.route().path, '/dropoff', '搜尋清單：不導走');
     await app.go('/ride?mode=explore');
     await app.click('.spot[data-spot="moat"]');
-    await app.click('[data-area-intro] [data-act="set-area-dropoff"]');
+    await app.click('[data-area-intro] [data-act="use-yoxi"]');
     await app.tick(60);
     t.eq(A.store.get('dropoff').id, 'lake', '四個入口都沒改到 dropoff');
     /* 抵達之後就可以再設 */
@@ -1074,7 +1074,7 @@ T.spec('flows', function (t) {
     await app.go('/ride?mode=explore');
     const spots = app.$$('main.view .spot');
     t.ok(spots.length > 0 && spots.every(function (s) { return s.getAttribute('aria-label') === A.place(s.getAttribute('data-spot')).name; }), '叫車地圖景點 aria-label＝地名');
-    t.ok(/今天想去哪裡？$/.test(app.text('.ride-v2__intro h1')), '全形問號：' + app.text('.ride-v2__intro h1'));
+    t.includes(app.text('.ride-v2__feature'), A.place('glass-kiln').name, '預設最近地點名稱');
     await app.go('/explore/map');
     t.ok(app.$$('main.view .spot').every(function (s) { return !!s.getAttribute('aria-label'); }), '探索地圖景點都有 aria-label');
     /* 13：搭車回饋 floor(fare/20) */

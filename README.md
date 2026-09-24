@@ -93,7 +93,7 @@ Yoxi_app截圖.zip    yoxi 現有 app 的截圖（還原用）
 
 ## web app 版（`app/`）
 
-`app/` 是可操作的單頁 web app：主頁收斂為叫車與收藏。叫車頁預設搭車，面板內可切到探索；探索地圖可選附近地點，同一張面板上拉看周邊卡片；舊探索流程仍保留供對照。狀態會記住，也可裝到手機主畫面。
+`app/` 是可操作的單頁 web app：主頁收斂為叫車與收藏。叫車頁預設搭車，面板內可切到探索；探索會預選最近地點，同一張面板上拉看疊放的周邊卡片，點卡片可翻看懸浮小卡；舊探索流程仍保留供對照。狀態會記住，也可裝到手機主畫面。
 桌機把 `app/index.html` 拖進 Chrome 就能用；手機跑 `python app/tools/serve.py` 後同 Wi-Fi 開它印的網址。
 測試：`python app/tests/run.py`（node 單元測試＋headless Chrome，每條 route 驗死按鈕、禁用詞、可按數、公式數字）。細節看 `app/README.md`，契約在 `app/ARCHITECTURE.md`；原型 `prototype/` 一個字沒動。
 

@@ -16,7 +16,7 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v6';
+const VERSION = 'chengshi-app-v7';
 
 // 路徑相對於 sw.js（app/）。順序照 ARCHITECTURE §2 的載入順序。
 const PRECACHE = [
@@ -71,6 +71,9 @@ const PRECACHE = [
   './assets/icons/icon-maskable-512.png',
   './assets/icons/apple-touch-icon.png',
   './assets/icons/favicon.svg',
+  // 設計稿內連結的互動截圖
+  './assets/shots/ride-float.png',
+  './assets/shots/ride-float-back.png',
   /* PRECACHE:END */
 ];
 

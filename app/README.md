@@ -1,6 +1,6 @@
 # yoxi 城事 — web app（雙主頁 UI 第一版）
 
-<img src="assets/shots/ride.png" alt="預設搭車畫面" width="230"> <img src="assets/shots/ride-cards.png" alt="探索模式上拉卡片面板" width="230"> <img src="assets/shots/album.png" alt="收藏摘要頁" width="230">
+<img src="assets/shots/ride.png" alt="預設搭車畫面" width="230"> <img src="assets/shots/ride-peek.png" alt="探索預選最近地點" width="230"> <img src="assets/shots/ride-cards.png" alt="探索卡片堆" width="230">
 
 `prototype/` 是 102 張各自獨立的設計原型；`app/` 現在以**叫車／收藏兩個主頁**呈現第一版重新設計：
 hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒動，app 只從 `../prototype` 讀共用的樣式、假資料與地圖。
@@ -22,7 +22,7 @@ hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒�
 
 ## 這版怎麼看
 
-- 底欄維持「叫車」與「收藏」。叫車頁預設是一般搭車畫面；面板頂端按變體 F 的兩顆 pill 切換「搭車／探索」。搭車面板可往下拉收合，再點「展開搭車」恢復；探索面板可上拉看附近有卡片的地方。點地圖 pin 或清單地點，再上拉看該處可收的卡片；下拉會收合，仍留在探索。點「設為下車點」後回到搭車畫面，接著走原有叫車流程。
+- 底欄維持「叫車」與「收藏」。叫車頁預設是一般搭車畫面；面板頂端按變體 F 的兩顆 pill 切換「搭車／探索」。搭車面板往下拉時跟手收合，點「展開搭車」平順恢復。探索切換後預選最近地點，底部只保留簡短資訊與「用 yoxi／收集」；上拉或點「收集」顯示疊放的可收集卡片。點卡片會出現可翻面的[懸浮小卡](assets/shots/ride-float.png)。探索下拉只收合面板，仍留在探索；點「用 yoxi」回搭車頁並填好下車點。
 - 收藏首頁是摘要式排版：明信片主卡、去過的地方與公里數、明信片網格和獎章。數字跟著既有狀態改變。
 - `#/ride?mode=explore&area=moat` 可直接打開探索的選定地點。舊探索、地點詳情和回顧路由仍可用於舊流程對照，但不在新底欄。
 
@@ -83,7 +83,7 @@ demo 前的提醒：先按「重設 demo」讓數字跟講稿一致；投影用 
 | path | 畫面 | 來源原型 |
 |---|---|---|
 | `/welcome` | onboarding 三張 | 新 |
-| `/ride` | 預設搭車；面板內切探索後可上下拉卡片（`?mode=explore&area=` 可選地區） | 沿用原叫車 sheet 與地圖資料，參考變體 F 的面板切換 |
+| `/ride` | 預設搭車；面板內切探索後預選最近地區，上拉看卡片堆（`?mode=explore&area=` 可選地區） | 沿用原叫車 sheet 與地圖資料，參考變體 F 的面板切換 |
 | `/dropoff`、`/pickup` | 下車地點（清單＋搜尋）、上車地點 | 新（參考 `pickup`）、`pickup` |
 | `/trip`、`/trip/done` | 配對中→行程中；行程結束頁＋評分＋金色橫幅 | `ride`、`ride-done` |
 | `/drawer`、`/points`、`/notify`、`/trips` | 抽屜、和泰 Points、通知、行程紀錄 | `drawer`、`points`、`notify`、`trips` |

@@ -65,11 +65,13 @@ T.spec('ride', function (t) {
     t.ok(!sheet.classList.contains('is-condensed'), '向上拖不展開或切換搭車面板');
     grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: box.top + 10, pointerId: 2 }));
     W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top + 90, pointerId: 2 }));
+    t.ok(!!sheet.style.maxHeight, '下拉時面板高度跟手');
     W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top + 90, pointerId: 2 }));
     t.ok(sheet.classList.contains('is-condensed'), '向下拖收合搭車面板');
     t.ok(app.$('[data-act="restore-ride"]').offsetHeight > 0, '收合後可點按恢復');
     await app.click('[data-act="restore-ride"]');
     t.ok(!sheet.classList.contains('is-condensed'), '點按恢復搭車欄位');
+    t.ok(!!sheet.style.getPropertyValue('--ride-open-height'), '恢復使用已量測的高度');
     t.eq(app.route().query.get('mode'), null, '全程留在搭車');
   });
 
@@ -90,7 +92,12 @@ T.spec('ride', function (t) {
     t.ok(el && el.classList.contains('spot--today'), '今天的地方是 .spot--today');
     t.ok(app.$('main.view .pin[data-pin="pickup"]'), '上車點 pin');
     t.ok(app.$('main.view [data-recenter]'), '定位鈕');
-    t.includes(app.text('.ride-v2__intro'), '今天想去哪裡', '探索面板有地點入口');
+    const areas = ['glass-kiln', 'market', 'moat', 'hill'];
+    const nearest = areas.reduce(function (a, b) { return app.APP.place(a).dist <= app.APP.place(b).dist ? a : b; });
+    t.eq(app.route().query.get('area'), nearest, '探索預選最近地區');
+    t.includes(app.text('.ride-v2__feature'), app.APP.place(nearest).name, '底部顯示最近地點');
+    t.includes(app.text('.ride-v2__feature'), String(app.APP.fmt.walkMin(app.APP.place(nearest).dist)), '步行分鐘由公式算');
+    t.ok(app.$('[data-act="use-yoxi"]') && app.$('[data-act="expand-cards"]'), '用 yoxi 與收集兩個動作');
     await app.click('[data-act="mode-ride"]');
     t.eq(app.route().query.get('mode'), null, '切回搭車清除探索模式');
     t.eq(app.$$('main.view .spot').length, 0, '切回搭車隱藏探索圖釘');
@@ -123,7 +130,7 @@ T.spec('ride', function (t) {
     t.eq(app.route().query.get('area'), 'moat', '選點寫入網址');
     t.includes(app.text('[data-area-intro]'), '護城河', '面板顯示地區');
     t.includes(app.text('[data-area-intro]'), app.APP.fmt.dist(app.APP.place('moat').dist), '距離由公式取得');
-    await app.click('[data-area-intro] [data-act="set-area-dropoff"]');
+    await app.click('[data-area-intro] [data-act="use-yoxi"]');
     await app.waitFor(function () { const d = app.APP.store.get('dropoff'); return d && d.id === 'moat'; }, 2000, 'dropoff=moat');
     await app.at('/ride');
     t.eq(app.APP.store.get('dropoff').via, 'e', 'via=e');
@@ -133,7 +140,7 @@ T.spec('ride', function (t) {
     t.eq(app.APP.store.get('dropoff'), null, '清除 → dropoff null');
   });
 
-  t.test('上拉面板：選點後看該地區的卡片，不開地點詳情', async function (app) {
+  t.test('探索預設上拉看最近地區卡片，選點後更新卡片堆', async function (app) {
     await app.reset();
     await app.go('/ride?mode=explore');
     const grip = app.$('.ride-sheet .sheet__grip'), W = app.win, box = grip.getBoundingClientRect();
@@ -141,11 +148,21 @@ T.spec('ride', function (t) {
     W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
     W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
     t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '向上拉後面板展開');
+    t.eq(app.$$('[data-area-expanded] [data-act="open-card"]').length, 2, '預設最近地區的兩張卡');
+    await app.click('[data-act="all-areas"]');
     t.eq(app.$$('[data-act="select-area"]').length, 4, '附近四個地區');
     await app.click('[data-act="select-area"][data-area="market"]');
     t.eq(app.route().query.get('area'), 'market', '選定東門');
     t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '東門四張卡');
     t.ok(!app.$('[data-act="peek-place"]'), '沒有地點詳情入口');
+    await app.click('[data-act="open-card"][data-card="p1"]');
+    t.ok(!app.$('[data-card-float]').hidden, '卡片以懸浮物件打開');
+    await app.click('[data-act="flip-card"]');
+    t.ok(app.$('[data-act="flip-card"]').classList.contains('is-flipped'), '懸浮卡片可翻面');
+    t.includes(app.text('[data-card-back]'), app.STATE.has('p1') ? '已收藏' : '抵達後可以收下', '背面只顯示簡短收集狀態');
+    t.noDeadButtons(app, '懸浮卡片');
+    await app.click('[data-act="close-card"]');
+    t.ok(app.$('[data-card-float]').hidden, '可關閉懸浮卡片');
     const downBox = grip.getBoundingClientRect();
     grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: downBox.top + 10, pointerId: 2 }));
     W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: downBox.top + 100, pointerId: 2 }));
@@ -155,19 +172,22 @@ T.spec('ride', function (t) {
     await app.reload('/ride?mode=explore&area=market');
     t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '重新整理仍是東門四張');
     await app.click('[data-act="all-areas"]');
-    t.eq(app.route().query.get('area'), null, '回附近清單會清除網址選點');
+    t.eq(app.$$('[data-act="select-area"]').length, 4, '可回附近清單');
+    t.eq(app.route().query.get('area'), 'market', '回清單仍保留選定地區');
   });
 
   t.test('地區卡片收集狀態跟 STATE 更新', async function (app) {
     await app.reset();
     await app.go('/ride?mode=explore&area=glass-kiln');
-    t.includes(app.text('[data-area-intro]'), '收集 0/2', '初始水利路進度');
+    t.includes(app.text('[data-area-expanded]'), '收集 0/2', '初始水利路進度');
     app.STATE.collect('glass-kiln', { date: app.APP.fmt.todayMMDD() });
     await app.go('/album');
     await app.go('/ride?mode=explore&area=glass-kiln');
-    t.includes(app.text('[data-area-intro]'), '收集 1/2', '收卡後進度更新');
+    t.includes(app.text('[data-area-expanded]'), '收集 1/2', '收卡後進度更新');
     await app.click('[data-act="expand-cards"]');
     t.ok(app.$('[data-area-expanded] [data-card="p11"].is-collected'), '卡片上色');
+    await app.click('[data-act="open-card"][data-card="p11"]');
+    t.includes(app.text('[data-card-back]'), '已收藏', '懸浮卡片狀態跟著 STATE 更新');
   });
 
   t.test('沒有下車點時顯示選址入口，不能直接叫車', async function (app) {
