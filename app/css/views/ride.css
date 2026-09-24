@@ -171,8 +171,7 @@
 .ride-v2__actions { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); margin-top: var(--sp-3); }
 .ride-v2__actions .btn-primary, .ride-v2__actions .btn-ghost { min-height: 50px; }
 .ride-v2__actions .btn-ghost { padding: 0 var(--sp-4); border: 1px solid var(--yoxi-navy); }
-.ride-v2__sheet:not(.is-collapsed) .ride-v2__intro { display: none; }
-.ride-v2__expanded { padding-bottom: var(--sp-5); }
+.ride-v2__expanded { margin-top: var(--sp-4); padding-top: var(--sp-3); padding-bottom: var(--sp-5); border-top: 1px solid var(--yoxi-line); }
 .ride-v2__section h2 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-title); }
 .ride-v2__section p { margin: 0 0 var(--sp-4); color: var(--app-muted); font-size: var(--fs-sm); line-height: var(--lh-body); }
 .ride-v2__stack { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 220px; padding: var(--sp-3) 0 var(--sp-4); }

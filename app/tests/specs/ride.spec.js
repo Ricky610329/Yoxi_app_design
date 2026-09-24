@@ -148,6 +148,9 @@ T.spec('ride', function (t) {
     W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
     W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
     t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '向上拉後面板展開');
+    const intro = app.$('[data-area-intro]'), cards = app.$('[data-area-expanded]');
+    t.ok(intro.offsetHeight > 0 && intro.getBoundingClientRect().bottom <= cards.getBoundingClientRect().top, '展開時保留地點資訊，卡片接在下方');
+    t.ok(intro.querySelector('[data-act="use-yoxi"]') && intro.querySelector('[data-act="expand-cards"]'), '展開時兩個動作仍在');
     t.eq(app.$$('[data-area-expanded] [data-act="open-card"]').length, 2, '預設最近地區的兩張卡');
     t.eq(app.$$('[data-act="all-areas"], [data-act="select-area"]').length, 0, '展開後沒有多餘的地區清單');
     const firstDown = grip.getBoundingClientRect();
@@ -157,6 +160,7 @@ T.spec('ride', function (t) {
     await app.click('.spot[data-spot="market"]');
     t.eq(app.route().query.get('area'), 'market', '地圖選定東門');
     await app.click('[data-act="expand-cards"]');
+    t.includes(app.text('[data-area-intro]'), app.APP.place('market').name, '換地區後展開仍顯示新地點資訊');
     t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '東門四張卡');
     t.ok(!app.$('[data-act="peek-place"]'), '沒有地點詳情入口');
     await app.click('[data-act="open-card"][data-card="p1"]');
