@@ -8,14 +8,14 @@
 `prototype/` 是 102 張各自獨立的 HTML 設計原型；`app/` 是把其中**一組決定**做成一個真的能用的
 單頁 web app（hash 路由、狀態持久、可安裝 PWA），手機直接開、桌機看得到手機外框。
 
-目前主畫面是「**雙主頁第一版**」：底欄只顯示 `#/ride` 與 `#/album`。`/explore` 等舊路由仍保留供舊連結與流程對照，但新主畫面沒有探索入口；`/place/:id` 不在新 UI 的地點選擇路徑中。
+目前主畫面是「**雙主頁第一版**」：底欄只顯示 `#/ride` 與 `#/album`。`#/ride` 的面板頂端以變體 F 的 pill 切換「搭車／探索」，預設搭車；探索使用 `#/ride?mode=explore`，選定地區再加 `&area=<地點 id>`。`/explore` 等舊路由仍保留供舊連結與流程對照；`/place/:id` 不在新 UI 的地點選擇路徑中。
 
 以下是原「合一版」的資料與流程決定；新主畫面沿用其中的地圖、卡片狀態和叫車流程：
 
 | 軸線 | 選 | 在 app 裡長什麼樣 |
 |---|---|---|
 | 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
-| 地圖歸誰 | **E** 景點常駐＋一鍵設為下車點 | 叫車首頁的地圖是真實新竹（`HSMAP` paper），同時最多 **4** 個景點，小卡上有「設為下車點」 |
+| 地圖歸誰 | **F＋E** 同頁切模式 | 叫車首頁是真實新竹地圖（`HSMAP` paper）；搭車不顯示景點，探索同時最多 **4** 個景點，可設為下車點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
 | 收藏組織 | 摘要式首頁 | 明信片主卡、兩張統計卡、明信片與獎章網格；舊路線書架只作對照 |
 | 獎章呈現 | **X4** 勳章牆 | 沒有進度環、沒有集點卡；寫「收集 4/8」 |
@@ -35,7 +35,7 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 
 ### 雙主頁的叫車面板
 
-- `#/ride` 預設顯示叫車欄位；上拉同一張 sheet 顯示四個附近地點。點地圖 pin 或清單地點後，網址寫成 `#/ride?area=<地點 id>`；收合態顯示地點名稱、距離、卡片收集數與設為下車點，展開態顯示周邊卡片。從地圖點選會先收合面板，從展開清單點選則維持展開。
+- `#/ride` 預設是一般搭車地圖與叫車欄位；搭車面板只能往下拉收合，點「展開搭車」恢復，不接受向上拖曳。面板頂端的「探索」切到 `#/ride?mode=explore`，才顯示四個附近地點與可上下拉的 sheet。點地圖 pin 或清單地點後，網址寫成 `#/ride?mode=explore&area=<地點 id>`；收合態顯示地點名稱、距離、卡片收集數與設為下車點，展開態顯示周邊卡片。往下拉只收合面板，仍留在探索。從地圖點選會先收合面板，從展開清單點選則維持展開；切回「搭車」清除探索 query。
 - 四組展示對應：`glass-kiln → p11,p17`、`market → p1,p2,p7,p20`、`moat → p3,p19`、`hill → p6,p21`。群組只定義卡片歸屬，收集與公里數仍由 `STATE`／`MOCK`／`APP.fmt` 計算；卡片不連地點詳情。
 - 舊 `/place/:id`、探索與回顧路由仍能直接開啟，供既有資料和流程對照；新底欄和叫車卡片面板不導向它們。
 
@@ -297,7 +297,7 @@ T.spec('ride', function (t) {
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
 - `APP.explore.collect(placeId, { by, note, km })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）
-- `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/explore`（早）或 `#/lookback`（晚））
+- `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用）
 
 ## 8. 路由總表
@@ -306,7 +306,7 @@ T.spec('ride', function (t) {
 |---|---|---|---|---|
 | `/` | 導到 `/ride`（第一次開先 `/welcome`） | — | — | core |
 | `/welcome` | onboarding 三張 | null | 新 | system |
-| `/ride` | 叫車首頁（E＋真實地圖＋sheet） | ride | `variant-e-home.html`、`concept-map-home.html`、`variant-k-ride.html` | ride |
+| `/ride` | 預設搭車；面板內 pill 切探索（`?mode=explore`），選地區再加 `&area=` | ride | `variant-f-home.html`、`variant-e-home.html`、`concept-map-home.html` | ride |
 | `/dropoff` | 設定下車地點（清單＋搜尋） | ride | 新（參考 `pickup.html` 版型） | ride |
 | `/pickup` | 設定上車地點 | ride | `pickup.html` | ride |
 | `/trip` | 配對中→行程中（「這條路上」卡） | null | `ride.html` | ride |

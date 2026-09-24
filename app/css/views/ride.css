@@ -131,7 +131,27 @@
 .ride-call { margin-top: var(--sp-4); }
 .ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--app-muted); }
 
-/* 雙主頁第一版：地圖保留原來的拉把手感，面板改看周邊卡片。 */
+/* 變體 F：模式切換在面板頂端，搭車面板固定；探索面板才可上下拉。 */
+.ride-mode__pills { margin-bottom: var(--sp-4); }
+.ride-mode__active {
+  display: inline-flex; align-items: center; height: 44px; padding: 0 var(--sp-4);
+  border: 1px solid var(--yoxi-navy); border-radius: var(--r-pill);
+  background: var(--yoxi-navy); color: var(--yoxi-white);
+  font-size: var(--fs-sm); font-weight: var(--fw-bold); white-space: nowrap;
+}
+.ride-sheet--ride { padding-top: var(--sp-2); }
+.ride-mode__grip { height: 22px; touch-action: none; cursor: grab; }
+.ride-mode__grip .sheet__handle { margin-bottom: 0; }
+.ride-sheet--ride .ride-call { width: 100%; }
+.ride-mode__restore { display: none; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.ride-sheet--ride.is-condensed .ride-mode__pills { margin-bottom: 0; }
+.ride-sheet--ride.is-condensed .ride-mode__restore { display: flex; }
+.ride-sheet--ride.is-condensed .sheet__greet,
+.ride-sheet--ride.is-condensed .card,
+.ride-sheet--ride.is-condensed .ride-sheet__row,
+.ride-sheet--ride.is-condensed .ride-call,
+.ride-sheet--ride.is-condensed .ride-unlock { display: none; }
+
 .ride-v2__map { flex: 1 1 auto; }
 .ride-v2__sheet { --sheet-max: 82%; padding-top: var(--sp-2); }
 .ride-v2__sheet .sheet__grip { height: 22px; touch-action: none; }

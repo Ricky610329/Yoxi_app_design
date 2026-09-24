@@ -58,7 +58,7 @@ T.spec('system', function (t) {
     const v = app.view();
     t.ok(v && v.getAttribute('data-view') === 'settings', 'view=settings');
     t.ok(app.$('#tabbar').hidden, 'tab bar 隱藏');
-    t.eq(app.$$('main.view [data-switch]').length, 8, '八個開關（含叫車地圖上的景點）');
+    t.eq(app.$$('main.view [data-switch]').length, 8, '八個開關（含探索模式的景點）');
     t.ok(app.text('main.view').indexOf('一天最多兩則') >= 0, '說出上限');
     t.ok(app.text('main.view').indexOf('只有你') >= 0 && app.text('main.view').indexOf('你可分享') >= 0, '隱私分軌');
     t.noDeadButtons(app);

@@ -1,6 +1,6 @@
 # yoxi 城事 — web app（雙主頁 UI 第一版）
 
-<img src="assets/shots/ride-cards.png" alt="叫車地圖與上拉卡片面板" width="280"> <img src="assets/shots/album.png" alt="收藏摘要頁" width="280">
+<img src="assets/shots/ride.png" alt="預設搭車畫面" width="230"> <img src="assets/shots/ride-cards.png" alt="探索模式上拉卡片面板" width="230"> <img src="assets/shots/album.png" alt="收藏摘要頁" width="230">
 
 `prototype/` 是 102 張各自獨立的設計原型；`app/` 現在以**叫車／收藏兩個主頁**呈現第一版重新設計：
 hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒動，app 只從 `../prototype` 讀共用的樣式、假資料與地圖。
@@ -22,9 +22,9 @@ hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒�
 
 ## 這版怎麼看
 
-- 底欄只有「叫車」與「收藏」。叫車頁保留原本可上拉的底部面板：直接上拉看附近有卡片的地方；點地圖 pin 或清單地點，再上拉看該處可收的卡片。點「設為下車點」後仍可走原有叫車流程。
+- 底欄維持「叫車」與「收藏」。叫車頁預設是一般搭車畫面；面板頂端按變體 F 的兩顆 pill 切換「搭車／探索」。搭車面板可往下拉收合，再點「展開搭車」恢復；探索面板可上拉看附近有卡片的地方。點地圖 pin 或清單地點，再上拉看該處可收的卡片；下拉會收合，仍留在探索。點「設為下車點」後回到搭車畫面，接著走原有叫車流程。
 - 收藏首頁是摘要式排版：明信片主卡、去過的地方與公里數、明信片網格和獎章。數字跟著既有狀態改變。
-- `#/ride?area=moat` 等網址可直接打開選定地點。舊探索、地點詳情和回顧路由仍可用於舊流程對照，但不在新底欄。
+- `#/ride?mode=explore&area=moat` 可直接打開探索的選定地點。舊探索、地點詳情和回顧路由仍可用於舊流程對照，但不在新底欄。
 
 ## 原合一版的資料與流程
 
@@ -33,7 +33,7 @@ hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒�
 | 軸線 | 選 | 在 app 裡長什麼樣 |
 |---|---|---|
 | 入口 | 雙主頁底欄 | 叫車／收藏；舊探索路由保留作對照 |
-| 地圖歸誰 | E 景點常駐 | 叫車首頁是真實新竹地圖，最多 4 個景點，小卡上「設為下車點」 |
+| 地圖歸誰 | F＋E 同頁切模式 | 叫車首頁是真實新竹地圖；搭車不顯示景點，探索最多 4 個景點，可設為下車點 |
 | 轉換點 | K1 內容頁 | 地方詳情 ≤ 3 km 主「走路前往」、次「設為下車點」；走不到就對調 |
 | 收藏組織 | 摘要式首頁 | 主卡、統計卡、明信片與獎章網格 |
 | 獎章呈現 | X4 勳章牆 | 沒有進度環、沒有集點卡；寫「收集 4/8」 |
@@ -83,7 +83,7 @@ demo 前的提醒：先按「重設 demo」讓數字跟講稿一致；投影用 
 | path | 畫面 | 來源原型 |
 |---|---|---|
 | `/welcome` | onboarding 三張 | 新 |
-| `/ride` | 叫車地圖＋同一張上拉卡片面板（`?area=` 可選地區） | 沿用原叫車 sheet 與地圖資料 |
+| `/ride` | 預設搭車；面板內切探索後可上下拉卡片（`?mode=explore&area=` 可選地區） | 沿用原叫車 sheet 與地圖資料，參考變體 F 的面板切換 |
 | `/dropoff`、`/pickup` | 下車地點（清單＋搜尋）、上車地點 | 新（參考 `pickup`）、`pickup` |
 | `/trip`、`/trip/done` | 配對中→行程中；行程結束頁＋評分＋金色橫幅 | `ride`、`ride-done` |
 | `/drawer`、`/points`、`/notify`、`/trips` | 抽屜、和泰 Points、通知、行程紀錄 | `drawer`、`points`、`notify`、`trips` |
@@ -108,7 +108,7 @@ python app/tools/check-sw.py         # sw.js 的快取清單與實際檔案對�
 python app/tools/shoot-app.py        # 每條 route 用手機寬度拍一張（app/assets/shots/），另拼一張 board.png
 ```
 
-目前瀏覽器測試 187 條（app 43、system 20、ride 25、explore 37、album 15、flows 47）＋node 單元測試 34 條，全綠。測的東西：
+目前瀏覽器測試 189 條（app 43、system 20、ride 27、explore 37、album 15、flows 47）＋node 單元測試 34 條，全綠。測的東西：
 
 | 測什麼 | 怎麼量 |
 |---|---|
