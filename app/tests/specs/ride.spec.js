@@ -149,10 +149,14 @@ T.spec('ride', function (t) {
     W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
     t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '向上拉後面板展開');
     t.eq(app.$$('[data-area-expanded] [data-act="open-card"]').length, 2, '預設最近地區的兩張卡');
-    await app.click('[data-act="all-areas"]');
-    t.eq(app.$$('[data-act="select-area"]').length, 4, '附近四個地區');
-    await app.click('[data-act="select-area"][data-area="market"]');
-    t.eq(app.route().query.get('area'), 'market', '選定東門');
+    t.eq(app.$$('[data-act="all-areas"], [data-act="select-area"]').length, 0, '展開後沒有多餘的地區清單');
+    const firstDown = grip.getBoundingClientRect();
+    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: firstDown.top + 10, pointerId: 2 }));
+    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: firstDown.top + 100, pointerId: 2 }));
+    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: firstDown.top + 100, pointerId: 2 }));
+    await app.click('.spot[data-spot="market"]');
+    t.eq(app.route().query.get('area'), 'market', '地圖選定東門');
+    await app.click('[data-act="expand-cards"]');
     t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '東門四張卡');
     t.ok(!app.$('[data-act="peek-place"]'), '沒有地點詳情入口');
     await app.click('[data-act="open-card"][data-card="p1"]');
@@ -164,16 +168,15 @@ T.spec('ride', function (t) {
     await app.click('[data-act="close-card"]');
     t.ok(app.$('[data-card-float]').hidden, '可關閉懸浮卡片');
     const downBox = grip.getBoundingClientRect();
-    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: downBox.top + 10, pointerId: 2 }));
-    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: downBox.top + 100, pointerId: 2 }));
-    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: downBox.top + 100, pointerId: 2 }));
+    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: downBox.top + 10, pointerId: 3 }));
+    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: downBox.top + 100, pointerId: 3 }));
+    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: downBox.top + 100, pointerId: 3 }));
     t.ok(app.$('.ride-sheet').classList.contains('is-collapsed'), '向下拉收合探索面板');
     t.eq(app.route().query.get('mode'), 'explore', '收合後仍在探索');
     await app.reload('/ride?mode=explore&area=market');
     t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '重新整理仍是東門四張');
-    await app.click('[data-act="all-areas"]');
-    t.eq(app.$$('[data-act="select-area"]').length, 4, '可回附近清單');
-    t.eq(app.route().query.get('area'), 'market', '回清單仍保留選定地區');
+    t.eq(app.$$('[data-act="all-areas"], [data-act="select-area"]').length, 0, '重新整理後也沒有地區清單');
+    t.eq(app.route().query.get('area'), 'market', '重新整理仍保留選定地區');
   });
 
   t.test('地區卡片收集狀態跟 STATE 更新', async function (app) {

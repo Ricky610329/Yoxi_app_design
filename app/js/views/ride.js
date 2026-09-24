@@ -505,22 +505,9 @@ function areaProgress(a) {
   return { done: a.cards.filter(function (id) { return S().has(id); }).length, total: a.cards.length };
 }
 function areaCard(id) { return (M().POSTCARDS || []).filter(function (p) { return p.id === id; })[0] || null; }
-function areaListHTML() {
-  return '<div class="ride-v2__section"><h2>附近的地方</h2></div>' +
-    '<div class="ride-v2__area-list">' + CARD_AREAS.map(function (a) {
-      const p = APP.place(a.id), r = areaProgress(a);
-      return '<button class="ride-v2__area" type="button" data-act="select-area" data-area="' + esc(a.id) + '">' +
-        '<span class="ride-v2__area-art" data-art="' + esc(p.art) + '" data-seed="2"></span>' +
-        '<span class="ride-v2__area-body"><strong>' + esc(a.name) + '</strong><small>' + esc(p.name) +
-          ' · ' + esc(F.dist(p.dist)) + '</small></span>' +
-        '<span class="ride-v2__area-count">' + r.done + '/' + r.total + '<span class="arrow"></span></span></button>';
-    }).join('') + '</div>';
-}
 function areaCardsHTML(a) {
   const r = areaProgress(a), p = APP.place(a.id);
-  return '<div class="ride-v2__section"><button class="ride-v2__back" type="button" data-act="all-areas">' +
-      '<span class="arrow arrow--left"></span>附近的地方</button>' +
-      '<h2>' + esc(a.name) + '的卡片</h2>' +
+  return '<div class="ride-v2__section"><h2>' + esc(a.name) + '的卡片</h2>' +
       '<p>收集 ' + r.done + '/' + r.total + ' · 離你 ' + esc(F.dist(p.dist)) + '</p></div>' +
     '<div class="ride-v2__stack" data-stack-size="' + a.cards.length + '">' + a.cards.map(function (id) {
       const c = areaCard(id);
@@ -575,7 +562,7 @@ function rideV2Render(params, ctx) {
       '<div class="sheet__grip"><div class="sheet__handle"></div></div>' +
       rideModePills('explore') +
       '<div class="ride-v2__intro" data-area-intro>' + areaIntroHTML(a) + '</div>' +
-      '<div class="ride-v2__expanded" data-expand-only data-area-expanded>' + (a ? areaCardsHTML(a) : areaListHTML()) + '</div>' +
+      '<div class="ride-v2__expanded" data-expand-only data-area-expanded>' + areaCardsHTML(a) + '</div>' +
     '</section>' + rideCardFloatHTML();
 }
 function rideV2Mount(root, params, ctx) {
@@ -586,7 +573,7 @@ function rideV2Mount(root, params, ctx) {
   const floatCard = floating.querySelector('[data-act="flip-card"]');
   const tabbar = document.getElementById('tabbar');
   let selected = cardArea(ctx.query.get('area')) || nearestCardArea();
-  let showAreaList = false, returnFocus = null;
+  let returnFocus = null;
   if (!cardArea(ctx.query.get('area'))) APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
   const map = APP.map.mount(root.querySelector('[data-ride-map]'), {
     style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
@@ -604,17 +591,12 @@ function rideV2Mount(root, params, ctx) {
   }
   function paint() {
     intro.innerHTML = areaIntroHTML(selected);
-    expanded.innerHTML = showAreaList ? areaListHTML() : areaCardsHTML(selected);
+    expanded.innerHTML = areaCardsHTML(selected);
     SHELL.injectArt(intro);
     SHELL.injectArt(expanded);
     SHELL.injectIcons(sheet);
     intro.querySelector('[data-act="expand-cards"]').onclick = function () { setOpen(true); };
     intro.querySelector('[data-act="use-yoxi"]').onclick = function () { setDropoff(selected.id, 'e'); };
-    expanded.querySelectorAll('[data-act="select-area"]').forEach(function (b) {
-      b.onclick = function () { selectArea(b.getAttribute('data-area'), false); };
-    });
-    const back = expanded.querySelector('[data-act="all-areas"]');
-    if (back) back.onclick = function () { showAreaList = true; paint(); };
     expanded.querySelectorAll('[data-act="open-card"]').forEach(function (b) {
       b.onclick = function () { openCard(b.getAttribute('data-card'), b); };
     });
@@ -624,7 +606,6 @@ function rideV2Mount(root, params, ctx) {
   }
   function selectArea(id, fromMap) {
     selected = cardArea(id) || nearestCardArea();
-    showAreaList = false;
     APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
     paint();
     if (fromMap) setOpen(false);

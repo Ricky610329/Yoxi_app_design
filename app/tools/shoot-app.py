@@ -78,7 +78,6 @@ RUN_DROPOFF = ("var p=APP.place('glass-kiln');APP.store.set('dropoff',{id:p.id,n
                "setAt:new Date().toISOString(),via:'e'});APP.nav.go('/ride',{replace:true,dir:'none'});")
 RUN_SELECT = "var s=document.querySelector('#view .spot[data-spot=\"moat\"]');if(s)s.click();"
 RUN_STACK = "var b=document.querySelector('[data-act=\"expand-cards\"]');if(b)b.click();"
-RUN_AREAS = RUN_STACK + "var a=document.querySelector('[data-act=\"all-areas\"]');if(a)a.click();"
 RUN_CARDS = RUN_SELECT + RUN_STACK
 RUN_FLOAT = RUN_CARDS + "var c=document.querySelector('[data-act=\"open-card\"]');if(c)c.click();"
 RUN_FLOAT_BACK = RUN_FLOAT + "var f=document.querySelector('[data-act=\"flip-card\"]');if(f)f.click();"
@@ -90,7 +89,6 @@ SHOTS = [
     ('ride',             '/ride',                 None),
     ('ride-dropoff',     '/ride',                 {'run': RUN_DROPOFF}),
     ('ride-peek',        '/ride?mode=explore',    None),
-    ('ride-areas',       '/ride?mode=explore',    {'run': RUN_AREAS}),
     ('ride-cards',       '/ride?mode=explore',    {'run': RUN_CARDS}),
     ('ride-float',       '/ride?mode=explore',    {'run': RUN_FLOAT}),
     ('ride-float-back',  '/ride?mode=explore',    {'run': RUN_FLOAT_BACK}),

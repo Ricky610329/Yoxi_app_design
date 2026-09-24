@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v7';
+const VERSION = 'chengshi-app-v8';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -363,7 +363,7 @@ const DATA = [
   ['steps',  '步數',     '用來畫今天的回顧的路徑，資料留在手機上；關掉回顧就沒有路線', 'steps'],
   ['camera', '相簿',     '只在今天的回顧才讀取當天照片，不會上傳；關掉回顧就只有明信片', 'photos'],
   ['route',  '行程紀錄', '用來知道你搭車去過哪裡；關掉搭車抵達就不會自動收進足跡', 'trips'],
-  ['place',  '探索模式的景點', '探索時在地圖顯示附近有卡片的地方；關掉後仍可從面板清單選地區', 'rideSpots'],
+  ['place',  '探索模式的景點', '探索時在地圖顯示附近有卡片的地方；關掉後保留目前選定的地區', 'rideSpots'],
 ];
 /* 這些開關存在 app 自己的 store（不是 STATE.settings） */
 const STORE_SWITCH = { rideSpots: true };
