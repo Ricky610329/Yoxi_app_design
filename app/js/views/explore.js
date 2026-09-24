@@ -1,10 +1,11 @@
 /* ==========================================================================
-   yoxi 城事 web app — explore 區塊（探索分頁）
+   yoxi 城事 web app — explore 區塊（舊探索深連結與收卡邏輯）
    契約：app/ARCHITECTURE.md §3、§4、§5、§7、§8。只用 APP.view() 註冊，不改 app.js。
 
-   這支檔案註冊七個畫面，並提供 APP.explore.collect()（ride 的限定版解鎖也用）：
+   這支檔案註冊舊探索深連結畫面，並提供 APP.explore.collect()（ride 的限定版解鎖也用）。
+   新的 /explore 地圖與卡片面板共用 ride.js 的地圖實作。
 
-   /explore        探索首頁（X2 缺口導向＋今天的地方）
+   舊 /explore 排版（X2 缺口導向＋今天的地方）只保留函式供對照，未註冊到新入口。
      回答什麼：今天出門去哪？收藏裡還缺什麼、可以順便補哪一張？
      原型：variant-x2-explore.html（缺口）、explore.html（今天的地方、路線、還沒去）、
            variant-l1-explore.html（一屏一事：可按數 ≤ 12，超過就砍列而不是塞更多）
@@ -1012,11 +1013,6 @@ function mountRoute(root, params) {
 }
 
 /* ---------------------------------------------------------------- 註冊 */
-
-APP.view('explore', {
-  path: '/explore', tab: 'explore', status: 'light', root: true, title: '探索',
-  render: renderExplore, mount: mountExplore,
-});
 
 APP.view('explore-map', {
   path: '/explore/map', tab: 'explore', status: 'light', title: '探索地圖',

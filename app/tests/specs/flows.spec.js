@@ -21,13 +21,13 @@ T.spec('flows', function (t) {
     await app.click('main.view[data-view] a[data-back]');
   }
 
-  /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
+  /* 舊版步行收藏流程仍可由地方深連結對照；新探索首頁只顯示地區卡片。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
   async function walkAndCollect(app, note) {
     const A = app.APP;
     const T0 = app.MOCK.TODAY;
     await app.at('/explore');
-    await app.click('main.view .ex-cta [data-act="open-place"]');
+    await app.go('/place/' + T0.id);
     await app.at('/place/' + T0.id);
     const main = app.$('[data-place-foot] .btn-primary');
     t.eq(main && main.getAttribute('data-act'), 'go-walk', '地方詳情：走得到 → 主要動作是走路前往');
@@ -53,7 +53,7 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 1. 三條流程 */
 
-  t.test('流程 A：早上推播先到叫車卡片面板，舊探索流程仍可走到收藏', async function (app) {
+  t.test('流程 A：早上推播進探索卡片面板，舊步行收藏仍可由深連結對照', async function (app) {
     await app.reset();
     const A = app.APP, S = app.STATE;
     const T0 = app.MOCK.TODAY;
@@ -69,16 +69,12 @@ T.spec('flows', function (t) {
     t.ok(push, '早上推播浮層');
     t.includes(push && push.textContent, T0.name, '推播寫今天的地方');
     await app.click('.pushmock [data-act="open-push"]');
-    await app.at('/ride');
+    await app.at('/explore');
     t.eq(app.route().query.get('area'), T0.id, '推播選定今天的地方');
     await app.click('[data-act="expand-cards"]');
     t.ok(app.$('[data-area-expanded] [data-card="p11"]'), '上拉看到今天的卡片');
     t.ok(!app.$('.device > .pushmock'), '點了推播浮層就收掉');
-    /* 為什麼推薦給你：依據條數＝MOCK */
     await app.go('/explore');
-    await app.click('[data-act="toggle-why"]');
-    t.eq(app.$$('[data-why-list] .why__item').length, (T0.why || []).length, '推薦依據條數');
-
     await walkAndCollect(app, '窯的牆還是溫的');
 
     t.ok(app.$('main.view .postcard__new'), '/album 有「新」角標');
@@ -102,8 +98,7 @@ T.spec('flows', function (t) {
     const pts0 = S.points;
     const rows0 = A.ride.pointsRows();
 
-    await app.go('/explore');
-    await app.click('main.view [data-act="open-routes"]');
+    await app.go('/routes');
     await app.at('/routes');
     await app.click('[data-route-id="rail"]');
     await app.at('/route/rail');
@@ -116,8 +111,8 @@ T.spec('flows', function (t) {
     t.eq(d && d.id, 'neiwan', 'store.dropoff.id');
     t.eq(d && d.via, 'route', 'via route');
     t.eq(app.text('[data-drop-name]'), P.name, '下車點欄位填好');
-    t.eq(app.text('.ride-v2__field [data-fare]'), String(F.fare(km)), '[data-fare]＝fmt.fare(fmt.km(dist))');
-    t.eq(app.text('.ride-v2__field [data-min]'), String(F.rideMin(km)), '[data-min]＝fmt.rideMin');
+    t.eq(app.text('[data-fare]'), String(F.fare(km)), '[data-fare]＝fmt.fare(fmt.km(dist))');
+    t.eq(app.text('[data-min]'), String(F.rideMin(km)), '[data-min]＝fmt.rideMin');
     const call = app.$('[data-act="call-ride"]');
     t.ok(call && call.classList.contains('is-ready'), '叫車鈕 is-ready');
 
@@ -155,6 +150,8 @@ T.spec('flows', function (t) {
     t.eq(A.store.get('dropoff'), null, 'store.dropoff === null');
 
     /* 回叫車：不會 toast「限定明信片還在收藏等你」 */
+    await app.click('[data-act="back-explore"]');
+    await app.at('/explore');
     await app.click('#tabbar [data-tab-id="ride"]');
     await app.at('/ride');
     t.ok(toastText(app).indexOf('限定明信片還在收藏等你') < 0, '/ride 再進不會 toast 限定明信片（' + toastText(app) + '）');
@@ -358,9 +355,9 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 2. 縫合 */
 
-  t.test('縫合 a：/ride 選景點 → 上拉看卡片 → 下拉收合', async function (app) {
+  t.test('縫合 a：/explore 選景點 → 上拉看卡片 → 下拉收合', async function (app) {
     await app.reset();
-    await app.go('/ride');
+    await app.go('/explore');
     t.ok(app.$('.ride-sheet.is-collapsed'), '一開始收合');
     await app.click('.spot[data-spot="moat"]');
     t.eq(app.route().query.get('area'), 'moat', '選的是護城河');
@@ -374,6 +371,7 @@ T.spec('flows', function (t) {
     W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top + 90, pointerId: 1 }));
     W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top + 90, pointerId: 1 }));
     t.ok(app.$('.ride-sheet.is-collapsed'), '向下拉回收合態');
+    t.eq(app.route().path, '/explore', '下拉後仍留在探索');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   });
 
@@ -392,7 +390,7 @@ T.spec('flows', function (t) {
     t.eq(calls.length, 1, '呼叫 APP.ride.setDropoff 一次');
     t.eq(calls[0] && calls[0].join(','), 'lake,e', "setDropoff('lake','e')");
     const e = A.store.get('dropoff');
-    const fareE = app.text('.ride-v2__field [data-fare]');
+    const fareE = app.text('[data-fare]');
 
     await app.go('/place/lake');
     await app.click('[data-place-foot] [data-act="set-dropoff"]');
@@ -401,7 +399,7 @@ T.spec('flows', function (t) {
     const k = A.store.get('dropoff');
     t.eq(k && k.via, 'k1', 'K1 via k1');
     t.eq(JSON.stringify([e.id, e.name, e.km]), JSON.stringify([k.id, k.name, k.km]), 'E 與 K1 寫出同一個下車點');
-    t.eq(app.text('.ride-v2__field [data-fare]'), fareE, '車資相同');
+    t.eq(app.text('[data-fare]'), fareE, '車資相同');
     A.ride.setDropoff = orig;
   });
 
@@ -442,17 +440,22 @@ T.spec('flows', function (t) {
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   });
 
-  t.test('縫合 d：雙主頁 tab 記憶選定地區，再按叫車回根', async function (app) {
+  t.test('縫合 d：搭車與探索切換，探索記住地區而搭車維持乾淨', async function (app) {
     await app.reset();
+    t.eq(app.$$('main.view .spot').length, 0, '預設搭車沒有卡片 pin');
+    await app.click('#tabbar [data-tab-id="explore"]');
+    await app.at('/explore');
     await app.click('.spot[data-spot="moat"]');
     t.eq(app.route().query.get('area'), 'moat', '網址記住護城河');
-    await app.click('#tabbar [data-tab-id="album"]');
-    await app.at('/album');
     await app.click('#tabbar [data-tab-id="ride"]');
     await app.at('/ride');
-    t.eq(app.route().query.get('area'), 'moat', '切回叫車仍選著護城河');
-    await app.click('#tabbar [data-tab-id="ride"]');
-    t.eq(app.route().query.get('area'), null, '再按叫車回到根');
+    t.eq(app.$$('main.view .spot').length, 0, '搭車仍沒有卡片 pin');
+    t.eq(app.route().query.get('area'), null, '搭車網址沒有地區參數');
+    await app.click('#tabbar [data-tab-id="explore"]');
+    await app.at('/explore');
+    t.eq(app.route().query.get('area'), 'moat', '切回探索仍選著護城河');
+    await app.click('#tabbar [data-tab-id="explore"]');
+    t.eq(app.route().query.get('area'), null, '再按探索回到根');
   });
 
   t.test('縫合 e：非 still 模式每條 route 載入後 #app-errors 仍為空', async function (app) {
@@ -576,15 +579,16 @@ T.spec('flows', function (t) {
     W.addEventListener = function (type, fn, o) { if (/^pointer/.test(type) && !seen.has(fn)) { seen.add(fn); live++; } return add.call(this, type, fn, o); };
     W.removeEventListener = function (type, fn, o) { if (seen.has(fn)) { seen.delete(fn); live--; } return rem.call(this, type, fn, o); };
     try {
-      await app.go('/explore');
-      for (let i = 0; i < 4; i++) {
-        await app.go('/ride');
-        await app.go('/explore/map');
-      }
-      await app.go('/explore');
-      t.eq(live, 0, '離開有 sheet／地圖的畫面之後，pointer listener 全數拆掉（剩 ' + live + '）');
       await app.go('/ride');
-      t.ok(live > 0 && live <= 4, '/ride 上只有這一頁的 listener（' + live + '）');
+      const ridePan = live;
+      t.ok(ridePan > 0 && ridePan <= 2, '搭車只保留地圖平移 listener（' + ridePan + '）');
+      for (let i = 0; i < 4; i++) {
+        await app.go('/explore');
+        await app.go('/ride');
+      }
+      t.eq(live, ridePan, '反覆切換後搭車沒有多出探索手勢 listener');
+      await app.go('/explore');
+      t.ok(live > ridePan && live <= ridePan + 2, '/explore 只多出面板上下拉的 listener（' + live + '）');
     } finally {
       delete W.addEventListener; delete W.removeEventListener;
     }
@@ -824,7 +828,7 @@ T.spec('flows', function (t) {
       seen.place = m ? m[1] : null;
       await app.click('[data-place-foot] [data-act="set-dropoff"]');
       await app.at('/ride');
-      seen.dropoff = app.text('.ride-v2__field [data-fare]');
+      seen.dropoff = app.text('[data-fare]');
       await app.click('[data-act="call-ride"]');
       await app.at('/trip');
       await app.waitFor(function () { return !app.$('[data-phase="riding"]').hidden; }, 3000, '行程中');
@@ -950,7 +954,7 @@ T.spec('flows', function (t) {
     await app.click('[data-act="choose-dropoff"]');
     await app.tick(60);
     t.eq(app.route().path, '/dropoff', '搜尋清單：不導走');
-    await app.go('/ride');
+    await app.go('/explore');
     await app.click('.spot[data-spot="moat"]');
     await app.click('[data-area-intro] [data-act="set-area-dropoff"]');
     await app.tick(60);
@@ -980,8 +984,8 @@ T.spec('flows', function (t) {
     const A = app.APP, F = A.fmt;
     await app.go('/ride');
     t.eq(app.text('[data-drop-name]'), A.place('lake').name, '下車點＝行程目的地');
-    t.eq(app.text('.ride-v2__field [data-fare]'), String(F.fare(6.4)), '車資用 trip.km');
-    t.ok(app.$('.ride-v2__field a[href="#/trip"]'), '點下車點卡回行程');
+    t.eq(app.text('[data-fare]'), String(F.fare(6.4)), '車資用 trip.km');
+    t.ok(app.$('.ride-drop a[href="#/trip"]'), '點下車點卡回行程');
     t.ok(!app.$('[data-act="clear-dropoff"]'), '行程中沒有「清除」');
     t.includes(app.text('[data-act="call-ride"]'), '回到行程', '叫車鈕是回到行程');
     t.noDeadButtons(app, '/ride（行程中）');
@@ -1068,10 +1072,10 @@ T.spec('flows', function (t) {
   t.test('QA 11–17：景點 aria-label、全形問號、點數無條件捨去、原型未做統一文案、onboarding 推播、日期 MM.DD', async function (app) {
     await app.reset();
     const A = app.APP;
-    await app.go('/ride');
+    await app.go('/explore');
     const spots = app.$$('main.view .spot');
-    t.ok(spots.length > 0 && spots.every(function (s) { return s.getAttribute('aria-label') === A.place(s.getAttribute('data-spot')).name; }), '叫車地圖景點 aria-label＝地名');
-    t.ok(/今天想去哪裡？$/.test(app.text('.ride-v2__intro h1')), '全形問號：' + app.text('.ride-v2__intro h1'));
+    t.ok(spots.length > 0 && spots.every(function (s) { return s.getAttribute('aria-label') === A.place(s.getAttribute('data-spot')).name; }), '探索地圖景點 aria-label＝地名');
+    t.ok(/今天想看看哪裡？$/.test(app.text('.ride-v2__intro h1')), '全形問號：' + app.text('.ride-v2__intro h1'));
     await app.go('/explore/map');
     t.ok(app.$$('main.view .spot').every(function (s) { return !!s.getAttribute('aria-label'); }), '探索地圖景點都有 aria-label');
     /* 13：搭車回饋 floor(fare/20) */
@@ -1100,7 +1104,7 @@ T.spec('flows', function (t) {
     await app.at('/welcome');
     await app.click('#demo-panel [data-act="push-am"]');
     await app.click('.pushmock [data-act="open-push"]');
-    await app.at('/ride');
+    await app.at('/explore');
     t.eq(app.route().query.get('area'), app.MOCK.TODAY.id, '早上推播選定地區');
     t.eq(app.APP.store.get('onboarded'), true, '從 /welcome 點推播進來 → onboarded');
     await app.go('/', { expect: '/ride' });
@@ -1174,10 +1178,12 @@ T.spec('flows', function (t) {
     await app.reset();
   }, { timeout: 15000 });
 
-  t.test('評估 3：設定頁可以關掉叫車地圖上的景點；可按數仍 ≤ 10', async function (app) {
+  t.test('評估 3：設定頁可以關掉探索地圖上的景點；搭車地圖始終乾淨', async function (app) {
     await app.reset();
     await app.go('/ride');
-    t.eq(app.$$('main.view .spot').length, 4, '預設 4 顆');
+    t.eq(app.$$('main.view .spot').length, 0, '搭車沒有景點');
+    await app.go('/explore');
+    t.eq(app.$$('main.view .spot').length, 4, '探索預設 4 顆');
     await app.go('/settings');
     t.ok(t.countTappables(app) <= 10, '設定頁可按數 ' + t.countTappables(app));
     const sw = app.$('main.view [data-switch="rideSpots"]');
@@ -1185,15 +1191,15 @@ T.spec('flows', function (t) {
     await app.click(sw);
     t.eq(app.APP.store.get('rideSpots'), false, 'store.rideSpots=false');
     t.eq(sw.getAttribute('aria-checked'), 'false', '開關外觀');
-    await app.go('/ride');
+    await app.go('/explore');
     t.eq(app.$$('main.view .spot').length, 0, '關掉之後 0 顆');
     t.ok(app.$('main.view .map__svg'), '地圖照畫');
-    t.noDeadButtons(app, '/ride（景點關掉）');
-    await app.reload('/ride');
+    t.noDeadButtons(app, '/explore（景點關掉）');
+    await app.reload('/explore');
     t.eq(app.$$('main.view .spot').length, 0, '重載後還是關的');
     await app.go('/settings');
     await app.click('main.view [data-switch="rideSpots"]');
-    await app.go('/ride');
+    await app.go('/explore');
     t.eq(app.$$('main.view .spot').length, 4, '開回來 4 顆');
     t.eq(app.STATE.all.settings.rideSpots, undefined, '不寫進 STATE.settings');
   });
@@ -1251,14 +1257,14 @@ T.spec('flows', function (t) {
   t.test('無障礙 1／2：「要去哪裡？」與次要文字對比 ≥ 4.5:1', async function (app) {
     await app.reset();
     await app.go('/ride');
-    const ph = app.$('[data-act="pick-dropoff"] strong');
+    const ph = app.$('[data-act="pick-dropoff"] .route-input__value');
     const r = ratioOf(app, ph);
     t.ok(r >= 4.5, '「要去哪裡？」對比 ' + r.toFixed(2));
     const samples = [
-      ['/ride', '.ride-v2__field small'],
+      ['/ride', '.route-input__label'],
       ['/notify', '.row-nav__sub'],
       ['/album', '.alb-v2__stat small'],
-      ['/explore', '.sec__m'],
+      ['/explore', '.ride-v2__eyebrow'],
       ['/place/lake', '.ex-foot__note'],
       ['/points', '.row-nav__sub'],
       ['/album?tab=badges', '.badge__prog'],
@@ -1384,7 +1390,7 @@ T.spec('flows', function (t) {
     await app.go('/going/moat'); await app.tick(40); scan('/going（行程中）');
     await app.reset({ store: { trip: { placeId: 'lake', phase: 'done', startedAt: now(), rated: true, stars: 4, km: 6.4 } } });
     await app.go('/trip/done'); await app.tick(40); scan('/trip/done');
-    await app.go('/ride'); await app.click('.spot[data-spot="moat"]'); scan('/ride 小卡');
+    await app.go('/explore'); await app.click('.spot[data-spot="moat"]'); scan('/explore 選點');
     app.APP.ui.share({ kind: 'week' });
     app.$$('.sys-share button').forEach(function (el) { if (!nameOf(el)) nameless.push('分享面板 ' + el.getAttribute('data-act')); });
     app.APP.ui.push({ when: 'am', force: true });

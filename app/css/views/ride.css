@@ -19,6 +19,7 @@
 .ride-fab--menu { top: calc(var(--statusbar-h) + 12px); left: var(--gutter); }
 .ride-fab--scan { top: calc(var(--statusbar-h) + 16px); right: 76px; }
 .ride-fab--bell { top: calc(var(--statusbar-h) + 16px); right: var(--gutter); }
+.ride-fab--album { top: calc(var(--statusbar-h) + 16px); right: var(--gutter); }
 .ride-fab--loc  { bottom: 20px; right: var(--gutter); }
 
 .ride-pin .pin__drop svg { width: 24px; height: 24px; }

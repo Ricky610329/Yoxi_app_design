@@ -40,68 +40,63 @@ T.spec('explore', function (t) {
     });
   });
 
-  /* 2. /explore：今天的地方、X2 缺口、路線、還沒去 */
-  t.test('/explore：今天的地方與雙 CTA', async function (app) {
+  /* 2. /explore：只在選擇探索後出現的地圖與上拉卡片面板 */
+  t.test('/explore：四個卡片地點，搭車欄位不混進來', async function (app) {
     await app.reset();
     await app.go('/explore');
-    const T0 = app.MOCK.TODAY;
-    const P = app.APP.place(T0.id);
-    t.includes(app.text('.ex-today'), P.name, '今天的地方名字');
-    t.ok(app.$('.ex-today.is-gray'), '沒收過是灰階');
-    t.ok(app.$('.ex-today .ai-mark'), '有 AI 生成示意');
-    const go = app.$('[data-act="go-walk"]');
-    t.ok(go && go.classList.contains('btn-primary'), '走得到 → 主要動作是走路前往');
-    t.eq(go && go.getAttribute('href'), '#/going/' + T0.id, '走路前往 → /going/:id');
-    t.includes(app.text('.ex-today'), String(app.APP.fmt.walkMin(P.dist)), '走路分鐘用公式');
-    /* 為什麼推薦給你：收合 → 點開 */
-    t.ok(app.$('[data-why-list]').hidden, '預設收合');
-    await app.click('[data-act="toggle-why"]');
-    t.ok(!app.$('[data-why-list]').hidden, '點開後看得到');
-    t.eq(app.$$('[data-why-list] .why__item').length, T0.why.length, '依據條數＝MOCK.TODAY.why');
+    t.eq(app.$$('main.view .spot').length, 4, '探索地圖有四個地點');
+    t.ok(app.$('.spot[data-spot="' + app.MOCK.TODAY.id + '"].spot--today'), '今天的地方');
+    t.ok(app.$('[data-area-intro] [data-act="expand-cards"]'), '可上拉看附近卡片');
+    t.ok(!app.$('[data-act="pick-pickup"], [data-act="pick-dropoff"]'), '沒有搭車欄位');
+    t.ok(app.$('[data-act="open-album"][href="#/album"]'), '收藏從探索進入');
   });
 
-  t.test('/explore：X2 缺口是一句陳述、最多三個地方', async function (app) {
-    await app.go('/explore');
-    const g = app.APP.explore.gap();
-    t.ok(g, '有一枚還沒收齊的獎章');
-    if (!g) return;
-    const line = app.text('.ex-gap__line');
-    t.includes(line, '你還沒有『' + g.badge.name + '』這一組的 ' + g.missing + ' 張', '句型');
-    const chips = app.$$('.ex-chip');
-    t.ok(chips.length >= 1 && chips.length <= 3, 'chip 數 ' + chips.length);
-    t.eq(chips.length, Math.min(3, g.places.length), 'chip 數＝還缺的地方（最多 3）');
-    t.ok(!app.$('.ex-gap .ring, .ex-gap input[type=checkbox]'), '沒有進度環、沒有勾選');
-    /* 缺口是還沒收齊裡缺最少的一枚 */
-    const S = app.STATE;
-    app.MOCK.BADGES.forEach(function (b) {
-      const r = S.badge(b.id);
-      if (r.got) return;
-      t.ok(r.total - r.done >= g.missing, '〈' + r.name + '〉缺 ' + (r.total - r.done) + ' ≥ 挑中的 ' + g.missing);
-    });
-  });
-
-  t.test('/explore：路線 ≤ 2 張、進度＝STATE.routeDone；還沒去 ≤ 3 列', async function (app) {
-    await app.go('/explore');
-    const cards = app.$$('.ex-rcard');
-    t.ok(cards.length <= 2 && cards.length >= 1, '路線卡 ' + cards.length);
-    cards.forEach(function (c) {
-      const id = c.getAttribute('href').split('/').pop();
-      const R = app.MOCK.ROUTES.filter(function (r) { return r.id === id; })[0];
-      t.includes(c.textContent.replace(/\s+/g, ''), app.STATE.routeDone(id) + '/' + R.total, id + ' 進度');
-    });
-    t.ok(app.$('a[href="#/routes"]'), '有「全部」→ /routes');
-    t.ok(app.$$('.ex-row').length <= 3, '還沒去 ≤ 3 列');
-    t.ok(app.$('.ex-block--last a[href="#/explore/map"]'), '在地圖上看 → /explore/map');
-  });
-
-  t.test('/explore：今天的地方收過之後是彩色＋已收藏', async function (app) {
+  t.test('/explore：選地點後設為下車點，回搭車頁', async function (app) {
     await app.reset();
-    app.APP.explore.collect(app.MOCK.TODAY.id, { by: 'walk', km: 1 });
     await app.go('/explore');
-    t.ok(app.$('.ex-today.is-got'), '彩色');
-    t.includes(app.text('.ex-today'), '已收藏', '已收藏角標');
-    t.ok(app.$('[data-act="open-postcard"]'), '動作換成看明信片');
+    await app.click('.spot[data-spot="moat"]');
+    t.eq(app.route().query.get('area'), 'moat', '選點寫入網址');
+    t.includes(app.text('[data-area-intro]'), '護城河', '顯示地區');
+    t.includes(app.text('[data-area-intro]'), app.APP.fmt.dist(app.APP.place('moat').dist), '距離由公式取得');
+    await app.click('[data-area-intro] [data-act="set-area-dropoff"]');
+    await app.at('/ride');
+    t.eq(app.APP.store.get('dropoff').id, 'moat', '下車點是所選地點');
+    t.eq(app.text('[data-drop-name]'), app.APP.place('moat').name, '搭車欄位已填入');
+  });
+
+  t.test('/explore：上拉、選地區、重新整理，卡片不開地點詳情', async function (app) {
     await app.reset();
+    await app.go('/explore');
+    const grip = app.$('.ride-sheet .sheet__grip'), W = app.win, box = grip.getBoundingClientRect();
+    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: box.top + 10, pointerId: 1 }));
+    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
+    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
+    t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '向上拉展開');
+    t.eq(app.$$('[data-act="select-area"]').length, 4, '附近四個地區');
+    await app.click('[data-act="select-area"][data-area="market"]');
+    t.eq(app.route().query.get('area'), 'market', '選定東門');
+    t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '東門四張卡');
+    t.ok(!app.$('[data-act="peek-place"]'), '沒有地點詳情入口');
+    await app.reload('/explore?area=market');
+    t.eq(app.$$('[data-area-expanded] [data-card]').length, 4, '重新整理仍是東門四張');
+    await app.click('[data-act="all-areas"]');
+    t.eq(app.route().query.get('area'), null, '回附近清單清除選點');
+  });
+
+  t.test('/explore：收卡狀態與收藏入口', async function (app) {
+    await app.reset();
+    await app.go('/explore?area=glass-kiln');
+    t.includes(app.text('[data-area-intro]'), '收集 0/2', '初始水利路進度');
+    app.STATE.collect('glass-kiln', { date: app.APP.fmt.todayMMDD() });
+    await app.go('/ride');
+    await app.go('/explore?area=glass-kiln');
+    t.includes(app.text('[data-area-intro]'), '收集 1/2', '收卡後進度更新');
+    await app.click('[data-act="expand-cards"]');
+    t.ok(app.$('[data-area-expanded] [data-card="p11"].is-collected'), '卡片上色');
+    await app.click('[data-act="open-album"]');
+    await app.at('/album');
+    await app.click('[data-act="back-explore"]');
+    await app.at('/explore');
   });
 
   /* 3. /place：K1 主次、找不到 */
@@ -310,15 +305,6 @@ T.spec('explore', function (t) {
   });
 
   /* 7. 返回鍵回到來處 */
-  t.test('返回：/explore → /route/rail → 返回 → /explore', async function (app) {
-    await app.reset();
-    await app.go('/explore');
-    await app.click('.ex-rcard[href="#/route/rail"], .ex-rcard');
-    await app.waitFor(function () { return /^\/route\//.test(app.route().path) && app.doc.documentElement.getAttribute('data-view-ready') === '1'; }, 3000, '進到路線');
-    await app.click('main.view[data-view] a[data-back]');
-    await app.at('/explore');
-  });
-
   t.test('返回：/explore/map → /place/moat → 返回 → /explore/map', async function (app) {
     await app.go('/explore/map');
     await app.click('.spot[data-spot="moat"]');

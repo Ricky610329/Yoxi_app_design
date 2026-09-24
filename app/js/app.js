@@ -643,8 +643,8 @@ function reportError(e, where) {
 
 /* ---- tab bar ---- */
 const TABDEF = [
-  { id: 'ride',    label: '叫車', icon: 'tabRide' },
-  { id: 'album',   label: '收藏', icon: 'tabAlbum' },
+  { id: 'ride',    label: '搭車', icon: 'tabRide' },
+  { id: 'explore', label: '探索', icon: 'tabExplore' },
 ];
 
 /* 今天的地方的明信片還沒收 → 探索 tab 上一個小圓點（不是數字） */

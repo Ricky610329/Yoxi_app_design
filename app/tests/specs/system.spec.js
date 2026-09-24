@@ -100,7 +100,7 @@ T.spec('system', function (t) {
     t.eq(app.storage('state').settings.pushAm, !before, '寫進 localStorage');
   });
 
-  t.test('早上推播：浮層、只記一次、點卡片到叫車頁選定地點', async function (app) {
+  t.test('早上推播：浮層、只記一次、點卡片到探索頁選定地點', async function (app) {
     await app.reset();
     await app.go('/ride');
     app.APP.ui.push({ when: 'am' });
@@ -114,7 +114,7 @@ T.spec('system', function (t) {
     t.eq(app.APP.store.get('pushes').length, 1, '再發一次不變');
     t.eq(app.$$('.device > .pushmock').length, 1, '浮層只有一張');
     await app.click('.pushmock [data-act="open-push"]');
-    await app.at('/ride');
+    await app.at('/explore');
     t.eq(app.route().query.get('area'), app.MOCK.TODAY.id, '選定今天的地方');
     t.ok(!pushmock(app), '浮層收掉');
   });

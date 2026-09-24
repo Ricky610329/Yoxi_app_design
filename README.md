@@ -15,7 +15,7 @@
 | 看 demo、聽講稿 | `prototype/index.html` → 三條流程各有「開始導覽」，手機旁邊會出現講的人看的字幕列，鍵盤 ← → 翻頁 |
 | 評估某個畫面、寫評語 | `prototype/overview.html`：整個系統的層級樹，點節點在右邊打分、寫評語（存在你的瀏覽器，右上「匯出評語」給我） |
 | 看「真的會長怎樣」 | `prototype/concept.html`：真實新竹地圖的六種質感、單／雙地圖、微 3D、好友系統，附五張 1600×1000 概念板 |
-| 想真的用一遍 | `app/index.html`：web app，叫車／收藏雙主頁 UI；叫車頁可上拉看地區卡片，舊流程仍可用深連結對照；說明在 `app/README.md` |
+| 想真的用一遍 | `app/index.html`：web app，底欄「搭車／探索」；預設是一般搭車，探索頁上拉看地區卡片並可進收藏；說明在 `app/README.md` |
 
 其他兩頁：`prototype/variants.html`（依軸線分區的變體卡牆）、`prototype/vision.html`（願景探索稿）。
 
@@ -93,7 +93,7 @@ Yoxi_app截圖.zip    yoxi 現有 app 的截圖（還原用）
 
 ## web app 版（`app/`）
 
-`app/` 是可操作的單頁 web app：主頁收斂為叫車與收藏。叫車地圖可選附近地點，同一張面板上拉看周邊卡片；舊探索流程仍保留供對照。狀態會記住，也可裝到手機主畫面。
+`app/` 是可操作的單頁 web app：底欄是搭車與探索，預設搭車頁維持乾淨地圖和原本的叫車欄位；選探索後才出現附近地點與可上下拉的卡片面板。收藏從探索進入。狀態會記住，也可裝到手機主畫面。
 桌機把 `app/index.html` 拖進 Chrome 就能用；手機跑 `python app/tools/serve.py` 後同 Wi-Fi 開它印的網址。
 測試：`python app/tests/run.py`（node 單元測試＋headless Chrome，每條 route 驗死按鈕、禁用詞、可按數、公式數字）。細節看 `app/README.md`，契約在 `app/ARCHITECTURE.md`；原型 `prototype/` 一個字沒動。
 

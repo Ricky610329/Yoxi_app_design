@@ -8,18 +8,18 @@
 `prototype/` 是 102 張各自獨立的 HTML 設計原型；`app/` 是把其中**一組決定**做成一個真的能用的
 單頁 web app（hash 路由、狀態持久、可安裝 PWA），手機直接開、桌機看得到手機外框。
 
-目前主畫面是「**雙主頁第一版**」：底欄只顯示 `#/ride` 與 `#/album`。`/explore` 等舊路由仍保留供舊連結與流程對照，但新主畫面沒有探索入口；`/place/:id` 不在新 UI 的地點選擇路徑中。
+目前主畫面是「**搭車／探索雙入口**」：底欄只顯示 `#/ride` 與 `#/explore`，預設進搭車。搭車地圖沒有探索 pin、卡片或上下拉手勢；進探索後才有地點與卡片面板。`/album` 從探索進入，`/place/:id` 等舊路由保留作深連結對照。
 
 以下是原「合一版」的資料與流程決定；新主畫面沿用其中的地圖、卡片狀態和叫車流程：
 
 | 軸線 | 選 | 在 app 裡長什麼樣 |
 |---|---|---|
-| 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
-| 地圖歸誰 | **E** 景點常駐＋一鍵設為下車點 | 叫車首頁的地圖是真實新竹（`HSMAP` paper），同時最多 **4** 個景點，小卡上有「設為下車點」 |
+| 入口 | 底欄雙入口（搭車／探索） | `#/ride` 預設搭車；`#/explore` 才顯示地點卡片；收藏由探索進入 |
+| 地圖歸誰 | 參考 **F** 的雙模式結構 | 搭車地圖乾淨，探索地圖使用真實新竹（`HSMAP` paper），同時最多 **4** 個地點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
 | 收藏組織 | 摘要式首頁 | 明信片主卡、兩張統計卡、明信片與獎章網格；舊路線書架只作對照 |
 | 獎章呈現 | **X4** 勳章牆 | 沒有進度環、沒有集點卡；寫「收集 4/8」 |
-| 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
+| 探索敘事 | 地區卡片面板 | 地圖選地區、上拉看卡片、下拉收合；收藏從探索地圖右上角進入 |
 | 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/explore`／`/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
 | 儀式 | 三幕解鎖（主線） | 灰點爆開上色 → AI 生成中 → 成品；點畫面可跳到成品 |
 | 家人 | 分享選項 | 長輩圖在分享面板第一格；沒有「家人模式」 |
@@ -33,11 +33,12 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 - 推播是 app 內的浮層（早／晚各一則，一天最多兩則），由 demo 工具觸發。
 - demo 工具：桌機在手機外框旁邊一條面板；手機在「設定 → demo 工具」。內容：早上推播、晚上推播、模擬抵達（只在前往中／行程中出現）、重設。
 
-### 雙主頁的叫車面板
+### 搭車與探索的面板
 
-- `#/ride` 預設顯示叫車欄位；上拉同一張 sheet 顯示四個附近地點。點地圖 pin 或清單地點後，網址寫成 `#/ride?area=<地點 id>`；收合態顯示地點名稱、距離、卡片收集數與設為下車點，展開態顯示周邊卡片。從地圖點選會先收合面板，從展開清單點選則維持展開。
+- `#/ride` 是預設搭車畫面：乾淨地圖、上下車點、促銷區與機場接送。sheet 固定，沒有 `data-drag`、拉把或上下拉手勢；選好下車點才顯示叫車鈕。
+- `#/explore` 才顯示四個附近地點與可上下拉的 sheet。點地圖 pin 或清單地點後，網址寫成 `#/explore?area=<地點 id>`；收合態顯示地區名稱、距離、卡片收集數與設為下車點，展開態顯示周邊卡片。從地圖點選會先收合，從展開清單點選維持展開；下拉只收合，仍留在探索。
 - 四組展示對應：`glass-kiln → p11,p17`、`market → p1,p2,p7,p20`、`moat → p3,p19`、`hill → p6,p21`。群組只定義卡片歸屬，收集與公里數仍由 `STATE`／`MOCK`／`APP.fmt` 計算；卡片不連地點詳情。
-- 舊 `/place/:id`、探索與回顧路由仍能直接開啟，供既有資料和流程對照；新底欄和叫車卡片面板不導向它們。
+- 探索選地區後點「設為下車點」會回 `#/ride` 並填好欄位；`/album` 是探索的次頁。舊 `/place/:id`、路線與回顧路由仍能直接開啟，供既有資料和流程對照。
 
 ## 1. 檔案配置
 
@@ -53,7 +54,7 @@ app/
   js/app.js                 核心：window.APP（router、view registry、store、fmt、nav、ui、map）
   js/views/system.js        設定、onboarding、推播浮層、demo 工具、分享
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
-  js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、解鎖三幕、路線列表／詳情
+  js/views/explore.js       舊探索地圖、地方詳情（K1）、前往中、解鎖三幕、路線列表／詳情；探索首頁在 ride.js
   js/views/album.js         收藏（S3＋X4）、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   tools/serve.py            本機靜態伺服器（測 PWA 用）
@@ -178,8 +179,7 @@ APP.ui.share(opt)                                 // SHELL.shareSheet；第一�
 APP.ui.push({ when:'am'|'pm' })                   // 推播浮層（system.js 實作並掛到 APP.ui.push）
 APP.ui.setStatus(tone)                            // 切狀態列字色
 ```
-tab bar：`<nav class="tabbar" id="tabbar">` 沿用 chengshi.css 樣式與 `TABSETS.default` 的圖示；
-探索 tab 在「今天的地方還沒收」時有 `.tabbar__dot`（不是未讀數字）。
+tab bar：`<nav class="tabbar" id="tabbar">` 只有「搭車／探索」兩項；`/album` 是從探索進入的次頁，不顯示底欄。
 
 ### 3.6 地圖
 ```js
@@ -187,9 +187,9 @@ const m = APP.map.mount(containerEl, {
   style: 'paper',            // hsmap preset；叫車首頁 paper、足跡 fog、夜間回顧可 navy
   center: 'station' | [lat, lon] | placeId,
   spanM: 1800,
-  spots: MOCK.SPOTS | false, // 要疊哪些景點；叫車首頁 ≤ 4、探索地圖 ≤ 10（超過就 throw）
+  spots: MOCK.SPOTS | false, // 搭車首頁 false；探索首頁 ≤ 4、舊探索地圖 ≤ 10（超過就 throw）
   max: 4,
-  compact: true,             // .spot--compact（叫車首頁用）
+  compact: true,             // .spot--compact（探索首頁用）
   fog: false | { seen:[...], fade:[...] },
   pan: true,                 // 加 data-pan 並 INTERACT.initPan
   onSpot(spot, el) {}        // 點景點（小卡由呼叫端畫；可用 SHELL.bindPeek）
@@ -205,7 +205,7 @@ container 要有尺寸（.map 以 `position:absolute; inset:0` 填滿它；conta
 max 預設 10；`spots.length > max` 直接 throw。
 內部：建 `<div class="map app-map" data-pan><svg class="map__svg"></svg><div class="map__spots" data-panlayer></div></div>`，
 `HSMAP.render(svg, …)` → `handle.spotsAt(list, {clamp:true})` → `SHELL.renderSpots`。右下角 ODbL 署名由 hsmap 自帶，不要關。
-叫車首頁的 pin（上車點）與景點 `.spot` 是兩套標記，不共用 class。
+上車點 pin 與探索景點 `.spot` 是兩套標記，不共用 class；搭車首頁沒有 `.spot`。
 
 ## 4. DOM 契約（測試與 CSS 都靠它）
 
@@ -233,7 +233,7 @@ demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-pane
 - 數字不手寫：統計、車資、時間、距離、覆蓋率全從 `STATE／MOCK／APP.fmt` 算。
 - 不加 CDN、不加 webfont、不連網（sw.js 只快取同源檔）。
 - 隱私分軌：日誌／心情／照片只有你（沒有分享鍵）；明信片／獎章／週回顧／長輩圖才可分享。
-- 推播一天最多兩則；叫車地圖 ≤ 4 景點；探索地圖 ≤ 10；抵達驗證 80 公尺內停 1 分鐘（文案用）。
+- 推播一天最多兩則；搭車地圖 0 個卡片地點，探索首頁 ≤ 4 個，舊探索地圖 ≤ 10 個；抵達驗證 80 公尺內停 1 分鐘（文案用）。
 - 用 `element.onclick`，不用 `addEventListener` 綁按鈕（測試的攔截器裝在後面）。
 - 每個 view 檔頭用中文註解寫：回答什麼／從哪張原型來／刻意沒有的東西。
 
@@ -306,7 +306,7 @@ T.spec('ride', function (t) {
 |---|---|---|---|---|
 | `/` | 導到 `/ride`（第一次開先 `/welcome`） | — | — | core |
 | `/welcome` | onboarding 三張 | null | 新 | system |
-| `/ride` | 叫車首頁（E＋真實地圖＋sheet） | ride | `variant-e-home.html`、`concept-map-home.html`、`variant-k-ride.html` | ride |
+| `/ride` | 預設搭車：乾淨地圖＋固定叫車欄位 | ride | `variant-f-home.html` 的叫車模式、`variant-k-ride.html` | ride |
 | `/dropoff` | 設定下車地點（清單＋搜尋） | ride | 新（參考 `pickup.html` 版型） | ride |
 | `/pickup` | 設定上車地點 | ride | `pickup.html` | ride |
 | `/trip` | 配對中→行程中（「這條路上」卡） | null | `ride.html` | ride |
@@ -315,14 +315,14 @@ T.spec('ride', function (t) {
 | `/points` | 和泰 Points（總數＝明細相加） | ride | `points.html` | ride |
 | `/notify` | 通知中心 | ride | `notify.html` | ride |
 | `/trips` | 行程紀錄 | ride | `trips.html` | ride |
-| `/explore` | 探索（X2 缺口導向＋今天的地方） | explore | `variant-x2-explore.html`、`explore.html`、`variant-l1-explore.html` | explore |
+| `/explore` | 探索地圖＋上下拉卡片面板（`?area=`） | explore | `variant-f-home.html` 的雙模式結構 | ride |
 | `/explore/map` | 探索地圖（真實地圖 ≤ 10 景點、小卡） | explore | `map.html`、`concept-map-explore.html` | explore |
 | `/place/:id` | 地方詳情（K1） | explore | `variant-k1-place.html`、`place.html` | explore |
 | `/going/:id` | 前往中（走路） | null | `going.html` | explore |
 | `/unlock/:id` | 抵達解鎖三幕（`?ride=1` 金框限定版） | null | `unlock.html` | explore |
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
-| `/album` | 收藏（S3 書架＋pill：明信片／獎章 X4／日誌／這一週） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
+| `/album` | 探索的次頁：收藏摘要、明信片與獎章 | null | 原收藏資料與摘要式排版 | album |
 | `/postcard/:id` | 明信片詳情（翻面） | album | `postcard.html` | album |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
 | `/footprint` | 城市足跡（真實地圖＋霧、覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |

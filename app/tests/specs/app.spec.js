@@ -121,12 +121,12 @@ T.spec('app', function (t) {
   }
 
   t.test('tab bar：tab 根出現、tab 為 null 的 view 隱藏', async function (app) {
-    const roots = ['/ride', '/explore', '/album'];
+    const roots = ['/ride', '/explore'];
     for (let i = 0; i < roots.length; i++) {
       await app.go(roots[i]);
       t.ok(tabbarShown(app), 'tab bar 在 ' + roots[i] + ' 應該顯示');
     }
-    const full = ['/settings', '/lookback', '/welcome'];
+    const full = ['/album', '/settings', '/lookback', '/welcome'];
     for (let i = 0; i < full.length; i++) {
       await app.go(full[i]);
       t.ok(!tabbarShown(app), 'tab bar 在 ' + full[i] + '（tab:null）應該隱藏');
@@ -135,14 +135,17 @@ T.spec('app', function (t) {
     t.ok(tabbarShown(app), '回到 /ride tab bar 又出現');
   });
 
-  t.test('tab bar 切換：點「收藏」到 /album', async function (app) {
+  t.test('tab bar 切換：搭車到探索，再回搭車', async function (app) {
     await app.go('/ride');
-    const a = app.$('#tabbar a[href="#/album"], #tabbar [data-tab="album"]');
-    t.ok(a, '#tabbar 裡有到 #/album 的項目');
+    const a = app.$('#tabbar a[href="#/explore"]');
+    t.ok(a, '#tabbar 裡有探索按鈕');
     if (!a) return;
     await app.click(a);
-    await app.at('/album');
-    t.eq(app.doc.body.getAttribute('data-tab'), 'album', 'body[data-tab]');
+    await app.at('/explore');
+    t.eq(app.doc.body.getAttribute('data-tab'), 'explore', '探索模式');
+    await app.click('#tabbar a[href="#/ride"]');
+    await app.at('/ride');
+    t.eq(app.$$('main.view .spot').length, 0, '回搭車地圖不留探索 pin');
   });
 
   t.test('nav.back 回到來處', async function (app) {
