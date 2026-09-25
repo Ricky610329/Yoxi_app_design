@@ -758,7 +758,6 @@
 .ex-unlock.is-done .ex-result { animation: fade-up var(--t-slow) var(--ease-out) both; }
 .ex-unlock__style { display: grid; justify-items: center; gap: 2px; margin: 0 0 var(--sp-3); }
 .ex-unlock__sname { font-size: var(--fs-title); font-weight: var(--fw-heavy); letter-spacing: .14em; }
-.ex-unlock__rare { font-size: var(--fs-cap); opacity: .75; }
 .ex-unlock[data-style="gold"] .ex-unlock__sname { color: var(--gold-lite); }
 .ex-credit { margin: calc(var(--sp-2) * -1) 0 var(--sp-2); font-size: var(--fs-xs); opacity: .6; }
 .ex-credit__a { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; color: inherit; text-decoration: underline; }

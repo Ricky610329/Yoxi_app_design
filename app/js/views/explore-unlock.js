@@ -9,7 +9,7 @@
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板。
      抽卡（data-at=2）：卡背升起 → 蓄力（拍數＝稀有度）→ 點一下翻開 → 依款式給特效（金框最重）。
-     結果（data-at=3）：卡面＋畫風名＋出現機率、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
+     結果（data-at=3）：卡面＋畫風名、一句話、收進收藏（抽到的不寫機率；想看機率按成品右上角的「?」）。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
    特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
    鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；抽完焦點移到「抽到 ○○」那一行。
    走路抵達的抽卡在 mount 做（render 是純函式），結果記在 store.draws，重整、返回都不重抽。
@@ -44,7 +44,7 @@ const openOdds = E.openOdds;
 const collect = E.collect;
 const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
-const styleOf = K.styleOf, oddsPct = K.oddsPct, storedDraw = K.storedDraw, rollDraw = K.rollDraw;
+const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw;
 const closeOdds = K.closeOdds;
 const rideTripFor = K.rideTripFor;
 const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar, distHTML = K.distHTML;
@@ -201,10 +201,6 @@ function renderUnlock(params) {
     ? '<p class="ex-unlock__style" data-draw="' + esc(draw.key) + '" tabindex="-1">' +
         (got ? '' : '<span class="ex-sr">抽到</span>') +
         '<b class="ex-unlock__sname">' + esc(draw.name) + '</b>' +
-        (got ? '' : '<span class="ex-unlock__rare">' +
-          (isRide && draw.gold ? '搭 yoxi 抵達必得'
-            : num(DRAW_STYLES.length) + ' 款之一 · 出現機率 ' + num(oddsPct(draw[isRide ? 'ride' : 'walk']))) +
-        '</span>') +
       '</p>'
     : '';
 
