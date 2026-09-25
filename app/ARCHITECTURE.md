@@ -17,8 +17,8 @@
 | 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
 | 地圖歸誰 | **F＋E** 同頁切模式 | 叫車首頁是真實新竹地圖（`HSMAP` paper）；搭車不顯示景點，探索同時最多 **4** 個景點，可設為下車點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
-| 收藏組織 | 摘要式首頁 | 明信片主卡、兩張統計卡、明信片與獎章網格；舊路線書架只作對照 |
-| 獎章呈現 | **X4** 勳章牆 | 沒有進度環、沒有集點卡；寫「收集 4/8」 |
+| 收藏組織 | 摘要式首頁 | 「我的明信片」主卡（張數＋明信片網格收在裡面）、兩張統計卡、獎章精選卡；舊路線書架只作對照 |
+| 獎章呈現 | **X4** 勳章牆（六角章） | 首頁放大最近收下的一枚＋一列小章＋「顯示全部」→ `/badges` 三欄章牆；沒有進度環、沒有集點卡；還在路上的寫「收集 4/8」 |
 | 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
 | 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/explore`／`/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
 | 儀式 | 三幕解鎖（主線） | 灰點爆開上色 → AI 生成中 → 成品；點畫面可跳到成品 |
@@ -54,7 +54,7 @@ app/
   js/views/system.js        設定、onboarding、推播浮層、demo 工具、分享
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、解鎖三幕、路線列表／詳情
-  js/views/album.js         收藏（S3＋X4）、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
+  js/views/album.js         收藏（摘要式＋X4 六角章）、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   tools/serve.py            本機靜態伺服器（測 PWA 用）
   tools/make-icons.py       產生 PWA 圖示
@@ -323,7 +323,8 @@ T.spec('ride', function (t) {
 | `/unlock/:id` | 抵達解鎖三幕（`?ride=1` 金框限定版） | null | `unlock.html` | explore |
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
-| `/album` | 收藏（S3 書架＋pill：明信片／獎章 X4／日誌／這一週） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
+| `/album` | 收藏（明信片主卡含網格、統計、獎章精選卡；`?tab=` 舊連結照樣落在這頁） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
+| `/badges` | 全部獎章（三欄六角章牆） | album | 新（參考 `variant-x4-badges.html`） | album |
 | `/postcard/:id` | 明信片詳情（翻面） | album | `postcard.html` | album |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
 | `/footprint` | 城市足跡（真實地圖＋霧、覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |

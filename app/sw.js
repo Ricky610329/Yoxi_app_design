@@ -16,7 +16,7 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v10';
+const VERSION = 'chengshi-app-v11';
 
 // 路徑相對於 sw.js（app/）。順序照 ARCHITECTURE §2 的載入順序。
 const PRECACHE = [

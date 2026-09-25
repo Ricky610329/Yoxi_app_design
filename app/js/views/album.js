@@ -2,10 +2,11 @@
    yoxi 城事 web app — album 區塊（收藏 tab）
    契約：app/ARCHITECTURE.md §0（S3 路線書架＋X4 勳章牆、隱私分軌、長輩圖是分享選項）、§3、§5、§8。
 
-   這支註冊七個 view：
-     /album           收藏首頁。回答「這一個月我真的出門了嗎」：統計三格、pill 四段。
-                      來源：variant-s3-album.html（書架骨架）、album.html（pill、「新」角標、日誌）、
-                            variant-x4-badges.html（勳章牆；只取 disc 那一版）。
+   這支註冊八個 view：
+     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋明信片網格收在裡面）、統計兩格、
+                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。
+                      舊的書架＋pill 四段留在 legacyAlbumHome 當對照，不註冊。
+     /badges          全部獎章：三欄六角章牆，收下的寫日期、還在路上的寫「收集 n/m」。
      /postcard/:id    明信片詳情，點一下翻面看背面敘事。來源：postcard.html。
      /badge/:id       獎章詳情。來源：badge.html。
      /footprint       城市足跡：真實地圖＋霧、覆蓋率由 hsmap 取樣格算。來源：fogmap.html、concept-map-footprint.html。
@@ -15,6 +16,8 @@
 
    刻意沒有的東西：
    - 連續天數、排名、限量、倒數、未讀數字；獎章的進度環與集點卡（X4 選了勳章牆）。
+   - 獎章章面不刻年份：刻了像「年度限定」，跟「沒有期限、不會過期」相衝；刻 yoxi。
+   - 明信片網格不逐張貼「AI 生成示意」（22 張會變成標籤牆），主卡底下一行講一次。
    - 日誌／心情／照片沒有分享鍵（隱私分軌）；只有明信片與週回顧右上有分享。
    - 書架沒有「一次攤開 22 張」：L1 一屏一事，/album 可按數 ≤ 12，
      所以同一時間只攤開一層書架（最多 3 格＋「全部 n 張」），其他層收成書脊。
@@ -95,6 +98,102 @@ function badgeCount() {
     got: list.filter(function (b) { return STATE.badge(b.id).got; }).length,
     total: list.length,
   };
+}
+
+/* 收下那一天：組成的卡都收了，最晚那一張的日期（'MM.DD'）；還沒收齊回 null */
+function badgeDate(r) {
+  if (!r.got) return null;
+  let last = null;
+  r.ids.forEach(function (cid) {
+    const c = STATE.card(cid);
+    if (c && (!last || String(c.date) > last)) last = String(c.date);
+  });
+  return last;
+}
+function badgeWhen(x) { return x.date ? YEAR() + '.' + x.date : badgeProg(x.r); }
+
+/* 收藏首頁與 /badges 的順序：收下的在前（最近收下的最前），還在路上的照收集比例排 */
+function badgeOrder() {
+  return (M().BADGES || []).map(function (b) {
+    const r = STATE.badge(b.id);
+    return { b: b, r: r, date: badgeDate(r) };
+  }).sort(function (x, y) {
+    if (x.date && y.date) return x.date < y.date ? 1 : x.date > y.date ? -1 : 0;
+    if (x.date || y.date) return x.date ? -1 : 1;
+    return (y.r.total ? y.r.done / y.r.total : 0) - (x.r.total ? x.r.done / x.r.total : 0);
+  });
+}
+
+/* ---- 獎章的章面：六角形、銀框、斜切兩色（上是這枚的顏色、右下是銀）、中間刻一個字 ----
+   顏色借 MOCK.ART 的明信片色票（跟那一組地方同一種天色），不另寫色碼；
+   銀色用 tokens（album.css 的 .alb-hex__s*）。沒登記的獎章：第一張卡的色票、名字第一個字。 */
+const MEDAL = {
+  b1: { art: 'market',  glyph: '舊' },
+  b3: { art: 'station', glyph: '站' },
+  b2: { art: 'moat',    glyph: '水' },
+  b4: { art: 'hakka',   glyph: '灣' },
+  b5: { art: 'glass',   glyph: '玻' },
+  b6: { art: 'lake',    glyph: '山' },
+};
+let medalSeq = 0;
+
+/* 尖頂六角形、圓角：每個角用一段二次曲線帶過 */
+function hexPath(R, r) {
+  const V = [];
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI / 180 * (60 * i - 90);
+    V.push([50 + R * Math.cos(a), 50 + R * Math.sin(a)]);
+  }
+  const k = r / R;
+  const pt = function (p) { return p[0].toFixed(2) + ' ' + p[1].toFixed(2); };
+  const toward = function (p, q) { return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]; };
+  return V.map(function (v, i) {
+    const a = toward(v, V[(i + 5) % 6]), b = toward(v, V[(i + 1) % 6]);
+    return (i ? 'L' : 'M') + pt(a) + 'Q' + pt(v) + ' ' + pt(b);
+  }).join('') + 'Z';
+}
+const HEX_RIM = hexPath(48, 9);
+const HEX_FACE = hexPath(40.5, 6.5);
+
+function medalSVG(b, got) {
+  const m = MEDAL[b.id] || {};
+  const first = cardById(b.ids[0]);
+  const art = (M().ART || {})[m.art] || (M().ART || {})[first && first.art] || { sky: [] };
+  const sky = art.sky;
+  const glyph = m.glyph || String(b.name || '').charAt(0);
+  const id = 'md' + (medalSeq++);
+  const silver = function (gid, x2, y2, stops) {
+    return '<linearGradient id="' + id + gid + '" x1="0" y1="0" x2="' + x2 + '" y2="' + y2 + '">' +
+      stops.map(function (s) { return '<stop offset="' + s[0] + '" class="alb-hex__' + s[1] + '"/>'; }).join('') +
+      '</linearGradient>';
+  };
+  return '<svg class="alb-hex' + (got ? '' : ' is-locked') + '" viewBox="0 0 100 100" aria-hidden="true">' +
+    '<defs>' +
+      silver('r', 1, 1, [[0, 's1'], [.42, 's2'], [.58, 's1'], [1, 's3']]) +
+      silver('b', 1, 0, [[0, 's2'], [.5, 's1'], [1, 's2']]) +
+      silver('e', 1, 1, [[0, 's1'], [1, 's2']]) +
+      '<linearGradient id="' + id + 'f" x1="0" y1="0" x2=".7" y2="1">' +
+        '<stop offset="0" stop-color="' + esc(sky[1] || '') + '"/>' +
+        '<stop offset=".55" stop-color="' + esc(sky[1] || '') + '"/>' +
+        '<stop offset="1" stop-color="' + esc(sky[2] || sky[1] || '') + '"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" class="alb-hex__s1" stop-opacity=".55"/><stop offset=".5" class="alb-hex__s1" stop-opacity="0"/>' +
+      '</linearGradient>' +
+      '<clipPath id="' + id + 'c"><path d="' + HEX_FACE + '"/></clipPath>' +
+    '</defs>' +
+    '<path class="alb-hex__rim" d="' + HEX_RIM + '" fill="url(#' + id + 'r)"/>' +
+    '<g clip-path="url(#' + id + 'c)">' +
+      '<rect width="100" height="100" fill="url(#' + id + 'f)"/>' +
+      '<text class="alb-hex__glyph alb-hex__glyph--shade" x="46" y="45">' + esc(glyph) + '</text>' +
+      '<text class="alb-hex__glyph" x="45" y="44" fill="' + esc(sky[0] || '') + '" stroke="url(#' + id + 'e)">' + esc(glyph) + '</text>' +
+      '<path d="M0 88 L100 54 L100 100 L0 100Z" fill="url(#' + id + 'b)"/>' +
+      '<path class="alb-hex__ridge" d="M0 88 L100 54" stroke="url(#' + id + 'r)"/>' +
+      '<text class="alb-hex__mark" x="70" y="75" transform="rotate(-18.8 70 75)">yoxi</text>' +
+      '<rect width="100" height="100" fill="url(#' + id + 'g)"/>' +
+    '</g>' +
+    '<path class="alb-hex__edge" d="' + HEX_FACE + '"/>' +
+  '</svg>';
 }
 
 /* 卡片背面的一段話：原型寫好的三張 → 地點的「以前的它」→ 通用句 */
@@ -358,15 +457,15 @@ function weekPanel() {
       '<span class="arrow"></span></a>';
 }
 
-/* 雙主頁第一版：摘要、統計、明信片、獎章直接往下看。舊的細節 view 仍可讀舊連結。 */
+/* 雙主頁第一版：明信片主卡（網格收在裡面）、統計、獎章精選卡往下看。舊的細節 view 仍可讀舊連結。 */
 function albumV2CardHTML(p) {
   const got = STATE.card(p.id);
   const fresh = !!got && STATE.lastIsNew && STATE.all.lastCard === p.id;
   return '<div class="alb-v2__postcard' + (got ? ' is-collected' : '') + (fresh ? ' postcard--fresh' : '') + '" data-card="' + esc(p.id) + '">' +
     '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '">' +
-      '<span class="ai-mark">AI 生成示意</span>' + (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
+      (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
     '<strong>' + esc(p.name) + '</strong>' +
-    '<small>' + (got ? (fresh ? '新收下' : '已收藏') : '還沒收下') + '</small></div>';
+    '<small>' + (got ? (fresh ? '新收下' : esc(got.date) + ' 收下') : '還沒收下') + '</small></div>';
 }
 function albumV2CardsHTML(all) {
   const cards = M().POSTCARDS || [];
@@ -377,31 +476,53 @@ function albumV2CardsHTML(all) {
       ? '<button class="alb-v2__more" type="button" data-act="show-all-cards">全部 ' + cards.length + ' 張明信片</button>'
       : '<button class="alb-v2__more" type="button" data-act="show-recent-cards">收起來</button>');
 }
+/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges） */
+const MEDAL_MINI = 5;
+function albumV2MedalsHTML() {
+  const list = badgeOrder();
+  const bc = badgeCount();
+  const top = list[0];
+  const rest = list.slice(1);
+  const extra = rest.length - MEDAL_MINI;
+  return '<section class="alb-v2__medals" aria-label="獎章">' +
+    '<div class="alb-v2__section-head"><h2>獎章</h2><span data-stat="badges">' + bc.got + '/' + bc.total + '</span></div>' +
+    (top
+      ? '<a class="alb-v2__medal-top" href="#/badge/' + esc(top.b.id) + '" data-act="go-badge" data-badge="' + esc(top.b.id) + '">' +
+          medalSVG(top.b, top.r.got) +
+          '<strong>' + esc(top.r.name) + '</strong>' +
+          '<small data-badge-when>' + esc(badgeWhen(top)) + '</small></a>'
+      : '') +
+    '<div class="alb-v2__medal-foot">' +
+      '<span class="alb-v2__medal-row" aria-hidden="true">' + rest.slice(0, MEDAL_MINI).map(function (x) {
+        return '<span class="alb-v2__medal-mini">' + medalSVG(x.b, x.r.got) + '</span>';
+      }).join('') + '</span>' +
+      '<a class="alb-v2__medal-all" href="#/badges" data-act="go-badges">' +
+        (extra > 0 ? '<small>+' + extra + ' 枚</small>' : '') + '顯示全部</a>' +
+    '</div>' +
+  '</section>';
+}
+
 function albumV2Render() {
   const cards = M().POSTCARDS || [];
   const got = cards.filter(function (p) { return STATE.has(p.id); });
-  const badges = badgeCount();
-  const recent = got.slice(-3).reverse();
   return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
       '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
         '<p>走過的地方，都留在這裡。</p></header>' +
-      '<section class="alb-v2__hero" aria-label="明信片摘要">' +
-        '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
-          '<strong data-stat="cards">' + got.length + '</strong><span>／' + cards.length + ' 張</span></div>' +
-          '<p>一張卡，記下一個到過的地方。</p></div>' +
-        '<div class="alb-v2__stack" aria-hidden="true">' + recent.map(function (p, i) {
-          return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + '" data-art="' + esc(p.art) +
-            '" data-seed="' + cardIdx(p) + '"></span>';
-        }).join('') + '</div>' +
+      '<section class="alb-v2__hero" aria-label="我的明信片">' +
+        '<div class="alb-v2__hero-head">' +
+          '<div><span class="alb-v2__label">我的明信片</span>' +
+            '<p>一張卡，記下一個到過的地方。</p></div>' +
+          '<div class="alb-v2__hero-count"><strong data-stat="cards">' + got.length + '</strong>' +
+            '<span>／' + cards.length + ' 張</span></div>' +
+        '</div>' +
+        '<div class="alb-v2__hero-cards" data-alb-v2-cards>' + albumV2CardsHTML(false) + '</div>' +
+        '<p class="alb-v2__ai">明信片是 AI 依地點生成的示意圖，不是實景照片。</p>' +
       '</section>' +
       '<div class="alb-v2__stats">' +
         '<div class="alb-v2__stat"><span>去過的地方</span><strong data-stat="places">' + STATE.count() + '</strong><small>個地方</small></div>' +
         '<div class="alb-v2__stat"><span>留下的距離</span><strong data-stat="km">' + esc(STATE.all.km) + '</strong><small>公里</small></div>' +
       '</div>' +
-      '<section class="alb-v2__section"><div class="alb-v2__section-head"><h2>明信片</h2><span>收集 ' + got.length + '/' + cards.length + '</span></div>' +
-        '<div data-alb-v2-cards>' + albumV2CardsHTML(false) + '</div></section>' +
-      '<section class="alb-v2__section alb-v2__section--badges"><div class="alb-v2__section-head"><h2>獎章</h2>' +
-        '<span data-stat="badges">' + badges.got + '/' + badges.total + '</span></div>' + badgesPanel() + '</section>' +
+      albumV2MedalsHTML() +
     '</div></div>';
 }
 function albumV2Mount(root) {
@@ -426,6 +547,29 @@ APP.view('album', {
   title: '收藏',
   render: albumV2Render,
   mount: albumV2Mount,
+});
+
+/* ================================================================ /badges */
+
+/* 全部獎章：三欄章牆。收下的寫日期，還在路上的寫「收集 n/m」並上灰。 */
+APP.view('badges', {
+  path: '/badges',
+  tab: 'album',
+  status: 'dark',
+  title: '獎章',
+  render: function () {
+    return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
+      '<header class="alb-v2__header alb-v2__header--sub">' +
+        '<a class="alb-v2__back" href="#" data-back="/album" aria-label="返回"><span class="arrow arrow--left"></span></a>' +
+        '<h1>獎章</h1><p>湊齊一組地方，就收下一枚。沒有期限，也不會過期。</p></header>' +
+      '<div class="alb-v2__medal-grid">' + badgeOrder().map(function (x) {
+        return '<a class="alb-v2__medal-cell' + (x.r.got ? '' : ' is-locked') + '" href="#/badge/' + esc(x.b.id) + '" data-badge="' + esc(x.b.id) + '">' +
+          medalSVG(x.b, x.r.got) +
+          '<strong>' + esc(x.r.name) + '</strong>' +
+          '<small data-badge-when>' + esc(badgeWhen(x)) + '</small></a>';
+      }).join('') + '</div>' +
+    '</div></div>';
+  },
 });
 
 /* 舊版首頁的組織方式留作視覺對照，不註冊到主頁。 */
@@ -524,8 +668,7 @@ APP.view('postcard', {
     const ownerHTML = owner ? (function () {
       const r = STATE.badge(owner.id);
       return '<a class="card alb-row" href="#/badge/' + esc(owner.id) + '" data-act="go-badge">' +
-        '<span class="badge' + (r.got ? '' : ' badge--locked') + ' alb-row__badge"><span class="badge__disc">' +
-        '<span data-icon="' + esc(r.icon) + '"></span></span></span>' +
+        '<span class="alb-row__medal">' + medalSVG(owner, r.got) + '</span>' +
         '<span class="u-fill"><span class="alb-row__t">〈' + esc(r.name) + '〉</span>' +
         '<span class="alb-row__s">' + badgeProg(r) + '</span></span><span class="arrow"></span></a>';
     })() : '<div class="card alb-row"><span class="u-fill"><span class="alb-row__t">還沒歸到任何一枚獎章</span>' +
@@ -648,14 +791,14 @@ APP.view('badge', {
   render: function (params) {
     const B = (M().BADGES || []).filter(function (x) { return x.id === params.id; })[0];
     if (!B) {
-      return notFound({ title: '獎章', back: '/album?tab=badges', eyebrow: '獎章',
+      return notFound({ title: '獎章', back: '/badges', eyebrow: '獎章',
                         t: '找不到這枚', p: '這枚獎章不在收藏裡。' });
     }
     const r = STATE.badge(B.id);
-    return header({ title: '獎章', back: '/album?tab=badges' }) +
+    return header({ title: '獎章', back: '/badges' }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
         '<div class="alb-medal' + (r.got ? '' : ' is-locked') + '" data-got="' + (r.got ? '1' : '0') + '">' +
-          '<div class="alb-medal__disc"><span data-icon="' + esc(r.icon) + '"></span></div>' +
+          '<div class="alb-medal__hex">' + medalSVG(B, r.got) + '</div>' +
           '<h1 class="alb-medal__name">〈' + esc(r.name) + '〉</h1>' +
           (r.got ? '<p class="alb-medal__award" data-award>' + esc(r.award) + '</p>'
                  : '<p class="alb-medal__wait">還在路上 · 沒有期限</p>') +

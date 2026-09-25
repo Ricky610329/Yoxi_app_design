@@ -4,7 +4,7 @@
    ========================================================================== */
 T.spec('album', function (t) {
 
-  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges',
                   '/postcard/p1', '/postcard/p4', '/postcard/p11', '/postcard/nope',
                   '/badge/b1', '/badge/b4', '/badge/nope',
                   '/footprint', '/lookback', '/week', '/elder'];
@@ -61,6 +61,9 @@ T.spec('album', function (t) {
     await app.reset();
     await app.go('/album');
     t.eq(app.text('[data-stat="cards"]'), String(app.STATE.count()), '主卡顯示已收張數');
+    t.ok(app.$('.alb-v2__hero [data-alb-v2-cards]'), '明信片網格收在「我的明信片」主卡裡');
+    t.eq(app.$$('[data-alb-v2-cards] .ai-mark').length, 0, '網格不逐張貼 AI 標籤（主卡講一次）');
+    t.includes(app.text('.alb-v2__hero'), 'AI', '主卡有一行 AI 生成說明');
     t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '先顯示最近四張');
     await app.click('[data-act="show-all-cards"]');
     t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, app.MOCK.POSTCARDS.length, '展開全部明信片');
@@ -68,24 +71,59 @@ T.spec('album', function (t) {
     t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '收起回最近四張');
   });
 
-  /* 3. 獎章格文字＝STATE.badge */
-  t.test('勳章牆「收集 n/m」與 STATE.badge 一致、沒有進度環', async function (app) {
+  /* 3. 獎章：收下的寫日期（組成的卡最晚那一張）、還在路上的寫「收集 n/m」；沒有進度環 */
+  function badgeExpect(app, id) {
+    const S = app.STATE;
+    const r = S.badge(id);
+    if (!r.got) return '收集 ' + r.done + '/' + r.total;
+    const last = r.ids.map(function (c) { return S.card(c).date; }).sort().pop();
+    return new Date().getFullYear() + '.' + last;
+  }
+
+  t.test('/badges 章牆：每一枚的日期或「收集 n/m」與 STATE 一致、收下在前', async function (app) {
     await app.reset();
-    await app.go('/album?tab=badges');
-    app.MOCK.BADGES.forEach(function (b) {
+    await app.go('/badges');
+    const B = app.MOCK.BADGES;
+    t.eq(app.$$('[data-badge]').length, B.length, '每一枚都在');
+    B.forEach(function (b) {
       const r = app.STATE.badge(b.id);
-      t.eq(app.text('[data-badge="' + b.id + '"] .badge__prog'), '收集 ' + r.done + '/' + r.total, b.id);
+      t.eq(app.text('[data-badge="' + b.id + '"] [data-badge-when]'), badgeExpect(app, b.id), b.id);
       const el = app.$('[data-badge="' + b.id + '"]');
-      t.eq(el && el.classList.contains('badge--locked'), !r.got, b.id + ' 亮／灰');
+      t.eq(el && el.classList.contains('is-locked'), !r.got, b.id + ' 亮／灰');
+      t.eq(el && el.getAttribute('href'), '#/badge/' + b.id, b.id + ' 連到詳情');
     });
+    const order = app.$$('[data-badge]').map(function (el) { return app.STATE.badge(el.getAttribute('data-badge')).got; });
+    t.eq(order.indexOf(false) < 0 || order.slice(order.indexOf(false)).indexOf(true) < 0, true, '收下的排在還在路上的前面');
     t.eq(app.$$('.ring, .stampcard').length, 0, '沒有進度環與集點卡');
     await app.go('/badge/b3');
     const r3 = app.STATE.badge('b3');
     t.eq(app.text('[data-prog]'), '收集 ' + r3.done + '/' + r3.total, '/badge/b3 收集 n/m');
     t.ok(r3.got ? !!app.$('[data-award]') : !app.$('[data-award]'), 'award 只在獲得後出現');
+    t.ok(app.$('.alb-medal__hex .alb-hex'), '詳情用同一枚六角章');
     await app.go('/badge/b4');
     t.ok(!app.$('[data-award]'), '未獲得的 b4 沒有 award 文案');
     t.eq(app.$$('[data-member]').length, app.STATE.badge('b4').ids.length, '組成清單');
+  });
+
+  t.test('/album 獎章卡：放大最近收下的一枚，其餘排成一列，顯示全部 → /badges', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    const S = app.STATE, B = app.MOCK.BADGES;
+    const got = B.filter(function (b) { return S.badge(b.id).got; });
+    const newest = got.map(function (b) { return { id: b.id, d: badgeExpect(app, b.id) }; })
+      .sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; })[0];
+    const top = app.$('.alb-v2__medal-top');
+    t.eq(top && top.getAttribute('data-badge'), newest && newest.id, '放大的是最近收下的那一枚');
+    t.eq(app.text('.alb-v2__medal-top [data-badge-when]'), newest && newest.d, '日期＝組成的卡最晚那一張');
+    t.eq(app.$$('.alb-v2__medal-mini').length, Math.min(B.length - 1, 5), '其餘最多五枚小章');
+    await app.click('[data-act="go-badges"]');
+    await app.at('/badges');
+    /* 收一張讓〈水路〉收齊：它變成最近收下的一枚 */
+    S.collect('p18', { date: app.APP.fmt.todayMMDD() });
+    app.APP.emit('state:change');
+    await app.go('/album');
+    t.eq(app.$('.alb-v2__medal-top').getAttribute('data-badge'), 'b2', '收齊〈水路〉後換它放大');
+    t.eq(app.text('[data-stat="badges"]'), (got.length + 1) + '/' + B.length, '獎章數 +1');
   });
 
   /* 隱私分軌 */
@@ -243,13 +281,17 @@ T.spec('album', function (t) {
   /* 5. 返回鍵 */
   t.test('返回鍵回到來處', async function (app) {
     await app.reset();
-    await app.go('/album?tab=badges');
+    await app.go('/album');
+    await app.click('[data-act="go-badges"]');
+    await app.at('/badges');
     await app.click('[data-badge="b3"]');
     await app.at('/badge/b3');
     await app.click('[data-member="p1"]');
     await app.at('/postcard/p1');
     await app.click('main.view[data-view] a[data-back]');
     await app.at('/badge/b3');
+    await app.click('main.view[data-view] a[data-back]');
+    await app.at('/badges');
     await app.click('main.view[data-view] a[data-back]');
     await app.at('/album');
     await app.go('/footprint');

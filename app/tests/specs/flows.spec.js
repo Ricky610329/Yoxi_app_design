@@ -89,7 +89,8 @@ T.spec('flows', function (t) {
     t.ok(!app.$('#tabbar .tabbar__dot'), '底欄沒有提示小圓點');
     const b1 = S.badge('b5');
     t.eq(b1.done, b0.done + 1, '〈' + b0.name + '〉收集 +1');
-    t.eq(app.text('[data-badge="b5"] .badge__prog'), '收集 ' + b1.done + '/' + b1.total, '勳章牆「收集 n/m」');
+    await app.go('/badges');
+    t.eq(app.text('[data-badge="b5"] [data-badge-when]'), '收集 ' + b1.done + '/' + b1.total, '章牆「收集 n/m」');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   }, { timeout: 15000 });
 
@@ -304,7 +305,7 @@ T.spec('flows', function (t) {
     const b = app.$('main.view [data-act="arrive"]');
     t.eq(b && b.textContent.trim(), '模擬抵達', '/going 按鈕文字與 /trip 一致');
     await app.go('/album');
-    t.eq(app.text('.alb-v2__section--badges h2'), '獎章', '獎章區標題');
+    t.eq(app.text('.alb-v2__medals h2'), '獎章', '獎章區標題');
     const bc = app.MOCK.BADGES.filter(function (x) { return app.STATE.badge(x.id).got; }).length;
     t.eq(app.text('[data-stat="badges"]'), bc + '/' + app.MOCK.BADGES.length, '第三格數字仍是 n/m');
   });
@@ -601,7 +602,7 @@ T.spec('flows', function (t) {
       '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/lake', '/place/brick',
       '/going/glass-kiln', '/going/lake', '/unlock/glass-kiln', '/unlock/neiwan?ride=1', '/unlock/lake?ride=1',
       '/routes', '/route/rail', '/route/glass', '/route/water',
-      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges',
       '/postcard/p1', '/postcard/p9', '/postcard/p11', '/badge/b1', '/badge/b5',
       '/footprint', '/lookback', '/week', '/elder', '/settings',
     ].map(function (p) { return { path: p }; });
@@ -1266,7 +1267,8 @@ T.spec('flows', function (t) {
       ['/explore', '.sec__m'],
       ['/place/lake', '.ex-foot__note'],
       ['/points', '.row-nav__sub'],
-      ['/album?tab=badges', '.badge__prog'],
+      ['/badges', '.alb-v2__medal-cell small'],
+      ['/album', '.alb-v2__medal-top small'],
     ];
     for (const s of samples) {
       await app.go(s[0]);
@@ -1338,7 +1340,7 @@ T.spec('flows', function (t) {
   /* 可按元素：命中區（含 ::after 撐大的）至少 40×40；每個都有名字 */
   const A11Y_ROUTES = ['/ride', '/dropoff', '/pickup', '/drawer', '/points', '/notify', '/trips',
     '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/p1', '/going/glass-kiln', '/unlock/glass-kiln',
-    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges',
     '/postcard/p1', '/postcard/p11', '/badge/b1', '/footprint', '/lookback', '/week', '/elder', '/settings', '/welcome'];
   /* 例外（原型就如此、而且不是單一的點擊目標）：地圖景點（本身 38px，周圍是可平移的地圖） */
   const HIT_EXEMPT = '.spot';

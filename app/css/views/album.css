@@ -35,45 +35,97 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__brand { color: var(--yoxi-red); font-size: var(--fs-cap); font-weight: var(--fw-heavy); letter-spacing: .04em; }
 .alb-v2__header h1 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-display); line-height: var(--lh-tight); }
 .alb-v2__header p { color: var(--app-muted); font-size: var(--fs-sm); }
+/* 明信片主卡：網格收在主卡裡面（原本主卡下面另有一段「明信片」，同一個 8/22 講了兩次） */
 .alb-v2__hero {
-  position: relative; display: flex; justify-content: space-between; min-height: 196px;
-  margin: 0 var(--gutter); padding: var(--sp-5); overflow: hidden;
+  margin: 0 var(--gutter); padding: var(--sp-5) var(--sp-4) var(--sp-4);
   border-radius: var(--r-card); background: var(--yoxi-navy); color: var(--yoxi-white);
 }
-.alb-v2__hero > div:first-child { position: relative; z-index: 2; }
+.alb-v2__hero-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); padding: 0 var(--sp-1) var(--sp-4); }
 .alb-v2__label { font-size: var(--fs-sm); font-weight: var(--fw-bold); }
-.alb-v2__hero-count { display: flex; align-items: baseline; margin-top: var(--sp-3); }
-.alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.88); line-height: 1; font-weight: var(--fw-heavy); }
+.alb-v2__hero-head p { margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
+.alb-v2__hero-count { display: flex; flex: none; align-items: baseline; }
+.alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.5); line-height: 1; font-weight: var(--fw-heavy); }
 .alb-v2__hero-count span { font-size: var(--fs-sm); }
-.alb-v2__hero p { max-width: 155px; margin-top: var(--sp-3); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
-.alb-v2__stack { position: absolute; width: 146px; height: 156px; right: var(--sp-2); bottom: var(--sp-2); }
-.alb-v2__stack-art { position: absolute; display: block; width: 89px; height: 126px; overflow: hidden; border: 3px solid var(--yoxi-white); border-radius: var(--r-img); box-shadow: var(--sh-lift); }
-.alb-v2__stack-art > * { width: 100%; height: 100%; }
-.alb-v2__stack-art--0 { right: 0; bottom: 0; transform: rotate(8deg); z-index: 3; }
-.alb-v2__stack-art--1 { right: 28px; bottom: 8px; transform: rotate(-7deg); z-index: 2; }
-.alb-v2__stack-art--2 { right: 49px; bottom: 15px; transform: rotate(-16deg); z-index: 1; }
 .alb-v2__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-3) var(--gutter) 0; }
 .alb-v2__stat { min-height: 128px; padding: var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }
 .alb-v2__stat span, .alb-v2__stat small { display: block; font-size: var(--fs-cap); }
 .alb-v2__stat span { font-weight: var(--fw-bold); }
 .alb-v2__stat strong { display: inline-block; margin-top: var(--sp-3); color: var(--yoxi-red); font-size: var(--fs-display); line-height: 1; }
 .alb-v2__stat small { display: inline-block; margin-left: var(--sp-1); color: var(--app-muted); }
-.alb-v2__section { padding: var(--sp-5) var(--gutter) 0; }
 .alb-v2__section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .alb-v2__section-head h2 { font-size: var(--fs-title); }
 .alb-v2__section-head span { color: var(--app-muted); font-size: var(--fs-cap); }
 .alb-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
-.alb-v2__postcard { min-width: 0; padding: var(--sp-2); border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: var(--yoxi-white); }
+.alb-v2__postcard { min-width: 0; padding: var(--sp-2); border-radius: var(--r-card); background: rgba(255, 255, 255, .08); }
 .alb-v2__art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-img); }
 .alb-v2__art > :first-child { width: 100%; height: 100%; }
 .alb-v2__postcard:not(.is-collected) .alb-v2__art > :first-child { filter: grayscale(1); opacity: .6; }
-.alb-v2__art .ai-mark { position: absolute; left: var(--sp-1); bottom: var(--sp-1); z-index: 2; }
-.alb-v2__postcard strong, .alb-v2__postcard small { display: block; }
+.alb-v2__postcard strong, .alb-v2__postcard small { display: block; color: var(--yoxi-white); }
 .alb-v2__postcard strong { margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: 1.3; }
-.alb-v2__postcard small { margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-xs); }
-.alb-v2__more { display: block; width: 100%; min-height: 44px; margin-top: var(--sp-3); color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
-.alb-v2__section--badges { padding-bottom: var(--sp-5); }
-.alb-v2__section--badges .alb-badges { gap: var(--sp-3); }
+.alb-v2__postcard small { margin-top: var(--sp-1); font-size: var(--fs-xs); opacity: .75; }
+.alb-v2__ai { margin-top: var(--sp-3); font-size: var(--fs-xs); line-height: var(--lh-body); opacity: .75; }
+.alb-v2__more {
+  display: block; width: 100%; min-height: 44px; margin-top: var(--sp-3);
+  border-radius: var(--r-btn); background: var(--yoxi-white);
+  color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold);
+}
+
+/* 獎章精選卡：最近收下的一枚放大，下面一列小章疊在一起＋「顯示全部」 */
+.alb-v2__medals {
+  margin: var(--sp-5) var(--gutter); padding: var(--sp-4);
+  border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-white); box-shadow: var(--sh-card);
+}
+.alb-v2__medals .alb-v2__section-head { margin-bottom: 0; }
+.alb-v2__medal-top { display: flex; flex-direction: column; align-items: center; padding: var(--sp-4) 0 var(--sp-5); text-align: center; }
+.alb-v2__medal-top .alb-hex { width: 168px; height: 168px; }
+.alb-v2__medal-top strong { margin-top: var(--sp-3); font-size: var(--fs-lead); line-height: var(--lh-tight); }
+.alb-v2__medal-top small { margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-sm); }
+.alb-v2__medal-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.alb-v2__medal-row { display: flex; padding-left: 10px; }
+.alb-v2__medal-mini { position: relative; width: 40px; height: 40px; margin-left: -10px; }
+.alb-v2__medal-mini .alb-hex { width: 100%; height: 100%; }
+.alb-v2__medal-mini:nth-child(1) { z-index: 5; }
+.alb-v2__medal-mini:nth-child(2) { z-index: 4; }
+.alb-v2__medal-mini:nth-child(3) { z-index: 3; }
+.alb-v2__medal-mini:nth-child(4) { z-index: 2; }
+.alb-v2__medal-mini:nth-child(5) { z-index: 1; }
+.alb-v2__medal-all {
+  display: flex; flex: none; flex-direction: column; align-items: flex-end; justify-content: center;
+  min-height: 44px; color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold);
+}
+.alb-v2__medal-all small { color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-med); }
+
+/* 全部獎章（/badges）：三欄章牆 */
+.alb-v2__header--sub { padding-top: var(--sp-3); }
+.alb-v2__back {
+  display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: var(--sp-3);
+  border-radius: var(--r-pill); background: var(--yoxi-mist);
+}
+.alb-v2__medal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); padding: var(--sp-2) var(--gutter) var(--sp-6); }
+.alb-v2__medal-cell { display: flex; flex-direction: column; align-items: center; min-width: 0; text-align: center; }
+.alb-v2__medal-cell .alb-hex { width: 100%; max-width: 108px; height: auto; aspect-ratio: 1 / 1; }
+.alb-v2__medal-cell strong { margin-top: var(--sp-2); font-size: var(--fs-sm); line-height: 1.3; }
+.alb-v2__medal-cell small { margin-top: 2px; color: var(--app-muted); font-size: var(--fs-cap); }
+
+/* 六角章本體（album.js medalSVG）：銀色全用 tokens，章面顏色在 SVG 裡取 MOCK.ART 色票 */
+.alb-hex { display: block; overflow: visible; filter: drop-shadow(0 2px 3px rgba(6, 32, 64, .2)); }
+.alb-hex.is-locked { filter: grayscale(1); opacity: .5; }
+.alb-hex__s1 { stop-color: var(--yoxi-white); }
+.alb-hex__s2 { stop-color: var(--yoxi-slate-lite); }
+.alb-hex__s3 { stop-color: var(--yoxi-slate); }
+.alb-hex__rim { stroke: var(--yoxi-slate); stroke-width: .8; }
+.alb-hex__edge { fill: none; stroke: var(--yoxi-slate); stroke-width: 1; opacity: .6; }
+.alb-hex__ridge { fill: none; stroke-width: 2.4; }
+.alb-hex__glyph {
+  font-size: 40px; font-weight: var(--fw-heavy); text-anchor: middle; dominant-baseline: central;
+  fill-opacity: .28; stroke-width: 1.5; stroke-linejoin: round;
+}
+.alb-hex__glyph--shade { fill: none; stroke: var(--yoxi-navy); opacity: .2; }
+.alb-hex__mark {
+  font-size: 10px; font-weight: var(--fw-heavy); letter-spacing: .06em; text-anchor: middle;
+  fill: none; stroke: var(--yoxi-slate); stroke-width: .6;
+}
 
 /* ---- 一列可按的卡（回顧入口、週回顧入口、長輩圖、所屬獎章） ---- */
 .alb-row {
@@ -90,9 +142,8 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-row__icon { background: rgba(255, 255, 255, .14); }
 .alb-row__icon [data-icon] { width: 24px; height: 24px; display: block; }
 .alb-row .tile-icon [data-icon] { width: 24px; height: 24px; display: block; }
-.alb-row__badge { width: auto; }
-.alb-row__badge .badge__disc { width: 52px; height: 52px; }
-.alb-row__badge .badge__disc svg { width: 28px; height: 28px; }
+.alb-row__medal { width: 52px; height: 52px; flex: none; }
+.alb-row__medal .alb-hex { width: 100%; height: 100%; }
 
 /* ---- S3 書架 ---- */
 .alb-shelf { margin-bottom: var(--sp-3); }
@@ -235,23 +286,8 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 
 /* ---- 獎章詳情 ---- */
 .alb-medal { padding: var(--sp-6) var(--sp-5) 28px; background: var(--yoxi-white); text-align: center; }
-.alb-medal__disc {
-  width: 132px;
-  height: 132px;
-  margin: 0 auto;
-  border-radius: var(--r-pill);
-  display: grid;
-  place-items: center;
-  background: var(--yoxi-cream);
-  box-shadow: inset 0 0 0 6px var(--yoxi-cream-deep);
-}
-.alb-medal__disc [data-icon] { width: 66px; height: 66px; display: block; }
-.alb-medal.is-locked .alb-medal__disc {
-  background: var(--yoxi-mist);
-  box-shadow: inset 0 0 0 6px var(--yoxi-line);
-  filter: grayscale(1);
-  opacity: .75;
-}
+.alb-medal__hex { width: 168px; height: 168px; margin: 0 auto; }
+.alb-medal__hex .alb-hex { width: 100%; height: 100%; }
 .alb-medal__name { margin-top: 18px; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
 .alb-medal__award { margin-top: var(--sp-3); font-size: var(--fs-body); line-height: 1.8; color: var(--yoxi-navy); }
 .alb-medal__wait { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--app-muted); }
@@ -425,4 +461,3 @@ main.view .alb-row [data-icon] > svg,
 main.view .alb-fact [data-icon] > svg,
 main.view .alb-member__check > svg,
 main.view .alb-cell__lock [data-icon] > svg { width: 100%; height: 100%; display: block; }
-.alb-row__badge .badge__disc [data-icon] { width: 28px; height: 28px; display: block; }
