@@ -265,20 +265,29 @@ function callRide() {
   if (t && t.phase !== 'done') { APP.nav.go('/trip'); return; }
   const d = store().get('dropoff');
   if (!d || !d.id || !APP.place(d.id)) { APP.ui.toast('先選一個下車點'); return; }
-  /* 上一趟的限定版還沒收：先問一次。先去解鎖 → 不建新 trip；直接叫車 → 新行程覆蓋舊的（契約 §3.3 只有一筆 trip） */
+  /* 上一趟的限定版還沒收：先問一次。先去解鎖 → 不建新 trip；直接叫車 → 新行程覆蓋舊的（契約 §3.3 只有一筆 trip）。
+     APP.ui.confirm 只回 true／false：按「直接叫車」、按 Esc、點遮罩、導覽離開（core 的 dismissOverlays）都是 false。
+     叫車是有後果的動作，只認真的按了「直接叫車」那一顆（在確認框上用 capture 記下來）；其餘的 false 什麼都不做。 */
   const pend = pendingUnlock();
   if (pend) {
-    if (asking) return;
+    if (asking || document.querySelector('.app-confirm')) return;
     asking = true;
     const snap = rideSnapshot();
-    APP.ui.confirm({ text: pend.limited ? '上一趟的限定明信片還沒收，要先去解鎖嗎？' : '上一趟的明信片還沒收，要先去收下嗎？',
-                     yes: pend.limited ? '先去解鎖' : '先去收下', no: '直接叫車' })
-      .then(function (yes) {
-        asking = false;
-        if (!stillOnRide() || rideSnapshot() !== snap) return;
-        if (yes) APP.nav.go(pend.href.slice(1));
-        else startTrip(d);
-      }, function () { asking = false; });
+    let pickedNo = false;
+    const ask = APP.ui.confirm({ text: pend.limited ? '上一趟的限定明信片還沒收，要先去解鎖嗎？' : '上一趟的明信片還沒收，要先去收下嗎？',
+                                 yes: pend.limited ? '先去解鎖' : '先去收下', no: '直接叫車' });
+    const box = document.querySelector('.app-confirm');
+    if (box) {
+      box.addEventListener('click', function (e) {
+        if (e.target && e.target.closest && e.target.closest('[data-act="confirm-no"]')) pickedNo = true;
+      }, true);
+    }
+    ask.then(function (yes) {
+      asking = false;
+      if (!stillOnRide() || rideSnapshot() !== snap) return;
+      if (yes) APP.nav.go(pend.href.slice(1));
+      else if (pickedNo) startTrip(d);
+    }, function () { asking = false; });
     return;
   }
   startTrip(d);
@@ -429,10 +438,10 @@ function gripHTML(extra, expanded) {
     '<span class="sheet__handle"></span></button>';
 }
 
-/* 真地圖的代價（concept-map-home ②③④）：玻璃窯在 hs-places 跟家同一個座標、
-   東門市場與護城河只差 143 公尺、十八尖山落在定位鈕底下。
-   受保護的矩形（四顆浮動鈕、上車點 pin 與地址標籤、狀態列）當場量，
-   每個景點從真實落點往外找最近的淨空處；找不到就留在原地。 */
+/* 真地圖的代價（concept-map-home ②③④）：玻璃窯在 hs-places 跟家同一個座標、十八尖山落在定位鈕底下。
+   景點彼此推開由 core 的 APP.map.mount 做（m.spots 的 px／py 已經是推開後的位置）；
+   這裡只讓景點避開叫車首頁自己的東西：浮動鈕、上車點 pin 與地址標籤、狀態列。矩形當場量，
+   每個景點從現在的位置往外找最近的淨空處；找不到就留在原地。 */
 function keepClear(map) {
   const H = map.handle;
   const box = map.el.getBoundingClientRect();
@@ -448,7 +457,6 @@ function keepClear(map) {
   const hit = function (a, b, pad) {
     return !(a[2] + pad < b[0] || a[0] - pad > b[2] || a[3] + pad < b[1] || a[1] - pad > b[3]);
   };
-  const placed = [];
   map.spots.forEach(function (s, i) {
     const el = map.spotsEl.querySelector('.spot[data-i="' + i + '"]');
     if (!el) return;
@@ -461,13 +469,11 @@ function keepClear(map) {
         const bx = [X - w / 2, Y - w - 8, X + w / 2, Y + 8];
         if (bx[0] < 8 || bx[2] > H.width - 8 || bx[1] < 2 || bx[3] > H.height - 6) continue;
         if (rects.some(function (R) { return hit(bx, R, 4); })) continue;
-        if (placed.some(function (P) { return hit(bx, P, 4); })) continue;
-        best = [X, Y, bx];
+        best = [X, Y];
         break;
       }
     }
     if (!best) return;
-    placed.push(best[2]);
     el.style.left = (best[0] / H.width * 100).toFixed(1) + '%';
     el.style.top = (best[1] / H.height * 100).toFixed(1) + '%';
   });
@@ -495,7 +501,8 @@ function rideRender() {
               ' · 預估 <b class="num ride-em">$<span data-fare>' + F.fare(km) + '</span></b>' +
               ' · 車程 <span class="num" data-min>' + F.rideMin(km) + '</span> 分') + '</span>' +
         '</a>' +
-        (tp ? '' : '<button class="ride-drop__clear" type="button" data-act="clear-dropoff">清除</button>') +
+        /* 金色入口在的時候不放「清除」：那一刻的事是先收明信片或叫車（可按數 ≤ 10）；要換地方點下車點本身就好 */
+        (tp || pend ? '' : '<button class="ride-drop__clear" type="button" data-act="clear-dropoff">清除</button>') +
       '</div>'
     : '<a class="route-input__field" href="#/dropoff" data-act="pick-dropoff">' +
         '<span class="route-input__value route-input__value--ph">要去哪裡？</span></a>';
@@ -676,9 +683,10 @@ function areaIntroHTML(a) {
       '<button class="btn-ghost" type="button" data-act="expand-cards">收集</button>' +
     '</div>';
 }
-/* 懸浮小卡：翻面鈕在前、關閉鈕在後（關閉鈕用定位放在右上角），Tab 在兩顆之間繞 */
+/* 懸浮小卡：翻面鈕在前、關閉鈕在後（關閉鈕用定位放在右上角），Tab 在兩顆之間繞。
+   掛在 .device 上（main.view 外面）：遮罩連底欄一起蓋住；data-overlay 讓 core 導覽時收掉它 */
 function rideCardFloatHTML() {
-  return '<div class="ride-card-float" data-card-float role="dialog" aria-modal="true" aria-label="卡片" hidden>' +
+  return '<div class="ride-card-float" data-card-float data-overlay role="dialog" aria-modal="true" aria-label="卡片" hidden>' +
     '<div class="ride-card-float__wrap">' +
       '<button class="ride-card-float__object" type="button" data-act="flip-card" aria-label="翻到卡片背面" aria-pressed="false">' +
         '<span class="ride-card-float__front" data-card-front></span>' +
@@ -696,7 +704,7 @@ function rideV2Render(params, ctx) {
       rideModePills('explore') +
       '<div class="ride-v2__intro" data-area-intro>' + areaIntroHTML(a) + '</div>' +
       '<div class="ride-v2__expanded" data-expand-only data-area-expanded>' + areaCardsHTML(a) + '</div>' +
-    '</section>' + rideCardFloatHTML();
+    '</section>';
 }
 function rideV2Mount(root, params, ctx) {
   rideHere();
@@ -705,9 +713,6 @@ function rideV2Mount(root, params, ctx) {
   const host = root.querySelector('[data-ride-map]');
   const intro = root.querySelector('[data-area-intro]');
   const expanded = root.querySelector('[data-area-expanded]');
-  const floating = root.querySelector('[data-card-float]');
-  const floatCard = floating.querySelector('[data-act="flip-card"]');
-  const closeBtn = floating.querySelector('[data-act="close-card"]');
   const tabbar = document.getElementById('tabbar');
   let selected = cardArea(ctx.query.get('area')) || nearestCardArea();
   if (!cardArea(ctx.query.get('area'))) APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
@@ -754,29 +759,69 @@ function rideV2Mount(root, params, ctx) {
     if (fromMap) setSheet('collapsed');    /* 收到只剩拉把時，點景點把面板叫回來 */
   }
 
-  /* ---- 懸浮小卡：APP.ui.a11yDialog 管焦點與 Esc；開著的時候地圖、面板、底欄都 inert（點不到、Tab 不到） ---- */
-  let release = null, returnFocus = null, yieldBefore = false;
+  /* ---- 懸浮小卡 ----
+     第一次打開才建、掛在 .device 上（main.view 外面、data-overlay）：遮罩連底欄一起蓋住，
+     導覽時 core 的 dismissOverlays 叫 _dismiss 收掉（舊版 core 沒有它：這一頁的 cleanup 也會收）。
+     APP.ui.a11yDialog 管焦點、Esc、關掉後焦點回到點開的那張卡。新版 core 的 a11yDialog 另外讓 #view／#tabbar inert、
+     Tab 在框裡繞；舊版沒有（看有沒有 APP.ui.dismissOverlays）就在這裡自己補。 */
+  const coreDialog = typeof APP.ui.dismissOverlays === 'function';
+  let floating = null, floatCard = null, release = null, returnFocus = null;
   function behind(on) {
-    [host, sheet, tabbar].forEach(function (el) { if (el) el.inert = on; });
+    if (coreDialog) return;
+    ['view', 'tabbar'].forEach(function (id) { const el = document.getElementById(id); if (el) el.inert = on; });
+  }
+  function ensureFloat() {
+    if (floating && floating.isConnected) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = rideCardFloatHTML();
+    floating = wrap.firstChild;
+    (document.querySelector('.device') || document.body).appendChild(floating);
+    floatCard = floating.querySelector('[data-act="flip-card"]');
+    const closeBtn = floating.querySelector('[data-act="close-card"]');
+    floatCard.onclick = function () {
+      const flipped = floatCard.classList.toggle('is-flipped');
+      floatCard.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+      floatCard.setAttribute('aria-label', flipped ? '翻回卡片正面' : '翻到卡片背面');
+    };
+    closeBtn.onclick = closeCard;
+    floating.onclick = function (e) { if (e.target === floating) closeCard(); };
+    /* Tab／Shift+Tab 在小卡的兩顆按鈕之間繞，不跑到 demo 面板或網址列（新版 core 的 a11yDialog 自己會做） */
+    if (!coreDialog) {
+      floating.onkeydown = function (e) {
+        if (e.key !== 'Tab') return;
+        const f = [floatCard, closeBtn];
+        const i = f.indexOf(document.activeElement);
+        e.preventDefault();
+        f[i < 0 ? 0 : (i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus();
+      };
+    }
+    floating._dismiss = dismissFloat;
+  }
+  /* 收起來並拆掉（導覽、這一頁 cleanup）；可以重複叫 */
+  function dismissFloat() {
+    closeCard();
+    if (floating) floating.remove();
+    floating = null;
   }
   function closeCard() {
-    if (floating.hidden) return;
+    if (!floating || floating.hidden) return;
     behind(false);
-    if (tabbar) tabbar.classList.toggle('is-yield', yieldBefore);
     floating.hidden = true;
     const r = release;
     release = null;
     if (r) r();
     /* Safari 點按鈕不會把焦點給它，a11yDialog 記到的是 body：退回點開的那張卡 */
     const now = document.activeElement;
-    if (returnFocus && returnFocus.isConnected && (!now || now === document.body)) returnFocus.focus();
+    if (returnFocus && returnFocus.isConnected && !returnFocus.closest('[inert]') && (!now || now === document.body)) returnFocus.focus();
     returnFocus = null;
   }
   function openCard(id, button) {
     const c = areaCard(id);
     if (!c) return;
-    if (!floating.hidden) closeCard();
+    ensureFloat();
+    closeCard();
     returnFocus = button;
+    floating.setAttribute('aria-label', c.name);
     floatCard.classList.remove('is-flipped');
     floatCard.setAttribute('aria-pressed', 'false');
     floatCard.setAttribute('aria-label', '翻到卡片背面');
@@ -787,29 +832,14 @@ function rideV2Mount(root, params, ctx) {
       '<span class="ride-card-float__back-mark">yoxi 城事</span><strong>' + esc(c.name) + '</strong>' +
       '<span>' + (S().has(id) ? '已收藏' : '抵達後可以收下') + '</span>';
     SHELL.injectArt(floating);
+    /* 生成的明信片成品：explore 只監看 #view，這張在 .device 上，自己叫一次 */
+    if (APP.explore && typeof APP.explore.paintCardArt === 'function') APP.explore.paintCardArt(floating);
     floating.hidden = false;
     /* 先交給 a11yDialog（它記下現在的焦點＝點開的卡），再把背後變 inert（inert 會把焦點踢掉） */
     release = APP.ui.a11yDialog(floating, { label: c.name, onEsc: closeCard, focus: floatCard });
-    yieldBefore = tabbar ? tabbar.classList.contains('is-yield') : false;
-    if (tabbar) tabbar.classList.add('is-yield');
     behind(true);
   }
   paint();
-  floatCard.onclick = function () {
-    const flipped = floatCard.classList.toggle('is-flipped');
-    floatCard.setAttribute('aria-pressed', flipped ? 'true' : 'false');
-    floatCard.setAttribute('aria-label', flipped ? '翻回卡片正面' : '翻到卡片背面');
-  };
-  closeBtn.onclick = closeCard;
-  floating.onclick = function (e) { if (e.target === floating) closeCard(); };
-  /* Tab／Shift+Tab 在小卡的兩顆按鈕之間繞，不跑到 demo 面板或網址列 */
-  floating.onkeydown = function (e) {
-    if (e.key !== 'Tab') return;
-    const f = [floatCard, closeBtn];
-    const i = f.indexOf(document.activeElement);
-    e.preventDefault();
-    f[i < 0 ? 0 : (i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus();
-  };
   const stopDrag = bindDragSheet(sheet, {
     order: ['hidden', 'collapsed', 'open'],
     get: function () { return state; },
@@ -822,10 +852,10 @@ function rideV2Mount(root, params, ctx) {
     dragStart: function () { sheet.classList.remove('is-collapsed', 'is-hidden'); },
   });
   return function () {
-    closeCard();
+    dismissFloat();
     stopDrag();
     ctl.destroy();
-    if (tabbar) { tabbar.classList.remove('is-yield'); tabbar.inert = false; }
+    if (tabbar) tabbar.classList.remove('is-yield');
   };
 }
 
@@ -946,9 +976,9 @@ function bindDragSheet(sheet, opt) {
   let lastY = 0, lastT = 0, vel = 0, pointerAt = 0;
   function now(e) { return (e && e.timeStamp) || performance.now(); }
   function down(e) {
-    if (y0 !== null) return;
     if (e.button > 0) return;                               /* 右鍵、中鍵 */
     if (e.pointerType && e.isPrimary === false) return;     /* 第二根手指 */
+    if (y0 !== null) abort();       /* 上一次的 pointerup 掉了（同一個指標又按下／新的主要指標）：作廢重來 */
     y0 = e.clientY;
     pointer = e.pointerId;
     moved = 0;
@@ -1109,7 +1139,7 @@ APP.view('dropoff', {
           '<span class="ride-row__art" data-art="' + esc(p.art) + '" data-seed="2"></span>' +
           '<span class="row-nav__body">' +
             '<span class="row-nav__title">' + esc(p.name) + '</span>' +
-            '<span class="row-nav__sub">' + esc(p.type) + ' · ' + (p.dist == null ? '距離待確認' : esc(F.dist(p.dist))) + '</span>' +
+            '<span class="row-nav__sub">' + esc(p.type) + ' · ' + esc(distText(p.dist)) + '</span>' +
           '</span>' +
           '<span class="ride-tag ' + (walk ? 'ride-tag--walk' : 'ride-tag--ride') + '">' + (walk ? '走得到' : '叫車') + '</span>' +
         '</button>';
@@ -1618,9 +1648,10 @@ APP.view('trips', {
         '<span class="tile-icon"><span data-icon="tabRide"></span></span>' +
         '<span class="row-nav__body"><span class="row-nav__title">' + esc(tr.from) + ' → ' + esc(tr.to) + '</span>' +
           '<span class="row-nav__sub">' + esc(tr.date) + (tr.time ? ' ' + esc(tr.time) : '') +
-          ' · <span data-km>' + kmText(tr.km) + '</span> 公里' + (tr.city ? ' · 城事' : '') +
+          ' · ' + (tr.km == null ? DIST_TBD : '<span data-km>' + kmText(tr.km) + '</span> 公里') + (tr.city ? ' · 城事' : '') +
           (tr.via && VIA_LABEL[tr.via] ? ' · <span data-via="' + esc(tr.via) + '">' + VIA_LABEL[tr.via] + '</span>' : '') + '</span></span>' +
-        '<span class="u-row u-gap3"><span class="num ride-trips__fare">$<span data-fare>' + F.fare(tr.km) + '</span></span>' +
+        '<span class="u-row u-gap3">' +
+          (tr.km == null ? '' : '<span class="num ride-trips__fare">$<span data-fare>' + F.fare(tr.km) + '</span></span>') +
         '<span class="arrow"></span></span></a>';
     }).join('');
     const empty = function (msg) {

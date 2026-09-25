@@ -580,6 +580,31 @@ T.spec('ride', function (t) {
     t.eq(A.store.get('trip').phase, 'done', '還是已抵達');
   });
 
+  t.test('叫車前的確認框被關掉（Esc、點遮罩）不算「直接叫車」；真的按了才叫', async function (app) {
+    const done = { placeId: 'neiwan', phase: 'done', startedAt: T0, rated: true, km: 28 };
+    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: T0, via: 'e' };
+    await app.reset({ store: { trip: done, dropoff: drop } });
+    const A = app.APP, W = app.win;
+    await app.go('/ride');
+    await app.click('[data-act="call-ride"]');
+    t.ok(app.$('.app-confirm'), '確認框開著');
+    (app.doc.activeElement || app.doc.body).dispatchEvent(new W.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await app.tick(60);
+    t.ok(!app.$('.app-confirm'), 'Esc 關掉確認框');
+    t.eq(app.route().path, '/ride', 'Esc：留在 /ride');
+    t.eq(A.store.get('trip').placeId, 'neiwan', 'Esc：沒有叫車');
+    await app.click('[data-act="call-ride"]');
+    const scrim = app.$('.app-confirm');
+    if (scrim) scrim.click();
+    await app.tick(60);
+    t.ok(!app.$('.app-confirm'), '點遮罩關掉確認框');
+    t.eq(A.store.get('trip').placeId, 'neiwan', '點遮罩：沒有叫車');
+    await app.click('[data-act="call-ride"]');
+    await app.click('.app-confirm [data-act="confirm-no"]');
+    await app.at('/trip');
+    t.eq(A.store.get('trip').placeId, 'lake', '按了「直接叫車」才叫');
+  });
+
   t.test('通知「今天的地方」、下車點「在地圖上挑」都進探索模式；在地圖上選好退回原本那一格', async function (app) {
     await app.reset();
     const A = app.APP, M = app.MOCK;
@@ -760,7 +785,7 @@ T.spec('ride', function (t) {
     t.eq(g2.getAttribute('aria-expanded'), 'true', 'aria-expanded=true');
   });
 
-  t.test('懸浮小卡：a11yDialog、背後 inert、Tab 繞在小卡裡、Esc 關、焦點回到卡片', async function (app) {
+  t.test('懸浮小卡：掛在 .device（data-overlay）、a11yDialog、背後 inert、Tab 繞在小卡裡、Esc 關、焦點回到卡片', async function (app) {
     await app.reset();
     await app.go('/ride?mode=explore&area=glass-kiln');
     const W = app.win, d = app.doc;
@@ -771,29 +796,32 @@ T.spec('ride', function (t) {
     const float = app.$('[data-card-float]');
     const flip = float.querySelector('[data-act="flip-card"]'), close = float.querySelector('[data-act="close-card"]');
     t.ok(!float.hidden, '小卡打開');
+    t.ok(!float.closest('#view') && float.parentElement === app.$('.device'), '掛在 .device 上（遮罩連底欄一起蓋）');
+    t.ok(float.hasAttribute('data-overlay') && typeof float._dismiss === 'function', 'data-overlay＋_dismiss');
     t.eq(float.getAttribute('role'), 'dialog', 'role=dialog');
     t.eq(d.activeElement, flip, '焦點在卡片（翻面鈕）');
     const btns = Array.prototype.slice.call(float.querySelectorAll('button'));
     t.ok(btns.indexOf(flip) < btns.indexOf(close), 'DOM 順序：翻面在前、關閉在後');
     t.ok(app.$('#tabbar').inert, '底欄 inert');
-    t.ok(app.$('.ride-sheet').inert && app.$('[data-ride-map]').inert, '面板與地圖 inert');
+    t.ok(app.$('#view').inert, '整個畫面（地圖、面板）inert');
     const key = function (k, shift) {
       d.activeElement.dispatchEvent(new W.KeyboardEvent('keydown', { key: k, shiftKey: !!shift, bubbles: true, cancelable: true }));
     };
+    close.focus();
     key('Tab');
-    t.eq(d.activeElement, close, 'Tab → 關閉鈕');
-    key('Tab');
-    t.eq(d.activeElement, flip, '再 Tab → 繞回翻面鈕');
+    t.eq(d.activeElement, flip, '關閉鈕再 Tab → 繞回翻面鈕');
     key('Tab', true);
-    t.eq(d.activeElement, close, 'Shift+Tab → 關閉鈕（往回也到得了）');
+    t.eq(d.activeElement, close, '翻面鈕 Shift+Tab → 關閉鈕（往回也到得了）');
     key('Escape');
     await app.tick(40);
     t.ok(float.hidden, 'Esc 關掉');
-    t.ok(!app.$('#tabbar').inert && !app.$('.ride-sheet').inert && !app.$('[data-ride-map]').inert, '關掉後背後都恢復');
+    t.ok(!app.$('#tabbar').inert && !app.$('#view').inert, '關掉後背後都恢復');
     t.eq(d.activeElement, card, '焦點回到點開的那張卡');
     await app.click(card);
+    t.ok(!app.$('[data-card-float]').hidden, '再打開');
     await app.go('/album');
-    t.ok(!app.$('#tabbar').inert, '小卡開著就離開：底欄恢復');
+    t.ok(!app.$('[data-card-float]'), '小卡開著就離開：小卡拆掉');
+    t.ok(!app.$('#tabbar').inert && !app.$('#view').inert, '小卡開著就離開：背後恢復');
   });
 
   t.test('視窗改大小：地圖重畫、畫滿可見範圍（ResizeObserver），舊地圖拆乾淨', async function (app) {
@@ -897,6 +925,26 @@ T.spec('ride', function (t) {
     const pts = app.$('[data-panel="mine"] [data-act="open-points"]');
     if (city.length) t.includes(pts && pts.textContent, city[0].place, '通知中心的地名從資料來');
     t.eq(A.views.drawer && A.views.drawer.remember, false, '/drawer remember:false');
+  });
+
+  t.test('/ride 可按數 ≤ 10：拉把也算，下車點＋待收明信片最擠的那一刻也不超過', async function (app) {
+    const done = { placeId: 'neiwan', phase: 'done', startedAt: T0, rated: true, km: 28 };
+    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: T0, via: 'e' };
+    const cases = [
+      ['空的', {}],
+      ['下車點', { dropoff: drop }],
+      ['待收', { trip: done }],
+      ['下車點＋待收', { trip: done, dropoff: drop }],
+      ['行程中', { trip: neiwanTrip('riding') }],
+    ];
+    for (const c of cases) {
+      await app.reset({ store: c[1] });
+      await app.go('/ride');
+      await app.tick(40);
+      const n = t.countTappables(app);
+      t.ok(n <= 10, '/ride ' + c[0] + ' 可按數 ' + n + ' ≤ 10');
+      t.noDeadButtons(app, '/ride ' + c[0]);
+    }
   });
 
   t.test('命中區 ≥ 44：返回、關閉、星星、取消行程、點數鈕、拉把', async function (app) {
