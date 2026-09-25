@@ -1,13 +1,16 @@
 /* ==========================================================================
    album 區塊的瀏覽器測試（ARCHITECTURE.md §6.3 五類）
-   /album /postcard/:id /badge/:id /footprint /lookback /week /elder
+   /album /postcards /badges /postcard/:id /badge/:id /footprint /lookback /week /elder
+   ?tab= 是舊連結：/album?tab=journal 落在同一頁（見「舊連結」那一條），不再當成不同的頁各跑一次。
    ========================================================================== */
 T.spec('album', function (t) {
 
-  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
+  const ROUTES = ['/album', '/badges', '/postcards',
                   '/postcard/p1', '/postcard/p4', '/postcard/p11', '/postcard/nope',
                   '/badge/b1', '/badge/b4', '/badge/nope',
-                  '/footprint', '/lookback', '/week', '/elder'];
+                  '/footprint', '/lookback', '/week', '/elder', '/elder?card=p1'];
+  const back = function (app) { return app.click('main.view[data-view] a[data-back]'); };
+  const histI = function (app) { const s = app.win.history.state; return s && s.i; };
 
   /* 1. 每條 route 都能 render、沒有死按鈕、沒有禁用詞、可按數在上限內 */
   t.test('每條 album route 都能 render（無死按鈕／禁用詞、可按數在上限內）', async function (app) {
@@ -31,10 +34,26 @@ T.spec('album', function (t) {
     await app.reset();
     await app.go('/album');
     const S = app.STATE, B = app.MOCK.BADGES;
-    t.eq(app.text('[data-stat="places"]'), String(S.count()), '去過的地方');
+    t.eq(app.text('[data-stat="places"]'), String(app.APP.album.visitedPlaces().length), '去過的地方（不重複）');
     t.eq(app.text('[data-stat="km"]'), String(S.all.km), '公里');
     const got = B.filter(function (b) { return S.badge(b.id).got; }).length;
     t.eq(app.text('[data-stat="badges"]'), got + '/' + B.length, '獎章 已獲得/總數');
+  });
+
+  /* 9. 去過的地方＝不重複的地方，不是卡片張數（p3／p19 都是護城河、p6／p21 都是十八尖山） */
+  t.test('「去過的地方」數不重複的地方：收 p19、p21 之後仍跟城市足跡一致', async function (app) {
+    await app.reset();
+    const S = app.STATE, A = app.APP;
+    const n0 = A.album.visitedPlaces().length;
+    t.eq(n0, A.album.footprintSeen().seen.length + A.album.footprintSeen().missing.length, '一開始＝足跡上的點');
+    S.collect('moat', { date: A.fmt.todayMMDD() });           /* p19：護城河的第二張 */
+    S.collect('hill', { date: A.fmt.todayMMDD() });           /* p21：十八尖山的第二張 */
+    A.emit('state:change');
+    t.ok(S.has('p19') && S.has('p21'), '收下 p19、p21');
+    await app.go('/album');
+    t.eq(app.text('[data-stat="cards"]'), String(S.count()), '明信片張數 +2');
+    t.eq(app.text('[data-stat="places"]'), String(n0), '去過的地方不變（同一個地方的第二張）');
+    t.eq(app.text('[data-stat="places"]'), String(A.album.footprintSeen().seen.length), '＝城市足跡的點數');
   });
 
   /* 2. 收卡之後：多一格「新」，mount 後 lastIsNew 變 false；統計 +1 */
@@ -78,6 +97,41 @@ T.spec('album', function (t) {
     await app.at('/album');
   });
 
+  /* 4. p19–p22 收了之後要打得開：/postcards 收下的每一格連到詳情，整片網格算一個可按的東西 */
+  t.test('/postcards 收下的格子連到明信片詳情（p19 也打得開）；網格是 data-gallery、可按數仍 ≤ 10', async function (app) {
+    await app.reset();
+    const S = app.STATE, A = app.APP;
+    S.collect('moat', { date: A.fmt.todayMMDD() });           /* p19：不屬於任何獎章 */
+    A.emit('state:change');
+    await app.go('/postcards');
+    const got = app.$$('[data-group="got"] [data-card]');
+    t.eq(got.length, S.count(), '收下的每一張都在');
+    t.ok(got.every(function (el) { return el.tagName === 'A' && el.getAttribute('href') === '#/postcard/' + el.getAttribute('data-card'); }),
+      '收下的每一格都是連到 /postcard/:id 的 <a>');
+    t.ok(got.every(function (el) { return el.closest('[data-gallery]'); }), '收下的格子都在 [data-gallery] 裡');
+    t.eq(app.$$('[data-group="todo"] a[data-card]').length, 0, '還沒去的格子不連');
+    const n = t.countTappables(app);
+    t.ok(n <= 10, '可按數 ' + n + ' ≤ 10（整片網格算一個）');
+    t.noDeadButtons(app, '/postcards');
+    await app.click('[data-group="got"] [data-card="p19"]');
+    await app.at('/postcard/p19');
+    t.ok(app.$('[data-flip]'), 'p19 的明信片詳情（收過、可翻面）');
+    await back(app);
+    await app.at('/postcards');
+  });
+
+  t.test('countTappables：[data-gallery] 不管幾格都算一個', async function (app) {
+    await app.reset();
+    await app.go('/postcards');
+    const grid = app.$('[data-gallery]');
+    t.ok(grid && grid.querySelectorAll('a[href]').length > 1, '網格裡不只一個連結');
+    const withGallery = t.countTappables(app);
+    grid.removeAttribute('data-gallery');
+    const without = t.countTappables(app);
+    grid.setAttribute('data-gallery', '');
+    t.eq(without - withGallery, grid.querySelectorAll('a[href]').length - 1, '拿掉 data-gallery 就一格一格算');
+  });
+
   t.test('/postcards、/badges 切去叫車再點「收藏」停回子頁：返回回收藏首頁，不退回叫車', async function (app) {
     for (const x of [['/postcards', 'go-postcards'], ['/badges', 'go-badges']]) {
       await app.reset();
@@ -92,6 +146,97 @@ T.spec('album', function (t) {
       await app.at('/album');
       t.eq(app.route().path, '/album', x[0] + ' 返回落在收藏首頁');
     }
+  });
+
+  /* 1. 更深的子頁切 tab 停回來：返回走邏輯上的上一層，不退回叫車 */
+  t.test('返回：/badge/b3 切去叫車再點「收藏」停回來 → 返回 /badges → /album', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    await app.click('[data-act="go-badges"]');
+    await app.at('/badges');
+    await app.click('[data-badge="b3"]');
+    await app.at('/badge/b3');
+    await app.click('#tabbar [data-tab-id="ride"]');
+    await app.at('/ride');
+    await app.click('#tabbar [data-tab-id="album"]');
+    await app.at('/badge/b3');
+    await back(app);
+    await app.at('/badges');
+    t.eq(app.route().path, '/badges', '/badge/b3 → /badges（不是 /ride）');
+    await back(app);
+    await app.at('/album');
+    t.eq(app.route().path, '/album', '/badges → /album（不是 /ride）');
+  });
+
+  t.test('返回：/trips 點行程卡到明信片、切 tab 停回來 → 返回 /postcards；直接點進來的返回 /trips', async function (app) {
+    await app.reset();
+    await app.go('/trips');
+    const a = app.$('[data-act="open-trip-card"]');
+    t.ok(a, '/trips 有連到明信片的行程卡');
+    if (!a) return;
+    const to = a.getAttribute('href').slice(1);
+    /* 直接點進來：照歷史退回 /trips */
+    await app.click(a);
+    await app.at(to);
+    await back(app);
+    await app.at('/trips');
+    t.eq(app.route().path, '/trips', '從 /trips 點進來的，返回 /trips');
+    /* 切 tab 停回來：上一筆是叫車，不是從那裡點進來的 → 明信片子頁 */
+    await app.click('[data-act="open-trip-card"]');
+    await app.at(to);
+    await app.click('#tabbar [data-tab-id="ride"]');
+    await app.at('/trips');
+    await app.click('#tabbar [data-tab-id="album"]');
+    await app.at(to);
+    await back(app);
+    await app.at('/postcards');
+    t.eq(app.route().path, '/postcards', '切 tab 停回來的，返回 /postcards（不是 /trips）');
+  });
+
+  /* 2. 從更深的一頁退回來再按返回：照歷史退，不多疊一筆 /album */
+  t.test('返回：/album → /badges → /badge/b3 → 返回 → 返回：照歷史退回第一筆，沒有重複的 /album', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    const i0 = histI(app);
+    await app.click('[data-act="go-badges"]');
+    await app.at('/badges');
+    await app.click('[data-badge="b3"]');
+    await app.at('/badge/b3');
+    t.eq(histI(app), i0 + 2, '往下兩層＝兩筆歷史');
+    await back(app);
+    await app.at('/badges');
+    t.eq(histI(app), i0 + 1, '退一格');
+    await back(app);
+    await app.at('/album');
+    t.eq(histI(app), i0, '回到第一筆（不是 replace 出來的第二個 /album）');
+  });
+
+  t.test('返回：直接開網址（沒有上一頁）→ 邏輯上的上一層', async function (app) {
+    const cases = [['/postcard/p1', '/postcards'], ['/badge/b3', '/badges'], ['/week', '/album'],
+                   ['/elder', '/week'], ['/footprint', '/album'], ['/postcards', '/album'], ['/badges', '/album']];
+    for (const c of cases) {
+      await app.reset({ hash: c[0] });
+      await app.at(c[0]);
+      t.eq(app.$('main.view[data-view] a[data-back]').getAttribute('data-back'), c[1], c[0] + ' 的 data-back');
+      await back(app);
+      await app.at(c[1]);
+      t.eq(app.route().path, c[1], c[0] + ' → ' + c[1]);
+    }
+  }, { timeout: 20000 });
+
+  t.test('返回：/album → 這一週 → 傳給家人 → 返回 → 返回：照歷史一路退回收藏', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    const i0 = histI(app);
+    await app.click('[data-act="go-week"]');
+    await app.at('/week');
+    await app.click('[data-act="go-elder"]');
+    await app.at('/elder');
+    await back(app);
+    await app.at('/week');
+    await back(app);
+    await app.at('/album');
+    t.eq(histI(app), i0, '回到第一筆');
   });
 
   /* 3. 獎章：收下的寫日期（組成的卡最晚那一張）、還在路上的寫「收集 n/m」；沒有進度環 */
@@ -228,7 +373,10 @@ T.spec('album', function (t) {
     t.eq(app.$$('.spot').length, 0, '.spot 0 顆');
     const svg = app.$('[data-fp-map] svg.map__svg');
     t.ok(svg && svg.childNodes.length > 0 && svg.querySelector('[data-layer="fog"]'), '地圖有畫出來、有霧');
-    t.eq(app.$$('.citycolor__band').length, app.MOCK.CITY_COLORS.length, '城市顏色色帶');
+    const bands = app.APP.album.cityColors();
+    t.eq(app.$$('.citycolor__band').length, bands.length, '城市顏色色帶＝去過的地方算出來的');
+    t.eq(bands.reduce(function (s, b) { return s + b.n; }, 0), app.APP.album.visitedPlaces().length, '每個去過的地方都有算進一道顏色');
+    t.ok(app.text('main.view[data-view]').indexOf('90 天') < 0, '不寫「90 天沒回去會變淡」（app 沒有記回訪）');
     const seen = (app.$('[data-fp-map]').getAttribute('data-seen') || '').split(',').filter(Boolean);
     const expect = app.APP.album.footprintSeen().seen;
     t.eq(seen.join(','), expect.join(','), '去過的點＝已收卡對應的地點');
@@ -256,11 +404,21 @@ T.spec('album', function (t) {
     t.eq(got && got.id, 'p1', 'id=p1');
   });
 
-  t.test('搭車卡是金框限定版；步數用公式', async function (app) {
+  /* 金框的框要看得到：畫在 ::after（插圖上面），不是被 --sh-lift 蓋掉、被滿版插圖遮住的 inset 陰影 */
+  function goldFrame(app, el) {
+    const s = el ? app.win.getComputedStyle(el, '::after') : null;
+    return !!s && s.content !== 'none' && /inset/.test(s.boxShadow) && s.boxShadow.indexOf('201, 162, 39') >= 0;
+  }
+
+  t.test('搭車卡是金框限定版：框畫在插圖上面看得到；步數用公式', async function (app) {
     await app.reset();
     await app.go('/postcard/p4');
-    t.ok(app.$('.postcard--gold[data-flip]'), '金框');
-    t.ok(app.$('[data-ribbon]'), '限定版角標');
+    const card = app.$('.postcard--gold[data-flip]');
+    t.ok(card, '金框');
+    t.ok(goldFrame(app, card), '金框畫在 ::after（--gold 的 inset 框）：' + (card && app.win.getComputedStyle(card, '::after').boxShadow));
+    t.eq(card && app.win.getComputedStyle(card, '::after').backfaceVisibility, 'hidden', '翻面時框跟著正面藏起來');
+    t.eq(app.APP.ride.limitedCard('p4'), true, 'p4 是 ride.js 認的限定版');
+    t.eq(app.text('[data-ribbon]'), 'yoxi 限定版', '限定版角標');
     await app.go('/postcard/p2');
     const pl = app.APP.place('market');
     const spk = app.MOCK.LOOKBACK.steps / app.MOCK.LOOKBACK.km;
@@ -332,5 +490,229 @@ T.spec('album', function (t) {
     await app.go('/footprint');
     await app.click('main.view[data-view] a[data-back]');
     await app.at('/album');
+  });
+
+  /* 3. 回顧、這一週、城市足跡不再是孤兒頁：收藏首頁的「回顧」一列 */
+  t.test('/album「回顧」一列：三格連到 /lookback、/week、/footprint，數字從公式來；今天的回顧只有你、沒有分享', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    const A = app.APP, L = app.MOCK.LOOKBACK;
+    [['go-lookback', '#/lookback'], ['go-week', '#/week'], ['go-footprint', '#/footprint']].forEach(function (x) {
+      const a = app.$('.alb-v2__look [data-act="' + x[0] + '"]');
+      t.eq(a && a.getAttribute('href'), x[1], x[0]);
+    });
+    t.includes(app.text('[data-look-today]'), A.fmt.num(L.steps), '還沒看今天的回顧：寫今天走的步數（LOOKBACK）');
+    t.eq(app.text('[data-look-week]'), String(A.album.weekStats().now.places), '這一週的地方數＝weekStats');
+    t.eq(app.text('[data-look-cov]'), String(A.album.coverage()), '覆蓋率＝城市足跡同一個公式');
+    t.ok(app.$('[data-look-tile="journal"] [aria-label="只有你看得到"]'), '「今天的回顧」標只有你看得到');
+    t.eq(app.$$('main.view [data-act="share"], main.view [data-share]').length, 0, '收藏首頁沒有分享鍵');
+    const n = t.countTappables(app);
+    t.ok(n <= 12, '可按數 ' + n + ' ≤ 12');
+    /* 今天看過回顧：心情與照片出現在那一格 */
+    const today = A.fmt.todayMMDD();
+    app.STATE.setToday({ done: true, mood: 'low', photo: 2, date: today });
+    await app.go('/ride');
+    await app.go('/album');
+    t.ok(app.$('[data-look-tile="journal"] [data-mood-now="low"]'), '今天的心情');
+    t.ok(app.$('[data-look-tile="journal"] [data-look-photo][data-art="' + L.photos[2] + '"]'), '今天選的照片');
+    t.includes(app.text('[data-look-today]'), '今天有點累', '心情的字');
+    /* 別天留下來的心情不算今天的 */
+    app.STATE.setToday({ date: today === '01.01' ? '01.02' : '01.01' });
+    await app.go('/ride');
+    await app.go('/album');
+    t.ok(!app.$('[data-look-tile="journal"] [data-mood-now]'), '別天的心情不掛在今天');
+    t.ok(!app.$('[data-look-photo]'), '別天的照片也不掛');
+  });
+
+  t.test('舊連結 /album?tab=journal|week|badges：落在收藏首頁、對應那一塊亮一下，網址的 ?tab 拿掉', async function (app) {
+    await app.reset();
+    const cases = [['journal', '[data-look-tile="journal"]'], ['week', '[data-look-tile="week"]'], ['badges', '.alb-v2__medals']];
+    for (const c of cases) {
+      await app.go('/album?tab=' + c[0], { expect: '/album' });
+      t.ok(app.$(c[1] + '.is-landed'), c[0] + '：' + c[1] + ' 亮一下');
+      t.eq(app.APP.nav.current().query.toString(), '', c[0] + '：current() 的 query 清掉');
+      t.ok(!/tab=/.test(app.win.location.hash), c[0] + '：網址沒有 ?tab（' + app.win.location.hash + '）');
+      t.eq((app.APP.store.get('tabPaths') || {}).album, '/album', c[0] + '：切 tab 回來是乾淨的 /album');
+      await app.go('/ride');
+    }
+  });
+
+  t.test('每日回顧走完：落在收藏首頁，「今天的回顧」那一格亮一下、寫今天的心情', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    await app.click('[data-act="go-lookback"]');
+    await app.at('/lookback');
+    await app.click('[data-act="mood"][data-mood="good"]');
+    await app.at('/album');
+    t.eq(app.STATE.all.today.date, app.APP.fmt.todayMMDD(), 'today 記下是哪一天看的');
+    t.ok(app.$('[data-look-tile="journal"].is-landed'), '「今天的回顧」亮一下');
+    t.ok(app.$('[data-look-tile="journal"] [data-mood-now="good"]'), '今天的心情');
+    t.ok(!/tab=/.test(app.win.location.hash), '網址的 ?tab 拿掉了');
+  });
+
+  /* 7. 「今天多了一張」只說今天收的 */
+  t.test('每日回顧第二幕：lastCard 不是今天收的就不說「今天多了一張」', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    const today = A.fmt.todayMMDD();
+    app.STATE.collect('glass-kiln', { date: today === '09.01' ? '09.02' : '09.01' });
+    A.emit('state:change');
+    t.eq(app.STATE.all.lastCard, 'p11', 'lastCard 是 p11（但不是今天收的）');
+    await app.go('/lookback');
+    t.ok(app.text('[data-lb-act="1"]').indexOf('今天多了一張') < 0, '不說今天多了一張');
+    t.includes(app.text('[data-lb-act="1"]'), '今天沒有新的卡', '照實說今天沒有新的卡');
+    app.STATE.collect('neiwan', { date: today });
+    A.emit('state:change');
+    await app.go('/ride');
+    await app.go('/lookback');
+    t.includes(app.text('[data-lb-act="1"]'), '今天多了一張', '今天收的才說');
+    t.includes(app.text('[data-lb-act="1"]'), '內灣老街', '是今天收的那張');
+  });
+
+  /* 8. 長輩圖用分享的那一張 */
+  t.test('明信片分享帶 card；/elder?card=p1 那張排第一、選好了（即使不在最近三張裡）', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    await app.go('/postcard/p1');
+    let got = null;
+    const orig = A.ui.share;
+    A.ui.share = function (o) { got = o; };
+    await app.click('[data-act="share"]');
+    A.ui.share = orig;
+    t.eq(got && got.card, 'p1', 'APP.ui.share 帶 card: p1');
+    const recent = A.album.recentCards(3).map(function (p) { return p.id; });
+    t.ok(recent.indexOf('p1') < 0, 'p1 不在最近三張裡：' + recent.join(','));
+    await app.go('/elder?card=p1');
+    const picks = app.$$('[data-act="pick-card"]').map(function (b) { return b.getAttribute('data-card'); });
+    t.eq(picks[0], 'p1', '分享的那張排第一');
+    t.ok(picks.length <= 3, '仍然最多三張：' + picks.join(','));
+    t.ok(app.$('[data-act="pick-card"][data-card="p1"].is-on'), '而且是選好的那張');
+    t.includes(app.text('[data-elder-small]'), '新竹車站', '圖上寫的是那個地方');
+    t.noDeadButtons(app, '/elder?card=p1');
+    /* 沒收過的 id：照舊用最近的 */
+    await app.go('/elder?card=p11');
+    t.eq(app.$('[data-act="pick-card"].is-on').getAttribute('data-card'), recent[0], '沒收過的 card 不理，退回最近那張');
+  });
+
+  /* 10. 週回顧的範圍 */
+  t.test('/week：標題＝圖表那 7 天；只算日期在範圍裡的卡，範圍之後的另寫一行', async function (app) {
+    await app.reset();
+    const S = app.STATE, A = app.APP;
+    const w0 = A.album.weekStats();
+    const dd = function (d) { return String(w0.month).padStart(2, '0') + '.' + String(d).padStart(2, '0'); };
+    S.collect('glass-kiln', { date: dd(w0.now.from + 1) });   /* p11：範圍裡 */
+    S.collect('neiwan', { date: dd(w0.now.to + 3) });         /* p9：範圍之後、同一個月 */
+    S.collect('p10', { date: String(w0.month + 1).padStart(2, '0') + '.03' });   /* 下個月 */
+    A.emit('state:change');
+    await app.go('/week');
+    const w = A.album.weekStats();
+    const lab = function (d) { return w.month + '月' + d + '日'; };
+    t.eq(app.text('.alb-cover__range'), lab(w.now.from) + ' – ' + lab(w.now.to), '標題是固定的 7 天');
+    t.eq(app.$$('.alb-days__col').length, w.now.to - w.now.from + 1, '長條圖的天數＝標題的天數');
+    const ids = w.now.cards.map(function (p) { return p.id; });
+    t.ok(ids.indexOf('p11') >= 0, '範圍裡的 p11 算進本週');
+    t.ok(ids.indexOf('p9') < 0 && ids.indexOf('p10') < 0, '範圍之後的不算：' + ids.join(','));
+    t.eq(w.now.after.map(function (p) { return p.id; }).sort().join(','), 'p10,p9', '範圍之後的放在 after');
+    t.ok(app.$('.alb-weekcard[data-card="p11"]') && !app.$('.alb-weekcard[data-card="p9"]') && !app.$('.alb-weekcard[data-card="p10"]'),
+      '「這一週收的卡」只有範圍裡的');
+    t.includes(app.text('[data-week-after]'), String(w.now.after.length), '另一行照實說之後又收了幾張');
+    t.eq(app.text('[data-week-places]'), String(w.now.places), '畫面地方數＝weekStats');
+    t.noBannedWords(app, { msg: '/week' });
+  });
+
+  /* 11. 同一天收的卡 */
+  t.test('同一天收的卡：最後收的（lastCard）排最前面，主卡疊卡與長輩圖預設都跟著', async function (app) {
+    for (const order of [['glass-kiln', 'neiwan', 'p9'], ['neiwan', 'glass-kiln', 'p11']]) {
+      await app.reset();
+      const S = app.STATE, A = app.APP, today = A.fmt.todayMMDD();
+      S.collect(order[0], { date: today });
+      S.collect(order[1], { date: today });
+      A.emit('state:change');
+      t.eq(S.all.lastCard, order[2], 'lastCard 是 ' + order[2]);
+      t.eq(A.album.recentCards(3)[0].id, order[2], 'recentCards 第一張是 ' + order[2]);
+      await app.go('/album');
+      t.eq(app.$('.alb-v2__stack-art--0').getAttribute('data-card'), order[2], '疊卡最上面是 ' + order[2]);
+      await app.go('/elder');
+      t.eq(app.$('[data-act="pick-card"].is-on').getAttribute('data-card'), order[2], '長輩圖預設是 ' + order[2]);
+    }
+  });
+
+  /* 6. 限定版只看 ride.js */
+  t.test('搭 yoxi 去走得到的玻璃窯（900 m）：金框，但角標寫「yoxi 金框」不是「yoxi 限定版」', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    app.STATE.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
+    A.emit('state:change');
+    t.eq(A.ride.limitedCard('p11'), false, 'ride.js：p11 不是限定版（走得到、沒有 +50）');
+    await app.go('/postcard/p11');
+    const card = app.$('[data-flip]');
+    t.ok(card && card.classList.contains('postcard--gold'), '搭車收的是金框');
+    t.ok(goldFrame(app, card), '框看得到');
+    t.eq(app.$('[data-ribbon]') && app.$('[data-ribbon]').getAttribute('data-ribbon'), 'gold', '角標是金框那一種');
+    t.eq(app.text('[data-ribbon]'), 'yoxi 金框', '角標寫 yoxi 金框');
+    t.ok(app.text('main.view[data-view]').indexOf('限定版') < 0, '整頁不寫限定版');
+    /* 走路收的：照 cardStyleOf 決定有沒有框，沒有限定版 */
+    await app.go('/postcard/p2');
+    const gold2 = !!(A.explore.cardStyleOf('p2') || {}).gold;
+    t.eq(!!app.$('[data-flip].postcard--gold'), gold2, 'p2 的框跟收下的款式一致');
+    t.ok(!app.$('[data-ribbon="limited"]'), 'p2 沒有限定版角標');
+  });
+
+  /* 5. /postcards 的金框 */
+  t.test('/postcards：金框的明信片在收藏裡也是金框（框畫在圖上面）', async function (app) {
+    await app.reset();
+    await app.go('/postcards');
+    const A = app.APP;
+    const cells = app.$$('[data-group="got"] [data-card]');
+    t.ok(cells.length > 0, '有收下的格子');
+    cells.forEach(function (el) {
+      const id = el.getAttribute('data-card');
+      const gold = !!(A.explore.cardStyleOf(id) || {}).gold;
+      t.eq(el.classList.contains('is-gold'), gold, id + '：金框 class ＝ cardStyleOf');
+      if (gold) t.ok(goldFrame(app, el.querySelector('.alb-v2__art')), id + '：框看得到');
+    });
+    t.ok(app.$('[data-group="got"] .is-gold[data-card="p4"]'), '搭車收的 p4 是金框');
+  });
+
+  /* 12. 0 張卡的空狀態 */
+  t.test('0 張卡：首頁不拿還沒收的獎章放大、足跡沒有顏色、長輩圖不說「用你去過的地方做的」', async function (app) {
+    await app.reset();
+    const A0 = app.STATE.all;
+    A0.cards = {}; A0.km = 0; A0.lastCard = null; A0.lastSeen = null;
+    app.STATE.setToday({ photo: null, mood: null, done: false });
+    app.APP.emit('state:change');
+    await app.go('/album');
+    t.ok(app.$('[data-medal-empty]'), '獎章卡是空的章位');
+    t.ok(!app.$('.alb-v2__medal-top[data-badge]'), '沒有放大一枚還沒收的章');
+    t.eq(app.text('[data-stat="places"]'), '0', '去過的地方 0');
+    t.noDeadButtons(app, '/album（0 張）');
+    t.noBannedWords(app, { msg: '/album（0 張）' });
+    await app.go('/footprint');
+    t.eq(app.$$('.citycolor__band').length, 0, '沒有城市顏色');
+    t.ok(app.$('[data-citycolor-empty]'), '寫還沒有顏色');
+    t.eq(app.text('[data-coverage]'), '0', '覆蓋率 0');
+    await app.go('/elder');
+    t.ok(app.$('[data-elder-empty]'), '長輩圖的空狀態文案');
+    t.ok(app.text('main.view[data-view]').indexOf('用你去過的地方做的') < 0, '不說用你去過的地方做的');
+    t.eq(app.$$('[data-act="pick-card"]').length, 0, '沒有地方可以換');
+    t.noDeadButtons(app, '/elder（0 張）');
+  });
+
+  /* 14. 可按的東西至少 44×44 */
+  t.test('收藏各頁的關閉鍵、分享、先離開、足跡返回都至少 44×44', async function (app) {
+    await app.reset();
+    const size = function (sel) {
+      const el = app.$(sel);
+      const r = el ? el.getBoundingClientRect() : { width: 0, height: 0 };
+      return [Math.round(r.width), Math.round(r.height)];
+    };
+    const big = function (wh) { return wh[0] >= 44 && wh[1] >= 44; };
+    await app.go('/postcard/p1');
+    t.ok(big(size('main.view .hdr-red__close')), '明信片關閉鍵 ' + size('main.view .hdr-red__close'));
+    t.ok(big(size('main.view [data-act="share"]')), '分享 ' + size('main.view [data-act="share"]'));
+    await app.go('/footprint');
+    t.ok(big(size('main.view .alb-fp__back')), '足跡返回 ' + size('main.view .alb-fp__back'));
+    await app.go('/lookback');
+    t.ok(big(size('main.view .alb-lb__exit')), '先離開 ' + size('main.view .alb-lb__exit'));
   });
 });
