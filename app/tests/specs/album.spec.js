@@ -160,7 +160,14 @@ T.spec('album', function (t) {
       await app.go('/lookback');
       const at = function () { const e = app.$('[data-lb]'); return e && e.getAttribute('data-lb-at'); };
       t.eq(at(), '0', '從第一幕開始');
-      t.ok(app.text('[data-lb-steps]') === app.APP.fmt.num(app.MOCK.LOOKBACK.steps), '步數來自 LOOKBACK');
+      const want = app.APP.fmt.num(app.MOCK.LOOKBACK.steps);
+      const n0 = Number((app.text('[data-lb-steps]') || '').replace(/,/g, ''));
+      t.ok(n0 < app.MOCK.LOOKBACK.steps, '步數從 0 往上跳（剛進來是 ' + n0 + '）');
+      t.ok(app.$('[data-lb][data-lb-run]'), '數的時候地名先藏著');
+      await app.waitFor(function () { return app.text('[data-lb-steps]') === want; }, 5000, '步數數到 LOOKBACK');
+      t.ok(true, '步數來自 LOOKBACK');
+      t.ok(!app.$('[data-lb][data-lb-run]'), '數完地名出現');
+      t.eq(app.$$('[data-zz-at].is-hit').length, app.$$('[data-zz-at]').length, '線上的點都冒出來');
       await app.click('[data-act="next"]');
       t.eq(at(), '1', '第二幕');
       t.includes(app.text('[data-lb-act="1"]'), '今天沒有新的卡', '沒有新卡時照實說');
@@ -187,6 +194,11 @@ T.spec('album', function (t) {
     const e = app.$('[data-lb]');
     t.eq(e && e.getAttribute('data-lb-at'), '3', 'data-still → 第四幕');
     t.eq(app.$$('[data-act="mood"]').length, 3, '心情三選一');
+    t.eq(app.text('[data-lb-steps]'), app.APP.fmt.num(app.MOCK.LOOKBACK.steps), '定格不數，直接是終值');
+    t.ok(!(e && e.hasAttribute('data-lb-run')), '定格沒有在數');
+    t.eq(app.$$('.zigzag text').length, 0, '折線上不寫地名');
+    const route = app.text('.alb-lb__route') || '';
+    app.MOCK.LOOKBACK.places.forEach(function (p) { t.includes(route, p, '地名整串寫在步數底下：' + p); });
   });
 
   /* 3. 覆蓋率算出來 */

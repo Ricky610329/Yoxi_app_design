@@ -978,37 +978,60 @@ function tintSeen(m, fog) {
 
 /* ================================================================ /lookback */
 
-/* 之字形：轉折點 3,000、5,000，之後每 5,000 步一折；最後一段照比例畫到今天的步數 */
-function zigzag(steps, labels) {
+/* 之字形：轉折點 3,000、5,000，之後每 5,000 步一折；最後一段照比例畫到今天的步數。
+   drawn(v)＝走到 v 步時線畫到全長的幾成：數字往上跳時線頭跟著數字走，數到 3,000 剛好轉彎。 */
+function zigzagGeom(steps) {
   const marks = [0, 3000, 5000];
   while (marks[marks.length - 1] < steps) marks.push(marks[marks.length - 1] + 5000);
   const X0 = 40, X1 = 252, Y0 = 272, DY = 66;
   const pts = [[X0, Y0]];
+  const at = [0];
+  const len = [];
   for (let i = 1; i < marks.length; i++) {
     const a = marks[i - 1], b = marks[i];
     const f = Math.max(0, Math.min(1, (steps - a) / (b - a)));
     const from = pts[pts.length - 1];
-    const toX = (i % 2) ? X1 : X0;
-    pts.push([from[0] + (toX - from[0]) * f, from[1] - DY * f]);
+    const to = [from[0] + (((i % 2) ? X1 : X0) - from[0]) * f, from[1] - DY * f];
+    pts.push(to);
+    at.push(Math.min(steps, b));
+    len.push(Math.hypot(to[0] - from[0], to[1] - from[1]));
     if (f < 1) break;
   }
-  const d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(0) + ' ' + p[1].toFixed(0); }).join(' ');
-  const stops = pts.slice(1);
-  const lab = (labels || []).slice(-stops.length);
-  const off = stops.length - lab.length;
+  const total = len.reduce(function (s, x) { return s + x; }, 0) || 1;
+  return {
+    pts: pts, at: at,
+    drawn: function (v) {
+      let got = 0;
+      for (let i = 1; i < at.length; i++) {
+        if (v >= at[i]) { got += len[i - 1]; continue; }
+        got += len[i - 1] * Math.max(0, (v - at[i - 1]) / (at[i] - at[i - 1]));
+        break;
+      }
+      return Math.min(1, got / total);
+    },
+  };
+}
+
+/* 線上只放點不放字：地名擠進 15px 的圓只剩兩個字，最後一段短的時候點還會疊在一起。
+   地名整串寫在步數底下（.alb-lb__route）。 */
+function zigzag(G) {
+  const d = G.pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(0) + ' ' + p[1].toFixed(0); }).join(' ');
+  const n = G.pts.length - 1;
   return '<svg class="zigzag" viewBox="0 0 300 300" aria-hidden="true">' +
     '<path class="zigzag__path" pathLength="640" d="' + d + '"/>' +
-    stops.map(function (p, i) {
-      const t = lab[i - off];
-      if (t == null) return '';
-      const last = i === stops.length - 1;
-      return '<g class="zigzag__stop"><circle cx="' + p[0].toFixed(0) + '" cy="' + p[1].toFixed(0) + '" r="' + (last ? 17 : 15) +
-        '" class="alb-zz__dot' + (last ? ' alb-zz__dot--last' : '') + '"/>' +
-        '<text x="' + p[0].toFixed(0) + '" y="' + (p[1] + 4).toFixed(0) + '" text-anchor="middle" class="alb-zz__t' +
-        (last ? ' alb-zz__t--last' : '') + '">' + esc(String(t).slice(0, 2)) + '</text></g>';
+    G.pts.slice(1).map(function (p, i) {
+      const last = i === n - 1;
+      const x = p[0].toFixed(0), y = p[1].toFixed(0);
+      return '<g class="alb-zz__stop' + (last ? ' alb-zz__stop--last' : '') + '" data-zz-at="' + G.at[i + 1] + '">' +
+        (last ? '<circle cx="' + x + '" cy="' + y + '" r="9" class="alb-zz__ping"/>' : '') +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + (last ? 9 : 5) + '" class="alb-zz__dot"/></g>';
     }).join('') +
   '</svg>';
 }
+
+/* 步數往上跳：刻意慢，這是回顧不是載入條（lookback.html 同速）。等幕 1 淡入一點再開始。 */
+const LB_COUNT_MS = 2600;
+const LB_COUNT_DELAY = 360;
 
 APP.view('lookback', {
   path: '/lookback',
@@ -1041,9 +1064,12 @@ APP.view('lookback', {
         '<a class="alb-lb__exit" href="#" data-back="/album?tab=journal">先離開</a></div>' +
       '<div class="lookback__body">' +
         '<div class="lookback__act" data-lb-act="0">' +
-          zigzag(L.steps, L.places) +
+          zigzag(zigzagGeom(L.steps)) +
           '<div class="lookback__steps" data-lb-steps>' + APP.fmt.num(L.steps) + '</div>' +
-          '<div class="lookback__unit">步 · ' + esc(L.km) + ' 公里 · 經過 ' + (L.places || []).length + ' 個地方</div>' +
+          '<div class="lookback__unit">步 · ' + esc(L.km) + ' 公里</div>' +
+          ((L.places || []).length ? '<p class="alb-lb__route">經過 ' +
+            L.places.map(function (p) { return '<span class="alb-lb__place">' + esc(p) + '</span>'; }).join('<span class="alb-lb__sep" aria-hidden="true"></span>') +
+          '</p>' : '') +
         '</div>' +
         '<div class="lookback__act" data-lb-act="1">' + act2 + '</div>' +
         '<div class="lookback__act" data-lb-act="2">' +
@@ -1078,7 +1104,44 @@ APP.view('lookback', {
     let photo = STATE.all.today ? STATE.all.today.photo : null;
     let timer = null;
 
+    /* 幕 1：數字從 0 往上跳，線頭跟著數字畫、走到的點才冒出來；數完地名才淡入。
+       HTML 本來就是終值（定格、減少動態效果、JS 停掉都停在完整畫面），這裡只負責從 0 演回終值。 */
+    const lb = root.querySelector('[data-lb]');
+    const L = M().LOOKBACK;
+    const G = zigzagGeom(L.steps);
+    const num = root.querySelector('[data-lb-steps]');
+    const path = root.querySelector('.zigzag__path');
+    const stops = root.querySelectorAll('[data-zz-at]');
+    let raf = 0, landTimer = null;
+    function paint(v) {
+      num.textContent = APP.fmt.num(Math.round(v));
+      path.style.strokeDashoffset = (640 * (1 - G.drawn(v))).toFixed(1);
+      stops.forEach(function (s) { s.classList.toggle('is-hit', v >= Number(s.getAttribute('data-zz-at'))); });
+    }
+    function landCount() {
+      if (raf) cancelAnimationFrame(raf);
+      clearTimeout(landTimer);
+      raf = 0; landTimer = null;
+      paint(L.steps);
+      lb.removeAttribute('data-lb-run');
+    }
+    function runCount() {
+      lb.setAttribute('data-lb-run', '');
+      paint(0);
+      const t0 = performance.now() + LB_COUNT_DELAY;
+      const tick = function (now) {
+        const p = Math.max(0, Math.min(1, (now - t0) / LB_COUNT_MS));
+        if (p >= 1) { landCount(); return; }
+        paint(L.steps * (1 - Math.pow(1 - p, 3)));
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+      /* 背景分頁、headless 的虛擬時間會停掉 rAF：時間到了不管畫到哪都落在終值 */
+      landTimer = setTimeout(landCount, LB_COUNT_DELAY + LB_COUNT_MS + 200);
+    }
+
     function show(i) {
+      if (i !== 0 && lb.hasAttribute('data-lb-run')) landCount();
       idx = i;
       acts.forEach(function (a, n) { a.classList.toggle('is-on', n === i); });
       root.querySelector('[data-lb]').setAttribute('data-lb-at', String(i));
@@ -1118,7 +1181,8 @@ APP.view('lookback', {
 
     /* 定格（縮圖）：全部到位，直接停在最後一幕 */
     show(still ? 3 : 0);
-    return function () { clearTimeout(timer); };
+    if (!still && !APP.reduceMotion()) runCount();
+    return function () { clearTimeout(timer); clearTimeout(landTimer); if (raf) cancelAnimationFrame(raf); };
   },
 });
 

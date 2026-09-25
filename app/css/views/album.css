@@ -375,10 +375,23 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-lb__skip { justify-content: center; width: 100%; margin-top: var(--sp-5); color: var(--yoxi-white); opacity: .7; }
 .alb-lb__next { background: var(--yoxi-white); color: var(--yoxi-navy); }
 .alb-lb .mood__btn { color: var(--yoxi-white); }
+/* 幕 1 的線由 JS 跟著數字畫（album.js runCount）：關掉 chengshi.css 那條固定 2.6s 的 draw，
+   沒有 JS 在跑的時候（定格、減少動態效果）線就是畫滿的 */
+.alb-lb .zigzag__path { animation: none; stroke-dashoffset: 0; }
+.alb-lb .lookback__steps { font-variant-numeric: tabular-nums; }
+.alb-zz__stop { transform-box: fill-box; transform-origin: center; transition: opacity var(--t-base) var(--ease-out), transform var(--t-slow) var(--ease-bump); }
+.alb-lb[data-lb-run] .alb-zz__stop:not(.is-hit) { opacity: 0; transform: scale(.3); }
 .alb-zz__dot { fill: var(--yoxi-white); }
-.alb-zz__dot--last { fill: var(--yoxi-red); }
-.alb-zz__t { font-size: 10px; font-weight: var(--fw-heavy); fill: var(--yoxi-navy); }
-.alb-zz__t--last { fill: var(--yoxi-white); }
+.alb-zz__stop--last .alb-zz__dot { fill: var(--yoxi-red); stroke: var(--yoxi-white); stroke-width: 3; }
+/* 數到終點那一下：紅點外擴散一圈，只一次 */
+.alb-zz__ping { fill: none; stroke: var(--yoxi-red); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.alb-lb:not([data-lb-run]) .alb-zz__stop--last.is-hit .alb-zz__ping { animation: alb-zz-ping var(--t-scene) var(--ease-out); }
+@keyframes alb-zz-ping { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(3); } }
+/* 地名不寫在線上，整串放在步數底下；數完才淡入 */
+.alb-lb__route { margin-top: var(--sp-4); font-size: var(--fs-sm); line-height: 1.6; opacity: .7; transition: opacity var(--t-slow) var(--ease-out); }
+.alb-lb[data-lb-run] .alb-lb__route { opacity: 0; }
+.alb-lb__place { font-weight: var(--fw-bold); white-space: nowrap; }
+.alb-lb__sep { display: inline-block; width: 4px; height: 4px; margin: 0 var(--sp-2); border-radius: var(--r-pill); background: currentColor; vertical-align: middle; opacity: .6; }
 
 /* ---- 這一週（本週／上週：同色系明度差） ---- */
 .alb-cover { overflow: hidden; }

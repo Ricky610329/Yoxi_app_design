@@ -190,6 +190,8 @@ T.spec('flows', function (t) {
     await app.at('/lookback');
     const lb = function () { return app.$('[data-lb]').getAttribute('data-lb-at'); };
     t.eq(lb(), '0', '第一幕：步數');
+    /* 非 still：步數從 0 往上跳，等它數完再比 */
+    await app.waitFor(function () { return app.text('[data-lb-steps]') === A.fmt.num(app.MOCK.LOOKBACK.steps); }, 5000, '步數數到 LOOKBACK.steps');
     t.includes(app.text('[data-lb-act="0"]'), A.fmt.num(app.MOCK.LOOKBACK.steps), '步數＝LOOKBACK.steps');
     await app.click('[data-act="next"]');
     t.eq(lb(), '1', '第二幕');
