@@ -12,7 +12,59 @@ test('預設值齊全', () => {
   assert.equal(s.get('trip'), null);
   assert.equal(s.get('pushes').length, 0);
   assert.equal(s.get('arrivedDemo'), null);
-  assert.deepEqual({ ...s.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  assert.equal(s.get('fxMute'), false);
+  assert.deepEqual({ ...s.get('draws') }, {});
+  assert.deepEqual({ ...s.get('cardStyle') }, {});
+  assert.equal(typeof s.get('version'), 'number', '有結構版本');
+  /* 底欄只有叫車與收藏：探索的舊路由記在 ride 底下 */
+  assert.deepEqual({ ...s.get('tabPaths') }, { ride: '/ride', album: '/album' });
+});
+
+test('每個鍵都跟 fresh() 對型別：型別不對退回預設，型別對的照收', () => {
+  const bad = {
+    onboarded: 'yes', dropoff: 'neiwan', trip: [1], pushes: { a: 1 }, arrivedDemo: 42,
+    rideSpots: 'no', rideVia: [], draws: 'x', cardStyle: null, fxMute: 1, tabPaths: [], version: 'v9',
+  };
+  const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(bad) }) });
+  const f = APP.store.fresh();
+  for (const k of Object.keys(f)) {
+    assert.deepEqual(JSON.parse(JSON.stringify(APP.store.get(k))), JSON.parse(JSON.stringify(f[k])), k + ' 退回預設');
+  }
+  const good = {
+    onboarded: true, dropoff: { id: 'neiwan', km: 28 }, trip: null, pushes: [{ when: 'am', at: 'x' }],
+    arrivedDemo: 'lake', rideSpots: false, rideVia: { p9: 'k1' }, draws: { lake: 'oil' },
+    cardStyle: { p22: 'gold' }, fxMute: true,
+  };
+  const ok = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(good) }) }).APP.store;
+  for (const k of Object.keys(good)) {
+    assert.deepEqual(JSON.parse(JSON.stringify(ok.get(k))), good[k], k + ' 照收');
+  }
+});
+
+test('結構版本：舊版（沒有 version）讀進來升到現在的版本；不認得的鍵原樣留著', () => {
+  const old = { onboarded: true, tabPaths: { ride: '/drawer', explore: '/routes', album: '/week' }, later: { a: 1 } };
+  const { APP, storage } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(old) }) });
+  const v = APP.store.fresh().version;
+  assert.equal(APP.store.get('version'), v);
+  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/drawer', album: '/week' }, 'tabPaths.explore 丟掉');
+  assert.deepEqual({ ...APP.store.get('later') }, { a: 1 }, '不認得的鍵留著');
+  APP.store.set('onboarded', true);
+  assert.equal(JSON.parse(storage.getItem(KEY)).version, v, '存回去帶版本');
+});
+
+test('讀檔不會被 __proto__ 鍵改掉原型', () => {
+  const raw = '{"onboarded":true,"__proto__":{"polluted":1}}';
+  const { APP } = loadApp({ storage: memoryStorage({ [KEY]: raw }) });
+  assert.equal(APP.store.get('onboarded'), true);
+  assert.equal(APP.store.all.polluted, undefined);
+});
+
+test('整份存檔不是物件（陣列、數字）→ 預設值', () => {
+  for (const raw of ['[1,2]', '42', '"str"', 'null']) {
+    const { APP } = loadApp({ storage: memoryStorage({ [KEY]: raw }) });
+    assert.equal(APP.store.get('onboarded'), false, raw);
+    assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride', album: '/album' }, raw);
+  }
 });
 
 test('讀到舊版（少鍵）會跟預設合併', () => {
@@ -101,9 +153,9 @@ test('on 回傳 off；listener 丟錯不影響其他人', () => {
 test('tabPaths 只收「/ 開頭的字串」：舊版或手改的怪值退回預設', () => {
   const bad = { onboarded: true, tabPaths: { ride: null, explore: 42, album: 'javascript:alert(1)', extra: '/x' } };
   const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(bad) }) });
-  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  assert.deepEqual({ ...APP.store.get('tabPaths') }, { ride: '/ride', album: '/album' });
   const str = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify({ tabPaths: 'abc' }) }) }).APP;
-  assert.deepEqual({ ...str.store.get('tabPaths') }, { ride: '/ride', explore: '/explore', album: '/album' });
+  assert.deepEqual({ ...str.store.get('tabPaths') }, { ride: '/ride', album: '/album' });
   const ok = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify({ tabPaths: { album: '/album?tab=journal' } }) }) }).APP;
   assert.equal(ok.store.get('tabPaths').album, '/album?tab=journal');
 });
