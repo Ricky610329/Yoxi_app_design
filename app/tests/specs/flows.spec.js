@@ -23,6 +23,18 @@ T.spec('flows', function (t) {
 
   /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
+  /* 非 still 的抵達：點發光的地方 → 收集明信片 → 一路點畫面（蓄力快轉 → 翻開 → 看結果） */
+  async function drawThrough(app) {
+    await app.click('[data-act="open-spot"]');
+    await app.click('[data-act="draw"]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
+    for (let i = 0; i < 16 && app.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
+      await app.click('[data-unlock]');
+      await app.tick(300);
+    }
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
+  }
+
   async function walkAndCollect(app, note) {
     const A = app.APP;
     const T0 = app.MOCK.TODAY;
@@ -33,17 +45,16 @@ T.spec('flows', function (t) {
     t.eq(main && main.getAttribute('data-act'), 'go-walk', '地方詳情：走得到 → 主要動作是走路前往');
     await app.click('[data-place-foot] [data-act="go-walk"]');
     await app.at('/going/' + T0.id);
-    /* demo 面板的模擬抵達：只在前往中亮 */
-    const pa = app.$('#demo-panel [data-act="arrive"]');
-    t.ok(pa && !pa.disabled, 'demo 面板的模擬抵達在前往中可以按');
-    await app.click('#demo-panel [data-act="arrive"]');
+    /* demo 面板的模擬抵達：地點跟著前往中的目的地，走路抵達 */
+    t.eq(app.$('#demo-panel [data-demo-place]').value, T0.id, 'demo 面板的地點跟著前往中的目的地');
+    await app.click('#demo-panel [data-act="arrive-walk"]');
     await app.at('/unlock/' + T0.id);
     t.eq(A.store.get('arrivedDemo'), T0.id, 'demo 面板寫了 store.arrivedDemo');
     if (!app.still) {
-      t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：從第一幕開始');
-      await app.click('[data-unlock]');            /* 點畫面任意處 → 成品 */
+      t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先是抵達（這個地方亮起來）');
+      await drawThrough(app);
     }
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 2000, '第三幕');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 2000, '結果');
     const inp = app.$('[data-one-line]');
     inp.value = note;
     await app.click('[data-act="collect"]');
@@ -474,10 +485,13 @@ T.spec('flows', function (t) {
       const txt = pre ? pre.textContent : '';
       if (txt || app.errors.length) bad.push(list[i].path + '：' + (txt || app.errors.join('；')).slice(0, 160));
     }
-    /* 解鎖跑完三幕停在成品 */
+    /* 抵達：這個地方亮起來、等你點；點過去抽卡會停在結果 */
     await app.go('/unlock/moat');
-    await app.tick(5400);
-    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '非 still：三幕自己跑到成品');
+    await app.tick(1500);
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先停在抵達，等你點發光的地方');
+    t.ok(app.$('[data-unlock]').classList.contains('is-lit'), '這個地方亮起來了');
+    await drawThrough(app);
+    t.ok(app.$('[data-act="collect"]'), '結果有「收進收藏」');
     /* 行程：配對 → 行程中由計時器切換 */
     await app.reset({ still: false, store: { dropoff: { id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' } } });
     await app.go('/ride');
@@ -544,7 +558,7 @@ T.spec('flows', function (t) {
     await app.reset();
     let A = app.APP;
     await app.go('/explore');
-    t.ok(app.$('#demo-panel [data-act="arrive"]').disabled, '沒有前往或行程時 demo 面板的模擬抵達是灰的');
+    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]').disabled, 'demo 面板的走路抵達任何一頁都能按（地點從選單挑）');
     t.eq(A.ride.arrive(), false, '沒有行程 → 回 false');
     await app.tick(40);
     t.eq(app.route().path, '/explore', '沒有行程不導走');

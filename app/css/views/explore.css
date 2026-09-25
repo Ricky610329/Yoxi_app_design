@@ -265,12 +265,495 @@
 .ex-going__sheet.is-collapsed .ex-going__card--mist { display: none; }
 
 /* ---------- /unlock/:id ---------- */
-.ex-unlock { cursor: pointer; }
-.ex-unlock [data-scene="3"] { cursor: default; }
-.ex-unlock__t2 { font-size: var(--fs-title); }
-.ex-unlock__skip { margin-top: var(--sp-4); font-size: var(--fs-xs); opacity: .55; }
-.ex-unlock__card { position: relative; width: 220px; margin: 0 auto var(--sp-5); }
-.ex-unlock__card .postcard { aspect-ratio: 3 / 4; }
+/* 抵達 → 收集 → 抽卡。圖層（下到上）：夜色地圖 → 宣紙（水墨）→ 後景粒子 → 兩幕 → 前景粒子 → 閃光 → 音效鈕。
+   只動 transform／opacity；顏色全用 tokens；時間跟著 --t-scene。 */
+.ex-unlock { overflow: hidden; padding: 0; }
+.ex-unlock[data-at="1"], .ex-unlock[data-at="2"] { cursor: pointer; }
+.ex-unlock .unlock__scene { position: absolute; inset: 0; z-index: 3; }
+.ex-unlock__map { position: absolute; inset: 0; z-index: 0; opacity: .55; }
+.ex-unlock__map::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 0 70px, color-mix(in srgb, var(--yoxi-navy) 60%, transparent) 190px, var(--yoxi-navy) 80%),
+    color-mix(in srgb, var(--yoxi-navy) 30%, transparent);
+}
+.ex-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ex-fx--back { z-index: 2; }
+.ex-fx--front { z-index: 4; }
+.ex-flash { position: absolute; inset: 0; z-index: 5; opacity: 0; pointer-events: none; }
+.ex-paper {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--yoxi-cream);
+  opacity: 0;
+  transition: opacity calc(var(--t-slow) * 1.6) var(--ease-out);
+}
+.ex-paper .ex-face__paper { opacity: .45; }
+
+/* 音效開關（右上角） */
+.ex-sound {
+  position: absolute;
+  top: calc(var(--statusbar-h) + var(--sp-1));
+  right: var(--sp-2);
+  z-index: 6;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--yoxi-white) 70%, transparent);
+  transition: color var(--t-slow) var(--ease-out);
+}
+.ex-sound__svg { width: 22px; height: 22px; }
+.ex-sound[aria-pressed="false"] .ex-sound__on,
+.ex-sound[aria-pressed="true"] .ex-sound__off { display: none; }
+
+/* 抽取機率的「?」：命中區 40×40，看得到的只有 24 的小圈 */
+.ex-odds-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--yoxi-white) 75%, transparent);
+}
+.ex-odds-btn__i {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  border: 1px solid currentColor;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  line-height: 1;
+}
+
+/* ---- 幕一：抵達。這個地方在夜色地圖上亮起來 ---- */
+.ex-arrive { --lit: var(--yoxi-cream); --lit-2: var(--yoxi-white); }
+.ex-unlock[data-ride] .ex-arrive { --lit: var(--gold); --lit-2: var(--gold-lite); }
+.ex-arrive__head {
+  position: absolute;
+  left: var(--sp-5);
+  right: var(--sp-5);
+  top: calc(var(--statusbar-h) + var(--sp-5));
+  z-index: 2;
+  text-align: center;
+  opacity: 0;
+}
+.ex-arrive__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--yoxi-white) 12%, transparent);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .06em;
+}
+.ex-unlock[data-ride] .ex-arrive__chip { background: color-mix(in srgb, var(--gold) 28%, transparent); color: var(--gold-lite); }
+.ex-arrive__chip [data-icon] svg * { fill: currentColor; }
+.ex-arrive .unlock__title { text-shadow: 0 2px 18px color-mix(in srgb, var(--yoxi-navy) 80%, transparent); }
+
+.ex-spot-wrap { position: absolute; left: 50%; top: 42%; width: 0; height: 0; z-index: 1; }
+.ex-spot {
+  position: absolute;
+  left: -80px;
+  top: -80px;
+  width: 160px;
+  height: 160px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.ex-spot__beam {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 84px;
+  height: 340px;
+  margin-left: -42px;
+  transform-origin: 50% 100%;
+  transform: scaleY(0);
+  opacity: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--lit-2) 75%, transparent), color-mix(in srgb, var(--lit) 22%, transparent) 55%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 32%, black 68%, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 32%, black 68%, transparent);
+  pointer-events: none;
+}
+.ex-spot__beam::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  margin-left: -2px;
+  background: linear-gradient(to top, var(--lit-2), transparent 85%);
+}
+.ex-spot__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160px;
+  height: 160px;
+  margin: -80px 0 0 -80px;
+  border-radius: 50%;
+  border: 2px solid var(--lit);
+  opacity: 0;
+}
+.ex-spot__halo {
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--lit-2) 90%, transparent), color-mix(in srgb, var(--lit) 40%, transparent) 42%, transparent 72%);
+  opacity: 0;
+}
+.ex-spot__pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 68px;
+  height: 68px;
+  margin: -34px 0 0 -34px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--yoxi-navy-soft);
+  box-shadow: 0 0 0 3px var(--lit-2), 0 0 0 8px color-mix(in srgb, var(--lit) 30%, transparent);
+  opacity: 0;
+}
+.ex-spot__art {
+  position: absolute;
+  inset: 0;
+  filter: grayscale(1) brightness(.75);
+  transition: filter var(--t-slow) var(--ease-out) calc(var(--t-scene) * .35);
+}
+.ex-arrive__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(42% + 100px);
+  z-index: 2;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: .08em;
+  opacity: 0;
+}
+.ex-unlock.is-sheet .ex-arrive__hint { visibility: hidden; }
+
+/* 亮起來：圖釘落地 → 上色、光暈炸開 → 光柱升起 → 地上一圈圈擴散 → 標題與提示 */
+.ex-unlock.is-lit .ex-spot__pin { animation: ex-pin-drop calc(var(--t-slow) * 1.2) var(--ease-bump) both; }
+.ex-unlock.is-lit .ex-spot__art { filter: none; }
+.ex-unlock.is-lit .ex-spot__halo {
+  animation: ex-halo-flare var(--t-scene) var(--ease-out) calc(var(--t-scene) * .35) both,
+             ex-breathe calc(var(--t-scene) * 2) var(--ease) calc(var(--t-scene) * 1.4) infinite;
+}
+.ex-unlock.is-lit .ex-spot__beam {
+  animation: ex-beam calc(var(--t-scene) * .75) var(--ease-out) calc(var(--t-scene) * .4) both,
+             ex-shimmer calc(var(--t-scene) * 1.6) var(--ease) calc(var(--t-scene) * 1.2) infinite;
+}
+.ex-unlock.is-lit .ex-spot__ring { animation: ex-ring calc(var(--t-scene) * 2) var(--ease-out) calc(var(--t-scene) * .45) infinite; }
+.ex-unlock.is-lit .ex-spot__ring:nth-child(3) { animation-delay: calc(var(--t-scene) * 1.12); }
+.ex-unlock.is-lit .ex-spot__ring:nth-child(4) { animation-delay: calc(var(--t-scene) * 1.78); }
+.ex-unlock.is-lit .ex-arrive__head { animation: fade-up var(--t-slow) var(--ease-out) calc(var(--t-scene) * .5) both; }
+.ex-unlock.is-lit .ex-arrive__hint {
+  animation: fade-up var(--t-slow) var(--ease-out) calc(var(--t-scene) * 1.3) both,
+             ex-pulse calc(var(--t-scene) * 1.6) var(--ease) calc(var(--t-scene) * 1.8) infinite;
+}
+@keyframes ex-pin-drop {
+  0%   { opacity: 0; transform: translateY(-40px) scale(.5); }
+  60%  { opacity: 1; transform: translateY(3px) scale(1.08, .92); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes ex-halo-flare {
+  0%   { opacity: 0; transform: scale(.2); }
+  35%  { opacity: 1; transform: scale(1.55); }
+  100% { opacity: .8; transform: scale(1); }
+}
+@keyframes ex-breathe {
+  0%, 100% { opacity: .8; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.1); }
+}
+@keyframes ex-beam {
+  from { opacity: 0; transform: scaleY(0); }
+  to   { opacity: .9; transform: scaleY(1); }
+}
+@keyframes ex-shimmer {
+  0%, 100% { opacity: .9; }
+  50%      { opacity: .62; }
+}
+@keyframes ex-ring {
+  0%   { opacity: .9; transform: scale(.36, .15); }
+  100% { opacity: 0; transform: scale(1.6, .62); }
+}
+@keyframes ex-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .45; }
+}
+
+/* 收集面板（點發光的地方才出現） */
+.ex-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: var(--sp-5) var(--gutter) calc(var(--sp-5) + var(--safe-bottom));
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  text-align: left;
+  box-shadow: var(--sh-sheet);
+  cursor: default;
+}
+.ex-sheet[hidden] { display: none; }
+.ex-sheet__row { display: flex; align-items: center; gap: var(--sp-3); }
+.ex-sheet__art { position: relative; flex: none; width: 56px; height: 56px; overflow: hidden; border-radius: var(--r-img); }
+.ex-sheet__txt { flex: 1; min-width: 0; }
+.ex-sheet__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
+.ex-sheet__p { display: block; margin-top: var(--sp-1); color: var(--yoxi-slate); font-size: var(--fs-cap); line-height: var(--lh-body); }
+.ex-sheet .ex-odds-btn { color: var(--yoxi-slate); }
+.ex-sheet__gold {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--gold-lite) 60%, var(--yoxi-white));
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+}
+.ex-sheet__go { width: 100%; height: 52px; margin-top: var(--sp-4); font-size: var(--fs-body); }
+
+/* ---- 抽卡舞台＋結果（同一幕：卡片不換元素，翻完直接滑到結果的位置） ---- */
+.ex-unlock .ex-stage.is-on {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--statusbar-h) + var(--sp-3)) var(--sp-5) var(--sp-5);
+}
+.ex-stage__shake { width: 100%; }
+.ex-unlock__card {
+  position: relative;
+  width: 220px;
+  margin: 0 auto var(--sp-4);
+  perspective: 1100px;
+  transition: transform var(--t-slow) var(--ease-out);
+}
+.ex-unlock[data-at="2"] .ex-unlock__card { transform: translateY(var(--dy, 0px)); }
+.ex-unlock.is-ready .ex-unlock__card { animation: ex-float calc(var(--t-scene) * 1.8) var(--ease) infinite; }
+@keyframes ex-float {
+  0%, 100% { transform: translateY(var(--dy, 0px)); }
+  50%      { transform: translateY(calc(var(--dy, 0px) - 7px)); }
+}
+.ex-unlock__card > .ex-odds-btn { position: absolute; top: calc(var(--sp-2) * -1); right: -48px; z-index: 2; }
+.ex-unlock[data-at="2"] .ex-unlock__card > .ex-odds-btn { opacity: 0; pointer-events: none; }
+
+.ex-flip { position: relative; aspect-ratio: 3 / 4; transform-style: preserve-3d; }
+.ex-flip.is-front { transform: rotateY(180deg); }
+.ex-unlock.is-drawing .ex-flip { will-change: transform; }
+.ex-flip__back,
+.ex-flip__front {
+  position: absolute;
+  inset: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.ex-flip__front { transform: rotateY(180deg); box-shadow: 0 18px 40px color-mix(in srgb, var(--yoxi-navy) 45%, transparent); }
+.ex-flip__front.postcard--gold {
+  box-shadow: inset 0 0 0 3px var(--gold), 0 0 0 1px var(--gold-lite), 0 0 38px color-mix(in srgb, var(--gold) 60%, transparent);
+}
+.ex-flip__front .postcard__ribbon { z-index: 3; }
+.ex-flip__back {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--sp-1);
+  overflow: hidden;
+  border-radius: var(--r-img);
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--yoxi-white) 5%, transparent) 0 2px, transparent 2px 11px),
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--yoxi-red) 28%, transparent), transparent 55%),
+    linear-gradient(160deg, var(--yoxi-navy-soft), var(--yoxi-navy));
+  box-shadow:
+    inset 0 0 0 7px var(--yoxi-navy),
+    inset 0 0 0 8px color-mix(in srgb, var(--gold) 65%, transparent),
+    0 18px 40px color-mix(in srgb, var(--yoxi-navy) 50%, transparent);
+}
+.ex-flip__back::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: linear-gradient(115deg, transparent 40%, color-mix(in srgb, var(--yoxi-white) 22%, transparent) 50%, transparent 60%);
+  transform: translateX(-70%);
+}
+.ex-unlock.is-ready .ex-flip__back::after { animation: ex-sheen calc(var(--t-scene) * 1.8) var(--ease) infinite; }
+@keyframes ex-sheen {
+  0%       { transform: translateX(-70%); }
+  60%, 100% { transform: translateX(70%); }
+}
+.ex-back__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--yoxi-red); box-shadow: 0 0 18px var(--yoxi-red); }
+.ex-back__mark { color: var(--yoxi-white); font-size: 40px; font-weight: var(--fw-heavy); line-height: 1; }
+.ex-back__sub { margin-left: .5em; color: var(--gold-lite); font-size: var(--fs-cap); font-weight: var(--fw-heavy); letter-spacing: .5em; }
+
+/* 蓄力的說明字：跟著卡片待在畫面正中 */
+.ex-stage__cap {
+  min-height: 1.6em;
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: .08em;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease-out);
+}
+.ex-unlock[data-at="2"] .ex-stage__cap { opacity: .85; transform: translateY(var(--dy, 0px)); }
+.ex-unlock.is-ready .ex-stage__cap { animation: ex-pulse calc(var(--t-scene) * 1.2) var(--ease) infinite; }
+.ex-unlock[data-at="3"] .ex-stage__cap { display: none; }
+
+/* 特效層：跟著卡片（放在卡片盒子裡），全部 pointer-events: none */
+.ex-stage__fx { position: absolute; inset: 0; pointer-events: none; }
+.ex-aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 540px;
+  height: 540px;
+  margin: -270px 0 0 -270px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--aura, var(--yoxi-white)) 75%, transparent),
+    color-mix(in srgb, var(--aura, var(--yoxi-white)) 24%, transparent) 42%,
+    transparent 70%);
+  opacity: 0;
+}
+.ex-unlock.is-done .ex-aura { opacity: .45; transition: opacity var(--t-slow) var(--ease-out); }
+.ex-unlock.is-paper .ex-aura { opacity: 0; }
+
+.ex-rays {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 980px;
+  height: 980px;
+  margin: -490px 0 0 -490px;
+  opacity: 0;
+  transform: scale(.5);
+  transition: opacity var(--t-scene) var(--ease-out), transform var(--t-scene) var(--ease-out);
+  -webkit-mask-image: radial-gradient(closest-side, black 16%, transparent 72%);
+  mask-image: radial-gradient(closest-side, black 16%, transparent 72%);
+}
+.ex-rays i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--gold-lite) 40%, transparent) 0deg 4deg, transparent 4deg 15deg);
+  animation: ex-spin calc(var(--t-scene) * 16) linear infinite;
+}
+.ex-unlock.is-gold-up .ex-rays { opacity: 1; transform: scale(1); }
+@keyframes ex-spin { to { transform: rotate(1turn); } }
+
+.ex-blots i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300px;
+  height: 300px;
+  margin: -150px 0 0 -150px;
+  border-radius: 50%;
+  opacity: 0;
+  filter: blur(12px);
+  mix-blend-mode: screen;
+}
+.ex-blots i:nth-child(1) { background: radial-gradient(closest-side, var(--yoxi-cream), transparent); }
+.ex-blots i:nth-child(2) { background: radial-gradient(closest-side, color-mix(in srgb, var(--yoxi-red) 40%, var(--yoxi-white)), transparent); }
+.ex-blots i:nth-child(3) { background: radial-gradient(closest-side, var(--yoxi-mist), transparent); }
+.ex-blots i:nth-child(4) { background: radial-gradient(closest-side, var(--gold-lite), transparent); }
+
+.ex-stroke {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 470px;
+  height: 118px;
+  border-radius: var(--r-pill);
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(-16deg);
+  background:
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--yoxi-navy) 24%, transparent) 0 2px, transparent 2px 7px),
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 70%, var(--yoxi-red)) 16%, var(--yoxi-red) 62%, color-mix(in srgb, var(--yoxi-red) 55%, transparent) 86%, transparent);
+  background-blend-mode: multiply;
+}
+
+.ex-enso {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 430px;
+  max-width: none;                /* base.css 的 svg { max-width: 100% } 會把它縮成卡片寬，整圈躲在卡片後面 */
+  height: 430px;
+  overflow: visible;
+  opacity: 0;
+  transform: translate(-50%, -53%);   /* 往上挪一點，下緣不壓到畫風名 */
+}
+.ex-enso path {
+  fill: none;
+  stroke: var(--yoxi-navy);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: url(#exf-brush);
+}
+.ex-unlock.is-done[data-style="ink"] .ex-enso { opacity: .8; }
+.ex-unlock.is-done[data-style="ink"] .ex-enso path { stroke-dashoffset: 0; }
+.ex-drop {
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  width: 12px;
+  height: 18px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--yoxi-cream);
+  box-shadow: 0 0 16px var(--yoxi-cream);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+/* 水墨：夜色洗成宣紙，字與按鈕換成墨色 */
+.ex-unlock.is-paper { color: var(--yoxi-navy); transition: color var(--t-slow) var(--ease-out); }
+.ex-unlock.is-paper .ex-paper { opacity: 1; }
+.ex-unlock.is-paper .ex-unlock__btn { background: var(--yoxi-navy); color: var(--yoxi-white); }
+.ex-unlock.is-paper .ex-unlock__input {
+  border-color: color-mix(in srgb, var(--yoxi-navy) 28%, transparent);
+  background: color-mix(in srgb, var(--yoxi-white) 55%, transparent);
+  color: var(--yoxi-navy);
+}
+.ex-unlock.is-paper .ex-unlock__input::placeholder { color: var(--yoxi-slate); }
+.ex-unlock.is-paper .ex-odds-btn,
+.ex-unlock.is-paper .ex-sound { color: var(--yoxi-navy); }
+
+/* 結果 */
+.ex-result { width: 100%; }
+.ex-unlock[data-at="2"] .ex-result { visibility: hidden; opacity: 0; }
+.ex-unlock.is-done .ex-result { animation: fade-up var(--t-slow) var(--ease-out) both; }
+.ex-unlock__style { display: grid; justify-items: center; gap: 2px; margin: 0 0 var(--sp-3); }
+.ex-unlock__sname { font-size: var(--fs-title); font-weight: var(--fw-heavy); letter-spacing: .14em; }
+.ex-unlock__rare { font-size: var(--fs-cap); opacity: .75; }
+.ex-unlock[data-style="gold"] .ex-unlock__sname { color: var(--gold-lite); }
+.ex-credit { margin: calc(var(--sp-2) * -1) 0 var(--sp-2); font-size: var(--fs-xs); opacity: .6; }
+.ex-credit__a { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; color: inherit; text-decoration: underline; }
 .ex-unlock__in { padding: 0 var(--sp-2); }
 .ex-unlock__input {
   width: 100%;
@@ -284,11 +767,11 @@
   text-align: center;
 }
 .ex-unlock__input::placeholder { color: color-mix(in srgb, var(--yoxi-white) 60%, transparent); }
-.ex-unlock__acts { display: grid; gap: var(--sp-2); margin-top: var(--sp-5); padding: 0 var(--sp-2); }
+.ex-unlock__acts { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); padding: 0 var(--sp-2); }
 .ex-unlock__btn { background: var(--yoxi-white); color: var(--yoxi-navy); }
 .ex-unlock__link { color: color-mix(in srgb, var(--yoxi-white) 75%, transparent); }
 .ex-unlock__have { font-size: var(--fs-sm); font-weight: var(--fw-heavy); opacity: .85; }
-.ex-unlock__gold { display: grid; justify-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.ex-unlock__gold { display: grid; justify-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .ex-unlock__goldrow {
   display: inline-flex;
   align-items: center;
@@ -305,44 +788,76 @@
 .ex-unlock__goldrow [data-icon] svg > circle:first-of-type,
 .ex-unlock__goldrow [data-icon] svg > path { fill: var(--gold-lite); }
 
-/* 抽卡：成品右上角的「?」（機率揭露收在這裡，不搶畫面）與抽到的畫風名 */
-.ex-unlock__odds {
+/* 卡面畫風（正式版：景點照片＋diffusion；原型：同一張照片或插圖套 explore-fx.js 的 SVG 濾鏡） */
+.ex-face { position: absolute; inset: 0; overflow: hidden; background: var(--yoxi-mist); }
+.ex-face__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ex-face--watercolor { background: var(--yoxi-paper); }
+.ex-face--watercolor .ex-face__img { filter: url(#exf-watercolor); }
+.ex-face--oil .ex-face__img { filter: url(#exf-oil); }
+.ex-face--woodcut .ex-face__img { filter: url(#exf-woodcut); }
+.ex-face--ink { background: var(--yoxi-cream); }
+.ex-face--ink .ex-face__img { filter: url(#exf-ink); }
+.ex-face--gold .ex-face__img { filter: url(#exf-gold); }
+.ex-face__paper {
   position: absolute;
-  top: calc(var(--sp-2) * -1);
-  right: -48px;
-  z-index: 2;
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: transparent;
-  color: color-mix(in srgb, var(--yoxi-white) 75%, transparent);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .5;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
-/* 命中區 40×40，看得到的只有 24 的小圈 */
-.ex-unlock__odds-i {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--r-pill);
-  border: 1px solid color-mix(in srgb, var(--yoxi-white) 45%, transparent);
-  font-size: var(--fs-cap);
+.ex-face__seal {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: 66px;
+  padding: 4px 2px;
+  border: 1.5px solid var(--yoxi-red);
+  border-radius: var(--r-btn);
+  color: var(--yoxi-red);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-heavy);
-  line-height: 1;
+  letter-spacing: .12em;
+  writing-mode: vertical-rl;
+  opacity: .85;
 }
-.ex-unlock__style {
-  margin: calc(var(--sp-3) * -1) 0 var(--sp-4);
-  font-size: var(--fs-cap);
-  font-weight: var(--fw-heavy);
-  letter-spacing: .1em;
-  opacity: .8;
+.ex-face__holo {
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(115deg, transparent 38%,
+    color-mix(in srgb, var(--gold-lite) 55%, transparent) 46%,
+    color-mix(in srgb, var(--yoxi-white) 70%, transparent) 50%,
+    color-mix(in srgb, var(--gold-lite) 45%, transparent) 54%, transparent 62%);
+  mix-blend-mode: screen;
+  transform: translateX(-60%);
+  animation: ex-holo calc(var(--t-scene) * 2.6) var(--ease) infinite;
+  pointer-events: none;
 }
-/* 畫風示意：正式版會用景點照片＋diffusion 生成，原型先用濾鏡區分四種 */
-[data-style="watercolor"] .ex-fill { filter: saturate(.8) brightness(1.08); }
-[data-style="oil"] .ex-fill        { filter: saturate(1.5) contrast(1.15); }
-[data-style="woodcut"] .ex-fill    { filter: grayscale(.5) contrast(1.6) sepia(.35); }
-[data-style="ink"] .ex-fill        { filter: grayscale(1) contrast(1.3) brightness(1.05); }
+@keyframes ex-holo {
+  0%        { transform: translateX(-60%); }
+  55%, 100% { transform: translateX(60%); }
+}
+.ex-fx-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* 減少動態效果：沒有落下、閃爍、旋轉、循環；亮起來直接是亮的（CSS 的漸變保留，改成短淡入） */
+@media (prefers-reduced-motion: reduce) {
+  .ex-unlock.is-lit .ex-spot__pin,
+  .ex-unlock.is-lit .ex-spot__halo,
+  .ex-unlock.is-lit .ex-spot__beam,
+  .ex-unlock.is-lit .ex-spot__ring,
+  .ex-unlock.is-lit .ex-arrive__head,
+  .ex-unlock.is-lit .ex-arrive__hint,
+  .ex-unlock.is-ready .ex-unlock__card,
+  .ex-rays i,
+  .ex-face__holo { animation: none; }
+  .ex-unlock.is-lit .ex-spot__pin,
+  .ex-unlock.is-lit .ex-arrive__head,
+  .ex-unlock.is-lit .ex-arrive__hint { opacity: 1; }
+  .ex-unlock.is-lit .ex-spot__halo { opacity: .8; }
+  .ex-unlock.is-lit .ex-spot__beam { opacity: .8; transform: none; }
+  .ex-unlock__card { transition: none; }
+  .ex-unlock.is-done .ex-result { animation-duration: var(--t-fast); }
+}
 
 /* 機率說明（「?」打開） */
 /* 解鎖頁（chengshi.css 的 .unlock）是 z-index 95，遮罩要壓在它上面 */
@@ -361,40 +876,6 @@
 }
 .ex-odds__row.is-gold { font-weight: var(--fw-heavy); color: var(--gold); }
 .ex-odds__note { font-size: var(--fs-xs); line-height: 1.6; opacity: .7; margin: var(--sp-4) 0; }
-
-/* 幕二的三層筆觸（原型 inline 的 rgba 換成 tokens 混色） */
-.ex-gen__l2 { background: linear-gradient(200deg, color-mix(in srgb, var(--yoxi-white) 28%, transparent), transparent 60%); }
-.ex-gen__l3 { background: radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--yoxi-white) 40%, transparent), transparent 52%); }
-.ex-gen__l4 { box-shadow: inset 0 -40px 60px color-mix(in srgb, var(--yoxi-navy) 45%, transparent); }
-
-/* 幕一：灰點爆開上色。點先是灰的，脹大時上色；八顆粒子往外噴，顏色輪流用品牌紅、金、奶油 */
-.ex-burst__dot { animation: burst-pop 900ms var(--ease-bump) both, ex-dot-color var(--t-scene) var(--ease-out) both; }
-@keyframes ex-dot-color {
-  0%, 35% { background: var(--yoxi-slate-lite); }
-  60%, 100% { background: var(--yoxi-red); }
-}
-.ex-burst__bits { position: absolute; inset: 0; }
-.ex-burst__bits i {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  margin: -4px 0 0 -4px;
-  border-radius: 50%;
-  background: var(--yoxi-red);
-  opacity: 0;
-  transform: rotate(calc(var(--i) * 45deg)) translateY(0);
-  animation: ex-bit var(--t-scene) var(--ease-out) calc(var(--t-scene) * .3) both;
-}
-.ex-burst__bits i:nth-child(3n + 2) { background: var(--gold); }
-.ex-burst__bits i:nth-child(3n) { background: var(--yoxi-cream); }
-@keyframes ex-bit {
-  0%   { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(0) scale(.4); }
-  20%  { opacity: 1; }
-  100% { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(-70px) scale(1); }
-}
-html[data-still] .ex-burst__bits i { animation: none; opacity: 0; }
 
 /* ---------- /routes ---------- */
 .ex-routes { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--gutter) 0; }

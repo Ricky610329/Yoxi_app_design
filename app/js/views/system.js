@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v11';
+const VERSION = 'chengshi-app-v12';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -539,6 +539,57 @@ APP.view('settings', {
    #demo-panel（桌機，main.view 之外）
    -------------------------------------------------------------------------- */
 let panelFilled = false;
+let panelPick = null;      /* 下拉選單現在選的地方；換到有地點的頁面就跟著那一頁 */
+
+/* demo 可以抵達的地方：地圖上的景點＋走不到的內灣（MOCK.FAR_PLACE） */
+function demoPlaces() {
+  const M = window.MOCK || {};
+  const ids = (M.SPOTS || []).map(function (s) { return s.id; });
+  if (M.FAR_PLACE && M.FAR_PLACE.id && ids.indexOf(M.FAR_PLACE.id) < 0) ids.push(M.FAR_PLACE.id);
+  return ids.map(function (id) { return APP.place(id); }).filter(Boolean);
+}
+function placeGot(p) { return !!(p && p.card && window.STATE && STATE.has(p.card)); }
+
+/* 這一頁在講哪個地方：地方詳情／前往中／抵達頁的 :id → 進行中行程的目的地 → 下車點 */
+function contextPlace(cur) {
+  const id = cur && cur.params && cur.params.id;
+  if (cur && /^\/(place|going|unlock)\//.test(cur.pattern || '') && APP.place(id)) return APP.place(id).id;
+  const t = APP.store.get('trip');
+  if (t && t.phase !== 'done' && APP.place(t.placeId)) return APP.place(t.placeId).id;
+  const d = APP.store.get('dropoff');
+  if (d && APP.place(d.id)) return APP.place(d.id).id;
+  return null;
+}
+
+/* demo 面板的模擬抵達（任何一頁都能用，地點從下拉選單挑）：
+   走路     → 記下 arrivedDemo，進 /unlock/:id；行程進行中不行（人在車上）。
+   搭 yoxi → 這一趟直接在這裡結束（store.trip phase done；原本是別的目的地就被這一趟取代，契約 §3.3 只有一筆 trip），
+             進 /unlock/:id?ride=1。抵達頁會再驗一次 trip，所以手打網址拿不到金框。 */
+function demoArrive(id, by) {
+  const p = APP.place(id);
+  if (!p) { APP.ui.toast('先選一個地方'); return false; }
+  const t = APP.store.get('trip');
+  if (by !== 'ride') {
+    if (t && t.phase !== 'done') { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
+    APP.store.set('arrivedDemo', p.id);
+    APP.nav.go('/unlock/' + encodeURIComponent(p.id));
+    return true;
+  }
+  const same = !!(t && t.placeId === p.id);
+  APP.store.patch({
+    trip: {
+      placeId: p.id, phase: 'done',
+      startedAt: same && t.startedAt ? t.startedAt : new Date().toISOString(),
+      rated: same && !!t.rated,
+      km: same && t.km != null ? t.km : APP.fmt.km(p.dist),
+      via: same ? (t.via || null) : null,
+    },
+    dropoff: null,
+    arrivedDemo: p.id,
+  });
+  APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1');
+  return true;
+}
 
 function fillPanel() {
   const panel = document.getElementById('demo-panel');
@@ -548,34 +599,44 @@ function fillPanel() {
     '<div class="demo-panel__t">demo 工具</div>' +
     '<button class="demo-panel__btn" type="button" data-act="push-am">早上推播</button>' +
     '<button class="demo-panel__btn" type="button" data-act="push-pm">晚上推播</button>' +
-    '<button class="demo-panel__btn" type="button" data-act="arrive" disabled>模擬抵達</button>' +
+    '<div class="demo-panel__group" role="group" aria-labelledby="demo-arrive-t">' +
+      '<label class="demo-panel__label" id="demo-arrive-t" for="demo-arrive-place">模擬抵達</label>' +
+      '<select class="demo-panel__select" id="demo-arrive-place" data-demo-place></select>' +
+      '<div class="demo-panel__row">' +
+        '<button class="demo-panel__btn" type="button" data-act="arrive-walk">走路抵達</button>' +
+        '<button class="demo-panel__btn demo-panel__btn--gold" type="button" data-act="arrive-ride">搭 yoxi 抵達</button>' +
+      '</div>' +
+    '</div>' +
     '<button class="demo-panel__btn" type="button" data-act="reset-demo">重設 demo</button>' +
     '<a class="demo-panel__btn demo-panel__btn--ghost" href="../prototype/index.html" target="_blank" rel="noopener" data-act="prototype">原型總覽</a>' +
     '<p class="demo-panel__note">這是提案用的 demo：叫車、抵達與推播都是模擬的。</p>';
+  const sel = panel.querySelector('[data-demo-place]');
+  sel.onchange = function () { panelPick = sel.value; };
   panel.querySelector('[data-act="push-am"]').onclick = function () { APP.ui.push({ when: 'am' }); };
   panel.querySelector('[data-act="push-pm"]').onclick = function () { APP.ui.push({ when: 'pm' }); };
   panel.querySelector('[data-act="reset-demo"]').onclick = function () { resetDemo(); };
-  panel.querySelector('[data-act="arrive"]').onclick = function () {
-    const go = panelArrive(APP.nav.current());
-    if (go) go(); else APP.ui.toast('先開始前往或叫車');
-  };
+  panel.querySelector('[data-act="arrive-walk"]').onclick = function () { demoArrive(sel.value, 'walk'); };
+  panel.querySelector('[data-act="arrive-ride"]').onclick = function () { demoArrive(sel.value, 'ride'); };
   return panel;
 }
 
-/* 面板上的模擬抵達只看「現在這一頁」：前往中 → 解鎖；行程中 → 抵達 */
-function panelArrive(cur) {
-  if (!cur) return null;
-  if (cur.pattern === '/going/:id' || cur.pattern === '/trip') return arriveTarget(cur);
-  return null;
-}
-
+/* 下拉選單：這一頁有地點就選它；沒有就留著上次選的（已經收過了就換成第一個還沒收的） */
 function updatePanel(cur) {
   const panel = fillPanel();
   if (!panel) return;
-  const b = panel.querySelector('[data-act="arrive"]');
-  const ok = !!panelArrive(cur);
-  b.disabled = !ok;
-  b.title = ok ? '' : '在前往中或行程中才能用';
+  const sel = panel.querySelector('[data-demo-place]');
+  const list = demoPlaces();
+  const here = contextPlace(cur);
+  if (here) panelPick = here;
+  else if (panelPick && placeGot(APP.place(panelPick))) panelPick = null;
+  if (!panelPick || !APP.place(panelPick)) {
+    const first = list.filter(function (p) { return !placeGot(p); })[0] || list[0];
+    panelPick = first ? first.id : null;
+  }
+  sel.innerHTML = list.map(function (p) {
+    return '<option value="' + esc(p.id) + '">' + esc(p.name) + (placeGot(p) ? '（已收藏）' : '') + '</option>';
+  }).join('');
+  if (panelPick) sel.value = panelPick;
 }
 
 /* --------------------------------------------------------------------------
@@ -589,8 +650,8 @@ APP.on('route:change', function (cur) {
   prunePushes();
   updatePanel(cur);
 });
-APP.on('state:change', prunePushes);
+APP.on('state:change', function () { prunePushes(); updatePanel(APP.nav.current()); });
 
-APP.system = { VERSION: VERSION, resetDemo: resetDemo, wipeFootprint: wipeFootprint, prunePushes: prunePushes, arriveTarget: arriveTarget };
+APP.system = { VERSION: VERSION, resetDemo: resetDemo, wipeFootprint: wipeFootprint, prunePushes: prunePushes, arriveTarget: arriveTarget, demoArrive: demoArrive };
 
 })();

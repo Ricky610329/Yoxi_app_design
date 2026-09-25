@@ -21,7 +21,7 @@
 | 獎章呈現 | **X4** 勳章牆（六角金屬章，章面是地標線稿） | 首頁放大最近收下的一枚＋一列小章＋「顯示全部」→ `/badges` 三欄章牆；沒有進度環、沒有集點卡；還在路上的寫「收集 4/8」 |
 | 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
 | 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/explore`／`/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
-| 儀式 | 三幕解鎖（主線） | 灰點爆開上色 → AI 生成中 → 成品；點畫面可跳到成品 |
+| 儀式 | 抵達 → 收集 → 抽卡 | 夜色地圖上這個地方亮起光柱 → 點它出「收集明信片」→ 卡背蓄力、翻開（特效照稀有度分級，金框最重）→ 結果；點畫面可快轉，減少動態效果時直接看結果 |
 | 家人 | 分享選項 | 長輩圖在分享面板第一格；沒有「家人模式」 |
 | 好康任務 | 不同頁 | 原封不動，不合併 |
 | 好友 | 不做 | 五個未決還在，不進 app |
@@ -31,7 +31,7 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 - 設定下車地點頁（`#/dropoff`）：清單＋搜尋，資料全部來自 `MOCK`。
 - 第一次開的 onboarding（三張，可略過）。
 - 推播是 app 內的浮層（早／晚各一則，一天最多兩則），由 demo 工具觸發。
-- demo 工具：桌機在手機外框旁邊一條面板；手機在「設定 → demo 工具」。內容：早上推播、晚上推播、模擬抵達（只在前往中／行程中出現）、重設。
+- demo 工具：桌機在手機外框旁邊一條面板；手機在「設定 → demo 工具」。桌機面板：早上推播、晚上推播、模擬抵達（地點下拉選單＋「走路抵達」「搭 yoxi 抵達」，任何一頁都能按；地點預設跟著這一頁）、重設。設定頁的模擬抵達仍只在前往中／行程中出現。
 
 ### 雙主頁的叫車面板
 
@@ -53,7 +53,8 @@ app/
   js/app.js                 核心：window.APP（router、view registry、store、fmt、nav、ui、map）
   js/views/system.js        設定、onboarding、推播浮層、demo 工具、分享
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
-  js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、解鎖三幕、路線列表／詳情
+  js/views/explore-fx.js    explore 的特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）；在 explore.js 之前載入
+  js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、抵達與抽卡、路線列表／詳情
   js/views/album.js         收藏（摘要式＋X4 六角章）、所有明信片、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   tools/serve.py            本機靜態伺服器（測 PWA 用）
@@ -145,6 +146,9 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   | `trip` | `{ placeId, phase:'matching'|'riding'|'done', startedAt, rated:bool, km }` 或 null | 進行中的叫車 |
   | `pushes` | `[{ when:'am'|'pm', at:ISO }]` | 今天發過的推播（最多兩則） |
   | `arrivedDemo` | string 或 null | demo「模擬抵達」暫存的 placeId |
+  | `draws` | `{ 地點 id: 款式 key }` | 走路抵達抽到、還沒收的款式（重進不重抽；收下就清掉） |
+  | `cardStyle` | `{ 明信片 id: 款式 key }` | 收下時抽到的款式（金框的明信片在收藏裡也是金框） |
+  | `fxMute` | bool | 抵達與抽卡的音效關掉 |
   | `tabPaths` | `{ ride, explore, album }` | 各 tab 最後停的 path（由 nav 維護） |
 - 事件：`APP.on('store:change'|'state:change'|'route:change', fn)`／`APP.emit(...)`。
   任何寫 `STATE.*` 的地方請跟著 `APP.emit('state:change')`，tab bar 的小紅點與統計才會更新。
@@ -217,7 +221,7 @@ body[data-view="place"][data-tab="explore"][data-route="/place/:id"]
 #demo-panel（.stage 內、.device 的旁邊；桌機才顯示；內容空的時候 :empty 隱藏）
 <pre id="app-errors" hidden>（window.onerror／render 錯誤；headless 驗收讀它）
 ```
-demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-panel__btn`（海軍藍）、`.demo-panel__btn--ghost`、`.demo-panel__note`。
+demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-panel__btn`（海軍藍）、`.demo-panel__btn--ghost`、`.demo-panel__note`；模擬抵達那一組（system.css 提供）：`.demo-panel__group`、`__label`、`__select`（`[data-demo-place]`）、`__row`、`.demo-panel__btn--gold`，按鈕是 `data-act="arrive-walk"`／`"arrive-ride"`。
 內建卡片：`.app-empty > .app-empty__card`（`__eyebrow`、`__t`、`__p`），views 要做「找不到」也可以沿用。
 - 每個可按的東西都要有行為：`href="#/…"`（必須是已註冊的 route）、`element.onclick`、或 `data-toast="…"`。
   只做裝飾的東西不要用 `<button>`／`<a>`。
@@ -297,7 +301,9 @@ T.spec('ride', function (t) {
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
 - `APP.explore.collect(placeId, { by, note, km, style })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）；`style` 記進 `store.cardStyle[卡片 id]`，並清掉 `store.draws[地點 id]`
-- 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框；走路抵達的結果先記在 `store.draws[地點 id]`，重進不重抽。機率只放在 `/unlock` 成品右上角的「?」（`data-act="open-odds"`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
+- 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框；走路抵達的結果先記在 `store.draws[地點 id]`，重進不重抽。機率只放在 `/unlock` 收集面板與成品右上角的「?」（`data-act="open-odds"`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
+- `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`
+- `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `arrivedDemo` ＋ `/unlock/:id`（行程進行中不行）；搭 yoxi → `store.trip` 設成這個地方、phase done（取代原本的行程）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用）
 
@@ -320,7 +326,7 @@ T.spec('ride', function (t) {
 | `/explore/map` | 探索地圖（真實地圖 ≤ 10 景點、小卡） | explore | `map.html`、`concept-map-explore.html` | explore |
 | `/place/:id` | 地方詳情（K1） | explore | `variant-k1-place.html`、`place.html` | explore |
 | `/going/:id` | 前往中（走路） | null | `going.html` | explore |
-| `/unlock/:id` | 抵達解鎖三幕（`?ride=1` 金框限定版） | null | `unlock.html` | explore |
+| `/unlock/:id` | 抵達 → 收集 → 抽卡（`?ride=1` 搭 yoxi 抵達，必得金框；`data-at` 1 抵達／2 抽卡／3 結果） | null | `unlock.html` | explore |
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
 | `/album` | 收藏（明信片主卡、統計、獎章精選卡；`?tab=` 舊連結照樣落在這頁） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |

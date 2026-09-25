@@ -317,6 +317,77 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
+  /* 非 still：抵達亮燈 → 收集面板 → 抽卡 → 結果。五款都跑一次，確認每款的收尾狀態 */
+  async function drawThrough(app) {
+    await app.click('[data-act="open-spot"]');
+    await app.click('[data-act="draw"]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
+    for (let i = 0; i < 16 && app.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
+      await app.click('[data-unlock]');
+      await app.tick(300);
+    }
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
+  }
+
+  t.test('/unlock 非 still：亮起來 → 點它出面板（5 款＋?）→ 抽卡 → 結果；五款各自收尾', async function (app) {
+    const cases = [
+      { key: 'watercolor', place: 'glass-kiln' },
+      { key: 'oil', place: 'glass-kiln' },
+      { key: 'woodcut', place: 'glass-kiln' },
+      { key: 'ink', place: 'glass-kiln', paper: true },
+      { key: 'gold', place: 'neiwan', ride: true },
+    ];
+    for (const c of cases) {
+      const store = c.ride
+        ? { trip: { placeId: c.place, phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 } }
+        : { draws: { [c.place]: c.key } };
+      await app.reset({ still: false, store: store });
+      await app.go('/unlock/' + c.place + (c.ride ? '?ride=1' : ''));
+      const box = app.$('[data-unlock]');
+      t.eq(box.getAttribute('data-at'), '1', c.key + '：先停在抵達');
+      t.eq(box.getAttribute('data-style'), c.key, c.key + '：抽到的款式');
+      await app.waitFor(function () { return app.$('[data-unlock]').classList.contains('is-lit'); }, 2000, '亮起來');
+      t.ok(app.$('[data-arrive-sheet]').hidden, c.key + '：面板一開始收著');
+      await app.click('[data-act="open-spot"]');
+      t.ok(!app.$('[data-arrive-sheet]').hidden, c.key + '：點發光的地方 → 面板');
+      t.includes(app.text('[data-arrive-sheet]'), app.APP.explore.DRAW_STYLES.length + ' 款', c.key + '：寫幾款');
+      t.ok(app.$('[data-arrive-sheet] [data-act="open-odds"]'), c.key + '：面板上有機率的 ?');
+      t.eq(!!app.$('.ex-sheet__gold'), !!c.ride, c.key + '：搭車才寫必得金框');
+      await drawThrough(app);
+      t.ok(app.$('[data-flip]').classList.contains('is-front'), c.key + '：翻到正面');
+      t.eq(app.$('[data-final-card]').getAttribute('data-style'), c.key, c.key + '：卡面款式');
+      t.eq(app.$('[data-unlock]').classList.contains('is-paper'), !!c.paper, c.key + '：只有水墨把背景洗成宣紙');
+      t.eq(app.$('[data-unlock]').classList.contains('is-gold-up'), c.key === 'gold', c.key + '：只有金框有光芒');
+      t.eq(!!app.$('[data-final-card].postcard--gold'), c.key === 'gold', c.key + '：只有金框是金框');
+      t.ok(app.$('[data-act="collect"]'), c.key + '：結果有「收進收藏」');
+      t.eq(app.errors.length, 0, c.key + '：錯誤：' + app.errors.join('；'));
+    }
+    await app.reset();
+  }, { timeout: 60000 });
+
+  t.test('/unlock 非 still：點畫面快轉（蓄力 → 可以翻 → 翻開）；音效開關記在 store.fxMute', async function (app) {
+    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'ink' } } });
+    await app.go('/unlock/glass-kiln');
+    const snd = app.$('[data-act="toggle-sound"]');
+    t.eq(snd.getAttribute('aria-pressed'), 'true', '音效預設開');
+    await app.click(snd);
+    t.eq(app.APP.store.get('fxMute'), true, '關掉 → store.fxMute');
+    t.eq(snd.getAttribute('aria-pressed'), 'false', 'aria-pressed 跟著');
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '按音效不會動到幕');
+    await app.click('[data-act="open-spot"]');
+    await app.click('[data-act="draw"]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '2'; }, 2000, '抽卡中');
+    await app.tick(700);
+    await app.click('[data-unlock]');
+    await app.waitFor(function () { return app.$('[data-unlock]').classList.contains('is-ready'); }, 2500, '蓄力中點一下 → 可以翻');
+    t.includes(app.text('[data-stage-cap]'), '點一下翻開', '提示翻開');
+    await app.click('[data-unlock]');
+    await app.waitFor(function () { return !app.$('[data-unlock]').classList.contains('is-ready'); }, 1000, '開始翻');
+    await app.click('[data-unlock]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 1500, '翻開中點一下 → 結果');
+    await app.reset();
+  });
+
   t.test('APP.explore.collect：回傳是否新收、emit state:change', async function (app) {
     await app.reset();
     let fired = 0;

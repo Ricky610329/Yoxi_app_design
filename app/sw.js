@@ -16,7 +16,7 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v11';
+const VERSION = 'chengshi-app-v12';
 
 // 路徑相對於 sw.js（app/）。順序照 ARCHITECTURE §2 的載入順序。
 const PRECACHE = [
@@ -52,6 +52,7 @@ const PRECACHE = [
   './js/app.js',
   './js/views/system.js',
   './js/views/ride.js',
+  './js/views/explore-fx.js',
   './js/views/explore.js',
   './js/views/album.js',
   // 照片
