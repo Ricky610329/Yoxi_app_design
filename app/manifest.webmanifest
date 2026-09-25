@@ -5,7 +5,7 @@
   "lang": "zh-Hant",
   "dir": "ltr",
   "id": "./index.html",
-  "start_url": "./index.html#/ride",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

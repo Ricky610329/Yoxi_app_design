@@ -918,9 +918,22 @@ function start() {
   else { curIdx = 0; stamp(0); }
   route('none');
 
-  /* PWA：只在 http(s) 註冊；file:// 安靜略過 */
+  /* PWA：只在 http(s) 註冊；file:// 安靜略過（策略見 sw.js 檔頭）。
+     新的 sw 接手（controllerchange）而且之前已經有一個在管這一頁 → 有新版本了，提示重新整理；
+     第一次安裝時 controller 從無到有，不提示。回到前景時順便問一次有沒有新版（裝成 app 的人很少冷啟動）。 */
   if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(function (err) {
+    const swc = navigator.serviceWorker;
+    let hadController = !!swc.controller;
+    let told = false;
+    swc.addEventListener('controllerchange', function () {
+      if (hadController && !told) { told = true; ui.toast('有新版本，重新整理就會套用'); }
+      hadController = true;
+    });
+    swc.register('./sw.js').then(function (reg) {
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && reg && reg.update) reg.update().catch(function () {});
+      });
+    }).catch(function (err) {
       console.info('[sw] 未註冊：', err && err.message);
     });
   }
