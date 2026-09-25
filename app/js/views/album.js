@@ -2,10 +2,11 @@
    yoxi 城事 web app — album 區塊（收藏 tab）
    契約：app/ARCHITECTURE.md §0（S3 路線書架＋X4 勳章牆、隱私分軌、長輩圖是分享選項）、§3、§5、§8。
 
-   這支註冊八個 view：
-     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋明信片網格收在裡面）、統計兩格、
+   這支註冊九個 view：
+     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近三張疊卡，點了進 /postcards）、統計兩格、
                       獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。
                       舊的書架＋pill 四段留在 legacyAlbumHome 當對照，不註冊。
+     /postcards       我的所有明信片：收下的一段（最近的在前）、還沒去的一段，左上返回。
      /badges          全部獎章：三欄六角章牆，收下的寫日期、還在路上的寫「收集 n/m」。
      /postcard/:id    明信片詳情，點一下翻面看背面敘事。來源：postcard.html。
      /badge/:id       獎章詳情。來源：badge.html。
@@ -16,8 +17,8 @@
 
    刻意沒有的東西：
    - 連續天數、排名、限量、倒數、未讀數字；獎章的進度環與集點卡（X4 選了勳章牆）。
-   - 獎章章面不刻年份：刻了像「年度限定」，跟「沒有期限、不會過期」相衝；刻 yoxi。
-   - 明信片網格不逐張貼「AI 生成示意」（22 張會變成標籤牆），主卡底下一行講一次。
+   - 獎章章面不刻年份：刻了像「年度限定」，跟「沒有期限、不會過期」相衝；也不拿文字當圖示，地標是線稿。
+   - 明信片網格不逐張貼「AI 生成示意」（22 張會變成標籤牆），/postcards 底下一行講一次。
    - 日誌／心情／照片沒有分享鍵（隱私分軌）；只有明信片與週回顧右上有分享。
    - 書架沒有「一次攤開 22 張」：L1 一屏一事，/album 可按數 ≤ 12，
      所以同一時間只攤開一層書架（最多 3 格＋「全部 n 張」），其他層收成書脊。
@@ -124,16 +125,39 @@ function badgeOrder() {
   });
 }
 
-/* ---- 獎章的章面：六角形、銀框、斜切兩色（上是這枚的顏色、右下是銀）、中間刻一個字 ----
-   顏色借 MOCK.ART 的明信片色票（跟那一組地方同一種天色），不另寫色碼；
-   銀色用 tokens（album.css 的 .alb-hex__s*）。沒登記的獎章：第一張卡的色票、名字第一個字。 */
+/* ---- 獎章的章面 ----
+   六角形的金屬章，章面是一張縮小的明信片：上面是天色與太陽，下面是一截銀色的地面，
+   地標用同一種粗細的線稿刻在上面（不拿文字當圖示）。
+   - 天色借 MOCK.ART 的明信片色票（跟那一組地方同一種天），不另寫色碼；銀色與還沒收下的素面都用 tokens。
+   - 地標：舊城區＝迎曦門、老車站＝新竹車站鐘樓、水路＝橋、內灣線＝火車、風城玻璃＝玻璃瓶與風、山與湖＝山。
+   - 地面刻線：水路與山與湖是水紋、內灣線是鐵軌，其他是兩道街線。
+   沒登記的獎章：第一張卡的色票＋地點圖釘。 */
+const PICT = {
+  gate:    'M26 67V53H74V67M43 67V61A7 7 0 0 1 57 61V67M34 53V46M66 53V46' +
+           'M24 45Q31 47 37 45L42 42H58L63 45Q69 47 76 45M42 42V37M58 42V37' +
+           'M33 37Q39 39 43 36L50 30L57 36Q61 39 67 37',
+  station: 'M42 67V39H58V67M40 39L50 28L60 39M54 46A4 4 0 1 1 46 46A4 4 0 1 1 54 46' +
+           'M46 67V61A4 4 0 0 1 54 61V67M26 67V52H42M58 52H74V67M31 57V62M37 57V62M63 57V62M69 57V62',
+  bridge:  'M22 49H78M26 43H74M26 43V49M38 43V49M50 43V49M62 43V49M74 43V49M28 67Q50 45 72 67',
+  train:   'M38 64V44Q38 37 45 37H55Q62 37 62 44V64ZM42 43H58V50H42ZM36 64H64' +
+           'M46 57A2 2 0 1 1 42 57A2 2 0 1 1 46 57M58 57A2 2 0 1 1 54 57A2 2 0 1 1 58 57',
+  glass:   'M45 29H55M47 29V37C47 41 36 45 36 55C36 62 42 66 50 66C58 66 64 62 64 55C64 45 53 41 53 37V29' +
+           'M41 54C41 50 43 48 46 47M19 44H29Q33 44 33 40.5Q33 37.5 30 37.5M21 51H31',
+  peaks:   'M22 67L38 43L46 54L57 35L78 67M51.5 43.5L55 46L58.5 43L62 45.5',
+  pin:     'M50 66C50 66 36 52 36 43A14 14 0 0 1 64 43C64 52 50 66 50 66ZM54 43A4 4 0 1 1 46 43A4 4 0 1 1 54 43',
+};
+const GROUND = {
+  street: 'M22 75H78M32 82H68',
+  waves:  'M18 74Q23 71.5 28 74T38 74T48 74T58 74T68 74T78 74T88 74M26 81Q31 78.5 36 81T46 81T56 81T66 81T76 81',
+  track:  'M46 67L34 92M54 67L66 92M41 73H59M38 80H62M35 87H65',
+};
 const MEDAL = {
-  b1: { art: 'market',  glyph: '舊' },
-  b3: { art: 'station', glyph: '站' },
-  b2: { art: 'moat',    glyph: '水' },
-  b4: { art: 'hakka',   glyph: '灣' },
-  b5: { art: 'glass',   glyph: '玻' },
-  b6: { art: 'lake',    glyph: '山' },
+  b1: { art: 'market',  pict: 'gate',    ground: 'street' },
+  b3: { art: 'station', pict: 'station', ground: 'street' },
+  b2: { art: 'moat',    pict: 'bridge',  ground: 'waves' },
+  b4: { art: 'hakka',   pict: 'train',   ground: 'track' },
+  b5: { art: 'glass',   pict: 'glass',   ground: 'street' },
+  b6: { art: 'lake',    pict: 'peaks',   ground: 'waves' },
 };
 let medalSeq = 0;
 
@@ -153,44 +177,40 @@ function hexPath(R, r) {
   }).join('') + 'Z';
 }
 const HEX_RIM = hexPath(48, 9);
-const HEX_FACE = hexPath(40.5, 6.5);
+const HEX_SHINE = hexPath(45.5, 8);
+const HEX_FACE = hexPath(39.5, 6);
 
 function medalSVG(b, got) {
   const m = MEDAL[b.id] || {};
   const first = cardById(b.ids[0]);
-  const art = (M().ART || {})[m.art] || (M().ART || {})[first && first.art] || { sky: [] };
-  const sky = art.sky;
-  const glyph = m.glyph || String(b.name || '').charAt(0);
+  const ART = M().ART || {};
+  const sky = (ART[m.art] || ART[first && first.art] || { sky: [] }).sky;
+  const pict = PICT[m.pict] || PICT.pin;
+  const ground = GROUND[m.ground] || GROUND.street;
   const id = 'md' + (medalSeq++);
-  const silver = function (gid, x2, y2, stops) {
+  const grad = function (gid, x2, y2, stops) {
     return '<linearGradient id="' + id + gid + '" x1="0" y1="0" x2="' + x2 + '" y2="' + y2 + '">' +
-      stops.map(function (s) { return '<stop offset="' + s[0] + '" class="alb-hex__' + s[1] + '"/>'; }).join('') +
-      '</linearGradient>';
+      stops.map(function (s) {
+        return '<stop offset="' + s[0] + '" class="alb-hex__' + s[1] + '"' + (s[2] ? ' stop-color="' + esc(s[2]) + '"' : '') + '/>';
+      }).join('') + '</linearGradient>';
   };
   return '<svg class="alb-hex' + (got ? '' : ' is-locked') + '" viewBox="0 0 100 100" aria-hidden="true">' +
     '<defs>' +
-      silver('r', 1, 1, [[0, 's1'], [.42, 's2'], [.58, 's1'], [1, 's3']]) +
-      silver('b', 1, 0, [[0, 's2'], [.5, 's1'], [1, 's2']]) +
-      silver('e', 1, 1, [[0, 's1'], [1, 's2']]) +
-      '<linearGradient id="' + id + 'f" x1="0" y1="0" x2=".7" y2="1">' +
-        '<stop offset="0" stop-color="' + esc(sky[1] || '') + '"/>' +
-        '<stop offset=".55" stop-color="' + esc(sky[1] || '') + '"/>' +
-        '<stop offset="1" stop-color="' + esc(sky[2] || sky[1] || '') + '"/>' +
-      '</linearGradient>' +
-      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" class="alb-hex__s1" stop-opacity=".55"/><stop offset=".5" class="alb-hex__s1" stop-opacity="0"/>' +
-      '</linearGradient>' +
+      grad('r', 1, 1, [[0, 's1'], [.35, 's2'], [.55, 's1'], [1, 's3']]) +
+      grad('g', 0, 1, [[0, 's1'], [1, 's2']]) +
+      grad('f', 0, 1, [[0, 'sky0', sky[1]], [1, 'sky1', sky[2] || sky[1]]]) +
       '<clipPath id="' + id + 'c"><path d="' + HEX_FACE + '"/></clipPath>' +
     '</defs>' +
     '<path class="alb-hex__rim" d="' + HEX_RIM + '" fill="url(#' + id + 'r)"/>' +
+    '<path class="alb-hex__shine" d="' + HEX_SHINE + '"/>' +
     '<g clip-path="url(#' + id + 'c)">' +
       '<rect width="100" height="100" fill="url(#' + id + 'f)"/>' +
-      '<text class="alb-hex__glyph alb-hex__glyph--shade" x="46" y="45">' + esc(glyph) + '</text>' +
-      '<text class="alb-hex__glyph" x="45" y="44" fill="' + esc(sky[0] || '') + '" stroke="url(#' + id + 'e)">' + esc(glyph) + '</text>' +
-      '<path d="M0 88 L100 54 L100 100 L0 100Z" fill="url(#' + id + 'b)"/>' +
-      '<path class="alb-hex__ridge" d="M0 88 L100 54" stroke="url(#' + id + 'r)"/>' +
-      '<text class="alb-hex__mark" x="70" y="75" transform="rotate(-18.8 70 75)">yoxi</text>' +
-      '<rect width="100" height="100" fill="url(#' + id + 'g)"/>' +
+      '<circle class="alb-hex__sun" cx="68" cy="31" r="7" fill="' + esc(sky[0] || '') + '"/>' +
+      '<rect y="67" width="100" height="33" fill="url(#' + id + 'g)"/>' +
+      '<path class="alb-hex__groove" d="' + ground + '"/>' +
+      '<path class="alb-hex__horizon" d="M0 67H100"/>' +
+      '<path class="alb-hex__pict alb-hex__pict--shade" transform="translate(0 1.2)" d="' + pict + '"/>' +
+      '<path class="alb-hex__pict" stroke="url(#' + id + 'g)" d="' + pict + '"/>' +
     '</g>' +
     '<path class="alb-hex__edge" d="' + HEX_FACE + '"/>' +
   '</svg>';
@@ -457,25 +477,27 @@ function weekPanel() {
       '<span class="arrow"></span></a>';
 }
 
-/* 雙主頁第一版：明信片主卡（網格收在裡面）、統計、獎章精選卡往下看。舊的細節 view 仍可讀舊連結。 */
+/* 雙主頁第一版：明信片主卡（點進去看全部）、統計、獎章精選卡往下看。舊的細節 view 仍可讀舊連結。 */
+function isFresh(p) { return STATE.has(p.id) && STATE.lastIsNew && STATE.all.lastCard === p.id; }
+
+/* 子頁的頁首（/postcards、/badges）：返回鍵＋大標題＋一句說明 */
+function subHeader(title, sub) {
+  return '<header class="alb-v2__header alb-v2__header--sub">' +
+    '<a class="alb-v2__back" href="#" data-back="/album" aria-label="返回"><span class="arrow arrow--left"></span></a>' +
+    '<h1>' + esc(title) + '</h1><p>' + sub + '</p></header>';
+}
+
+/* 「我的所有明信片」的一格：收下的彩色寫日期，還沒去的灰階 */
 function albumV2CardHTML(p) {
   const got = STATE.card(p.id);
-  const fresh = !!got && STATE.lastIsNew && STATE.all.lastCard === p.id;
-  return '<div class="alb-v2__postcard' + (got ? ' is-collected' : '') + (fresh ? ' postcard--fresh' : '') + '" data-card="' + esc(p.id) + '">' +
+  const fresh = isFresh(p);
+  return '<div class="alb-v2__postcard' + (got ? ' is-collected' : '') + '" data-card="' + esc(p.id) + '">' +
     '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '">' +
       (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
     '<strong>' + esc(p.name) + '</strong>' +
-    '<small>' + (got ? (fresh ? '新收下' : esc(got.date) + ' 收下') : '還沒收下') + '</small></div>';
+    (got ? '<small>' + (fresh ? '新收下' : esc(got.date) + ' 收下') + '</small>' : '') + '</div>';
 }
-function albumV2CardsHTML(all) {
-  const cards = M().POSTCARDS || [];
-  const got = cards.filter(function (p) { return STATE.has(p.id); });
-  const list = all ? cards : got.slice(-4).reverse();
-  return '<div class="alb-v2__card-grid">' + list.map(albumV2CardHTML).join('') + '</div>' +
-    (cards.length > list.length
-      ? '<button class="alb-v2__more" type="button" data-act="show-all-cards">全部 ' + cards.length + ' 張明信片</button>'
-      : '<button class="alb-v2__more" type="button" data-act="show-recent-cards">收起來</button>');
-}
+
 /* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges） */
 const MEDAL_MINI = 5;
 function albumV2MedalsHTML() {
@@ -508,16 +530,17 @@ function albumV2Render() {
   return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
       '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
         '<p>走過的地方，都留在這裡。</p></header>' +
-      '<section class="alb-v2__hero" aria-label="我的明信片">' +
-        '<div class="alb-v2__hero-head">' +
-          '<div><span class="alb-v2__label">我的明信片</span>' +
-            '<p>一張卡，記下一個到過的地方。</p></div>' +
-          '<div class="alb-v2__hero-count"><strong data-stat="cards">' + got.length + '</strong>' +
-            '<span>／' + cards.length + ' 張</span></div>' +
-        '</div>' +
-        '<div class="alb-v2__hero-cards" data-alb-v2-cards>' + albumV2CardsHTML(false) + '</div>' +
-        '<p class="alb-v2__ai">明信片是 AI 依地點生成的示意圖，不是實景照片。</p>' +
-      '</section>' +
+      '<a class="alb-v2__hero" href="#/postcards" data-act="go-postcards">' +
+        '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
+          '<strong data-stat="cards">' + got.length + '</strong><span>／' + cards.length + ' 張</span></div>' +
+          '<p>一張卡，記下一個到過的地方。</p>' +
+          '<span class="alb-v2__hero-go">看全部<span class="arrow arrow--onred"></span></span></div>' +
+        '<div class="alb-v2__stack" aria-hidden="true">' + recentCards(3).map(function (p, i) {
+          return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + '" data-card="' + esc(p.id) +
+            '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '">' +
+            (isFresh(p) ? '<span class="postcard__new">新</span>' : '') + '</span>';
+        }).join('') + '</div>' +
+      '</a>' +
       '<div class="alb-v2__stats">' +
         '<div class="alb-v2__stat"><span>去過的地方</span><strong data-stat="places">' + STATE.count() + '</strong><small>個地方</small></div>' +
         '<div class="alb-v2__stat"><span>留下的距離</span><strong data-stat="km">' + esc(STATE.all.km) + '</strong><small>公里</small></div>' +
@@ -525,17 +548,8 @@ function albumV2Render() {
       albumV2MedalsHTML() +
     '</div></div>';
 }
-function albumV2Mount(root) {
-  const host = root.querySelector('[data-alb-v2-cards]');
-  function paint(all) {
-    host.innerHTML = albumV2CardsHTML(all);
-    SHELL.injectArt(host);
-    const more = host.querySelector('[data-act="show-all-cards"]');
-    if (more) more.onclick = function () { paint(true); };
-    const less = host.querySelector('[data-act="show-recent-cards"]');
-    if (less) less.onclick = function () { paint(false); };
-  }
-  paint(false);
+function albumV2Mount() {
+  /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
   if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
 }
 
@@ -549,6 +563,39 @@ APP.view('album', {
   mount: albumV2Mount,
 });
 
+/* ================================================================ /postcards */
+
+/* 我的所有明信片：收下的（最近的在前）一段、還沒去的一段。
+   格子不做成連結：22 張全是連結會超過 L1 的可按數上限（≤ 10），明信片詳情從獎章與週回顧進。 */
+APP.view('postcards', {
+  path: '/postcards',
+  tab: 'album',
+  status: 'dark',
+  title: '我的所有明信片',
+  render: function () {
+    const cards = M().POSTCARDS || [];
+    const got = recentCards(cards.length);
+    const todo = cards.filter(function (p) { return !STATE.has(p.id); });
+    const grid = function (list) {
+      return '<div class="alb-v2__card-grid">' + list.map(albumV2CardHTML).join('') + '</div>';
+    };
+    return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
+      subHeader('我的所有明信片', '收集 <span data-stat="cards">' + got.length + '</span>/' + cards.length +
+        ' 張。還沒去的地方，到了就會上色。') +
+      (got.length
+        ? '<section class="alb-v2__cards" data-group="got"><h2>收下的 ' + got.length + ' 張</h2>' + grid(got) + '</section>'
+        : '') +
+      (todo.length
+        ? '<section class="alb-v2__cards" data-group="todo"><h2>還沒去的 ' + todo.length + ' 張</h2>' + grid(todo) + '</section>'
+        : '') +
+      '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，不是實景照片。沒有期限，也不用照順序。</p>' +
+    '</div></div>';
+  },
+  mount: function () {
+    if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+  },
+});
+
 /* ================================================================ /badges */
 
 /* 全部獎章：三欄章牆。收下的寫日期，還在路上的寫「收集 n/m」並上灰。 */
@@ -559,9 +606,7 @@ APP.view('badges', {
   title: '獎章',
   render: function () {
     return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
-      '<header class="alb-v2__header alb-v2__header--sub">' +
-        '<a class="alb-v2__back" href="#" data-back="/album" aria-label="返回"><span class="arrow arrow--left"></span></a>' +
-        '<h1>獎章</h1><p>湊齊一組地方，就收下一枚。沒有期限，也不會過期。</p></header>' +
+      subHeader('獎章', '湊齊一組地方，就收下一枚。沒有期限，也不會過期。') +
       '<div class="alb-v2__medal-grid">' + badgeOrder().map(function (x) {
         return '<a class="alb-v2__medal-cell' + (x.r.got ? '' : ' is-locked') + '" href="#/badge/' + esc(x.b.id) + '" data-badge="' + esc(x.b.id) + '">' +
           medalSVG(x.b, x.r.got) +

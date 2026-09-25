@@ -33,6 +33,7 @@ T.spec('app', function (t) {
       { path: '/route/' + rid },
       { path: '/album' },
       { path: '/badges' },
+      { path: '/postcards' },
       { path: '/postcard/p1' },
       { path: '/badge/b1' },
       { path: '/footprint' },

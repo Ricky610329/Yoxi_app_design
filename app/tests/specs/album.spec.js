@@ -4,7 +4,7 @@
    ========================================================================== */
 T.spec('album', function (t) {
 
-  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges',
+  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
                   '/postcard/p1', '/postcard/p4', '/postcard/p11', '/postcard/nope',
                   '/badge/b1', '/badge/b4', '/badge/nope',
                   '/footprint', '/lookback', '/week', '/elder'];
@@ -57,18 +57,25 @@ T.spec('album', function (t) {
     t.ok(t.countTappables(app) <= 12, '有「新」時可按數仍 ≤ 12：' + t.countTappables(app));
   });
 
-  t.test('摘要：最近明信片與全部明信片切換', async function (app) {
+  t.test('我的明信片主卡 → /postcards：收下的在前、還沒去的另一段，返回回收藏', async function (app) {
     await app.reset();
     await app.go('/album');
-    t.eq(app.text('[data-stat="cards"]'), String(app.STATE.count()), '主卡顯示已收張數');
-    t.ok(app.$('.alb-v2__hero [data-alb-v2-cards]'), '明信片網格收在「我的明信片」主卡裡');
-    t.eq(app.$$('[data-alb-v2-cards] .ai-mark').length, 0, '網格不逐張貼 AI 標籤（主卡講一次）');
-    t.includes(app.text('.alb-v2__hero'), 'AI', '主卡有一行 AI 生成說明');
-    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '先顯示最近四張');
-    await app.click('[data-act="show-all-cards"]');
-    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, app.MOCK.POSTCARDS.length, '展開全部明信片');
-    await app.click('[data-act="show-recent-cards"]');
-    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '收起回最近四張');
+    const S = app.STATE, P = app.MOCK.POSTCARDS;
+    t.eq(app.text('[data-stat="cards"]'), String(S.count()), '主卡顯示已收張數');
+    t.eq(app.$$('.alb-v2__stack [data-card]').length, Math.min(3, S.count()), '主卡疊最近三張');
+    t.eq(app.$$('.alb-v2__postcard, [data-act="show-all-cards"]').length, 0, '收藏首頁不攤開明信片網格');
+    await app.click('[data-act="go-postcards"]');
+    await app.at('/postcards');
+    const got = P.filter(function (p) { return S.has(p.id); });
+    t.eq(app.$$('[data-group="got"] [data-card]').length, got.length, '收下的一段＝已收張數');
+    t.eq(app.$$('[data-group="todo"] [data-card]').length, P.length - got.length, '還沒去的一段＝其餘');
+    t.eq(app.text('main.view[data-view] [data-stat="cards"]'), String(got.length), '頁首收集張數');
+    const dates = app.$$('[data-group="got"] [data-card]').map(function (el) { return S.card(el.getAttribute('data-card')).date; });
+    t.eq(dates.join(','), dates.slice().sort().reverse().join(','), '收下的照日期由近到遠');
+    t.eq(app.$$('main.view[data-view] .ai-mark').length, 0, '不逐張貼 AI 標籤');
+    t.includes(app.text('main.view[data-view]'), 'AI 依地點生成', '頁底一行 AI 生成說明');
+    await app.click('main.view[data-view] a[data-back]');
+    await app.at('/album');
   });
 
   /* 3. 獎章：收下的寫日期（組成的卡最晚那一張）、還在路上的寫「收集 n/m」；沒有進度環 */

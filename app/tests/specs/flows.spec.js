@@ -602,7 +602,7 @@ T.spec('flows', function (t) {
       '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/lake', '/place/brick',
       '/going/glass-kiln', '/going/lake', '/unlock/glass-kiln', '/unlock/neiwan?ride=1', '/unlock/lake?ride=1',
       '/routes', '/route/rail', '/route/glass', '/route/water',
-      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges',
+      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
       '/postcard/p1', '/postcard/p9', '/postcard/p11', '/badge/b1', '/badge/b5',
       '/footprint', '/lookback', '/week', '/elder', '/settings',
     ].map(function (p) { return { path: p }; });
@@ -1340,7 +1340,7 @@ T.spec('flows', function (t) {
   /* 可按元素：命中區（含 ::after 撐大的）至少 40×40；每個都有名字 */
   const A11Y_ROUTES = ['/ride', '/dropoff', '/pickup', '/drawer', '/points', '/notify', '/trips',
     '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/p1', '/going/glass-kiln', '/unlock/glass-kiln',
-    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges',
+    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
     '/postcard/p1', '/postcard/p11', '/badge/b1', '/footprint', '/lookback', '/week', '/elder', '/settings', '/welcome'];
   /* 例外（原型就如此、而且不是單一的點擊目標）：地圖景點（本身 38px，周圍是可平移的地圖） */
   const HIT_EXEMPT = '.spot';

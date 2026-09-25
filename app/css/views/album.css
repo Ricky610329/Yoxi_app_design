@@ -35,17 +35,25 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__brand { color: var(--yoxi-red); font-size: var(--fs-cap); font-weight: var(--fw-heavy); letter-spacing: .04em; }
 .alb-v2__header h1 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-display); line-height: var(--lh-tight); }
 .alb-v2__header p { color: var(--app-muted); font-size: var(--fs-sm); }
-/* 明信片主卡：網格收在主卡裡面（原本主卡下面另有一段「明信片」，同一個 8/22 講了兩次） */
+/* 明信片主卡：張數＋最近三張疊卡；整張是連結，點了進 /postcards */
 .alb-v2__hero {
-  margin: 0 var(--gutter); padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  position: relative; display: flex; justify-content: space-between; min-height: 196px;
+  margin: 0 var(--gutter); padding: var(--sp-5); overflow: hidden;
   border-radius: var(--r-card); background: var(--yoxi-navy); color: var(--yoxi-white);
 }
-.alb-v2__hero-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); padding: 0 var(--sp-1) var(--sp-4); }
+.alb-v2__hero > div:first-child { position: relative; z-index: 2; }
 .alb-v2__label { font-size: var(--fs-sm); font-weight: var(--fw-bold); }
-.alb-v2__hero-head p { margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
-.alb-v2__hero-count { display: flex; flex: none; align-items: baseline; }
-.alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.5); line-height: 1; font-weight: var(--fw-heavy); }
+.alb-v2__hero-count { display: flex; align-items: baseline; margin-top: var(--sp-3); }
+.alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.88); line-height: 1; font-weight: var(--fw-heavy); }
 .alb-v2__hero-count span { font-size: var(--fs-sm); }
+.alb-v2__hero p { max-width: 155px; margin-top: var(--sp-3); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
+.alb-v2__hero-go { display: inline-flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.alb-v2__stack { position: absolute; width: 146px; height: 156px; right: var(--sp-2); bottom: var(--sp-2); }
+.alb-v2__stack-art { position: absolute; display: block; width: 89px; height: 126px; overflow: hidden; border: 3px solid var(--yoxi-white); border-radius: var(--r-img); box-shadow: var(--sh-lift); }
+.alb-v2__stack-art > .postcard__art { width: 100%; height: 100%; }
+.alb-v2__stack-art--0 { right: 0; bottom: 0; transform: rotate(8deg); z-index: 3; }
+.alb-v2__stack-art--1 { right: 28px; bottom: 8px; transform: rotate(-7deg); z-index: 2; }
+.alb-v2__stack-art--2 { right: 49px; bottom: 15px; transform: rotate(-16deg); z-index: 1; }
 .alb-v2__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-3) var(--gutter) 0; }
 .alb-v2__stat { min-height: 128px; padding: var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }
 .alb-v2__stat span, .alb-v2__stat small { display: block; font-size: var(--fs-cap); }
@@ -55,20 +63,18 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .alb-v2__section-head h2 { font-size: var(--fs-title); }
 .alb-v2__section-head span { color: var(--app-muted); font-size: var(--fs-cap); }
-.alb-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
-.alb-v2__postcard { min-width: 0; padding: var(--sp-2); border-radius: var(--r-card); background: rgba(255, 255, 255, .08); }
-.alb-v2__art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-img); }
-.alb-v2__art > :first-child { width: 100%; height: 100%; }
-.alb-v2__postcard:not(.is-collected) .alb-v2__art > :first-child { filter: grayscale(1); opacity: .6; }
-.alb-v2__postcard strong, .alb-v2__postcard small { display: block; color: var(--yoxi-white); }
-.alb-v2__postcard strong { margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: 1.3; }
-.alb-v2__postcard small { margin-top: var(--sp-1); font-size: var(--fs-xs); opacity: .75; }
-.alb-v2__ai { margin-top: var(--sp-3); font-size: var(--fs-xs); line-height: var(--lh-body); opacity: .75; }
-.alb-v2__more {
-  display: block; width: 100%; min-height: 44px; margin-top: var(--sp-3);
-  border-radius: var(--r-btn); background: var(--yoxi-white);
-  color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold);
-}
+/* 我的所有明信片（/postcards）：兩段，每段兩欄；格子不加外框，圖就是明信片 */
+.alb-v2__cards { padding: var(--sp-4) var(--gutter) 0; }
+.alb-v2__cards h2 { margin-bottom: var(--sp-3); font-size: var(--fs-lead); }
+.alb-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); }
+.alb-v2__postcard { min-width: 0; }
+.alb-v2__art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-img); box-shadow: var(--sh-card); }
+.alb-v2__art > .postcard__art { width: 100%; height: 100%; }
+.alb-v2__postcard:not(.is-collected) .alb-v2__art > .postcard__art { filter: grayscale(1); opacity: .55; }
+.alb-v2__postcard strong, .alb-v2__postcard small { display: block; }
+.alb-v2__postcard strong { margin-top: var(--sp-2); font-size: var(--fs-sm); line-height: 1.3; }
+.alb-v2__postcard small { margin-top: 2px; color: var(--app-muted); font-size: var(--fs-xs); }
+.alb-v2__note { padding: var(--sp-2) var(--gutter) var(--sp-6); }
 
 /* 獎章精選卡：最近收下的一枚放大，下面一列小章疊在一起＋「顯示全部」 */
 .alb-v2__medals {
@@ -108,24 +114,23 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__medal-cell strong { margin-top: var(--sp-2); font-size: var(--fs-sm); line-height: 1.3; }
 .alb-v2__medal-cell small { margin-top: 2px; color: var(--app-muted); font-size: var(--fs-cap); }
 
-/* 六角章本體（album.js medalSVG）：銀色全用 tokens，章面顏色在 SVG 裡取 MOCK.ART 色票 */
-.alb-hex { display: block; overflow: visible; filter: drop-shadow(0 2px 3px rgba(6, 32, 64, .2)); }
-.alb-hex.is-locked { filter: grayscale(1); opacity: .5; }
+/* 六角章本體（album.js medalSVG）：金屬框＋明信片天色的章面＋銀色地面＋同粗細的地標線稿。
+   銀色全用 tokens；天色在 SVG 裡取 MOCK.ART 色票。還沒收下的：章面換成素面金屬（不是半透明的灰影）。 */
+.alb-hex { display: block; overflow: visible; filter: drop-shadow(0 3px 4px rgba(6, 32, 64, .22)); }
 .alb-hex__s1 { stop-color: var(--yoxi-white); }
 .alb-hex__s2 { stop-color: var(--yoxi-slate-lite); }
 .alb-hex__s3 { stop-color: var(--yoxi-slate); }
 .alb-hex__rim { stroke: var(--yoxi-slate); stroke-width: .8; }
-.alb-hex__edge { fill: none; stroke: var(--yoxi-slate); stroke-width: 1; opacity: .6; }
-.alb-hex__ridge { fill: none; stroke-width: 2.4; }
-.alb-hex__glyph {
-  font-size: 40px; font-weight: var(--fw-heavy); text-anchor: middle; dominant-baseline: central;
-  fill-opacity: .28; stroke-width: 1.5; stroke-linejoin: round;
-}
-.alb-hex__glyph--shade { fill: none; stroke: var(--yoxi-navy); opacity: .2; }
-.alb-hex__mark {
-  font-size: 10px; font-weight: var(--fw-heavy); letter-spacing: .06em; text-anchor: middle;
-  fill: none; stroke: var(--yoxi-slate); stroke-width: .6;
-}
+.alb-hex__shine { fill: none; stroke: var(--yoxi-white); stroke-width: .8; opacity: .8; }
+.alb-hex__edge { fill: none; stroke: var(--yoxi-navy); stroke-width: 1.2; opacity: .3; }
+.alb-hex__horizon { fill: none; stroke: var(--yoxi-white); stroke-width: 1.4; }
+.alb-hex__groove { fill: none; stroke: var(--yoxi-slate); stroke-width: 1.2; stroke-linecap: round; opacity: .7; }
+.alb-hex__pict { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.alb-hex__pict--shade { stroke: var(--yoxi-navy); opacity: .35; }
+.alb-hex.is-locked .alb-hex__sky0 { stop-color: var(--yoxi-slate-lite); }
+.alb-hex.is-locked .alb-hex__sky1 { stop-color: var(--yoxi-slate); }
+.alb-hex.is-locked .alb-hex__sun { fill: var(--yoxi-line); opacity: .45; }
+.alb-hex.is-locked { opacity: .82; }
 
 /* ---- 一列可按的卡（回顧入口、週回顧入口、長輩圖、所屬獎章） ---- */
 .alb-row {

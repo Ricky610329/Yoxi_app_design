@@ -115,6 +115,7 @@ SHOTS = [
     ('album',            '/album',                None),
     ('album-new',        '/album',                {'s': S_NEW_CARD}),
     ('album-badges',     '/badges',               None),
+    ('album-postcards',  '/postcards',            None),
     ('album-journal',    '/album?tab=journal',    None),
     ('album-week',       '/album?tab=week',       None),
     ('postcard',         '/postcard/p1',          None),
