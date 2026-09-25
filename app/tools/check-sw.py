@@ -1,23 +1,52 @@
 """檢查 app/sw.js 的 PRECACHE 清單與實際檔案是否一致。
 
 用法：python app/tools/check-sw.py
-  1. 清單裡的每個路徑都要存在（'./' 視為 index.html）。
+  1. 清單裡的每個路徑都要存在（'./' 視為 index.html）。缺一個就 FAIL：
+     sw 的 install 用 cache.addAll，全有全無，清單裡一個 404 整個安裝就失敗（離線整個不能用）。
   2. app/css、app/js、app/assets/icons、prototype/assets/map、prototype/assets/photos
      底下的檔案都要在清單裡。
-  3. sw.js 與 js/views/system.js 的 VERSION 字串相同。
+  3. index.html 載入的每個檔（<script src>、<link rel=stylesheet／manifest／icon／apple-touch-icon href>，
+     含 ../prototype 的共用檔）與 manifest 的 icons 都要在清單裡：不然離線時畫面缺樣式或腳本。
+  4. sw.js 與 js/views/system.js 的 VERSION 字串相同。
 不一致就印出來並 exit 1。
-例外：core 負責、契約已承諾但可能還沒建的入口檔（PENDING），缺檔只警告不算失敗；
-      全部建好之後這個例外自然不會再觸發。
+生成的明信片（app/assets/postcards/）刻意不在清單：sw 在執行期 cache-first 存（見 sw.js 檔頭）。
 """
+import json
 import re
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 
 APP = Path(__file__).resolve().parent.parent
 ROOT = APP.parent
-PENDING = {'index.html', 'css/app.css', 'js/app.js'}   # 相對 app/
 SCAN = [APP / 'css', APP / 'js', APP / 'assets' / 'icons',
         ROOT / 'prototype' / 'assets' / 'map', ROOT / 'prototype' / 'assets' / 'photos']
+LINK_RELS = {'stylesheet', 'manifest', 'icon', 'apple-touch-icon'}
+
+
+class Loads(HTMLParser):
+    """收集 index.html 會抓的同源檔：<script src>、<link rel=… href>。"""
+
+    def __init__(self):
+        super().__init__()
+        self.found = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == 'script' and a.get('src'):
+            self.found.append(('script', a['src']))
+        elif tag == 'link' and a.get('href'):
+            rels = set((a.get('rel') or '').lower().split())
+            if rels & LINK_RELS:
+                self.found.append(('link rel=' + ' '.join(sorted(rels & LINK_RELS)), a['href']))
+
+
+def local(base, href):
+    """相對路徑 → 檔案路徑；外部網址、data:、錨點回 None。"""
+    href = href.split('#')[0].split('?')[0]
+    if not href or re.match(r'^[a-z][a-z0-9+.-]*:', href, re.I) or href.startswith('//'):
+        return None
+    return (base / href).resolve()
 
 
 def main():
@@ -38,16 +67,37 @@ def main():
         p = (APP / ('index.html' if e == './' else e)).resolve()
         listed.add(p)
         if not p.is_file():
-            rel = p.relative_to(APP).as_posix() if p.is_relative_to(APP) else None
-            if rel in PENDING:
-                print(f'  警告（core 尚未建立）：{e}')
-            else:
-                print(f'  清單有、檔案沒有：{e}'); bad += 1
+            print(f'  清單有、檔案沒有：{e}（cache.addAll 會整個失敗）'); bad += 1
 
     for d in SCAN:
         for f in sorted(d.rglob('*')) if d.is_dir() else []:
             if f.is_file() and f.resolve() not in listed:
                 print(f'  檔案有、清單沒有：{f.relative_to(ROOT).as_posix()}'); bad += 1
+
+    # index.html 真正載入的檔（含 ../prototype 的 css／js）都要預先快取
+    index = APP / 'index.html'
+    loads = Loads()
+    loads.feed(index.read_text(encoding='utf-8'))
+    # manifest 的 icons 也是安裝時會抓的
+    man = APP / 'manifest.webmanifest'
+    try:
+        for ic in json.loads(man.read_text(encoding='utf-8')).get('icons', []):
+            if ic.get('src'):
+                loads.found.append(('manifest icon', ic['src']))
+    except (OSError, ValueError) as err:
+        print(f'  manifest.webmanifest 讀不動：{err}'); bad += 1
+    n_loads = 0
+    for kind, href in loads.found:
+        base = man.parent if kind == 'manifest icon' else index.parent
+        p = local(base, href)
+        if p is None:
+            print(f'  index.html 載了外部資源（不准連網）：{kind} {href}'); bad += 1
+            continue
+        n_loads += 1
+        if not p.is_file():
+            print(f'  index.html 載的檔不存在：{kind} {href}'); bad += 1
+        elif p not in listed:
+            print(f'  index.html 載了、清單沒有：{kind} {href}'); bad += 1
 
     # VERSION 單一來源：sw.js 的快取版本與設定頁「關於」顯示的版本（system.js）必須相同
     vre = re.compile(r"^const VERSION = '([^']+)';", re.M)
@@ -60,7 +110,8 @@ def main():
     else:
         print(f'  VERSION：{sw_v.group(1)}（sw.js＝system.js）')
 
-    print(f'check-sw：{len(entries)} 筆，' + ('PASS' if not bad else f'FAIL（{bad} 處）'))
+    print(f'check-sw：清單 {len(entries)} 筆、index.html＋manifest 載入 {n_loads} 個檔，'
+          + ('PASS' if not bad else f'FAIL（{bad} 處）'))
     return 1 if bad else 0
 
 
