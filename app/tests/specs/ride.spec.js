@@ -183,6 +183,56 @@ T.spec('ride', function (t) {
     t.eq(app.route().query.get('area'), 'market', '重新整理仍保留選定地區');
   });
 
+  t.test('探索面板往下收到只剩拉把看整張地圖，點景點叫回來', async function (app) {
+    await app.reset();
+    await app.go('/ride?mode=explore&area=glass-kiln');
+    const W = app.win, sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet .sheet__grip');
+    function drag(dy, id) {
+      const b = grip.getBoundingClientRect();
+      grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: b.top + 10, pointerId: id }));
+      W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id }));
+      W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id }));
+    }
+    const view = app.view().getBoundingClientRect();
+    const spotTop = function () { return app.$('.spot[data-spot="glass-kiln"]').getBoundingClientRect().top; };
+    const top0 = spotTop(), collapsedH = sheet.offsetHeight;
+    drag(80, 11);
+    await app.tick(60);
+    t.ok(sheet.classList.contains('is-hidden'), '收合態往下拉 → 只剩拉把');
+    t.ok(sheet.offsetHeight < 60 && sheet.offsetHeight < collapsedH, '面板只剩一條（' + sheet.offsetHeight + ' px）');
+    t.ok(grip.getBoundingClientRect().height > 0 && grip.getBoundingClientRect().bottom <= view.bottom + 1, '拉把還在，拉得回來');
+    t.ok(app.$('.ride-mode__pills').inert && app.$('[data-area-intro]').inert, '藏起來的內容不能被 Tab 到');
+    t.eq(spotTop(), top0, '地圖不縮放：景點留在原處');
+    const map = app.$('[data-ride-map]').getBoundingClientRect(), svg = app.$('[data-ride-map] .map__svg').getBoundingClientRect();
+    t.ok(svg.bottom >= map.bottom - 1, '地圖畫滿露出來的範圍');
+    const loc = app.$('[data-ride-map] [data-recenter]').getBoundingClientRect(), credit = app.$('.ride-v2__credit').getBoundingClientRect();
+    t.ok(loc.bottom <= sheet.getBoundingClientRect().top && loc.bottom > map.bottom - 80, '定位鈕跟著貼到可見範圍的底邊');
+    t.ok(credit.height > 0 && credit.bottom <= sheet.getBoundingClientRect().top, '地圖署名看得到');
+    t.includes(app.text('.ride-v2__credit'), 'OpenStreetMap', '署名文字');
+    await app.click('.spot[data-spot="market"]');
+    await app.tick(60);
+    t.ok(!sheet.classList.contains('is-hidden') && sheet.classList.contains('is-collapsed'), '點景點 → 面板回到地點資訊');
+    t.ok(!app.$('[data-area-intro]').inert, '叫回來後可以操作');
+    t.eq(app.route().query.get('area'), 'market', '選的是點到的景點');
+    t.includes(app.text('[data-area-intro]'), app.APP.place('market').name, '面板顯示點到的地方');
+    const loc2 = app.$('[data-ride-map] [data-recenter]').getBoundingClientRect();
+    t.ok(loc2.bottom <= sheet.getBoundingClientRect().top, '收合態定位鈕在面板上方');
+    drag(80, 12);
+    await app.tick(60);
+    t.ok(sheet.classList.contains('is-hidden'), '再收一次');
+    drag(0, 13);
+    await app.tick(60);
+    t.ok(!sheet.classList.contains('is-hidden') && sheet.classList.contains('is-collapsed'), '點一下拉把 → 回到地點資訊');
+    drag(80, 14);
+    drag(-500, 15);
+    await app.tick(60);
+    t.ok(!sheet.classList.contains('is-collapsed'), '從只剩拉把一口氣往上拉 → 直接展開卡片');
+    drag(700, 16);
+    await app.tick(60);
+    t.ok(sheet.classList.contains('is-hidden'), '從展開一口氣往下拉 → 只剩拉把');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+  });
+
   t.test('地區卡片收集狀態跟 STATE 更新', async function (app) {
     await app.reset();
     await app.go('/ride?mode=explore&area=glass-kiln');

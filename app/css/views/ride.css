@@ -156,8 +156,19 @@
 .ride-sheet--ride.is-condensed { max-height: var(--ride-closed-height); }
 .ride-sheet--ride.is-condensed .ride-mode__restore { height: 44px; min-height: 44px; opacity: 1; }
 
-.ride-v2__map { flex: 1 1 auto; }
+/* 探索地圖畫成面板收到只剩拉把時的高度（--ride-map-h，JS 量）、貼齊上緣；
+   面板收放只是露出多少，地圖不跟著縮放。署名與定位鈕放在容器上，貼著可見範圍的底邊。 */
+.ride-v2__map { flex: 1 1 auto; overflow: hidden; }
+.ride-v2__map > .app-map { bottom: auto; height: var(--ride-map-h, 100%); }
+.ride-v2__map [data-layer="credit"] { display: none; }
+.ride-v2__credit {
+  position: absolute; right: 6px; bottom: 6px; z-index: 1;
+  color: var(--app-muted); font-size: 9px; opacity: .7; pointer-events: none;
+}
 .ride-v2__sheet { --sheet-max: 82%; padding-top: var(--sp-2); }
+.ride-v2__sheet.is-collapsed.is-hidden { max-height: var(--ride-peek-h); }
+.ride-v2__sheet .ride-mode__pills, .ride-v2__sheet [data-area-intro] { transition: opacity var(--t-fast) var(--ease-out); }
+.ride-v2__sheet.is-hidden .ride-mode__pills, .ride-v2__sheet.is-hidden [data-area-intro] { opacity: 0; }
 .ride-v2__sheet .sheet__grip { height: 22px; touch-action: none; }
 .ride-v2__sheet .sheet__handle { margin-bottom: 0; }
 .ride-v2__eyebrow { color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-bold); }

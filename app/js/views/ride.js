@@ -16,7 +16,8 @@
      /notify      notify.html                            /trips      trips.html
 
    刻意沒有的東西：
-      - 搭車地圖沒有探索景點；只支援往下收合面板。探索地圖同時最多 4 個景點，面板可上下拉。
+      - 搭車地圖沒有探索景點；只支援往下收合面板。探索地圖同時最多 4 個景點，面板可上下拉，
+        最低收到只剩拉把（看整張地圖），點景點叫回來。
       - 收藏仍在底欄；沒有數字徽章、沒有未讀數字。
      - 金色橫幅只在評分之後出現（評分與付款是 yoxi 的既有職責，城事排在它們後面）。
      - 行程地圖上不畫路線：這份原型沒有做路徑規劃，一條假的線等於一個沒算過的數字。
@@ -333,7 +334,8 @@ function keepClear(map, me) {
     return [(r.left - box.left) * sx, (r.top - box.top) * sy, (r.right - box.left) * sx, (r.bottom - box.top) * sy];
   };
   const rects = [[0, 0, H.width, 60]];
-  map.el.querySelectorAll('.fab, .pin, .pin__label').forEach(function (el) { rects.push(rel(el)); });
+  /* 從地圖的容器找：探索把定位鈕搬到了 map.el 外面 */
+  map.el.parentElement.querySelectorAll('.fab, .pin, .pin__label').forEach(function (el) { rects.push(rel(el)); });
   const hit = function (a, b, pad) {
     return !(a[2] + pad < b[0] || a[0] - pad > b[2] || a[3] + pad < b[1] || a[1] - pad > b[3]);
   };
@@ -519,6 +521,12 @@ function areaCardsHTML(a) {
         '<strong>' + esc(c.name) + '</strong></button>';
     }).join('') + '</div>';
 }
+/* 探索面板收合態的自然高度：拉把＋模式切換＋地點資訊（卡片收合時不佔位）。
+   寫回 --sheet-min，收合／收起的動畫才不會先在多出來的高度裡空轉。 */
+function exploreCollapsedH(sheet) {
+  const intro = sheet.querySelector('[data-area-intro]');
+  return Math.ceil(intro.offsetTop + intro.offsetHeight + parseFloat(getComputedStyle(sheet).paddingBottom));
+}
 function areaIntroHTML(a) {
   const p = APP.place(a.id);
   const nearest = nearestCardArea().id === a.id;
@@ -557,7 +565,8 @@ function rideV2Overlay() {
 }
 function rideV2Render(params, ctx) {
   const a = cardArea(ctx.query.get('area')) || nearestCardArea();
-  return '<div class="ride-map ride-v2__map" data-ride-map></div>' +
+  return '<div class="ride-map ride-v2__map" data-ride-map>' +
+      '<span class="ride-v2__credit">地圖資料 © OpenStreetMap 貢獻者（ODbL）</span></div>' +
     '<section class="sheet sheet--drag is-collapsed ride-sheet ride-v2__sheet" style="--sheet-min:390px">' +
       '<div class="sheet__grip"><div class="sheet__handle"></div></div>' +
       rideModePills('explore') +
@@ -567,6 +576,8 @@ function rideV2Render(params, ctx) {
 }
 function rideV2Mount(root, params, ctx) {
   const sheet = root.querySelector('.ride-sheet');
+  const host = root.querySelector('[data-ride-map]');
+  const pills = sheet.querySelector('.ride-mode__pills');
   const intro = root.querySelector('[data-area-intro]');
   const expanded = root.querySelector('[data-area-expanded]');
   const floating = root.querySelector('[data-card-float]');
@@ -575,19 +586,34 @@ function rideV2Mount(root, params, ctx) {
   let selected = cardArea(ctx.query.get('area')) || nearestCardArea();
   let returnFocus = null;
   if (!cardArea(ctx.query.get('area'))) APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
-  const map = APP.map.mount(root.querySelector('[data-ride-map]'), {
-    style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
+  /* 面板可以收到只剩拉把，讓整張地圖露出來。地圖一開始就畫成那時的高度、貼齊上緣，
+     面板只是蓋在上面：收放時地圖不縮放，景點也不會跟街道錯開。
+     中心往南挪（全高 − 收合態可見高）的一半，收合態看到的範圍跟原本一樣。 */
+  const css = getComputedStyle(sheet);
+  const peek = Math.ceil(parseFloat(css.paddingTop) * 2 + sheet.querySelector('.sheet__grip').offsetHeight);
+  sheet.style.setProperty('--ride-peek-h', peek + 'px');
+  const fullH = Math.max(host.clientHeight, root.clientHeight - peek);
+  host.style.setProperty('--ride-map-h', fullH + 'px');
+  const c0 = HSMAP.toM(RIDE_CENTER[0], RIDE_CENTER[1]);
+  const center = HSMAP.toLL(c0[0], c0[1] + (fullH - host.clientHeight) / 2 * RIDE_SPAN / host.clientWidth);
+  const map = APP.map.mount(host, {
+    style: 'paper', center: center, spanM: RIDE_SPAN,
     spots: store().get('rideSpots') === false ? false : rideSpots(), max: 4, compact: true, pan: true, layers: { label: true },
     overlay: rideV2Overlay(), onSpot: function (s) { selectArea(s.id, true); },
   });
+  /* 定位鈕搬到可見範圍的右下角，跟著面板上下；它的回到原位在 mount 時已經綁好 */
+  host.appendChild(map.el.querySelector('.ride-fab--loc'));
   const H = map.handle, me = H.project(HOME_LL[0], HOME_LL[1]);
   const pin = map.el.querySelector('[data-pin="pickup"]');
   if (pin) { pin.style.left = (me[0] / H.width * 100).toFixed(1) + '%'; pin.style.top = (me[1] / H.height * 100).toFixed(1) + '%'; }
   SHELL.injectIcons(root);
   keepClear(map, me);
-  function setOpen(open) {
-    sheet.classList.toggle('is-collapsed', !open);
-    if (tabbar) tabbar.classList.toggle('is-yield', open);
+  /* 三段：hidden 只剩拉把（看整張地圖）／collapsed 地點資訊／open 接著看卡片 */
+  function setSheet(state) {
+    sheet.classList.toggle('is-collapsed', state !== 'open');
+    sheet.classList.toggle('is-hidden', state === 'hidden');
+    pills.inert = intro.inert = state === 'hidden';
+    if (tabbar) tabbar.classList.toggle('is-yield', state === 'open');
   }
   function paint() {
     intro.innerHTML = areaIntroHTML(selected);
@@ -595,7 +621,8 @@ function rideV2Mount(root, params, ctx) {
     SHELL.injectArt(intro);
     SHELL.injectArt(expanded);
     SHELL.injectIcons(sheet);
-    intro.querySelector('[data-act="expand-cards"]').onclick = function () { setOpen(true); };
+    sheet.style.setProperty('--sheet-min', exploreCollapsedH(sheet) + 'px');
+    intro.querySelector('[data-act="expand-cards"]').onclick = function () { setSheet('open'); };
     intro.querySelector('[data-act="use-yoxi"]').onclick = function () { setDropoff(selected.id, 'e'); };
     expanded.querySelectorAll('[data-act="open-card"]').forEach(function (b) {
       b.onclick = function () { openCard(b.getAttribute('data-card'), b); };
@@ -608,7 +635,7 @@ function rideV2Mount(root, params, ctx) {
     selected = cardArea(id) || nearestCardArea();
     APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
     paint();
-    if (fromMap) setOpen(false);
+    if (fromMap) setSheet('collapsed');    /* 收到只剩拉把時，點景點把面板叫回來 */
   }
   function closeCard() {
     floating.hidden = true;
@@ -643,7 +670,7 @@ function rideV2Mount(root, params, ctx) {
   floating.onclick = function (e) { if (e.target === floating) closeCard(); };
   function onEscape(e) { if (e.key === 'Escape' && !floating.hidden) closeCard(); }
   document.addEventListener('keydown', onEscape);
-  const stopDrag = bindExploreSheet(sheet, setOpen);
+  const stopDrag = bindExploreSheet(sheet, setSheet, peek);
   return function () {
     stopDrag();
     document.removeEventListener('keydown', onEscape);
@@ -713,37 +740,69 @@ function bindRideDownSheet(sheet) {
   };
 }
 
-function bindExploreSheet(sheet, setOpen) {
+/* 探索面板三段（hidden／collapsed／open）。放手時只往拖的方向換段，
+   那個方向有兩段可選時挑離放手高度最近的；點一下拉把：hidden→collapsed、collapsed↔open。
+   高度一律用 CSS px（桌機外框會縮放，clientY 要除回去）。 */
+function bindExploreSheet(sheet, setSheet, peek) {
   const grip = sheet.querySelector('.sheet__grip');
-  let y0 = null, moved = 0, base = 0;
+  const ORDER = ['hidden', 'collapsed', 'open'];
+  let y0 = null, moved = 0, base = 0, k = 1, from = 'collapsed';
+  function stateNow() {
+    return sheet.classList.contains('is-hidden') ? 'hidden'
+      : sheet.classList.contains('is-collapsed') ? 'collapsed' : 'open';
+  }
+  function heights() {
+    return {
+      hidden: peek,
+      collapsed: exploreCollapsedH(sheet),
+      open: sheet.parentElement.clientHeight * .82,
+    };
+  }
   function down(e) {
     y0 = e.clientY;
     moved = 0;
-    base = sheet.getBoundingClientRect().height;
+    base = sheet.offsetHeight;
+    k = sheet.getBoundingClientRect().height / base || 1;
+    from = stateNow();
     sheet.style.transition = 'none';
   }
   function move(e) {
     if (y0 === null) return;
-    moved = y0 - e.clientY;
+    moved = (y0 - e.clientY) / k;
     if (Math.abs(moved) > 4) e.preventDefault();
-    const max = sheet.parentElement.getBoundingClientRect().height * .82;
-    sheet.style.maxHeight = Math.max(120, Math.min(max, base + moved)) + 'px';
+    sheet.style.maxHeight = Math.max(peek, Math.min(heights().open, base + moved)) + 'px';
   }
   function up() {
     if (y0 === null) return;
+    const i = ORDER.indexOf(from);
+    let next;
+    if (Math.abs(moved) <= 24) next = from === 'collapsed' ? 'open' : 'collapsed';
+    else {
+      const h = heights(), at = base + moved;
+      next = ORDER.filter(function (s, j) { return moved > 0 ? j > i : j < i; })
+        .reduce(function (best, s) { return !best || Math.abs(h[s] - at) < Math.abs(h[best] - at) ? s : best; }, null) || from;
+    }
     sheet.style.transition = '';
     sheet.style.maxHeight = '';
-    setOpen(Math.abs(moved) > 24 ? moved > 0 : sheet.classList.contains('is-collapsed'));
+    setSheet(next);
+    y0 = null;
+  }
+  function cancel() {
+    if (y0 === null) return;
+    sheet.style.transition = '';
+    sheet.style.maxHeight = '';
     y0 = null;
   }
   grip.style.cursor = 'grab';
   grip.addEventListener('pointerdown', down);
   window.addEventListener('pointermove', move, { passive: false });
   window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', cancel);
   return function () {
     grip.removeEventListener('pointerdown', down);
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', cancel);
   };
 }
 
