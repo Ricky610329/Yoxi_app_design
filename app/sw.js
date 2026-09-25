@@ -30,7 +30,7 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v15';
+const VERSION = 'chengshi-app-v16';
 const RUNTIME = VERSION + '-img';          /* 執行期的圖片快取；跟著 VERSION 換代，activate 一起清 */
 const NAV_TIMEOUT_MS = 3000;               /* 導覽等網路最多這麼久，超過就先給快取（網路回來仍會更新快取） */
 

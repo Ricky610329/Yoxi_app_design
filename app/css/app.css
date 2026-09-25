@@ -31,11 +31,11 @@
    命中區用 ::before 撐到至少 44×44（WCAG 2.5.8；::after 已被開關的圓鈕用掉，所以統一用 ::before） */
 .hdr-red__close, .ride-back, .alb-fp__back, .ride-drawer__close, .ride-drop__clear,
 .pushmock__close, .sys-welcome__skip, .sw-toggle, .viewtoggle a, .btn-link, .hdr-red__action,
-a.sec__m, .alb-shelf__all, .alb-lb__exit, .ride-drawer__pts-btn { position: relative; }
+a.sec__m, .alb-lb__exit, .ride-drawer__pts-btn { position: relative; }
 .hdr-red__close::before, .ride-back::before, .alb-fp__back::before, .ride-drawer__close::before,
 .ride-drop__clear::before, .pushmock__close::before, .sys-welcome__skip::before, .sw-toggle::before,
 .viewtoggle a::before, .btn-link::before, .hdr-red__action::before, a.sec__m::before,
-.alb-shelf__all::before, .alb-lb__exit::before, .ride-drawer__pts-btn::before {
+.alb-lb__exit::before, .ride-drawer__pts-btn::before {
   content: '';
   position: absolute;
   left: 50%; top: 50%;
