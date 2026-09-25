@@ -115,3 +115,21 @@
 | `5d96b07` | 上拉探索時保留整塊地點資訊與兩個動作，卡片堆接在下方；更新截圖為最近地區的展開狀態。 |
 
 互動與資料契約在 `app/ARCHITECTURE.md`，接手摘要在 `docs/HANDOFF.md` §13。最後 UI 驗收：`python app/tests/run.py` 的 node 34/34、瀏覽器 189/189；`python app/tools/check-sw.py` 45 筆 PASS（PWA v9）；`python prototype/tools/verify-quiet.py` 八段全 PASS，六條承諾數字維持基準。原型、簡報與介紹網站沒有跟著改版；舊探索路由仍能以深連結供對照。
+
+## 2026-09-25 web app 全面 review 與修正（分支 `fix/app-review`）
+
+使用者要求「掃一下這個 APP」→「全修」。四個唯讀 agent 分區審查（約 60 條，都用 Playwright 重現過）；五個 agent 各在自己的 worktree 修，主 agent 先定跨區塊約定（`data-overlay`／`dismissOverlays`、`confirm` 的 `danger`、`remember:false`、`APP.ride.RIDE_BONUS`、`share` 的 `card`、景點推開歸 core、`APP.place` 正規化），再合併、縫合、寫文件。細節見 `docs/HANDOFF.md` §14 與 `app/ARCHITECTURE.md`。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `94bb5e2`、`4b2e918`、`a670c99` | PWA：導覽 network-first、靜態檔 SWR、明信片與照片執行期快取、check-sw 缺檔即失敗、`start_url` 會先看 onboarding；測試跑者：缺 spec 算 FAIL、掃浮層與 demo 面板、`click({hit})`；system：分享與推播換頁就收、複製連結用打開時的網址、長輩圖帶明信片、清除足跡清乾淨、demo 面板認得路線站 |
+| `281d3cc` | core：導覽收浮層、對話框焦點圈與 inert、同網址 replace、換頁焦點、底欄只建一次、live region、桌機判斷、景點推開、`APP.place` 正規化、store 版本與型別檢查、`fmt.dist` 先四捨五入 |
+| `ff3542d`〜`6359e3b` | ride：明信片 id、壞行程、過期確認框、返回紀錄、拉把手勢／跟手／鍵盤、視窗改大小重畫、懸浮小卡改掛 `.device`、距離待確認、`RIDE_BONUS`、tokens 與死碼 |
+| `45f9c01`〜`b1d00a3` | explore：搭車抵達不被走路收掉、機率框換頁就收、抽卡鍵盤與報讀、計時器與音效收乾淨、金框結果頁會停、render 不寫 store、拆成 explore-cards／explore／explore-unlock |
+| `359ac5d`、`d63c115` | album：子頁返回鍵、「回顧」一列、`/postcards` 可點、金框看得到、限定版與金框分開、「今天多了一張」看日期、長輩圖用分享的那張、去過的地方去重、週回顧範圍、文案誠實與空狀態、刪舊書架 |
+| `9fe6c53` | 縫合：`confirm` 三態（沒回答＝null）、刪掉 explore 重複的推開景點、生成腳本指向新檔名 |
+| `3ba1a5c`、`fbd5948` | 使用者追加：抽卡結果與收集面板不寫機率、不寫「必得金框」，機率只在「?」 |
+| `0d2adc0` | VERSION v16；app.css 拿掉已刪的選擇器 |
+
+驗收：`python app/tests/run.py` node 47/47、瀏覽器 272/272（改前 34／201）；check-sw 60 筆 PASS。截圖沒有重拍（shoot-app 在 Mac 會卡住）。
+

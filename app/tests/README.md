@@ -16,7 +16,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 ```
 
 - 需要 Chrome 或 Edge（路徑偵測同 `prototype/tools/verify-quiet.py`）與 node 18+（本 repo 用 24）。找不到會印清楚。
-- 瀏覽器測試跑在 virtual time 裡：`setTimeout` 不會真的等，整包通常幾秒就跑完。
+- 瀏覽器測試跑在 virtual time 裡：`setTimeout` 不會真的等，整包通常幾秒就跑完。改 iframe 大小不會送出 ResizeObserver／`resize`，要測就自己補發 `resize`；rAF／WAAPI 在畫面外的 iframe 也不走，app 的時序用 `setTimeout`。
 - 手動看結果：`chrome --allow-file-access-from-files app/tests/runner.html`（file:// 下 iframe 要同源才讀得到），
   或 `python app/tools/serve.py` 後開 `/tests/runner.html`。網址參數：`?only=ride`、`?frame=1`（把受測 iframe 顯示出來）、
   `?app=fixtures/mini-app.html`（換受測頁）。
@@ -26,7 +26,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | 檔 | 做什麼 |
 |---|---|
 | `run.py` | 總入口，解析 `<pre id="result">` 印表格 |
-| `runner.html` | 載 harness 與各 spec；spec 檔不存在只會列在「找不到的 spec 檔」 |
+| `runner.html` | 載 harness 與各 spec；spec 檔不存在會列在「找不到的 spec 檔」，而且算 FAIL（run.py exit 1） |
 | `harness.js` | `T`、`app`、`t` |
 | `specs/app.spec.js` | 跨區塊：§8 每條 route、tab bar、返回、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder |
 | `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫 |
@@ -79,7 +79,7 @@ T.spec('ride', function (t) {
 | `route()` | `APP.nav.current()`：`{ path, pattern, params, query, name, tab }` |
 | `go(path, opt)` | `APP.nav.go` 後等 `html[data-view-ready="1"]` 且 path 相符。`opt.expect` 預期落點（`go('/')`→`'/ride'`）、`opt.redirectOk` 任何落點都可、`opt.ms` 等多久（預設 4 s）。回傳落地 path |
 | `at(path, ms)` | 等到停在某個 path 且 view-ready |
-| `click(sel \| el, ms)` | 等元素出現（預設 2 s）後 `el.click()`，再等 30 ms |
+| `click(sel \| el, ms \| {ms, hit})` | 等元素出現（預設 2 s）後 `el.click()`，再等 30 ms；`hit:true` 先用 `elementFromPoint` 做命中測試，點不到（被蓋住、display:none）就丟例外 |
 | `waitFor(fn, ms, label)` | 每 20 ms 輪詢到 truthy，逾時丟 `等待逾時 …：label` |
 | `tick(ms)` | 等一下（預設 50 ms，virtual time） |
 | `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁；`opt.still:false` 不帶 `?still=1`（動畫與 setTimeout 照真的跑，之後的 reload 也沿用，直到下一次 reset） |
@@ -94,10 +94,10 @@ T.spec('ride', function (t) {
 |---|---|
 | `test(name, fn(app), opt)` | 登記一條；`opt.timeout`（預設 8000） |
 | `ok(cond, msg)`、`eq(a, b, msg)`、`includes(strOrArr, x, msg)`、`fail(msg)` | 軟斷言；回傳布林 |
-| `noDeadButtons(app, msg)` | 掃 `main.view` 與 `#tabbar` 的 `a, button, [role=button]`；有行為＝`href="#/…"` 指到已註冊 view（`APP.resolve` 不是 `_404`／`_placeholder`）、`onclick`、`data-toast／switch／pills／flip／share／reset／recenter／tab／i`、`<a data-back>`、或祖先有 |
-| `noBannedWords(app, {allow, msg})` | 任務／完成／達成／挑戰／每日；掃 `main.view` 文字節點、`title`／`aria-label`／`placeholder`、`document.title`。白名單 `WORD_OK`：好康任務、行程完成 |
+| `noDeadButtons(app, msg)` | 掃 `main.view`、`#tabbar`、看得到的浮層（`[data-overlay]`、`.scrim`、`.sharesheet`、`.sys-share`、`.pushmock`、`.toast`）與顯示中的 `#demo-panel` 的 `a, button, [role=button]`；有行為＝`href="#/…"` 指到已註冊 view（`APP.resolve` 不是 `_404`／`_placeholder`）、`onclick`、`data-toast／switch／pills／flip／share／reset／recenter／tab／i`、`<a data-back>`、`target="_blank"` 的真連結、或祖先有 |
+| `noBannedWords(app, {allow, msg})` | 任務／完成／達成／挑戰／每日；掃 `main.view`（與上面同一組浮層、demo 面板）的文字節點、`title`／`aria-label`／`placeholder`、`document.title`。白名單 `WORD_OK`：好康任務、行程完成 |
 | `noHardcodedHex(cssText, name)` | 宣告值裡不准有 `#rgb…`（selector 的 `#id`、註解、`url(#…)` 不算） |
-| `countTappables(app)` | `main.view` 內看得見的 `a[href], button, [role=button], .pill, .sw-toggle`；不算 `.spot`、tab bar、`[data-expand-only]`、`href="#"` 又沒行為的；巢狀只算外層。量法同 `prototype/tools/audit-load.html` |
+| `countTappables(app)` | `main.view` 內看得見的 `a[href], button, [role=button], .pill, .sw-toggle`；不算 `.spot`、tab bar、`[data-expand-only]`、`href="#"` 又沒行為的；`[data-gallery]` 容器整片算一個；巢狀只算外層。量法同 `prototype/tools/audit-load.html` |
 
 ### `T`
 
