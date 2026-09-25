@@ -897,17 +897,22 @@ function rideMap(root, sheet, opts, after) {
     if (after) after(map);
   }
   draw();
+  /* main.view 的大小變了才重畫（observe 當下那一次、面板收放都不算）。
+     ResizeObserver 為主；window resize 也接（沒有 ResizeObserver 的瀏覽器、測試環境補發的事件） */
   let size = [root.clientWidth, root.clientHeight], timer = null;
-  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(function () {
+  function check() {
     const now = [root.clientWidth, root.clientHeight];
-    if (now[0] === size[0] && now[1] === size[1]) return;     /* observe 當下那一次、面板收放都不算 */
+    if (now[0] === size[0] && now[1] === size[1]) return;
     size = now;
     clearTimeout(timer);
     timer = setTimeout(function () { if (root.isConnected && now[0] > 0 && now[1] > 0) draw(); }, 80);
-  }) : null;
+  }
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(check) : null;
   if (ro) ro.observe(root);
+  window.addEventListener('resize', check);
   ctl.destroy = function () {
     if (ro) ro.disconnect();
+    window.removeEventListener('resize', check);
     clearTimeout(timer);
     if (ctl.map) ctl.map.destroy();
     if (untrack) untrack();

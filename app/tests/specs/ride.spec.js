@@ -73,7 +73,7 @@ T.spec('ride', function (t) {
     await app.tick(60);
     t.ok(!sheet.classList.contains('is-hidden') && sheet.offsetHeight === openH, '已經展開：往上拉不會更高');
     const release = drag(90, 22, true);
-    t.ok(!!sheet.style.maxHeight, '下拉時面板高度跟手');
+    t.ok(Math.abs(sheet.offsetHeight - (openH - 90)) <= 2, '下拉時面板真的跟手（' + sheet.offsetHeight + ' ≈ ' + (openH - 90) + '）');
     release();
     await app.tick(60);
     t.ok(sheet.classList.contains('is-hidden'), '往下拉 → 只剩拉把');
@@ -86,8 +86,9 @@ T.spec('ride', function (t) {
     t.ok(loc.bottom <= map.bottom && loc.bottom > map.bottom - 80, '定位鈕跟著貼到可見範圍的底邊');
     const credit = app.$('[data-ride-map] .ride-map__credit').getBoundingClientRect();
     t.ok(credit.height > 0 && credit.bottom <= map.bottom, '地圖署名看得到');
+    const peekH = sheet.offsetHeight;
     const release2 = drag(-120, 23, true);
-    t.ok(parseFloat(sheet.style.maxHeight) > 60, '往上拉時面板跟手');
+    t.ok(Math.abs(sheet.offsetHeight - (peekH + 120)) <= 2, '往上拉時面板真的跟手（' + sheet.offsetHeight + ' ≈ ' + (peekH + 120) + '）');
     release2();
     await app.tick(60);
     t.ok(!sheet.classList.contains('is-hidden') && sheet.offsetHeight === openH, '往上拉 → 回到叫車欄位');
@@ -486,5 +487,441 @@ T.spec('ride', function (t) {
     const toast = app.$('.device .toast');
     t.ok(toast && toast.textContent.indexOf('上車點已更新') >= 0, 'toast 上車點已更新');
     t.includes(app.text('[data-pickup-name]'), '46 巷 2 號', '上車點換了');
+  });
+
+  /* ================================================================ 6. 回歸：review 找到的 bug */
+
+  const T0 = '2026-09-21T13:18:00.000Z';
+  function hist(app) { const s = app.win.history.state; return s && s.i; }
+  /* 在拉把上拖 dy（正＝往下）。opt：id、init（PointerEvent 其他欄位）、hold（回傳放手函式） */
+  function dragOn(app, grip, dy, opt) {
+    opt = opt || {};
+    const W = app.win, b = grip.getBoundingClientRect(), y = b.top + 10;
+    const ev = function (type, yy) {
+      return new W.PointerEvent(type, Object.assign({ bubbles: true, pointerId: opt.id || 1, clientY: yy }, opt.init || {}));
+    };
+    grip.dispatchEvent(ev('pointerdown', y));
+    W.dispatchEvent(ev('pointermove', y + dy));
+    const up = function () { W.dispatchEvent(ev('pointerup', y + dy)); };
+    if (opt.hold) return up;
+    up();
+  }
+
+  t.test('明信片 id 用 APP.place().card：收過 p2 再搭車到東門市場，不會一直「還沒收」', async function (app) {
+    await app.reset({ store: { trip: { placeId: 'market', phase: 'done', startedAt: T0, rated: true, stars: 5, km: 1.4 } }, hash: '/trip/done' });
+    const A = app.APP;
+    t.eq(A.place('market').card, 'p2', "APP.place('market').card＝p2");
+    t.ok(app.STATE.has('p2'), 'demo 已經收過 p2');
+    t.eq(A.ride.pendingUnlock(), null, '沒有待收的明信片');
+    t.includes(app.text('[data-gold]'), '已經在收藏', '/trip/done 說已經在收藏裡');
+    await app.go('/ride');
+    t.ok(!app.$('[data-act="unlock-ride"]'), '/ride 沒有「明信片還沒收」入口');
+    t.eq(A.store.get('trip'), null, '收過的那一趟在 /ride 安靜清掉');
+    A.ride.setDropoff('moat', 'e');
+    await app.waitFor(function () { return app.$('[data-act="call-ride"]'); }, 2000, '叫車鈕');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    t.ok(!app.$('.app-confirm'), '新的一趟不再問「上一趟還沒收」');
+    t.eq(A.store.get('trip').placeId, 'moat', '新行程');
+  });
+
+  t.test('認不得的行程／下車點不算數：/ride 不顯示「回到行程」、清掉、setDropoff 不被擋、/trip 顯示沒有行程', async function (app) {
+    const broken = { placeId: 'no-such-place', phase: 'riding', startedAt: T0, rated: false, km: 1 };
+    await app.reset({ store: { trip: broken, dropoff: { id: 'nope', name: '不存在', km: 1, setAt: T0, via: 'e' } }, hash: '/ride' });
+    const A = app.APP;
+    t.ok(!app.$('[data-act="call-ride"]'), '沒有「回到行程」鈕');
+    t.ok(app.$('[data-act="pick-dropoff"] .route-input__value--ph'), '下車點欄位是空的');
+    t.eq(A.store.get('trip'), null, '壞掉的 trip 清掉');
+    t.eq(A.store.get('dropoff'), null, '壞掉的 dropoff 清掉');
+    t.eq(A.ride.tripActive(), null, 'tripActive＝null');
+    A.ride.setDropoff('moat', 'e');
+    await app.waitFor(function () { const d = A.store.get('dropoff'); return d && d.id === 'moat'; }, 2000, 'setDropoff 不被擋');
+    await app.reset({ store: { trip: broken }, hash: '/trip' });
+    t.includes(app.text('main.view'), '目前沒有行程', '/trip 顯示沒有行程');
+    t.ok(app.$('main.view a[href="#/ride"]'), '/trip 有回叫車');
+    t.eq(app.APP.store.get('trip'), null, '/trip 也清掉壞掉的 trip');
+    await app.reset({ store: { trip: broken }, hash: '/album' });
+    t.eq(app.APP.ride.arrive(), false, 'arrive() 不接受壞掉的行程');
+    t.eq(app.APP.store.get('trip'), null, 'arrive() 順手清掉');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+  });
+
+  t.test('取消行程的確認框開著時抵達了：再按「取消行程」不會清掉抵達的那一趟', async function (app) {
+    await app.reset({ store: { trip: neiwanTrip('riding') } });
+    const A = app.APP;
+    await app.go('/trip');
+    await app.click('[data-act="cancel-trip"]');
+    t.ok(app.$('.app-confirm'), '確認框開著');
+    const yes = app.$('.app-confirm [data-act="confirm-yes"]');
+    if (A.system && A.system.demoArrive) A.system.demoArrive('neiwan', 'ride');
+    else { A.store.set('trip', Object.assign({}, A.store.get('trip'), { phase: 'done' })); A.nav.go('/unlock/neiwan?ride=1'); }
+    await app.at('/unlock/neiwan');
+    if (yes && yes.isConnected) await app.click(yes);
+    await app.tick(80);
+    const tr = A.store.get('trip');
+    t.ok(tr && tr.phase === 'done' && tr.placeId === 'neiwan', '抵達的行程還在（限定版與 +50 沒丟）');
+    t.eq(app.route().path, '/unlock/neiwan', '沒有被拉回 /ride');
+  });
+
+  t.test('叫車前的確認框開著時離開了 /ride：再按「直接叫車」不會覆蓋待解鎖的行程', async function (app) {
+    const done = { placeId: 'neiwan', phase: 'done', startedAt: T0, rated: true, km: 28 };
+    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: T0, via: 'e' };
+    await app.reset({ store: { trip: done, dropoff: drop } });
+    const A = app.APP;
+    await app.go('/ride');
+    await app.click('[data-act="call-ride"]');
+    t.ok(app.$('.app-confirm'), '確認框開著');
+    const no = app.$('.app-confirm [data-act="confirm-no"]');
+    await app.go('/album');
+    if (no && no.isConnected) await app.click(no);
+    await app.tick(80);
+    t.eq(app.route().path, '/album', '留在 /album，沒有被拉去 /trip');
+    t.eq(A.store.get('trip').placeId, 'neiwan', '待解鎖的行程沒被覆蓋');
+    t.eq(A.store.get('trip').phase, 'done', '還是已抵達');
+  });
+
+  t.test('通知「今天的地方」、下車點「在地圖上挑」都進探索模式；在地圖上選好退回原本那一格', async function (app) {
+    await app.reset();
+    const A = app.APP, M = app.MOCK;
+    await app.go('/notify');
+    const a = app.$('[data-act="open-today"]');
+    t.includes(a && a.getAttribute('href'), 'mode=explore', '通知連結帶 mode=explore');
+    t.includes(a && a.getAttribute('href'), 'area=' + encodeURIComponent(M.TODAY.id), '通知連結帶今天的地方');
+    await app.click(a);
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'explore', '落在探索模式');
+    t.eq(app.$$('main.view .spot').length, 4, '地圖上有景點');
+    t.eq(app.text('.ride-v2__eyebrow'), '今天的地方', '今天的地方照 MOCK.TODAY 標');
+
+    await app.go('/ride');
+    const i0 = hist(app);
+    await app.click('[data-act="pick-dropoff"]');
+    await app.at('/dropoff');
+    const pm = app.$('[data-act="pick-on-map"]');
+    t.includes(pm && pm.getAttribute('href'), 'mode=explore', '「在地圖上挑」帶 mode=explore');
+    await app.click(pm);
+    await app.waitFor(function () { return app.route().path === '/ride' && app.route().query.get('mode') === 'explore' && app.$('main.view .spot'); }, 3000, '探索模式');
+    t.eq(hist(app), i0 + 1, '換掉 /dropoff 那一格');
+    await app.click('.spot[data-spot="moat"]');
+    t.eq(app.text('.ride-v2__eyebrow'), '你選的地方', '選的地方照實標');
+    await app.click('[data-area-intro] [data-act="use-yoxi"]');
+    await app.waitFor(function () {
+      const d = A.store.get('dropoff');
+      return d && d.id === 'moat' && app.route().path === '/ride' && !app.route().query.get('mode') && hist(app) === i0 &&
+        app.doc.documentElement.getAttribute('data-view-ready') === '1';
+    }, 3000, '退回原本的 /ride');
+    t.eq(app.text('[data-drop-name]'), A.place('moat').name, '下車點欄位是護城河');
+  });
+
+  t.test('選好下車點、取消行程、結算頁回首頁：退回同一格 /ride，不疊兩個 /ride', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    await app.go('/ride');
+    const i0 = hist(app);
+    await app.click('[data-act="pick-dropoff"]');
+    await app.at('/dropoff');
+    await app.click('[data-act="choose-dropoff"][data-id="market"]');
+    await app.waitFor(function () { return app.route().path === '/ride' && hist(app) === i0 && app.$('[data-act="call-ride"]'); }, 3000, '選好 → 退回 /ride');
+    t.eq(A.store.get('dropoff').id, 'market', 'dropoff=market');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    t.eq(hist(app), i0 + 1, '/trip 在下一格');
+    await app.click('[data-act="cancel-trip"]');
+    await app.click('[data-act="confirm-yes"]');
+    await app.waitFor(function () { return app.route().path === '/ride' && hist(app) === i0 && app.$('[data-act="call-ride"]'); }, 3000, '取消 → 退回 /ride');
+    t.eq(A.store.get('trip'), null, 'trip 清掉');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    A.ride.arrive();
+    await app.at('/trip/done');
+    t.eq(hist(app), i0 + 1, '結算頁取代 /trip');
+    await app.click('[data-act="rate"][data-star="5"]');
+    await app.click('[data-act="go-home"]');
+    await app.waitFor(function () { return app.route().path === '/ride' && hist(app) === i0; }, 3000, '回首頁 → 退回 /ride');
+    /* 從別的地方進結算頁（demo 面板）：回首頁就地換成 /ride，結算頁不留在歷史裡 */
+    await app.go('/album');
+    A.store.set('trip', neiwanTrip('done', { rated: true, stars: 5 }));
+    const i1 = hist(app);
+    await app.go('/trip/done');
+    await app.click('[data-act="go-home"]');
+    await app.at('/ride');
+    t.eq(hist(app), i1 + 1, '就地換掉結算頁那一格');
+  }, { timeout: 15000 });
+
+  t.test('/pickup 選好也退回同一格', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    const i0 = hist(app);
+    await app.click('[data-act="pick-pickup"]');
+    await app.at('/pickup');
+    await app.click('[data-act="choose-pickup"][data-i="2"]');
+    await app.waitFor(function () { return app.route().path === '/ride' && hist(app) === i0; }, 3000, '退回 /ride');
+  });
+
+  t.test('拉把：移動 ≤ 8 px 才算點一下；超過照拖的方向換段', async function (app) {
+    await app.reset();
+    await app.go('/ride?mode=explore&area=glass-kiln');
+    let sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet .sheet__grip');
+    dragOn(app, grip, 20, { id: 31 });
+    await app.tick(40);
+    t.ok(sheet.classList.contains('is-hidden'), '探索收合態往下 20 px → 只剩拉把（不是展開）');
+    dragOn(app, grip, -6, { id: 32 });
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-hidden') && sheet.classList.contains('is-collapsed'), '6 px 算點一下 → 回到地點資訊');
+    await app.go('/ride');
+    sheet = app.$('.ride-sheet'); grip = app.$('.ride-sheet .sheet__grip');
+    dragOn(app, grip, -20, { id: 33 });
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-hidden'), '搭車展開態往上 20 px → 不動（不是收起來）');
+    dragOn(app, grip, 7, { id: 34 });
+    await app.tick(40);
+    t.ok(sheet.classList.contains('is-hidden'), '7 px 算點一下 → 只剩拉把');
+  });
+
+  t.test('拖曳真的跟手（offsetHeight，兩個模式）', async function (app) {
+    await app.reset();
+    await app.go('/ride?mode=explore&area=market');
+    let sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet .sheet__grip');
+    const c0 = sheet.offsetHeight;
+    let release = dragOn(app, grip, -120, { id: 41, hold: true });
+    t.ok(Math.abs(sheet.offsetHeight - (c0 + 120)) <= 2, '探索收合態往上拉 120：' + sheet.offsetHeight + ' ≈ ' + (c0 + 120));
+    t.ok(app.$('[data-area-expanded]').offsetHeight > 0, '拖的時候卡片堆已經排版');
+    release();
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-collapsed'), '放手 → 展開');
+    await app.go('/ride');
+    sheet = app.$('.ride-sheet'); grip = app.$('.ride-sheet .sheet__grip');
+    dragOn(app, grip, 120, { id: 42 });
+    await app.tick(40);
+    const p0 = sheet.offsetHeight;
+    release = dragOn(app, grip, -150, { id: 43, hold: true });
+    t.ok(Math.abs(sheet.offsetHeight - (p0 + 150)) <= 2, '搭車只剩拉把往上拉 150：' + sheet.offsetHeight + ' ≈ ' + (p0 + 150));
+    release();
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-hidden'), '放手 → 叫車欄位');
+  });
+
+  t.test('拉把：右鍵、第二根手指不拖；滑鼠鍵放開卻沒有 pointerup、視窗失焦 → 這次拖曳作廢', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    const sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet .sheet__grip'), W = app.win;
+    const open = sheet.offsetHeight;
+    dragOn(app, grip, 120, { id: 51, init: { button: 2, buttons: 2, pointerType: 'mouse', isPrimary: true } });
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-hidden') && sheet.offsetHeight === open, '右鍵拖不動');
+    dragOn(app, grip, 120, { id: 52, init: { pointerType: 'touch', isPrimary: false, buttons: 1 } });
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-hidden'), '第二根手指拖不動');
+    const b = grip.getBoundingClientRect(), y = b.top + 10;
+    const mouse = function (type, yy, buttons) {
+      return new W.PointerEvent(type, { bubbles: true, pointerId: 53, clientY: yy, pointerType: 'mouse', isPrimary: true, button: 0, buttons: buttons });
+    };
+    grip.dispatchEvent(mouse('pointerdown', y, 1));
+    W.dispatchEvent(mouse('pointermove', y + 100, 1));
+    t.ok(Math.abs(sheet.offsetHeight - (open - 100)) <= 2, '左鍵拖得動');
+    W.dispatchEvent(mouse('pointermove', y + 140, 0));
+    await app.tick(40);
+    t.eq(sheet.style.maxHeight, '', '鍵已經放開 → 放掉拖曳');
+    t.ok(!sheet.classList.contains('is-hidden'), '回到原段');
+    W.dispatchEvent(mouse('pointerup', y + 140, 0));
+    await app.tick(40);
+    t.ok(!sheet.classList.contains('is-hidden'), '遲來的 pointerup 不再換段');
+    grip.dispatchEvent(mouse('pointerdown', y, 1));
+    W.dispatchEvent(mouse('pointermove', y + 100, 1));
+    W.dispatchEvent(new W.Event('blur'));
+    await app.tick(40);
+    t.eq(sheet.style.maxHeight, '', '視窗失焦 → 放掉拖曳');
+    t.ok(!sheet.classList.contains('is-hidden'), '失焦後回到原段');
+  });
+
+  t.test('拉把是按鈕：鍵盤（click）也能收放，aria-expanded 跟著變；指標點一下不會切兩次', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    const sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet [data-act="toggle-sheet"]'), W = app.win;
+    t.eq(grip && grip.tagName, 'BUTTON', '拉把是 <button>');
+    t.eq(grip.getAttribute('aria-expanded'), 'true', '展開時 aria-expanded=true');
+    t.ok(grip.getAttribute('aria-label'), '拉把有名字');
+    await app.click(grip);
+    t.ok(sheet.classList.contains('is-hidden'), 'Enter／空白鍵（click）→ 只剩拉把');
+    t.eq(grip.getAttribute('aria-expanded'), 'false', 'aria-expanded=false');
+    t.ok(!grip.closest('[inert]') && !grip.inert, '收起來時拉把還按得到');
+    await app.click(grip);
+    t.ok(!sheet.classList.contains('is-hidden'), '再按一次 → 叫車欄位');
+    /* 指標：pointerdown/up 已經切了一次，之後瀏覽器補的 click 不再切 */
+    dragOn(app, grip, 0, { id: 61 });
+    grip.click();
+    await app.tick(40);
+    t.ok(sheet.classList.contains('is-hidden'), '點一下只切一次');
+    await app.go('/ride?mode=explore&area=glass-kiln');
+    const g2 = app.$('.ride-sheet [data-act="toggle-sheet"]');
+    t.eq(g2.getAttribute('aria-expanded'), 'false', '探索收合態 aria-expanded=false');
+    await app.click(g2);
+    t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '探索：按拉把 → 展開卡片');
+    t.eq(g2.getAttribute('aria-expanded'), 'true', 'aria-expanded=true');
+  });
+
+  t.test('懸浮小卡：a11yDialog、背後 inert、Tab 繞在小卡裡、Esc 關、焦點回到卡片', async function (app) {
+    await app.reset();
+    await app.go('/ride?mode=explore&area=glass-kiln');
+    const W = app.win, d = app.doc;
+    await app.click('[data-act="expand-cards"]');
+    const card = app.$('[data-act="open-card"][data-card="p11"]');
+    card.focus();
+    await app.click(card);
+    const float = app.$('[data-card-float]');
+    const flip = float.querySelector('[data-act="flip-card"]'), close = float.querySelector('[data-act="close-card"]');
+    t.ok(!float.hidden, '小卡打開');
+    t.eq(float.getAttribute('role'), 'dialog', 'role=dialog');
+    t.eq(d.activeElement, flip, '焦點在卡片（翻面鈕）');
+    const btns = Array.prototype.slice.call(float.querySelectorAll('button'));
+    t.ok(btns.indexOf(flip) < btns.indexOf(close), 'DOM 順序：翻面在前、關閉在後');
+    t.ok(app.$('#tabbar').inert, '底欄 inert');
+    t.ok(app.$('.ride-sheet').inert && app.$('[data-ride-map]').inert, '面板與地圖 inert');
+    const key = function (k, shift) {
+      d.activeElement.dispatchEvent(new W.KeyboardEvent('keydown', { key: k, shiftKey: !!shift, bubbles: true, cancelable: true }));
+    };
+    key('Tab');
+    t.eq(d.activeElement, close, 'Tab → 關閉鈕');
+    key('Tab');
+    t.eq(d.activeElement, flip, '再 Tab → 繞回翻面鈕');
+    key('Tab', true);
+    t.eq(d.activeElement, close, 'Shift+Tab → 關閉鈕（往回也到得了）');
+    key('Escape');
+    await app.tick(40);
+    t.ok(float.hidden, 'Esc 關掉');
+    t.ok(!app.$('#tabbar').inert && !app.$('.ride-sheet').inert && !app.$('[data-ride-map]').inert, '關掉後背後都恢復');
+    t.eq(d.activeElement, card, '焦點回到點開的那張卡');
+    await app.click(card);
+    await app.go('/album');
+    t.ok(!app.$('#tabbar').inert, '小卡開著就離開：底欄恢復');
+  });
+
+  t.test('視窗改大小：地圖重畫、畫滿可見範圍（ResizeObserver），舊地圖拆乾淨', async function (app) {
+    /* run.py 的 headless Chrome 用 virtual time，改了 iframe 大小之後不會再跑 ResizeObserver／resize 事件
+       （真的瀏覽器會；Playwright 實測過）。這裡改完大小自己補發 resize，驗的是「重量、重畫」那一段。 */
+    const fr = app.win.frameElement, h0 = fr.style.height;
+    const resize = function (h) { fr.style.height = h; app.win.dispatchEvent(new app.win.Event('resize')); };
+    try {
+      fr.style.height = '700px';
+      await app.reset();
+      await app.go('/ride');
+      await app.click('.ride-sheet [data-act="toggle-sheet"]');
+      await app.tick(60);
+      resize('844px');
+      const filled = function () {
+        const m = app.$('[data-ride-map]'), svg = app.$('[data-ride-map] .map__svg');
+        return m && svg && svg.getBoundingClientRect().bottom >= m.getBoundingClientRect().bottom - 1;
+      };
+      await app.waitFor(filled, 3000, '改高之後地圖畫滿');
+      t.ok(filled(), '地圖畫滿露出來的範圍');
+      t.eq(app.$$('main.view .app-map').length, 1, '只有一張地圖');
+      t.eq(app.$$('main.view [data-recenter]').length, 1, '只有一顆定位鈕');
+      const map = app.$('[data-ride-map]').getBoundingClientRect(), loc = app.$('main.view [data-recenter]').getBoundingClientRect();
+      t.ok(loc.bottom <= map.bottom && loc.bottom > map.bottom - 80, '定位鈕仍貼著可見範圍的底邊');
+      await app.click('.ride-sheet [data-act="toggle-sheet"]');
+      await app.tick(60);
+      t.ok(!app.$('.ride-sheet').classList.contains('is-hidden'), '重畫之後面板照樣收放');
+      await app.click('[data-act="mode-explore"]');
+      resize('760px');
+      await app.waitFor(function () { const s = app.$('.spot.is-selected'); return s && filled(); }, 3000, '探索重畫後仍標著選到的景點');
+      t.eq(app.$$('main.view .spot').length, 4, '探索重畫後還是四顆景點');
+      t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    } finally {
+      fr.style.height = h0;
+    }
+  }, { timeout: 15000 });
+
+  t.test('距離不明：寫「距離待確認」，不寫車資與分鐘', async function (app) {
+    await app.reset();
+    const A = app.APP, orig = A.place;
+    A.place = function () {
+      const p = orig.apply(this, arguments);
+      if (p && (p.id === 'moat' || p.id === 'glass-kiln')) p.dist = null;
+      return p;
+    };
+    try {
+      A.store.set('dropoff', { id: 'moat', name: '護城河的舊碼頭階梯', km: null, setAt: T0, via: 'e' });
+      await app.go('/ride');
+      t.includes(app.text('.ride-drop__meta'), '距離待確認', '/ride 下車點寫距離待確認');
+      t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-min]'), '/ride 沒有車資與分鐘');
+      await app.go('/ride?mode=explore&area=moat');
+      t.includes(app.text('[data-area-intro]'), '距離待確認', '探索地點卡寫距離待確認');
+      t.ok(app.text('[data-area-intro]').indexOf('0 m') < 0, '不寫 0 m');
+      await app.go('/notify');
+      t.includes(app.text('[data-act="open-today"]'), '距離待確認', '通知的今天的地方寫距離待確認');
+      A.store.set('dropoff', null);
+      A.ride.setDropoff('moat', 'e');
+      await app.at('/ride');
+      t.eq(A.store.get('dropoff').km, null, 'dropoff.km＝null（不是 0）');
+      A.store.set('trip', { placeId: 'moat', phase: 'riding', startedAt: T0, rated: false, km: null });
+      await app.go('/trip');
+      t.includes(app.text('[data-phase="riding"]'), '距離待確認', '/trip 寫距離待確認');
+      t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-min]'), '/trip 沒有車資與分鐘');
+      A.store.set('trip', { placeId: 'moat', phase: 'done', startedAt: T0, rated: true, km: null });
+      await app.go('/trip/done');
+      t.includes(app.text('.ride-done__meta'), '距離待確認', '/trip/done 寫距離待確認');
+      t.ok(!app.$('main.view [data-fare]'), '/trip/done 沒有車資');
+      t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    } finally {
+      A.place = orig;
+    }
+  });
+
+  t.test('非 still：配對中 → 時間到自己切到行程中', async function (app) {
+    await app.reset({ still: false, store: { dropoff: { id: 'neiwan', name: '內灣老街', km: 28, setAt: T0, via: 'k1' } } });
+    const A = app.APP;
+    t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
+    await app.go('/ride');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip', 4000);
+    if (!A.reduceMotion()) {
+      t.eq(A.store.get('trip').phase, 'matching', '一開始是配對中');
+      t.ok(!app.$('[data-phase="matching"]').hidden && app.$('[data-phase="riding"]').hidden, '畫面是配對中');
+    }
+    await app.waitFor(function () {
+      const tr = A.store.get('trip');
+      return tr && tr.phase === 'riding' && !app.$('[data-phase="riding"]').hidden;
+    }, 4000, 'MATCH_MS 之後切到行程中');
+    t.ok(app.$('[data-phase="matching"]').hidden, '配對中收起來');
+    t.includes(app.doc.title, '行程中', '標題跟著換');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+  }, { timeout: 15000 });
+
+  t.test('點數回饋只有一個來源：APP.ride.RIDE_BONUS＝MOCK.FAR_PLACE.ridePoints；抽屜不記進 tab', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    t.eq(A.ride.RIDE_BONUS, app.MOCK.FAR_PLACE.ridePoints, 'RIDE_BONUS＝ridePoints');
+    const city = A.ride.pointsRows().filter(function (r) { return r.city; });
+    t.ok(city.every(function (r) { return r.amt === A.ride.RIDE_BONUS && r.place; }), '城事列＝RIDE_BONUS，帶地名');
+    await app.go('/notify');
+    const pts = app.$('[data-panel="mine"] [data-act="open-points"]');
+    if (city.length) t.includes(pts && pts.textContent, city[0].place, '通知中心的地名從資料來');
+    t.eq(A.views.drawer && A.views.drawer.remember, false, '/drawer remember:false');
+  });
+
+  t.test('命中區 ≥ 44：返回、關閉、星星、取消行程、點數鈕、拉把', async function (app) {
+    await app.reset({ store: { trip: neiwanTrip('riding') } });
+    const sizes = [];
+    const need = function (sel, label) {
+      const el = app.$(sel);
+      if (!el) { sizes.push(label + ' 找不到'); return; }
+      const r = el.getBoundingClientRect();
+      if (r.width < 44 || r.height < 44) sizes.push(label + ' ' + Math.round(r.width) + '×' + Math.round(r.height));
+    };
+    await app.go('/trip');
+    need('[data-act="cancel-trip"]', '取消行程');
+    app.APP.store.set('trip', neiwanTrip('done', { rated: true, stars: 3 }));
+    await app.go('/trip/done');
+    need('[data-act="rate"]', '星星');
+    await app.go('/dropoff');
+    need('main.view .ride-back[data-back]', '/dropoff 返回');
+    await app.go('/points');
+    need('main.view .hdr-red__close', '/points 關閉');
+    await app.go('/drawer');
+    need('main.view .ride-drawer__close', '抽屜關閉');
+    need('[data-act="open-points"]', '抽屜點數鈕');
+    await app.go('/ride');
+    need('.ride-sheet [data-act="toggle-sheet"]', '拉把');
+    t.eq(sizes.length, 0, '小於 44：' + sizes.join('、'));
   });
 });
