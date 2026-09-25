@@ -78,6 +78,22 @@ T.spec('album', function (t) {
     await app.at('/album');
   });
 
+  t.test('/postcards、/badges 切去叫車再點「收藏」停回子頁：返回回收藏首頁，不退回叫車', async function (app) {
+    for (const x of [['/postcards', 'go-postcards'], ['/badges', 'go-badges']]) {
+      await app.reset();
+      await app.go('/album');
+      await app.click('[data-act="' + x[1] + '"]');
+      await app.at(x[0]);
+      await app.click('#tabbar [data-tab-id="ride"]');
+      await app.at('/ride');
+      await app.click('#tabbar [data-tab-id="album"]');
+      await app.at(x[0]);
+      await app.click('main.view[data-view] a[data-back]');
+      await app.at('/album');
+      t.eq(app.route().path, '/album', x[0] + ' 返回落在收藏首頁');
+    }
+  });
+
   /* 3. 獎章：收下的寫日期（組成的卡最晚那一張）、還在路上的寫「收集 n/m」；沒有進度環 */
   function badgeExpect(app, id) {
     const S = app.STATE;

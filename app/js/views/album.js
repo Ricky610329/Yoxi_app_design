@@ -487,6 +487,19 @@ function subHeader(title, sub) {
     '<h1>' + esc(title) + '</h1><p>' + sub + '</p></header>';
 }
 
+/* 子頁的返回鍵：上一頁是收藏首頁才照歷史退一格（router 的 data-back）。
+   切到叫車再點「收藏」會停回這個子頁，這時上一筆歷史是叫車，退一格就跑錯頁；重新整理、直接開網址也一樣，
+   所以上一頁不是收藏首頁就直接回收藏首頁。 */
+function subBackMount(root, ctx) {
+  const a = root.querySelector('.alb-v2__back');
+  const from = ctx && ctx.from ? ctx.from.split('?')[0] : '';
+  if (!a || from === '/album') return;
+  a.onclick = function (e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    APP.nav.go('/album', { replace: true, dir: 'back' });
+  };
+}
+
 /* /postcards 的一格：收下的彩色寫日期，還沒去的灰階 */
 function albumV2CardHTML(p) {
   const got = STATE.card(p.id);
@@ -591,8 +604,9 @@ APP.view('postcards', {
       '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，不是實景照片。沒有期限，也不用照順序。</p>' +
     '</div></div>';
   },
-  mount: function () {
+  mount: function (root, params, ctx) {
     if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+    subBackMount(root, ctx);
   },
 });
 
@@ -615,6 +629,7 @@ APP.view('badges', {
       }).join('') + '</div>' +
     '</div></div>';
   },
+  mount: function (root, params, ctx) { subBackMount(root, ctx); },
 });
 
 /* 舊版首頁的組織方式留作視覺對照，不註冊到主頁。 */
