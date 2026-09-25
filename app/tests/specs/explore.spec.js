@@ -178,6 +178,12 @@ T.spec('explore', function (t) {
     t.ok(app.$('.ex-peek.is-on [data-act="go-walk"]'), '1.8 km 走得到 → 走路前往');
     t.eq(app.$('.ex-peek [data-act="open-place"]').getAttribute('href'), '#/place/moat', '看看這個地方');
     t.noDeadButtons(app, '/explore/map 小卡');
+    /* 選到的景點放大（只有它一顆） */
+    t.ok(s.classList.contains('is-selected'), '點到的那一顆 is-selected');
+    t.eq(app.$$('.spot.is-selected').length, 1, '只有一顆被選');
+    t.ok(s.getBoundingClientRect().width > app.$('.spot[data-spot="market"]').getBoundingClientRect().width * 1.2, '選到的比別顆大');
+    await app.click(s);
+    t.eq(app.$$('.spot.is-selected').length, 0, '再點一次收起小卡，也取消選取');
   });
 
   t.test('/explore/map：走不到的景點 → 設為下車點（via e）', async function (app) {
@@ -385,6 +391,62 @@ T.spec('explore', function (t) {
     await app.waitFor(function () { return !app.$('[data-unlock]').classList.contains('is-ready'); }, 1000, '開始翻');
     await app.click('[data-unlock]');
     await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 1500, '翻開中點一下 → 結果');
+    await app.reset();
+  });
+
+  /* 生成好的明信片：抵達頁用成品、收藏與叫車首頁用 data-card-art 疊上去 */
+  t.test('生成的明信片：款式來源、成品路徑、底圖照片', async function (app) {
+    await app.reset();
+    const E = app.APP.explore, S = app.STATE;
+    t.eq(E.postcardSrc('p11', 'ink'), 'assets/postcards/p11-ink.jpg', '成品路徑');
+    t.eq(E.postcardSrc('p11', 'nope'), '', '不認得的款式沒有成品');
+    t.eq(E.postcardSrc('zz', 'ink'), '', '不認得的明信片沒有成品');
+    t.eq(E.postcardSrc('p22', 'ink'), '', '還沒生成的明信片沒有成品（卡面退回照片＋濾鏡）');
+    app.MOCK.POSTCARDS.forEach(function (c) {
+      t.ok(E.cardPhoto(c.id), c.id + ' 有底圖照片');
+    });
+    t.eq(E.cardPhoto('p19').file, 'p19-1.jpg', '同一個地方的第二張卡用自己的照片');
+    t.eq(E.cardStyleOf('p11'), null, '還沒收的沒有款式');
+    t.eq(E.cardStyleOf('p4').key, 'gold', 'demo 一開始的搭車卡 → 金框');
+    const w = E.cardStyleOf('p1');
+    t.ok(w && !w.gold, '走路收的預設款式不是金框：' + (w && w.key));
+    t.eq(E.cardStyleOf('p1').key, w.key, '同一張每次都一樣');
+    app.APP.store.set('cardStyle', { p1: 'ink' });
+    t.eq(E.cardStyleOf('p1').key, 'ink', '抽到的款式優先');
+    t.ok(S.has('p1'), 'p1 在收藏裡');
+    await app.reset();
+  });
+
+  t.test('/unlock 卡面用生成的成品；收藏與叫車卡片疊上收下的那一款', async function (app) {
+    await app.reset({ store: { draws: { 'glass-kiln': 'ink' } } });
+    await app.go('/unlock/glass-kiln');
+    const img = app.$('[data-final-card] .ex-face__img');
+    t.ok(img && /assets\/postcards\/p11-ink\.jpg$/.test(img.getAttribute('src')), '成品：' + (img && img.getAttribute('src')));
+    t.ok(img && /glass-kiln-1\.jpg$/.test(img.getAttribute('data-fallback') || ''), '載不到就退回照片');
+    t.ok(app.$('[data-final-card] .ex-face--gen'), '成品不再套濾鏡');
+    t.includes(app.text('[data-credit]'), '底圖照片', '底圖的作者與授權');
+    await app.go('/postcards');
+    await app.tick(60);
+    const got = app.STATE.all.cards;
+    app.$$('[data-card-art]').forEach(function (el) {
+      const id = el.getAttribute('data-card-art');
+      const gen = el.querySelector(':scope > img.card-gen');
+      const d = got[id] ? app.APP.explore.cardStyleOf(id) : null;
+      const src = d ? app.APP.explore.postcardSrc(id, d.key) : '';
+      if (src) {
+        t.ok(gen && gen.getAttribute('src') === src, id + ' 疊上 ' + d.key);
+      } else {
+        t.ok(!gen, id + (got[id] ? ' 還沒生成成品：不疊' : ' 還沒收：不疊'));
+      }
+    });
+    await app.go('/ride?mode=explore');
+    await app.tick(60);
+    const collected = app.$$('.ride-v2__card.is-collected [data-card-art]');
+    t.ok(collected.every(function (el) {
+      const id = el.getAttribute('data-card-art');
+      const d = app.APP.explore.cardStyleOf(id);
+      return !app.APP.explore.postcardSrc(id, d.key) || el.querySelector('img.card-gen');
+    }), '叫車首頁收過、已生成的卡也是成品（' + collected.length + ' 張）');
     await app.reset();
   });
 

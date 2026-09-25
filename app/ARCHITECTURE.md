@@ -57,8 +57,10 @@ app/
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、抵達與抽卡、路線列表／詳情
   js/views/album.js         收藏（摘要式＋X4 六角章）、明信片子頁、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
+  assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，載不到時卡面退回照片＋SVG 濾鏡
   tools/serve.py            本機靜態伺服器（測 PWA 用）
   tools/make-icons.py       產生 PWA 圖示
+  tools/gen-postcards.py    生成明信片成品：實景照片 → Stable Diffusion img2img＋ControlNet（本機跑，環境見檔頭）
   tests/run.py              測試總入口（node 單元測試 ＋ headless Chrome 瀏覽器測試）
   tests/runner.html         瀏覽器端測試跑者（iframe 載入 index.html）
   tests/harness.js          瀏覽器端測試 API（T／app）
@@ -206,6 +208,7 @@ m.destroy()
 `clamp`（預設 true，框外的景點夾到邊緣並加 `.spot--edge`）、`layers／labels／avoid／rotate／dataset` 直接傳給 HSMAP。
 container 要有尺寸（.map 以 `position:absolute; inset:0` 填滿它；container 是 static 會被改成 relative）。
 沒給 `onSpot` 時景點是 `<a href="#/place/:id">`；有給時是 `<button>` 並以 `onclick` 呼叫。每顆 `.spot` 有 `data-spot="<id>"`。
+選到的景點加 `.is-selected`（app.css：從底部尖角放大 1.4 倍、框換海軍藍、壓在其他景點上面）；叫車首頁的探索模式與 `/explore/map` 共用。景點縮圖維持插圖不換實景照片（38–46 px 的照片糊成一團、跟「還沒去＝灰階」的狀態搶辨識度）。
 max 預設 10；`spots.length > max` 直接 throw。
 內部：建 `<div class="map app-map" data-pan><svg class="map__svg"></svg><div class="map__spots" data-panlayer></div></div>`，
 `HSMAP.render(svg, …)` → `handle.spotsAt(list, {clamp:true})` → `SHELL.renderSpots`。右下角 ODbL 署名由 hsmap 自帶，不要關。
@@ -303,6 +306,7 @@ T.spec('ride', function (t) {
 - `APP.explore.collect(placeId, { by, note, km, style })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）；`style` 記進 `store.cardStyle[卡片 id]`，並清掉 `store.draws[地點 id]`
 - 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框；走路抵達的結果先記在 `store.draws[地點 id]`，重進不重抽。機率只放在 `/unlock` 收集面板與成品右上角的「?」（`data-act="open-odds"`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`
+- 生成的明信片（explore 提供）：`APP.explore.postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片；`cardStyleOf(cardId)` 收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡以明信片 id 為種子照機率表抽一次）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore.js 監看 `#view` 自動把成品 `<img class="card-gen">` 疊上去（還沒收的不疊；載不到就拿掉）
 - `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `arrivedDemo` ＋ `/unlock/:id`（行程進行中不行）；搭 yoxi → `store.trip` 設成這個地方、phase done（取代原本的行程）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用）

@@ -140,12 +140,13 @@ python app/tools/shoot-app.py        # 每條 route 用手機寬度拍一張（a
 - **地圖只有新竹 11×12 km**（OSM 抓一次、離線）。內灣在 28 km 外，不在底圖範圍，行程與路線上的內灣會夾到地圖邊緣。
 - **城市足跡少算八張卡**：22 張明信片裡有 8 張（合興、九讚頭、橫山、玻璃工藝博物館、春池玻璃、舊社的矽砂場、水源地的窯口、頭前溪河口）對不到地圖座標，收了也不進覆蓋率。
 - **PWA 要 http(s)**：`file://` 能用不能裝；區網 http 也不能裝，要 localhost 或 https。
-- 明信片與插圖是程式生成示意（標「AI 生成示意」）；實景照片只覆蓋十個地點。
+- 明信片成品（`assets/postcards/`，目前 p1–p11 共 11 張 × 5 款；p12–p22 還沒生成，卡面用照片＋濾鏡示意）是本機用 Stable Diffusion 依實景照片生成的示意（`tools/gen-postcards.py`），標「AI 生成示意」；地圖景點與列表縮圖仍是程式畫的插圖。三個虛構地點用同類實景當底圖（見 `assets/postcards/README.md`）。
 - 狀態只存在這台瀏覽器的 localStorage，換裝置或清資料就重來。
 
 ## 授權
 
 - 地圖資料 © OpenStreetMap 貢獻者，ODbL 1.0；每張地圖右下角有署名（hsmap 自帶，不要關）。
 - 實景照片來自 Wikimedia Commons，作者與授權在 `prototype/assets/photos/credits.js`，也列在 app 的設定頁。
+- 明信片成品：DreamShaper 8（CreativeML OpenRAIL-M）＋ ControlNet 1.1 canny 依上述照片改作；CC BY-SA 的底圖改作也以 CC BY-SA 4.0 分享，每張的出處在 `assets/postcards/index.json`。
 - Leaflet 沒有用在 app（只有原型的 `concept-map-tiles.html` 用）。app 不連網、不載 CDN、不用 webfont。
 - 人物、地方故事、車資與時間是虛構或公式算出來的示意值。

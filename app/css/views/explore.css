@@ -798,6 +798,18 @@
 .ex-face--ink { background: var(--yoxi-cream); }
 .ex-face--ink .ex-face__img { filter: url(#exf-ink); }
 .ex-face--gold .ex-face__img { filter: url(#exf-gold); }
+/* 生成好的成品已經是那個畫風了：不再套濾鏡，紙紋也淡一點 */
+.ex-face--gen .ex-face__img { filter: none; }
+.ex-face--gen .ex-face__paper { opacity: .22; }
+/* 收藏、叫車首頁卡片上「收下的那一張」（APP.explore.paintCardArt 疊上去的成品） */
+.card-gen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
 .ex-face__paper {
   position: absolute;
   inset: 0;

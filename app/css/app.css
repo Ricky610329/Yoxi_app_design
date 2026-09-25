@@ -217,6 +217,21 @@ main.view[data-leaving] { pointer-events: none; }
 .app-map .map__spots { position: absolute; inset: 0; }
 .app-map .map__svg { pointer-events: none; }
 
+/* 選到的景點：從底下的尖角往上放大、框換成海軍藍、壓在其他景點上面，一眼看得出現在選的是它
+   （叫車首頁的探索模式與 /explore/map 共用；.spot 本身用 transform 定位，所以放大要把 translate 一起寫） */
+.app-map .spot {
+  transform-origin: 50% 100%;
+  transition: transform var(--t-base) var(--ease-bump);
+}
+.app-map .spot.is-selected {
+  z-index: 9;
+  transform: translate(-50%, -100%) scale(1.4);
+}
+.app-map .spot.is-selected .spot__img { border-color: var(--yoxi-navy); box-shadow: var(--sh-lift); }
+.app-map .spot.is-selected::after { background: var(--yoxi-navy); }
+.app-map .spot--today.is-selected .spot__img { border-color: var(--yoxi-red); }
+.app-map .spot--today.is-selected::after { background: var(--yoxi-red); }
+
 /* 被夾到地圖邊緣的景點（例：內灣 28 km）：不假裝它在畫面裡 */
 .spot--edge { opacity: .55; }
 .spot--edge .spot__img { border-style: dashed; }

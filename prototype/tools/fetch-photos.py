@@ -128,6 +128,76 @@ PLACES = [
         'prefer': [],
         'avoid': [r'EMU\d', r'\bDR\d{3,}'],
     }),
+    # ---- 明信片專用（2026-09：每張明信片都要一張底圖，給 diffusion 當 img2img 的起點）----
+    # key 用地點 id（地圖景點）或明信片 id（只在明信片／路線出現的地方）。
+    # 同一個大地點的第二張卡（p19／p21／p22）另外找一張，不跟 moat／hill／lake 共用，兩張卡才不會長得一樣。
+    # 沒有對應實景的地方（mock 虛構的窯口、砂場）找同類的新竹實景，name 寫清楚是哪裡。
+    ('glass-kiln', {
+        'name': '新竹市玻璃工坊（水利路老玻璃窯的示意底圖）', 'core': False, 'n': 1,
+        'queries': ['Hsinchu glass kiln', 'Hsinchu Glass Museum furnace', 'glass furnace Hsinchu',
+                    '新竹 玻璃 窯', 'Hsinchu glass factory chimney'],
+        'prefer': ['File:新竹市玻璃工坊.jpg'],
+        'avoid': [r'\bmap\b', r'logo'],
+    }),
+    ('p10', {
+        'name': '合興車站', 'core': False, 'n': 1,
+        'queries': ['Hexing Station Hsinchu', 'Hexing railway station Neiwan', '合興車站'],
+        'prefer': [], 'avoid': [r'\bmap\b', r'EMU\d', r'\bDR\d{3,}'],
+    }),
+    ('p12', {
+        'name': '九讚頭站', 'core': False, 'n': 1,
+        'queries': ['Jiuzantou Station', 'Jiuzantou railway station', '九讚頭車站'],
+        'prefer': [], 'avoid': [r'\bmap\b', r'EMU\d', r'\bDR\d{3,}'],
+    }),
+    ('p13', {
+        'name': '橫山站', 'core': False, 'n': 1,
+        'queries': ['Hengshan Station Hsinchu', 'Hengshan railway station Neiwan line', '橫山車站'],
+        'prefer': [], 'avoid': [r'\bmap\b', r'EMU\d', r'\bDR\d{3,}'],
+    }),
+    ('p14', {
+        'name': '新竹市玻璃工藝博物館', 'core': False, 'n': 1,
+        'queries': ['Hsinchu City Glass Museum', 'Hsinchu Municipal Glass Museum', '新竹市玻璃工藝博物館'],
+        'prefer': [], 'avoid': [r'\bmap\b', r'logo'],
+    }),
+    ('p15', {
+        'name': '春池玻璃', 'core': False, 'n': 1,
+        'queries': ['Spring Pool Glass Hsinchu', 'Spring Pool Glass', '春池玻璃'],
+        # 總統府的照片裡多半有總統本人，當明信片底圖不適合；只收老師傅那一張
+        'prefer': ['File:09.19 新竹「春池玻璃公司」的老師傅 (29674248222).jpg'],
+        'avoid': [r'\bmap\b', r'logo', r'總統', r'Sydney', r'Hereford', r'Ryerson', r'Ohinemutu', r'Coward Springs'],
+    }),
+    ('p16', {
+        'name': '新竹海岸的沙地（舊社的矽砂場的示意底圖）', 'core': False, 'n': 1,
+        'queries': ['Hsinchu coast sand dunes', 'Hsinchu Nanliao beach', 'Hsinchu coastline sand', '新竹 海岸 沙丘'],
+        'prefer': [], 'avoid': [r'\bmap\b'],
+    }),
+    ('p17', {
+        'name': '高雄唐榮磚窯（水源地的窯口的示意底圖；新竹沒有找到合格的磚窯照片）', 'core': False, 'n': 1,
+        'queries': ['Hsinchu brick kiln', 'Hsinchu kiln', 'brick kiln Taiwan', '新竹 磚窯'],
+        'prefer': [], 'avoid': [r'\bmap\b'],
+    }),
+    ('p18', {
+        'name': '頭前溪', 'core': False, 'n': 1,
+        'queries': ['Touqian River estuary', 'Touqian River Hsinchu', '頭前溪'],
+        'prefer': [], 'avoid': [r'\bmap\b'],
+    }),
+    ('p19', {
+        'name': '新竹護城河', 'core': False, 'n': 1,
+        'queries': ['Hsinchu moat steps', 'Hsinchu City Moat', 'Hsinchu moat river walk', '新竹 護城河'],
+        'prefer': [], 'avoid': [r'\bmap\b', r'panoramio'],
+    }),
+    ('p21', {
+        'name': '十八尖山防空洞步道', 'core': False, 'n': 1,
+        'queries': ['Eighteen Peaks Mountain air raid shelter', 'Eighteen Peaks Mountain tunnel',
+                    'Eighteen Peaks Mountain Hsinchu trail', '十八尖山 防空洞'],
+        'prefer': ['File:Eighteen Peaks Mountain Baoshan Rd. Entrance 防空洞步道 2020-12-04.jpg'], 'avoid': [r'\bmap\b', r'\bbird\b', r'insect', r'Small Pavilion of Long Life'],
+    }),
+    ('p22', {
+        'name': '青草湖', 'core': False, 'n': 1,
+        'queries': ['Qingcao Lake Hsinchu', 'Qingcaohu Hsinchu', '新竹青草湖', 'Lingyin Temple Hsinchu'],
+        'prefer': ['File:2022 Green Grass Lake in East District, Hsinchu City.jpg'],
+        'avoid': [r'\bmap\b', r'panoramio \(1\)', r'\bBus\b'],     # (1) 已經是 lake-1
+    }),
 ]
 PLACE_MAP = dict(PLACES)
 
@@ -388,7 +458,9 @@ def write_credits(picked):
              'window.PHOTOS_DATA = {']
     for pid in order:
         rows = picked[pid]
-        lines.append('  %s: [' % pid)
+        # glass-kiln 這種有連字號的 id 不是合法的 JS 識別字，要加引號
+        key = pid if re.match(r'^[A-Za-z_$][\w$]*$', pid) else json.dumps(pid)
+        lines.append('  %s: [' % key)
         for r in rows:
             f = []
             for k in ('file', 'name', 'title', 'author', 'licence', 'licenceUrl', 'source'):

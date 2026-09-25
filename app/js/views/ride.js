@@ -522,7 +522,7 @@ function areaCardsHTML(a) {
       if (!c) return '';
       const got = S().has(id);
       return '<button class="ride-v2__card' + (got ? ' is-collected' : '') + '" type="button" data-act="open-card" data-card="' + esc(id) + '" aria-label="看看卡片：' + esc(c.name) + '">' +
-        '<span class="ride-v2__card-art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '">' +
+        '<span class="ride-v2__card-art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '" data-card-art="' + esc(id) + '">' +
           '<span class="ai-mark">AI 生成示意</span></span>' +
         '<strong>' + esc(c.name) + '</strong></button>';
     }).join('') + '</div>';
@@ -642,7 +642,7 @@ function rideV2Mount(root, params, ctx) {
     floatCard.setAttribute('aria-pressed', 'false');
     floatCard.setAttribute('aria-label', '翻到卡片背面');
     floating.querySelector('[data-card-front]').innerHTML =
-      '<span class="ride-card-float__art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '"></span>' +
+      '<span class="ride-card-float__art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '" data-card-art="' + esc(id) + '"></span>' +
       '<span class="ride-card-float__name">' + esc(c.name) + '</span><span class="ai-mark">AI 生成示意</span>';
     floating.querySelector('[data-card-back]').innerHTML =
       '<span class="ride-card-float__back-mark">yoxi 城事</span><strong>' + esc(c.name) + '</strong>' +

@@ -85,8 +85,11 @@ function badgeOfCard(cardId) {
 function limitedCard(cardId) {
   const c = STATE.card(cardId);
   if (!c) return false;
-  /* 抵達時抽到金框（explore.js 的 DRAW_STYLES；搭車必得、走路極低機率）就是金框 */
-  if ((APP.store.get('cardStyle') || {})[cardId] === 'gold') return true;
+  /* 收下的是金框那一款（explore.js 的 cardStyleOf：抽到的，或 demo 一開始就有的搭車卡）就是金框 */
+  if (APP.explore && APP.explore.cardStyleOf) {
+    const d = APP.explore.cardStyleOf(cardId);
+    if (d && d.gold) return true;
+  } else if ((APP.store.get('cardStyle') || {})[cardId] === 'gold') return true;
   if (c.by !== 'ride') return false;
   return APP.ride && APP.ride.limitedCard ? APP.ride.limitedCard(cardId) : true;
 }
@@ -333,7 +336,7 @@ function cellHTML(p) {
     (fresh ? ' postcard--fresh' : '');
   return '<a class="' + cls + '" href="#/postcard/' + esc(p.id) + '" data-card="' + esc(p.id) + '"' +
     (got ? '' : ' aria-label="' + esc(p.name) + '（還沒去）"') + '>' +
-    '<div data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" style="position:absolute;inset:0"></div>' +
+    '<div data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '" style="position:absolute;inset:0"></div>' +
     (fresh ? '<span class="postcard__new">新</span>' : '') +
     (got ? '' : '<span class="alb-cell__lock"><span data-icon="lock"></span></span>') +
     '<span class="postcard__foot"><span class="postcard__name">' + esc(p.name) + '</span>' +
@@ -505,7 +508,7 @@ function albumV2CardHTML(p) {
   const got = STATE.card(p.id);
   const fresh = isFresh(p);
   return '<div class="alb-v2__postcard' + (got ? ' is-collected' : '') + '" data-card="' + esc(p.id) + '">' +
-    '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '">' +
+    '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '">' +
       (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
     '<strong>' + esc(p.name) + '</strong>' +
     (got ? '<small>' + (fresh ? '新收下' : esc(got.date) + ' 收下') + '</small>' : '') + '</div>';
@@ -550,7 +553,7 @@ function albumV2Render() {
           '<span class="alb-v2__hero-go">看全部<span class="arrow arrow--onred"></span></span></div>' +
         '<div class="alb-v2__stack" aria-hidden="true">' + recentCards(3).map(function (p, i) {
           return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + '" data-card="' + esc(p.id) +
-            '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '">' +
+            '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '">' +
             (isFresh(p) ? '<span class="postcard__new">新</span>' : '') + '</span>';
         }).join('') + '</div>' +
       '</a>' +
@@ -780,7 +783,7 @@ APP.view('postcard', {
         '<div class="alb-big">' +
           '<button class="postcard alb-big__card' + (gold ? ' postcard--gold' : '') + '" type="button" data-flip data-act="flip" ' +
             'data-card="' + esc(P.id) + '" aria-label="翻面">' +
-            '<div data-art="' + esc(P.art) + '" data-seed="' + i + '" style="position:absolute;inset:0"></div>' +
+            '<div data-art="' + esc(P.art) + '" data-seed="' + i + '" data-card-art="' + esc(P.id) + '" style="position:absolute;inset:0"></div>' +
             '<span class="ai-mark">AI 生成示意</span>' +
             (gold ? '<span class="postcard__ribbon" data-ribbon>yoxi 限定版</span>' : '') +
             '<span class="postcard__foot"><span class="postcard__name alb-big__name">' + esc(P.name) + '</span>' +
@@ -871,7 +874,7 @@ APP.view('badge', {
             if (!P) return '';
             const has = STATE.has(cid);
             return '<a class="row-nav alb-member' + (has ? ' is-got' : '') + '" href="#/postcard/' + esc(cid) + '" data-member="' + esc(cid) + '">' +
-              '<span class="alb-member__pic' + (has ? '' : ' postcard--locked') + '" data-art="' + esc(P.art) + '" data-seed="' + cardIdx(P) + '"></span>' +
+              '<span class="alb-member__pic' + (has ? '' : ' postcard--locked') + '" data-art="' + esc(P.art) + '" data-seed="' + cardIdx(P) + '" data-card-art="' + esc(cid) + '"></span>' +
               '<span class="row-nav__body"><span class="row-nav__title">' + esc(P.name) + '</span>' +
               '<span class="row-nav__sub">' + (has ? '收過 · ' + esc(STATE.card(cid).date) : '還沒去') + '</span></span>' +
               (has ? '<span class="alb-member__check" data-icon="check"></span>' : '<span class="arrow"></span>') +
@@ -1062,7 +1065,7 @@ APP.view('lookback', {
       const owner = badgeOfCard(last.id);
       const r = owner ? STATE.badge(owner.id) : null;
       act2 = '<div class="alb-lb__card"><div class="postcard">' +
-          '<div data-art="' + esc(last.art) + '" data-seed="1" style="position:absolute;inset:0"></div>' +
+          '<div data-art="' + esc(last.art) + '" data-seed="1" data-card-art="' + esc(last.id) + '" style="position:absolute;inset:0"></div>' +
           '<span class="ai-mark">AI 生成示意</span>' +
           '<span class="postcard__foot"><span class="postcard__name">' + esc(last.name) + '</span></span>' +
         '</div></div>' +

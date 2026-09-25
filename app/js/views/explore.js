@@ -98,6 +98,72 @@ function arrivalDraw(p, isRide) {
   return d;
 }
 
+/* ---- 生成好的明信片 ----
+   每張明信片五款的成品：景點照片 → Stable Diffusion img2img＋ControlNet（照片的輪廓鎖住構圖）→ 各畫風。
+   產生器是 app/tools/gen-postcards.py；檔名 assets/postcards/<明信片 id>-<款式>.jpg。
+   只有 POSTCARD_GEN 裡的明信片有成品（匯出時工具會印出這張表）；其餘的卡面退回「照片＋SVG 濾鏡」的示意。 */
+const POSTCARD_DIR = 'assets/postcards/';
+const POSTCARD_GEN = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'];
+function postcardSrc(cardId, key) {
+  if (!cardId || !styleOf(key) || POSTCARD_GEN.indexOf(cardId) < 0) return '';
+  return POSTCARD_DIR + cardId + '-' + key + '.jpg';
+}
+/* 明信片的底圖照片：明信片自己的一張（p10、p19…）→ 所在地點的（station…）。照片與授權在 prototype/assets/photos/credits.js */
+const CARD_PHOTO = { p1: 'station', p2: 'market', p3: 'moat', p4: 'harbour', p5: 'rail', p6: 'hill', p7: 'temple',
+                     p8: 'lake', p9: 'neiwan', p11: 'glass-kiln', p20: 'brick' };
+function cardPhoto(cardId) {
+  const P = window.PHOTOS;
+  if (!cardId || !P || !P.get) return null;
+  return P.get(cardId, 0) || P.get(CARD_PHOTO[cardId], 0) || null;
+}
+/* 收下的明信片是哪一款：抽到的（store.cardStyle）→ 沒有紀錄的（demo 一開始就有的 8 張）：
+   搭車收的是金框；走路的照機率表、用明信片 id 當種子抽一次（每次打開都一樣） */
+function cardStyleOf(cardId) {
+  const had = styleOf((APP.store.get('cardStyle') || {})[cardId]);
+  if (had) return had;
+  const c = S() && S().card(cardId);
+  if (!c) return null;
+  if (c.by === 'ride') return styleOf('gold');
+  let h = 7;
+  String(cardId).split('').forEach(function (ch) { h = (h * 31 + ch.charCodeAt(0)) % 100003; });
+  const goldW = styleOf('gold').walk;
+  return drawStyle('walk', ((h * 7919) % 1000) / 1000 * (1 - goldW / 1000));
+}
+
+/* 別的畫面（收藏、叫車首頁的卡片）要顯示「收下的那一張」：元素帶 data-card-art="<明信片 id>"，
+   這裡把那一款的成品疊在插圖上面；圖載不到就拿掉，插圖照舊。還沒收的不疊（維持灰階插圖）。 */
+function paintCardArt(root) {
+  if (!root || !root.querySelectorAll) return;
+  root.querySelectorAll('[data-card-art]:not([data-card-painted])').forEach(function (el) {
+    const id = el.getAttribute('data-card-art');
+    el.setAttribute('data-card-painted', '');
+    if (!S() || !S().has(id)) return;
+    const d = cardStyleOf(id);
+    const src = postcardSrc(id, d && d.key);
+    if (!src) return;
+    const img = document.createElement('img');
+    img.className = 'card-gen';
+    img.alt = '';
+    img.decoding = 'async';
+    img.setAttribute('data-style', d.key);
+    img.onerror = function () { img.remove(); };
+    img.src = src;
+    /* 放在插圖（第一個子元素）後面、「新」之類的角標前面 */
+    const art = el.querySelector(':scope > .postcard__art');
+    el.insertBefore(img, art ? art.nextSibling : el.firstChild);
+  });
+}
+(function watchCardArt() {
+  const view = document.getElementById('view');
+  if (!view || !window.MutationObserver) return;
+  let queued = false;
+  new MutationObserver(function () {
+    if (queued) return;
+    queued = true;
+    Promise.resolve().then(function () { queued = false; paintCardArt(view); });
+  }).observe(view, { childList: true, subtree: true });
+})();
+
 /* 收在「?」裡的機率說明 */
 function openOdds() {
   if (document.querySelector('.ex-odds')) return;
@@ -251,6 +317,11 @@ APP.explore = Object.assign(APP.explore || {}, {
   /* 抽卡：機率表、純抽取函式、機率說明（契約 §7） */
   DRAW_STYLES: DRAW_STYLES,
   drawStyle: drawStyle,
+  /* 生成好的明信片（收藏與叫車首頁用 data-card-art 掛上來） */
+  cardStyleOf: cardStyleOf,
+  postcardSrc: postcardSrc,
+  cardPhoto: cardPhoto,
+  paintCardArt: paintCardArt,
   openOdds: openOdds,
   /* 給別的區塊與測試用的純計算（沒有副作用） */
   gap: gapPick,
@@ -480,9 +551,10 @@ function mountMap(root) {
     const p = APP.place(s.id);
     if (!p) return;
     if (openId === p.id && peek.classList.contains('is-on')) {
-      peek.classList.remove('is-on'); openId = null; return;
+      peek.classList.remove('is-on'); openId = null; markSpot(null); return;
     }
     openId = p.id;
+    markSpot(s.id);
     const got = collected(p) || s.state === 'seen';
     const img = peek.querySelector('[data-peek-img]');
     img.innerHTML = SHELL.postcardArt(p.art, { seed: 2 });
@@ -503,7 +575,16 @@ function mountMap(root) {
     peek.classList.add('is-on');
   }
 
-  const m = APP.map.mount(wrap, {
+  /* 選到的景點放大（樣式在 app.css 的 .app-map .spot.is-selected） */
+  function markSpot(id) {
+    if (!m) return;
+    m.spotsEl.querySelectorAll('.spot').forEach(function (el) {
+      el.classList.toggle('is-selected', !!id && el.getAttribute('data-spot') === id);
+    });
+  }
+
+  let m = null;
+  m = APP.map.mount(wrap, {
     style: 'paper',
     center: 'station',
     spanM: MAP_SPAN_M,
@@ -844,16 +925,23 @@ const CHARGE_CAPS = ['正在畫下今天的這裡', '讀取今天的天氣與光
 
 /* 卡面：有實景照片就用照片（PHOTOS，授權一定要露出），沒有就用插圖；畫風是 explore-fx.js 的 SVG 濾鏡 */
 function photoOf(p) {
+  if (!p) return null;
   const P = window.PHOTOS;
-  return P && P.get ? P.get(p.id, 0) : null;
+  return cardPhoto(p.card) || (P && P.get ? P.get(p.id, 0) : null);
 }
 function faceHTML(p, d) {
   const key = d ? d.key : '';
   const ph = photoOf(p);
-  const base = ph
-    ? '<img class="ex-face__img" src="' + esc(window.PHOTOS.base + ph.file) + '" alt="" draggable="false">'
-    : '<div class="ex-face__img ex-fill" data-art="' + esc(p.art) + '" data-seed="1"></div>';
-  return '<div class="ex-face' + (key ? ' ex-face--' + esc(key) : '') + '">' + base +
+  const photo = ph ? window.PHOTOS.base + ph.file : '';
+  const gen = postcardSrc(p.card, key);
+  /* 生成好的成品優先；載不到（data-fallback）就退回「照片＋SVG 濾鏡」的示意，再沒有就是插圖 */
+  const base = gen
+    ? '<img class="ex-face__img" src="' + esc(gen) + '" alt="" draggable="false"' +
+        (photo ? ' data-fallback="' + esc(photo) + '"' : '') + '>'
+    : (photo
+        ? '<img class="ex-face__img" src="' + esc(photo) + '" alt="" draggable="false">'
+        : '<div class="ex-face__img ex-fill" data-art="' + esc(p.art) + '" data-seed="1"></div>');
+  return '<div class="ex-face' + (key ? ' ex-face--' + esc(key) : '') + (gen ? ' ex-face--gen' : '') + '">' + base +
       (key === 'watercolor' || key === 'ink'
         ? '<svg class="ex-face__paper" aria-hidden="true" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg>' : '') +
       (key === 'ink' ? '<span class="ex-face__seal" aria-hidden="true">城事</span>' : '') +
@@ -883,7 +971,7 @@ function renderUnlock(params, ctx) {
   const isRide = !!trip;
   const got = collected(p);
   /* 已收過的地方不重抽：顯示當初收下的那一款 */
-  const draw = got ? (styleOf((APP.store.get('cardStyle') || {})[p.card]) || null) : arrivalDraw(p, isRide);
+  const draw = got ? cardStyleOf(p.card) : arrivalDraw(p, isRide);
   /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
   const gold = !got && !!draw && !!draw.gold;
   const bonus = isRide && limitedPlace(p);
@@ -1061,6 +1149,18 @@ function mountUnlock(root, params, ctx) {
   if (F) F.filters();
 
   const q = function (s) { return box.querySelector(s); };
+  /* 生成的成品載不到：換回照片＋SVG 濾鏡的示意 */
+  box.querySelectorAll('img[data-fallback]').forEach(function (img) {
+    const back = function () {
+      img.onerror = null;
+      img.src = img.getAttribute('data-fallback');
+      img.removeAttribute('data-fallback');
+      const face = img.closest('.ex-face');
+      if (face) face.classList.remove('ex-face--gen');
+    };
+    img.onerror = back;
+    if (img.complete && !img.naturalWidth) back();
+  });
   const cardBox = q('[data-card-box]');
   const flip = q('[data-flip]');
   const cap = q('[data-stage-cap]');
