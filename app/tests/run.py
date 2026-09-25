@@ -146,8 +146,10 @@ def report(res):
         ms = sum(t.get('ms', 0) for t in tests)
         print('  %s  %s%d/%d  (%.1fs)' % (mark, pad(s['name'], col), ok, len(tests), ms / 1000))
         fails += [(s['name'], t) for t in tests if not t.get('ok')]
-    for src in res.get('missing', []):
-        print('  —     找不到的 spec 檔：%s' % src)
+    # runner.html 登記了、檔案卻不在（改名或刪掉）：那個區塊的測試整個沒跑到，不能算通過
+    missing = res.get('missing', [])
+    for src in missing:
+        print('  FAIL  找不到的 spec 檔：%s（runner.html 有登記，檔案不在）' % src)
     sm = res.get('summary', {})
     if sm.get('crash'):
         print('  FAIL  runner 崩潰：%s' % sm['crash'][:400])
@@ -157,8 +159,9 @@ def report(res):
             print('  ✗ [%s] %s' % (spec, t.get('name')))
             for part in t.get('msg', '').split('；')[:12]:
                 print('        ' + part[:300])
-    print('\n  合計 %d/%d 通過' % (sm.get('pass', 0), sm.get('total', 0)))
-    return 1 if (sm.get('fail') or sm.get('crash') or not specs) else 0
+    print('\n  合計 %d/%d 通過' % (sm.get('pass', 0), sm.get('total', 0)) +
+          ('，找不到的 spec 檔 %d 個' % len(missing) if missing else ''))
+    return 1 if (sm.get('fail') or sm.get('crash') or missing or not specs) else 0
 
 
 def main():
