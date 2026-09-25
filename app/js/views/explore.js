@@ -645,8 +645,11 @@ function mountMap(root) {
 
 /* 市中心的景點（舊城區一帶）真實座標只差一兩百公尺，縮圖會疊成一團。
    mount 後量每顆 .spot 的實際大小，兩兩重疊就沿著圓心連線各推開一半，反覆幾輪；
-   推的時候夾在地圖框內（頂部留給頁首）。跟 ride.js 的 keepClear 同一個想法：寧可離真實位置遠一點，也不要疊。 */
+   推的時候夾在地圖框內（頂部留給頁首）。跟 ride.js 的 keepClear 同一個想法：寧可離真實位置遠一點，也不要疊。
+   core 的 APP.map.mount 已經推過（它會在 m.spots 留下原本的位置 px0）就不再推：那一版連選到放大後的大小都算進去了。
+   core 那一版合進來之後這整段可以刪掉。 */
 function spreadSpots(m) {
+  if ((m.spots || []).some(function (s) { return s && s.px0 != null; })) return;
   const layer = m.spotsEl;
   const box = layer.getBoundingClientRect();
   if (!box.width || !box.height) return;
