@@ -471,7 +471,7 @@ T.spec('explore', function (t) {
       t.ok(!app.$('[data-arrive-sheet]').hidden, c.key + '：點發光的地方 → 面板');
       t.includes(app.text('[data-arrive-sheet]'), app.APP.explore.DRAW_STYLES.length + ' 款', c.key + '：寫幾款');
       t.ok(app.$('[data-arrive-sheet] [data-act="open-odds"]'), c.key + '：面板上有機率的 ?');
-      t.eq(!!app.$('.ex-sheet__gold'), !!c.ride, c.key + '：搭車才寫必得金框');
+      t.ok(!/必得/.test(app.text('[data-arrive-sheet]')), c.key + '：面板不寫「必得」（機率只在「?」裡）');
       await drawThrough(app);
       t.ok(app.$('[data-flip]').classList.contains('is-front'), c.key + '：翻到正面');
       t.eq(app.$('[data-final-card]').getAttribute('data-style'), c.key, c.key + '：卡面款式');

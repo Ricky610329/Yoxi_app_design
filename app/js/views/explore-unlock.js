@@ -176,9 +176,6 @@ function renderUnlock(params) {
           '</span>' +
           odds +
         '</div>' +
-        (isRide
-          ? '<p class="ex-sheet__gold"><span data-icon="badge" class="ex-ic16"></span>搭 yoxi 抵達 · 這一次必得 yoxi 金框</p>'
-          : '') +
         '<button class="btn-primary ex-sheet__go" type="button" data-act="draw">收集明信片</button>' +
       '</div>' +
     '</div>';

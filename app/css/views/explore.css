@@ -529,17 +529,6 @@
 .ex-sheet__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
 .ex-sheet__p { display: block; margin-top: var(--sp-1); color: var(--yoxi-slate); font-size: var(--fs-cap); line-height: var(--lh-body); }
 .ex-sheet .ex-odds-btn { color: var(--yoxi-slate); }
-.ex-sheet__gold {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-card);
-  background: color-mix(in srgb, var(--gold-lite) 60%, var(--yoxi-white));
-  font-size: var(--fs-cap);
-  font-weight: var(--fw-heavy);
-}
 .ex-sheet__go { width: 100%; height: 52px; margin-top: var(--sp-4); font-size: var(--fs-body); }
 
 /* ---- 抽卡舞台＋結果（同一幕：卡片不換元素，翻完直接滑到結果的位置） ---- */
