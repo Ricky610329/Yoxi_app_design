@@ -53,7 +53,9 @@ const PRECACHE = [
   './js/views/system.js',
   './js/views/ride.js',
   './js/views/explore-fx.js',
+  './js/views/explore-cards.js',
   './js/views/explore.js',
+  './js/views/explore-unlock.js',
   './js/views/album.js',
   // 照片
   '../prototype/assets/photos/brick-1.jpg',

@@ -1,6 +1,6 @@
 /* ==========================================================================
    yoxi 城事 web app — explore 區塊的特效工具（抵達亮燈、抽卡）
-   契約：app/ARCHITECTURE.md §7（APP.fx）。只給 explore.js 的 /unlock 用，不註冊畫面。
+   契約：app/ARCHITECTURE.md §7（APP.fx）。只給 explore-unlock.js 的 /unlock 用，不註冊畫面。
 
    為什麼自己寫、不用 GSAP／PixiJS：repo 不加 CDN、不加套件（AGENTS.md），
    而這裡要的東西不多——Web Animations API 做時間軸，一張 <canvas> 做粒子，Web Audio 合成音效。
