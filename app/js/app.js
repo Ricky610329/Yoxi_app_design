@@ -2,10 +2,11 @@
    yoxi 城事 web app — 核心（window.APP）
    契約：app/ARCHITECTURE.md §3、§4、§9。改 API 先改那份文件。
 
-   提供：view registry、hash router、nav（go/back/tab/current）、轉場、
-         store（localStorage yoxi-chengshi-app-v1）、事件 on/emit、fmt（全部公式）、
-         esc、place()/places()、ui（toast/confirm/setStatus；share/push 由 system.js 覆寫）、
-         map.mount()（HSMAP ＋ SHELL.renderSpots）。
+   提供：view registry、hash router、nav（go/back/tab/current）、轉場、導覽後的焦點、
+         store（localStorage yoxi-chengshi-app-v1，有結構版本與型別檢查）、事件 on/emit、fmt（全部公式）、
+         esc、place()/places()（明信片 id／路線站 id 都正規化成地點）、
+         ui（toast＋live region／confirm／a11yDialog／dismissOverlays／setStatus；share/push 由 system.js 覆寫）、
+         map.mount()（HSMAP ＋ SHELL.renderSpots ＋ 景點互相推開）、桌機外框／手機滿版的判斷。
 
    規矩：
    - 模組層級不碰 DOM：node 單元測試會用 vm 載入這支，只 stub window／localStorage。
@@ -19,7 +20,14 @@
 
 const W = (typeof window !== 'undefined') ? window : globalThis;
 const APP_KEY = 'yoxi-chengshi-app-v1';
-const TABS = ['ride', 'explore', 'album'];
+/* 底欄的兩個入口。view 的 tab 仍可以是 'explore'（舊的探索路由），它歸在叫車底下：
+   底欄亮叫車、tabPaths 記在 ride、再按叫車回 /ride（TAB_GROUP）。 */
+const TABS = ['ride', 'album'];
+const TAB_GROUP = { explore: 'ride' };
+function tabGroup(tab) {
+  const g = (tab && Object.prototype.hasOwnProperty.call(TAB_GROUP, tab)) ? TAB_GROUP[tab] : tab;
+  return TABS.indexOf(g) >= 0 ? g : null;
+}
 
 /* --------------------------------------------------------------------------
    事件
@@ -42,8 +50,13 @@ function emit(name, data) {
 /* --------------------------------------------------------------------------
    store：app 自己的狀態（收藏／點數等沿用 STATE）
    -------------------------------------------------------------------------- */
+/* 存檔結構的版本：沒有 version 的是第 1 版（tabPaths 還有 explore）。
+   讀進來一律跟 fresh() 對過型別，版本只是讓下一次改結構時知道要不要搬資料。 */
+const STORE_VERSION = 2;
+
 function fresh() {
   return {
+    version: STORE_VERSION,
     onboarded: false,
     dropoff: null,        /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
     trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km } */
@@ -51,8 +64,28 @@ function fresh() {
     arrivedDemo: null,    /* placeId */
     rideSpots: true,      /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
     rideVia: {},          /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
-    tabPaths: { ride: '/ride', explore: '/explore', album: '/album' },
+    draws: {},            /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
+    cardStyle: {},        /* 明信片 id → 收下時抽到的款式 key（explore） */
+    fxMute: false,        /* 抵達與抽卡的音效關掉（explore） */
+    tabPaths: { ride: '/ride', album: '/album' },
   };
+}
+
+/* 每個鍵收什麼型別（預設是 null 的鍵光看 fresh() 看不出來）。'?' 結尾＝也可以是 null；map＝一般物件（不是陣列） */
+const KIND = {
+  version: 'number', onboarded: 'boolean', dropoff: 'object?', trip: 'object?', pushes: 'array',
+  arrivedDemo: 'string?', rideSpots: 'boolean', rideVia: 'map', draws: 'map', cardStyle: 'map',
+  fxMute: 'boolean', tabPaths: 'map',
+};
+function kindOk(kind, v) {
+  if (!kind) return true;
+  const nullable = kind.slice(-1) === '?';
+  const k = nullable ? kind.slice(0, -1) : kind;
+  if (v === null || v === undefined) return nullable && v === null;
+  if (k === 'array') return Array.isArray(v);
+  if (k === 'object' || k === 'map') return typeof v === 'object' && !Array.isArray(v);
+  if (k === 'number') return typeof v === 'number' && isFinite(v);
+  return typeof v === k;
 }
 
 function ls() {
@@ -66,18 +99,25 @@ function load() {
     const L = ls();
     const raw = L && L.getItem(APP_KEY);
     const got = raw ? JSON.parse(raw) : null;
-    if (!got || typeof got !== 'object') return base;
-    /* 跟預設合併：舊版存的結構少了鍵也不會讓畫面讀到 undefined */
-    const s = Object.assign(base, got);
-    /* tabPaths 只收「/ 開頭的字串」：舊版或手改過的值（null、數字、整串字串）不能讓 nav.tab 導到怪地方 */
+    if (!got || typeof got !== 'object' || Array.isArray(got)) return base;
+    /* 認得的鍵：型別不對（舊版、手改、別的程式寫壞）就用預設值；
+       不認得的鍵原樣留著（別的區塊新加、還沒進 fresh() 的，不能讀一次就被洗掉） */
+    const s = {};
+    Object.keys(got).forEach(function (k) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') return;
+      s[k] = got[k];
+    });
+    Object.keys(base).forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(got, k) || !kindOk(KIND[k], got[k])) s[k] = base[k];
+    });
+    /* tabPaths 只收「/ 開頭的字串」：舊版或手改過的值（null、數字、整串字串）不能讓 nav.tab 導到怪地方。
+       第 1 版的 tabPaths.explore 不再用（探索歸在叫車底下），順手丟掉 */
+    const tp = s.tabPaths;
     s.tabPaths = fresh().tabPaths;
-    const tp = got.tabPaths && typeof got.tabPaths === 'object' ? got.tabPaths : {};
     TABS.forEach(function (k) {
       if (typeof tp[k] === 'string' && tp[k][0] === '/') s.tabPaths[k] = tp[k];
     });
-    if (!Array.isArray(s.pushes)) s.pushes = [];
-    if (!s.rideVia || typeof s.rideVia !== 'object' || Array.isArray(s.rideVia)) s.rideVia = {};
-    if (typeof s.rideSpots !== 'boolean') s.rideSpots = true;
+    s.version = STORE_VERSION;
     return s;
   } catch (e) {
     return base;
@@ -118,7 +158,9 @@ const fmt = {
   walkMin: function (m)  { return Math.round(m / 75); },
   dist:    function (m) {
     m = Number(m) || 0;
-    return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km';
+    /* 先四捨五入再挑單位：999.6 公尺是「1.0 km」，不是「1000 m」 */
+    const r = Math.round(m);
+    return r < 1000 ? r + ' m' : (m / 1000).toFixed(1) + ' km';
   },
   canWalk: function (m) { return m != null && m <= fmt.WALK_MAX_M; },
   km:      function (m) { return Math.round((Number(m) || 0) / 100) / 10; },   /* 公尺 → 公里（一位小數） */
@@ -183,10 +225,42 @@ function cardOf(p) {
   return byName ? byName.id : null;
 }
 
+/* 可去的地方（SPOTS ∪ PENDING ∪ TODAY ∪ FAR_PLACE）的原始資料，依序、去重 */
+function basePlaces() {
+  const m = M();
+  const seen = {};
+  return [].concat(m.SPOTS || [], m.PENDING || [], m.TODAY ? [m.TODAY] : [], m.FAR_PLACE ? [m.FAR_PLACE] : [])
+    .filter(function (p) {
+      if (!p || !p.id || seen[p.id]) return false;
+      seen[p.id] = 1;
+      return true;
+    });
+}
+
+/* 任何 id → 它真正的地點 id。
+   MOCK.CARD_TO_PLACE 只列了六張明信片；其餘的（p1 新竹車站、p2 東門市場…）從可去的地方反查
+   「哪個地方的明信片是這張」，否則 /place/p1 跟 /place/station 會是兩個不同的地方（p2 甚至沒有距離）。
+   路線站 id（s1、g2…）先換成站上的明信片 id 再查。都查不到（只在路線上、沒有對應地方的站，例 p3、p14）就原樣回傳。 */
+function canonId(id) {
+  const m = M();
+  const own = Object.prototype.hasOwnProperty;
+  (m.ROUTES || []).some(function (r) {
+    return (r.stops || []).some(function (st) {
+      if (st.id === id && st.card) { id = st.card; return true; }
+      return false;
+    });
+  });
+  if (m.CARD_TO_PLACE && own.call(m.CARD_TO_PLACE, id)) return m.CARD_TO_PLACE[id];
+  const isCard = (m.POSTCARDS || []).some(function (c) { return c.id === id; });
+  if (!isCard) return id;
+  const hit = basePlaces().filter(function (p) { return cardOf(p) === id; })[0];
+  return hit ? hit.id : id;
+}
+
 function place(id) {
   const m = M();
   if (!id || !m.findPlace || !knownId(id)) return null;
-  const f = m.findPlace(id);
+  const f = m.findPlace(canonId(id));
   if (!f) return null;
   const spot = (m.SPOTS || []).filter(function (s) { return s.id === f.id; })[0];
   const geo = (W.HSINCHU_PLACES || {})[f.id];
@@ -217,16 +291,11 @@ function place(id) {
 }
 
 function places() {
-  const m = M();
-  const seen = {};
   const out = [];
-  [].concat(m.SPOTS || [], m.PENDING || [], m.TODAY ? [m.TODAY] : [], m.FAR_PLACE ? [m.FAR_PLACE] : [])
-    .forEach(function (p) {
-      if (!p || seen[p.id]) return;
-      seen[p.id] = 1;
-      const n = place(p.id);
-      if (n) out.push(n);
-    });
+  basePlaces().forEach(function (p) {
+    const n = place(p.id);
+    if (n) out.push(n);
+  });
   return out;
 }
 
@@ -357,6 +426,17 @@ function clearBackPending() {
   backPending = false;
   if (backTimer) { clearTimeout(backTimer); backTimer = null; }
 }
+/* 上一次 route() 畫的是哪個 location.hash：popstate 回到同一個網址（不會有 hashchange）時靠它認出來 */
+let routedHash = null;
+let routedOnce = false;     /* 這次載入是不是已經畫過第一頁（首頁的 onboarding 判斷用） */
+
+/* 兩個 hash 是不是同一頁（location.hash 會把中文 percent-encode，比之前先解開） */
+function normHash(h) {
+  h = String(h == null ? '' : h).replace(/^#/, '');
+  try { h = decodeURIComponent(h); } catch (e) { /* 壞掉的 % 序列：原樣比 */ }
+  return h;
+}
+function sameHash(a, b) { return normHash(a) === normHash(b); }
 
 function $(sel, root) { return (root || document).querySelector(sel); }
 
@@ -396,8 +476,11 @@ const nav = {
     if (!started) { try { location.hash = '#' + path; } catch (e) { /* ignore */ } return; }
     const url = '#' + path;
     let dir = opt.dir || 'push';
+    /* 目標就是現在這一頁：換掉這一筆，不疊一筆一模一樣的。疊了之後按返回只有 popstate、沒有 hashchange，
+       畫面不動、序號也對不上，要按兩次；那筆若是第一筆，第二次直接離開 app */
+    const replace = !!opt.replace || sameHash(url, location.hash);
     try {
-      if (opt.replace) {
+      if (replace) {
         history.replaceState({ yoxiApp: 1, i: curIdx }, '', url);
         if (!opt.dir) dir = 'none';
       } else {
@@ -407,7 +490,7 @@ const nav = {
     } catch (e) {
       /* 萬一 pushState 被擋（某些 file:// 環境）：退回改 hash，讓 hashchange 接手 */
       pendingDir = dir;
-      if (opt.replace) location.replace(url); else location.hash = url;
+      if (replace) location.replace(url); else location.hash = url;
       return;
     }
     route(dir);
@@ -425,8 +508,9 @@ const nav = {
     nav.go(fallback || '/ride', { replace: true, dir: 'back' });
   },
   tab: function (id) {
-    if (TABS.indexOf(id) < 0) return;
-    const here = cur && cur.tab;
+    id = tabGroup(id);
+    if (!id) return;
+    const here = cur && tabGroup(cur.tab);
     /* 已經在這個 tab：回到它的根；不然回到它最後停的那一頁 */
     const target = (here === id) ? '/' + id : (S.tabPaths[id] || '/' + id);
     if (cur && target === fullPath(cur)) return;
@@ -448,14 +532,32 @@ const nav = {
     const full = fullPath(cur);
     try { history.replaceState(Object.assign({}, history.state || {}, { yoxiApp: 1, i: curIdx }), '', '#' + full); }
     catch (e) { /* ignore */ }
-    if (cur.tab && TABS.indexOf(cur.tab) >= 0) {
-      S.tabPaths = Object.assign({}, S.tabPaths, { [cur.tab]: full });
-      save();
-    }
+    routedHash = location.hash;
+    remember(cur.tab, cur.def, full);
   },
 };
 
+/* 記住各 tab 最後停的 path（安靜地寫，不 emit）。view 設 remember:false 的過場頁（例 /drawer）不記：
+   不然開抽屜 → 切收藏 → 再按叫車，會回到抽屜 */
+function remember(tab, def, full) {
+  const g = tabGroup(tab);
+  if (!g || (def && def.remember === false)) return;
+  S.tabPaths = Object.assign({}, S.tabPaths, { [g]: full });
+  save();
+}
+
 /* ---- 路由主流程 ---- */
+/* popstate 一定先於 hashchange。網址變了的交給 onHashChange（它要拿舊的序號判斷前進／返回）；
+   網址沒變（同一個 hash 的兩筆紀錄之間，例如舊版疊出來的重複紀錄）不會有 hashchange：
+   這裡把序號對齊 history.state.i、放開 nav.back 的等待，畫面不用重畫 */
+function onPopState() {
+  clearBackPending();
+  if (location.hash !== routedHash) return;
+  pendingDir = null;
+  const st = history.state;
+  if (st && typeof st.i === 'number') curIdx = st.i;
+}
+
 function onHashChange() {
   const st = history.state;
   let dir = pendingDir;
@@ -477,15 +579,28 @@ function finishNow() {
   if (finishPending) { const f = finishPending; finishPending = null; f(); }
 }
 
+/* 第一次載入就落在這些底欄的根（裝到桌面後的 start_url、書籤）時，還沒看過 onboarding 先去 /welcome */
+const FIRST_RUN_ROOTS = ['/ride', '/album'];
+function hasWelcome() { return routes.some(function (r) { return r.pattern === '/welcome'; }); }
+
 function route(dir) {
+  /* 0. 上一頁開著的浮層（確認框、分享面板、推播…）先收掉：留著的話，它的動作會落在新的這一頁上 */
+  dismissOverlays();
   finishNow();
   clearBackPending();
   const p = parse(location.hash);
+  routedHash = location.hash;
+  const firstRoute = !routedOnce;
+  routedOnce = true;
 
   /* '/'：第一次開先 onboarding（system 有註冊才去），其餘去叫車 */
   if (p.path === '/') {
-    const toWelcome = !S.onboarded && routes.some(function (r) { return r.pattern === '/welcome'; });
+    const toWelcome = !S.onboarded && hasWelcome();
     nav.go(toWelcome ? '/welcome' : '/ride', { replace: true, dir: 'none' });
+    return;
+  }
+  if (firstRoute && !S.onboarded && !p.qs && FIRST_RUN_ROOTS.indexOf(p.path) >= 0 && hasWelcome()) {
+    nav.go('/welcome', { replace: true, dir: 'none' });
     return;
   }
 
@@ -496,19 +611,17 @@ function route(dir) {
   cur = { path: p.path, qs: p.qs, query: p.query, pattern: r.pattern, params: r.params,
           name: r.name, tab: tab, def: def };
 
-  /* 跨 tab 的根畫面用淡入，不用滑動 */
-  if (dir === 'push' && prev && def.root && prev.tab && tab && prev.tab !== tab) dir = 'tab';
+  /* 跨 tab 的根畫面用淡入，不用滑動（探索歸在叫車底下：叫車 → 探索是往前滑，不是換 tab） */
+  if (dir === 'push' && prev && def.root && tabGroup(prev.tab) && tabGroup(tab) &&
+      tabGroup(prev.tab) !== tabGroup(tab)) dir = 'tab';
   if (!prev) dir = 'none';
 
   /* 1. 舊 view 收尾 */
   if (cleanup) { try { cleanup(); } catch (e) { console.error('view cleanup:', e); } cleanup = null; }
   document.documentElement.removeAttribute('data-view-ready');
 
-  /* 2. 記住各 tab 最後停的 path（安靜地寫，不 emit） */
-  if (tab && TABS.indexOf(tab) >= 0) {
-    S.tabPaths = Object.assign({}, S.tabPaths, { [tab]: fullPath(p) });
-    save();
-  }
+  /* 2. 記住各 tab 最後停的 path（安靜地寫，不 emit；remember:false 的過場頁不記） */
+  remember(tab, def, fullPath(p));
 
   const ctx = { query: p.query, from: prev ? fullPath(prev) : null, state: W.STATE,
                 store: store, path: p.path, pattern: r.pattern };
@@ -580,6 +693,7 @@ function route(dir) {
   const done = function () {
     olds.forEach(function (o) { o.remove(); });
     main.classList.remove('view--in-push', 'view--in-back', 'view--in-tab');
+    focusView(main);
     document.documentElement.setAttribute('data-view-ready', '1');
     if (!document.documentElement.hasAttribute('data-app-ready')) {
       document.documentElement.setAttribute('data-app-ready', '1');
@@ -647,39 +761,62 @@ const TABDEF = [
   { id: 'album',   label: '收藏', icon: 'tabAlbum' },
 ];
 
-/* 今天的地方的明信片還沒收 → 探索 tab 上一個小圓點（不是數字） */
-function todayPending() {
-  const m = M();
-  if (!m.TODAY || !W.STATE) return false;
-  const c = m.cardIdOf ? m.cardIdOf(m.TODAY.id) : m.TODAY.id;
-  return !STATE.has(c);
-}
-
-function renderTabbar() {
-  const nb = $('#tabbar');
-  if (!nb) return;
-  const screen = $('.device__screen');
-  const active = cur && cur.tab;
-  if (!active) {
-    nb.hidden = true;
-    if (screen) screen.classList.remove('has-tabbar');
-    return;
-  }
-  nb.hidden = false;
-  if (screen) screen.classList.add('has-tabbar');
-  const dot = todayPending();
+/* 底欄只建一次；之後每次導覽只換 is-active／aria-current（整條重畫會把停在某一格上的鍵盤焦點弄丟）。
+   底欄不看 STATE／store（沒有小圓點、沒有數字），所以只在 route() 裡更新。 */
+function buildTabbar(nb) {
   nb.innerHTML = TABDEF.map(function (t) {
-    return '<a class="tabbar__item' + (t.id === active ? ' is-active' : '') + '" href="#/' + t.id +
-      '" data-tab-id="' + t.id + '"' + (t.id === active ? ' aria-current="page"' : '') + '>' +
+    return '<a class="tabbar__item" href="#/' + t.id + '" data-tab-id="' + t.id + '">' +
       '<span class="tabbar__icon">' +
         '<span data-icon="' + t.icon + '" style="display:block;width:26px;height:26px"></span>' +
-        (t.dot && dot && t.id !== active ? '<i class="tabbar__dot"></i>' : '') +
       '</span><span>' + t.label + '</span></a>';
   }).join('');
   nb.querySelectorAll('[data-tab-id]').forEach(function (a) {
     a.onclick = function (e) { if (e) e.preventDefault(); nav.tab(a.getAttribute('data-tab-id')); };
   });
   if (W.SHELL) SHELL.injectIcons(nb);
+}
+
+function renderTabbar() {
+  const nb = $('#tabbar');
+  if (!nb) return;
+  const screen = $('.device__screen');
+  const tab = cur && cur.tab;
+  if (!tab) {
+    nb.hidden = true;
+    if (screen) screen.classList.remove('has-tabbar');
+    return;
+  }
+  nb.hidden = false;
+  if (screen) screen.classList.add('has-tabbar');
+  if (!nb.querySelector('[data-tab-id]')) buildTabbar(nb);
+  /* 探索的舊路由（tab:'explore'）亮叫車：探索模式現在住在 /ride 裡 */
+  const active = tabGroup(tab);
+  nb.querySelectorAll('[data-tab-id]').forEach(function (a) {
+    const on = a.getAttribute('data-tab-id') === active;
+    a.classList.toggle('is-active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+}
+
+/* ---- 導覽後的焦點 ----
+   換頁之後焦點常常落在 body（剛按的連結跟著舊畫面一起拆掉了），報讀器什麼都不念。
+   mount 自己放好焦點（在新畫面裡）就不動；在浮層、對話框、demo 面板裡也不搶；
+   其餘移到新畫面的第一個 h1（沒有 h1 或 h1 看不見就是 main 本身）。這些目標不是可按的東西，不畫外框（app.css）。 */
+function focusView(main) {
+  if (!main || !main.isConnected) return;
+  const a = document.activeElement;
+  if (a && a !== document.body && a !== document.documentElement && a.isConnected) {
+    if (main.contains(a)) return;
+    if (a.closest && a.closest('[aria-modal="true"], [data-overlay], #demo-panel')) return;
+  }
+  const put = function (el) {
+    if (!el) return false;
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+    el.setAttribute('data-nav-focus', '');
+    try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (x) { /* ignore */ } }
+    return document.activeElement === el;
+  };
+  if (!put(main.querySelector('h1'))) put(main);
 }
 
 /* ---- 狀態列 ---- */
@@ -697,65 +834,182 @@ function tickClock() {
   if (t) t.textContent = fmt.clock();
 }
 
-/* ---- 對話框可及性：焦點移進去、Esc 關、關掉之後焦點回原處 ----
-   a11yDialog(dialogEl, { label, onEsc, focus }) → release()。release 可以重複呼叫。 */
+/* ---- 對話框可及性：焦點移進去、Tab 在框裡繞、背景 inert、Esc 關、關掉之後焦點回原處 ----
+   a11yDialog(dialogEl, { label, onEsc, focus }) → release()。release 可以重複呼叫。
+   疊著開（例：分享面板上又開確認框）時只有最上面那個吃 Tab／Esc；全部關掉才解除背景的 inert。 */
+const dialogs = [];                                  /* 開著的對話框，最上面的在最後 */
+const INERT_IDS = ['view', 'tabbar', 'demo-panel'];  /* 對話框開著時整塊不能點、不能 Tab、報讀器看不到 */
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
+
+function syncInert() {
+  const on = dialogs.length > 0;
+  INERT_IDS.forEach(function (id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert');
+  });
+}
+
+/* 框被別人直接拆掉、沒呼叫 release：當作關了（不然背景永遠 inert） */
+function pruneDialogs() {
+  dialogs.slice().forEach(function (d) { if (!d.dlg.isConnected) d.release(); });
+}
+
+function tabbables(root) {
+  return Array.prototype.filter.call(root.querySelectorAll(FOCUSABLE), function (el) {
+    if (el.disabled || el.getAttribute('tabindex') === '-1') return false;
+    if (el.closest('[inert], [hidden]')) return false;
+    return el.getClientRects().length > 0;
+  });
+}
+
+function focusEl(el) {
+  if (!el) return;
+  try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (x) { /* ignore */ } }
+}
+
 function a11yDialog(dlg, opt) {
   opt = opt || {};
+  pruneDialogs();
   const before = document.activeElement;
   dlg.setAttribute('role', 'dialog');
   dlg.setAttribute('aria-modal', 'true');
   if (opt.label) dlg.setAttribute('aria-label', opt.label);
+  const entry = { dlg: dlg, release: null, onEsc: opt.onEsc || null };
   const onKey = function (e) {
+    if (dialogs[dialogs.length - 1] !== entry) return;
     if (e.key === 'Escape' || e.key === 'Esc') {
       e.preventDefault();
       if (opt.onEsc) opt.onEsc();
+      return;
     }
+    if (e.key !== 'Tab') return;
+    /* Tab／Shift+Tab 在框裡繞：到了最後一個回第一個，反之亦然；焦點跑到框外就拉回來 */
+    const list = tabbables(dlg);
+    const a = document.activeElement;
+    if (!list.length) {
+      e.preventDefault();
+      if (!dlg.hasAttribute('tabindex')) dlg.setAttribute('tabindex', '-1');
+      focusEl(dlg);
+      return;
+    }
+    const first = list[0], last = list[list.length - 1];
+    const inside = dlg.contains(a);
+    if (e.shiftKey && (!inside || a === first || a === dlg)) { e.preventDefault(); focusEl(last); }
+    else if (!e.shiftKey && (!inside || a === last)) { e.preventDefault(); focusEl(first); }
   };
   document.addEventListener('keydown', onKey);
-  const first = opt.focus || dlg.querySelector('button, a[href], input, [tabindex]');
-  if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+  dialogs.push(entry);
+  syncInert();
+  const first = opt.focus || tabbables(dlg)[0] || dlg.querySelector(FOCUSABLE);
+  focusEl(first);
   let released = false;
-  return function release() {
+  entry.release = function release() {
     if (released) return;
     released = true;
     document.removeEventListener('keydown', onKey);
-    if (before && before !== document.body && before.isConnected && typeof before.focus === 'function') {
-      try { before.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    const i = dialogs.indexOf(entry);
+    if (i >= 0) dialogs.splice(i, 1);
+    /* 先解除背景的 inert，原本的按鈕才叫得回焦點 */
+    syncInert();
+    if (before && before !== document.body && before.isConnected && typeof before.focus === 'function' &&
+        !(before.closest && before.closest('[inert]'))) {
+      focusEl(before);
     }
   };
+  return entry.release;
+}
+
+/* ---- 浮層：導覽時一律收掉 ----
+   掛在 .device 上（main.view 外面）、換頁就該消失的東西加 data-overlay；要善後的在元素上放 el._dismiss()
+   （移除自己、還焦點、拆 listener；可以重複呼叫）。沒有 _dismiss 的直接 remove()（有 _release 順手叫）。
+   開著的 APP.ui.confirm 也是浮層（回 false）。route() 每次導覽一開始就呼叫這支。
+   toast 不是浮層：「已設為下車點」要跟著跳到下一頁。 */
+function dismissOverlays() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.device [data-overlay]').forEach(function (el) {
+    try {
+      if (typeof el._dismiss === 'function') el._dismiss();
+      else {
+        el.remove();
+        if (typeof el._release === 'function') el._release();
+      }
+    } catch (e) {
+      console.error('dismissOverlays:', e);
+      try { el.remove(); } catch (x) { /* ignore */ }
+    }
+  });
+  /* 安全網：沒標 data-overlay、但用 a11yDialog 開著的對話框，當作按了 Esc（每個 onEsc 都只是關掉自己）；
+     還是沒關的至少放掉背景的 inert，新的一頁才點得到 */
+  dialogs.slice().reverse().forEach(function (d) {
+    if (d.dlg.isConnected && d.onEsc) {
+      try { d.onEsc(); } catch (e) { console.error('dismissOverlays onEsc:', e); }
+    }
+    d.release();
+  });
 }
 
 const TOAST_MS = 3200;       /* 至少 3 秒：讀得完一句話 */
+const LIVE_DELAY_MS = 60;    /* live region 先清空、隔一下才放字：同一句話連兩次也會再念 */
+
+/* 報讀器用的 live region：一開始就在（先有 region 再換內容才會被念），整個 app 只有一個。
+   畫面上的 toast 設 aria-hidden，不念兩次。 */
+function liveRegion() {
+  if (typeof document === 'undefined' || !document.body) return null;
+  let el = document.getElementById('app-live');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'app-live';
+    el.className = 'app-sr-only';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(el);
+  }
+  return el;
+}
+let liveTimer = null;
+function announce(text) {
+  const el = liveRegion();
+  if (!el) return;
+  el.textContent = '';
+  if (liveTimer) clearTimeout(liveTimer);
+  /* 用 setTimeout 不用 rAF：測試的 iframe 在畫面外，rAF 不會跑 */
+  liveTimer = setTimeout(function () { liveTimer = null; el.textContent = text; }, LIVE_DELAY_MS);
+}
 
 /* ---- UI 零件 ---- */
 const ui = {
   toast: function (msg, opt) {
+    const text = String(msg == null ? '' : msg);
     if (W.SHELL && SHELL.toast) {
-      const r = SHELL.toast(msg, Object.assign({ ms: TOAST_MS }, opt || {}));
-      /* 報讀器要念得到：補 role=status／aria-live，文字在屬性之後再放進去（先有 live region 再有內容才會被念） */
+      const r = SHELL.toast(text, Object.assign({ ms: TOAST_MS }, opt || {}));
       const host = $('.device') || document.body;
       const list = host.querySelectorAll('.toast');
       const t = list[list.length - 1];
-      if (t) {
-        t.setAttribute('role', 'status');
-        t.setAttribute('aria-live', 'polite');
-        t.textContent = '';
-        t.textContent = String(msg == null ? '' : msg);
-      }
+      if (t) t.setAttribute('aria-hidden', 'true');
+      announce(text);
       return r;
     }
-    console.info('[toast]', msg);
+    console.info('[toast]', text);
   },
+  announce: announce,
   a11yDialog: a11yDialog,
+  dismissOverlays: dismissOverlays,
+  /* o.danger：做了就回不去的動作（清除、重設、取消行程），預設焦點放在「不要」那顆 */
   confirm: function (o) {
     o = o || {};
-    /* 同一時間只有一個確認框：連按「取消行程」「重設」會開第二個，兩個都按「是」動作就做兩次。
-       已經有一個開著時，新的這次直接回 false（第一個照常等使用者回答）。 */
-    if (document.querySelector('.app-confirm')) return Promise.resolve(false);
+    /* 回傳 Promise：按「是」→ true、按「否」→ false、沒有回答就被關掉（Esc、點遮罩、導覽離開）→ null。
+       null 跟 false 一樣是 falsy，只問「要不要做」的呼叫端照舊寫 if (!yes)；
+       「否」本身也是一個動作的（例：叫車前的「直接叫車」）要寫 === false，關掉時才不會誤觸。
+       同一時間只有一個確認框：連按「取消行程」「重設」會開第二個，兩個都按「是」動作就做兩次。
+       已經有一個開著時，新的這次直接回 null（第一個照常等使用者回答）。 */
+    if (document.querySelector('.app-confirm')) return Promise.resolve(null);
     return new Promise(function (resolve) {
       const host = $('.device') || document.body;
       const scrim = document.createElement('div');
       scrim.className = 'scrim app-confirm';
+      scrim.setAttribute('data-overlay', '');
       scrim.innerHTML =
         '<div class="modal app-modal" role="dialog" aria-modal="true">' +
           '<p class="modal__text">' + esc(o.text || '確定嗎？') + '</p>' +
@@ -764,12 +1018,27 @@ const ui = {
             '<button class="btn-ghost" type="button" data-act="confirm-no">' + esc(o.no || '先不要') + '</button>' +
           '</div></div>';
       let release = null;
-      const end = function (v) { scrim.remove(); if (release) release(); resolve(v); };
-      scrim.querySelector('[data-act="confirm-yes"]').onclick = function () { end(true); };
-      scrim.querySelector('[data-act="confirm-no"]').onclick = function () { end(false); };
-      scrim.onclick = function (e) { if (e.target === scrim) end(false); };
+      let settled = false;
+      const end = function (v) {
+        if (settled) return;
+        settled = true;
+        scrim.remove();
+        if (release) release();
+        resolve(v);
+      };
+      const yesB = scrim.querySelector('[data-act="confirm-yes"]');
+      const noB = scrim.querySelector('[data-act="confirm-no"]');
+      yesB.onclick = function () { end(true); };
+      noB.onclick = function () { end(false); };
+      scrim.onclick = function (e) { if (e.target === scrim) end(null); };
+      /* 導覽時（APP.ui.dismissOverlays）：沒有回答，動作不會落在新的一頁上 */
+      scrim._dismiss = function () { end(null); };
       host.appendChild(scrim);
-      release = a11yDialog(scrim.querySelector('.modal'), { label: o.text || '確定嗎？', onEsc: function () { end(false); } });
+      release = a11yDialog(scrim.querySelector('.modal'), {
+        label: o.text || '確定嗎？',
+        onEsc: function () { end(null); },
+        focus: o.danger ? noB : yesB,
+      });
     });
   },
   /* 預設實作：system.js 會覆寫這兩個 */
@@ -779,6 +1048,78 @@ const ui = {
 };
 
 /* ---- 地圖 ---- */
+/* 景點互相推開（舊城區的地方真實座標只差一兩百公尺，縮圖會疊成一團；東門市場與護城河只差 143 公尺）。
+   量每顆 .spot 的版面大小（offsetWidth／Height，不受桌機縮放與轉場的 transform 影響），
+   兩兩比：要嘛左右錯開、要嘛上下錯開；不夠就沿著重疊較小的那一軸各推一半，反覆幾輪，每輪夾回地圖框內。
+   - .spot 的錨點在底邊中央（translate(-50%, -100%)），選到時從底邊往上放大 grow 倍（app.css .is-selected）：
+     左右要留「一顆放大、一顆原尺寸」的寬，上下要留下面那顆放大後的高——任何一顆被選到都不會壓到別顆。
+   - 上緣留 top（預設 64：狀態列／頁首／定位鈕那一條），景點原尺寸的框不進去。
+   - 推完寫回 style 與 m.spots 的 x/y（百分比）、px/py（地圖座標）；原本的位置留在 px0/py0。寧可離真實位置遠一點，也不要疊。 */
+const SPOT_SELECTED_SCALE = 1.4;      /* 跟 app.css 的 .app-map .spot.is-selected scale() 一致 */
+const SPOT_GAP_X = 4;
+const SPOT_GAP_Y = 8;                 /* 上下多留一點：底下的小尖角（::after）凸出框外約 7px */
+const SPOT_EDGE = 4;
+const SPOT_TOP = 64;
+function declutter(layer, placed, handle, o) {
+  o = o || {};
+  const W0 = layer.clientWidth, H0 = layer.clientHeight;
+  if (!W0 || !H0 || placed.length < 2) return;
+  const g = o.grow || 1;
+  const top = o.top != null ? o.top : SPOT_TOP;
+  const kx = (handle && handle.width ? handle.width : W0) / W0;     /* 版面 px → 地圖 px */
+  const ky = (handle && handle.height ? handle.height : H0) / H0;
+  const it = [];
+  layer.querySelectorAll('.spot[data-i]').forEach(function (el) {
+    const s = placed[Number(el.dataset.i)];
+    if (!s || !el.offsetWidth) return;
+    it.push({ el: el, s: s, w: el.offsetWidth, h: el.offsetHeight,
+              x: s.px != null ? s.px / kx : s.x / 100 * W0, y: s.py != null ? s.py / ky : s.y / 100 * H0 });
+  });
+  if (it.length < 2) return;
+  it.forEach(function (a) { a.x0 = a.x; a.y0 = a.y; });
+  /* 夾回框內；框太小放不下時以「不掉出下緣／右緣」為先 */
+  const clamp = function (a) {
+    const hw = g * a.w / 2;
+    a.x = Math.min(W0 - hw - SPOT_EDGE, Math.max(hw + SPOT_EDGE, a.x));
+    a.y = Math.min(H0 - SPOT_GAP_Y, Math.max(Math.max(g * a.h + SPOT_EDGE, top + a.h), a.y));
+  };
+  it.forEach(clamp);
+  for (let round = 0; round < 80; round++) {
+    let moved = false;
+    for (let i = 0; i < it.length; i++) for (let j = i + 1; j < it.length; j++) {
+      const a = it[i], b = it[j];
+      const needX = Math.max(g * a.w + b.w, a.w + g * b.w) / 2 + SPOT_GAP_X;
+      const lower = a.y > b.y || (a.y === b.y && i > j) ? a : b;
+      const needY = g * lower.h + SPOT_GAP_Y;
+      const ox = needX - Math.abs(a.x - b.x);
+      const oy = needY - Math.abs(a.y - b.y);
+      if (ox <= 0.5 || oy <= 0.5) continue;
+      moved = true;
+      /* 沿位移較小的那一軸推開；完全同一點時 i 往左（上）、j 往右（下） */
+      if (ox <= oy) {
+        const sx = a.x < b.x || (a.x === b.x) ? -1 : 1;
+        a.x += sx * ox / 2; b.x -= sx * ox / 2;
+      } else {
+        const sy = a.y < b.y || (a.y === b.y) ? -1 : 1;
+        a.y += sy * oy / 2; b.y -= sy * oy / 2;
+      }
+    }
+    it.forEach(clamp);
+    if (!moved) break;
+  }
+  it.forEach(function (a) {
+    const s = a.s;
+    s.px0 = s.px; s.py0 = s.py;
+    if (Math.abs(a.x - a.x0) < 0.5 && Math.abs(a.y - a.y0) < 0.5) return;
+    s.x = Math.round(a.x / W0 * 1000) / 10;
+    s.y = Math.round(a.y / H0 * 1000) / 10;
+    s.px = a.x * kx;
+    s.py = a.y * ky;
+    a.el.style.left = (a.x / W0 * 100).toFixed(2) + '%';
+    a.el.style.top = (a.y / H0 * 100).toFixed(2) + '%';
+  });
+}
+
 const map = {
   /**
    * 在 container 裡長一張 HSMAP 真實地圖（container 要有尺寸；它若是 static 會被改成 relative）。
@@ -836,6 +1177,10 @@ const map = {
           b.onclick = function (e) { if (e) e.preventDefault(); opt.onSpot(s, b); };
         }
       });
+      /* 選得到的景點（有 onSpot）會被放大成 .is-selected：留出放大後的位置 */
+      if (opt.declutter !== false) {
+        declutter(spotsEl, placed, handle, { grow: hasCb ? SPOT_SELECTED_SCALE : 1, top: opt.spotsTop });
+      }
     }
 
     if (opt.pan) {
@@ -853,20 +1198,37 @@ const map = {
   },
 };
 
-/* ---- 桌機外框縮放：.device 固定 844 高，1280×720／1366×768 的螢幕會把 tab bar 擠到畫面外 ----
-   桌機（≥ 560 寬）時 scale = min(1, (innerHeight − 48) / 844)，寫進 --device-scale；app.css 用 transform 縮、
-   用負 margin 把版面佔位也縮掉（置中與 demo 面板才不會錯位）。手機模式不縮。 */
+/* ---- 桌機外框／手機滿版 ----
+   桌機＝寬 ≥ 560，而且（有滑鼠：hover＋細指標，或畫面夠高 ≥ 700）。只看寬度的話，手機橫放（844×390）
+   會被當成桌機：外框縮到四成、tab bar 被切掉。這句跟 app.css 的兩個 @media 是同一個條件，改了三處一起改。
+   桌機時 scale = min(1, (innerHeight − .stage 上下 padding) / 844)，寫進 --device-scale；app.css 用 transform 縮、
+   用負 margin 把版面佔位也縮掉（置中與 demo 面板才不會錯位）。手機模式不縮。
+   html[data-layout="desktop"|"phone"] 給測試與除錯看。 */
+const DESKTOP_MQ = '(min-width: 560px) and (hover: hover) and (pointer: fine), (min-width: 560px) and (min-height: 700px)';
 const DESKTOP_MIN_W = 560;
-const STAGE_PAD_Y = 48;
+function isDesktop() {
+  try { if (W.matchMedia) return W.matchMedia(DESKTOP_MQ).matches; } catch (e) { /* ignore */ }
+  return (W.innerWidth || 0) >= DESKTOP_MIN_W;
+}
 function deviceH() {
   const d = $('.device');
   const v = d ? parseFloat(getComputedStyle(d).getPropertyValue('--device-h')) : NaN;
   return v > 0 ? v : 844;
 }
+/* .stage 上下的 padding（base.css 的 --sp-6 ×2）：當場量，不寫死（寫死 48 時 1280×720 整頁會多捲 16px） */
+function stagePadY() {
+  const s = $('.stage');
+  if (!s) return 64;
+  const cs = getComputedStyle(s);
+  const v = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  return v > 0 ? v : 0;
+}
 function fitDevice() {
   const html = document.documentElement;
-  const w = W.innerWidth || 0, h = W.innerHeight || 0;
-  const scale = (w >= DESKTOP_MIN_W && h > 0) ? Math.max(0.3, Math.min(1, (h - STAGE_PAD_Y) / deviceH())) : 1;
+  const h = W.innerHeight || 0;
+  const desk = isDesktop();
+  const scale = (desk && h > 0) ? Math.max(0.3, Math.min(1, (h - stagePadY()) / deviceH())) : 1;
+  html.setAttribute('data-layout', desk ? 'desktop' : 'phone');
   html.style.setProperty('--device-scale', String(Math.round(scale * 1000) / 1000));
   return scale;
 }
@@ -903,10 +1265,9 @@ function start() {
     nav.back(a.getAttribute('data-back') || '/ride');
   });
 
-  on('state:change', renderTabbar);
-  on('store:change', renderTabbar);
-  W.addEventListener('popstate', clearBackPending);
+  W.addEventListener('popstate', onPopState);
   W.addEventListener('hashchange', onHashChange);
+  liveRegion();
 
   /* 桌機狀態列顯示真實時間 */
   scheduleClock();
@@ -918,9 +1279,22 @@ function start() {
   else { curIdx = 0; stamp(0); }
   route('none');
 
-  /* PWA：只在 http(s) 註冊；file:// 安靜略過 */
+  /* PWA：只在 http(s) 註冊；file:// 安靜略過（策略見 sw.js 檔頭）。
+     新的 sw 接手（controllerchange）而且之前已經有一個在管這一頁 → 有新版本了，提示重新整理；
+     第一次安裝時 controller 從無到有，不提示。回到前景時順便問一次有沒有新版（裝成 app 的人很少冷啟動）。 */
   if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(function (err) {
+    const swc = navigator.serviceWorker;
+    let hadController = !!swc.controller;
+    let told = false;
+    swc.addEventListener('controllerchange', function () {
+      if (hadController && !told) { told = true; ui.toast('有新版本，重新整理就會套用'); }
+      hadController = true;
+    });
+    swc.register('./sw.js').then(function (reg) {
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && reg && reg.update) reg.update().catch(function () {});
+      });
+    }).catch(function (err) {
       console.info('[sw] 未註冊：', err && err.message);
     });
   }

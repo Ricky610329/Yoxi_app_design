@@ -210,10 +210,28 @@ python app/tests/run.py                           # web app：node 單元＋head
 | 點卡片 | 在原頁打開可翻面的懸浮小卡，背面只有簡短收藏狀態。這裡的「收集」是查看卡片的入口；真正收下卡片仍走抵達／既有 `STATE` 流程。 |
 | 探索下拉 | 只收合面板，仍留在探索與原選定地區；再往下收到只剩拉把，點景點或拉把叫回來。 |
 
-實作入口：`app/js/views/ride.js` 的 `rideV2Render／rideV2Mount`、`CARD_AREAS`、`bindExploreSheet`，樣式在 `app/css/views/ride.css` 的 `.ride-v2__*`；兩個模式的拉法共用同檔的 `bindDragSheet`，全高地圖是 `mountFullMap`。收藏在 `app/js/views/album.js` 與 `app/css/views/album.css`。主路由與資料契約以 `app/ARCHITECTURE.md` 為準，使用說明在 `app/README.md`。PWA 快取版號目前是 `chengshi-app-v9`（`app/sw.js` 與 `app/js/views/system.js` 需同步）。
+實作入口：`app/js/views/ride.js` 的 `rideV2Render／rideV2Mount`、`CARD_AREAS`、`bindExploreSheet`，樣式在 `app/css/views/ride.css` 的 `.ride-v2__*`；兩個模式的拉法共用同檔的 `bindDragSheet`，全高地圖是 `mountFullMap`。收藏在 `app/js/views/album.js` 與 `app/css/views/album.css`。主路由與資料契約以 `app/ARCHITECTURE.md` 為準，使用說明在 `app/README.md`。PWA 快取版號見 §14（`app/sw.js` 與 `app/js/views/system.js` 需同步）。
 
 目前畫面截圖：`app/assets/shots/ride.png`（預設搭車）、`ride-peek.png`（探索收合）、`ride-cards.png`（預選地區展開，保留上方資訊卡）、`ride-float.png`／`ride-float-back.png`（卡片互動）、`album.png`（收藏）。使用者原始排版圖、草圖與四輪回饋截圖集中在 [`docs/references/README.md`](references/README.md)；參考圖不是 app 資產。重拍用 `python app/tools/shoot-app.py --only ride,ride-peek,ride-cards,ride-float,ride-float-back,album`。
 
 交接驗證：`python app/tests/run.py` 是 node 34/34、瀏覽器 189/189；`python app/tools/check-sw.py` 是 45 筆 PASS；`python prototype/tools/verify-quiet.py` 八段全 PASS，六條承諾的數字與改版前相同。`verify-quiet.py` 會改寫 `prototype/assets/load.js` 與 `load.json` 的 `generatedAt`，若只有時間戳差異，檢查後還原即可。本輪變更留在 `app/`、文件與參考圖，沒有改 `prototype/`、`pitch/` 或 `site/`。
 
 下一位 agent 請從本節、`app/ARCHITECTURE.md` §0 與 `app/README.md` 的「這版怎麼看」開始。這輪 UI 已按最後回饋收束；接下來先等使用者的新調整方向。`docs/WORKLOG.md` 記有這輪各個 commit 與回滾原因。
+
+## 14. 2026-09-25 全面 review 與修正（分支 `fix/app-review`）
+
+使用者要「掃一下這個 APP 有沒有能改進的地方」，接著「全修」。先由四個唯讀 agent 分區（ride／explore／album／core＋system＋PWA）讀碼並用 Playwright 重現，找到約 60 條測試抓不到的問題；再由五個 agent 各在自己的 git worktree 修（core、PWA＋測試跑者＋system、ride、explore、album），主 agent 定好跨區塊約定後合併、縫合、改文件。契約變更都已寫進 `app/ARCHITECTURE.md`（§0、§1–§4、§6–§9，含「返回規則」與「浮層約定」）。
+
+最重要的幾類修正：
+- **會弄丟東西的狀態 bug**：走路收卡會清掉搭車的限定版與 +50（`collect` 現在只有 `by:'ride'` 才清 trip，搭車與否只看 `store.trip`）；`cardIdOf` 與 `place().card` 對不上讓「明信片還沒收」永遠掛著；壞掉的 trip id 卡死叫車；確認框、分享面板、機率說明換頁不會關（新增 `data-overlay`／`APP.ui.dismissOverlays`，`APP.ui.confirm` 改成三態：是 true／否 false／沒回答 null）；同網址 push 要按兩次返回。
+- **雙主頁改版後斷掉的路**：收藏首頁補「回顧」一列（今天的回顧／這一週／城市足跡）；`/postcards` 每一格點得進詳情（`[data-gallery]` 整片算一個可按）；通知與「在地圖上挑」帶 `mode=explore`；舊路由的保底去處改成 `/ride?mode=explore`；收藏子頁返回鍵在切 tab 之後也對。
+- **畫面與手感**：收藏裡看得到金框；「yoxi 限定版」與「yoxi 金框」分開；拉把 8 px 算點、照方向換段、跟手、可用鍵盤；景點在 `APP.map.mount` 自動推開；手機橫放不再被當成桌機；命中區 ≥ 44 px。
+- **使用者追加**：抽卡結果與收集面板都不寫機率、不寫「必得金框」，機率只在「?」裡。
+- **文案誠實**：「去過的地方」是不重複的地點數；「今天多了一張」看日期；週回顧標題＝圖表的 7 天；城市顏色從去過的地方算；拿掉沒實作的「90 天變淡」。
+- **無障礙、PWA、測試跑者**：換頁焦點、對話框焦點圈與 inert、toast 走常駐 live region；明信片成品離線可看（執行期快取）、導覽 network-first、有新版本會提示、`start_url` 會先看 onboarding、`check-sw.py` 缺檔即失敗；找不到 spec 檔算 FAIL、死按鈕與禁用詞也掃浮層與 demo 面板。
+- **整理**：`explore.js` 拆成 `explore-cards.js`（明信片與抽卡的共用 API）／`explore.js`／`explore-unlock.js`；album 約 230 行舊書架死碼、ride.css 用不到的樣式刪掉；px 字級與 rgba 換成 tokens。
+
+驗證：`python app/tests/run.py` node 47/47、瀏覽器 272/272；`python app/tools/check-sw.py` 60 筆 PASS（PWA `chengshi-app-v16`）。`app/assets/shots/` 的截圖是改版前拍的，`shoot-app.py` 在這台 Mac 會卡住，沒有重拍。沒有改 `prototype/`、`pitch/`、`site/`。
+
+還沒做的：`app/tests/fixtures/`（selftest）沒有補浮層掃描與 `hit` 的案例；`MM.DD` 沒有年份，週回顧跨年會算錯（STATE 的格式歸 prototype，寫在 album.js 註解）；REVEAL（五款抽卡特效）刻意沒有改成資料表。
+

@@ -145,12 +145,45 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  t.test('/place/nope：找不到這個地方＋回探索', async function (app) {
+  t.test('/place/nope：找不到這個地方＋回探索（新 UI 的探索＝叫車首頁的探索模式）', async function (app) {
     await app.go('/place/nope');
     t.ok(app.$('[data-ex-missing]'), '找不到卡');
     t.includes(app.text('main.view[data-view]'), '找不到這個地方', '文案');
-    t.ok(app.$('main.view[data-view] a[href="#/explore"]'), '回探索');
+    t.ok(app.$('main.view[data-view] a[href="#/ride?mode=explore"]'), '回探索 → /ride?mode=explore');
+    t.ok(!app.$('main.view[data-view] a[href="#/explore"]'), '不再送回舊的 /explore');
     t.ok(!app.$('[data-place-foot]'), '沒有動作區');
+  });
+
+  t.test('新 UI：返回的保底、「回探索」、先不去了都回 /ride?mode=explore（有地點就帶 area）', async function (app) {
+    await app.reset();
+    await app.go('/place/glass-kiln');
+    t.eq(app.$('main.view a[data-back]').getAttribute('data-back'), '/ride?mode=explore&area=glass-kiln', '/place 返回的保底');
+    await app.go('/routes');
+    t.eq(app.$('main.view a[data-back]').getAttribute('data-back'), '/ride?mode=explore', '/routes 返回的保底');
+    await app.go('/going/nope');
+    t.ok(app.$('main.view a[href="#/ride?mode=explore"]'), '/going 找不到 → 回探索');
+    await app.go('/unlock/nope');
+    t.ok(app.$('main.view a[href="#/ride?mode=explore"]'), '/unlock 找不到 → 回探索');
+    /* 已收過的地方：結果頁的「回探索」 */
+    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    await app.go('/unlock/glass-kiln');
+    const back = app.$('[data-act="go-explore"]');
+    t.eq(back && back.getAttribute('href'), '#/ride?mode=explore&area=glass-kiln', '已收過 → 回探索帶 area');
+    t.ok(!back || back.getBoundingClientRect().height >= 44, '回探索的命中區 ≥ 44 px 高');
+    await app.click(back);
+    await app.at('/ride');
+    t.eq(app.route().query.get('mode'), 'explore', '落在探索模式');
+    t.eq(app.route().query.get('area'), 'glass-kiln', 'area＝這個地方');
+    const on = app.$('#tabbar [aria-current="page"]');
+    t.eq(on && on.getAttribute('data-tab-id'), 'ride', '底欄亮的是叫車（舊的 /explore 在新底欄沒有分頁）');
+    /* 先不去了：沒有歷史時回探索模式；命中區 ≥ 44 px 高 */
+    await app.reset({ hash: '/going/moat' });
+    const c = app.$('[data-act="cancel-going"]');
+    t.ok(c && c.getBoundingClientRect().height >= 44, '先不去了 高 ' + (c && Math.round(c.getBoundingClientRect().height)) + ' ≥ 44');
+    await app.click(c);
+    await app.at('/ride');
+    t.eq(app.route().query.get('area'), 'moat', '先不去了 → 探索模式、area=moat');
+    await app.reset();
   });
 
   t.test('/place：收過 → 已在收藏 · 看明信片', async function (app) {
@@ -232,7 +265,9 @@ T.spec('explore', function (t) {
   });
 
   t.test('/unlock/glass-kiln：已收過 → 已在收藏裡＋看明信片', async function (app) {
-    /* 延續上一條：p11 已經收了 */
+    /* 自己準備狀態（單獨跑這一條也對）：先收下 p11 */
+    await app.reset();
+    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-scene="3"].is-on'), '第三幕');
     t.includes(app.text('main.view[data-view]'), '已在收藏裡', '已在收藏裡');
@@ -258,6 +293,52 @@ T.spec('explore', function (t) {
     t.eq(app.STATE.all.km, km0 + 28, 'km 用 store.trip.km');
     t.eq(app.APP.store.get('trip'), null, 'store.trip 清掉');
     t.eq(app.APP.store.get('dropoff'), null, '同地方的 dropoff 清掉');
+    await app.reset();
+  });
+
+  /* 審查 1：已抵達（phase done）的那一趟還沒收，不論從哪個入口進 /unlock 都是搭車抵達；走路收下不清 trip */
+  t.test('搭車抵達還沒收：沒帶 ?ride=1 也是金框、by ride、+點數，trip 用掉', async function (app) {
+    const trip = { placeId: 'neiwan', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 };
+    await app.reset({ store: { trip: trip } });
+    const A = app.APP;
+    const bonus = (A.ride && A.ride.RIDE_BONUS) || 50;
+    const pts0 = app.STATE.points;
+    /* demo 面板的「走路抵達」（地點預設跟著這一頁）＝進 /unlock/neiwan，不帶 ?ride=1 */
+    A.system.demoArrive('neiwan', 'walk');
+    await app.at('/unlock/neiwan');
+    t.eq(app.route().query.get('ride'), null, '網址沒有 ?ride=1');
+    t.ok(app.$('[data-unlock][data-ride]'), '還是搭車抵達');
+    t.ok(app.$('[data-final-card].postcard--gold'), '金框');
+    t.includes(app.text('[data-points]'), '+' + bonus, '和泰 Points（APP.ride.RIDE_BONUS）');
+    await app.click('[data-act="collect"]');
+    await app.at('/album');
+    t.eq(app.STATE.card('p9') && app.STATE.card('p9').by, 'ride', 'by ride');
+    t.eq(A.store.get('trip'), null, '這一趟用掉了');
+    t.eq(app.STATE.points, pts0 + bonus, '點數加上去');
+    t.eq(A.store.get('cardStyle').p9, 'gold', '收下的是金框');
+    await app.reset();
+  });
+
+  t.test('搭車抵達還沒收：/going 不再帶你走一趟；走路收下（APP.explore.collect by walk）不清掉 trip', async function (app) {
+    const trip = { placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 };
+    await app.reset({ store: { trip: trip } });
+    await app.go('/going/glass-kiln');
+    t.ok(app.$('[data-going-rode]'), '已經搭 yoxi 到了的卡');
+    t.ok(!app.$('[data-act="arrive"]'), '沒有模擬抵達（不用再走一趟）');
+    const a = app.$('[data-going-rode] [data-act="unlock-ride"]');
+    t.eq(a && a.getAttribute('href'), '#/unlock/glass-kiln?ride=1', '→ 收下這一趟的明信片');
+    t.noDeadButtons(app, '/going 已搭車抵達');
+    t.noBannedWords(app, { msg: '/going 已搭車抵達' });
+    /* 別的地方的 done trip 不擋走路 */
+    await app.go('/going/moat');
+    t.ok(app.$('[data-act="arrive"]'), '別的地方照常走路前往');
+    t.ok(!app.$('[data-going-rode], [data-going-trip]'), '沒有擋住的卡');
+    /* 走路收下同一個地方：trip 留著（它只在搭車收下時用掉） */
+    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    t.ok(app.APP.store.get('trip') && app.APP.store.get('trip').placeId === 'glass-kiln', 'by walk 不清 trip');
+    app.APP.store.set('trip', trip);
+    app.APP.explore.collect('glass-kiln', { by: 'ride', km: 1 });
+    t.eq(app.APP.store.get('trip'), null, 'by ride 才清 trip');
     await app.reset();
   });
 
@@ -306,6 +387,38 @@ T.spec('explore', function (t) {
     await app.at('/album');
     t.eq(app.APP.store.get('cardStyle').p11, 'ink', 'store.cardStyle 記下水墨');
     t.ok(!(app.APP.store.get('draws') || {})['glass-kiln'], '這次抵達的暫存抽卡清掉');
+    await app.reset();
+  });
+
+  /* 審查 2：機率說明掛在 .device 上，離開 /unlock 要跟著收掉（不會蓋在下一頁上） */
+  t.test('機率說明：離開 /unlock（返回、導覽）就收掉；Esc 關；data-overlay＋_dismiss', async function (app) {
+    await app.reset({ store: { draws: { 'glass-kiln': 'oil' } } });
+    await app.go('/album');
+    await app.go('/unlock/glass-kiln');
+    await app.click('.ex-unlock__card [data-act="open-odds"]');
+    const sc = app.$('.ex-odds');
+    t.ok(sc, '? → 機率說明');
+    t.ok(sc && sc.hasAttribute('data-overlay'), 'data-overlay');
+    t.eq(sc && typeof sc._dismiss, 'function', 'el._dismiss');
+    t.ok(sc && sc.querySelector('[role="dialog"]'), 'role=dialog（a11yDialog）');
+    /* Esc 關掉 */
+    app.doc.dispatchEvent(new app.win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    t.ok(!app.$('.ex-odds'), 'Esc → 關掉');
+    /* 再開一次，按瀏覽器的返回 */
+    await app.click('.ex-unlock__card [data-act="open-odds"]');
+    t.ok(app.$('.ex-odds'), '再開一次');
+    app.win.history.back();
+    await app.at('/album');
+    t.ok(!app.$('.ex-odds'), '返回 /album：機率說明收掉了');
+    /* 導覽（不經返回）也一樣；_dismiss 可以重複呼叫 */
+    await app.go('/unlock/glass-kiln');
+    await app.click('.ex-unlock__card [data-act="open-odds"]');
+    const sc2 = app.$('.ex-odds');
+    await app.go('/explore');
+    t.ok(!app.$('.ex-odds'), '導覽到 /explore：收掉了');
+    try { sc2._dismiss(); sc2._dismiss(); t.ok(true, '_dismiss 重複呼叫不丟例外'); }
+    catch (e) { t.fail('_dismiss 重複呼叫丟例外：' + e.message); }
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
     await app.reset();
   });
 
@@ -358,7 +471,7 @@ T.spec('explore', function (t) {
       t.ok(!app.$('[data-arrive-sheet]').hidden, c.key + '：點發光的地方 → 面板');
       t.includes(app.text('[data-arrive-sheet]'), app.APP.explore.DRAW_STYLES.length + ' 款', c.key + '：寫幾款');
       t.ok(app.$('[data-arrive-sheet] [data-act="open-odds"]'), c.key + '：面板上有機率的 ?');
-      t.eq(!!app.$('.ex-sheet__gold'), !!c.ride, c.key + '：搭車才寫必得金框');
+      t.ok(!/必得/.test(app.text('[data-arrive-sheet]')), c.key + '：面板不寫「必得」（機率只在「?」裡）');
       await drawThrough(app);
       t.ok(app.$('[data-flip]').classList.contains('is-front'), c.key + '：翻到正面');
       t.eq(app.$('[data-final-card]').getAttribute('data-style'), c.key, c.key + '：卡面款式');
@@ -391,6 +504,124 @@ T.spec('explore', function (t) {
     await app.waitFor(function () { return !app.$('[data-unlock]').classList.contains('is-ready'); }, 1000, '開始翻');
     await app.click('[data-unlock]');
     await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 1500, '翻開中點一下 → 結果');
+    await app.reset();
+  });
+
+  /* 審查 4：抽卡時焦點不掉到 body；鍵盤與報讀器能跳過；抽完焦點到結果、念一次抽到什麼 */
+  t.test('抽卡的鍵盤與報讀器：收集 → 焦點在「跳過動畫」→ 跳過 → 焦點在「抽到 ○○」', async function (app) {
+    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'woodcut' } } });
+    await app.go('/unlock/glass-kiln');
+    await app.click('[data-act="open-spot"]');
+    const drawBtn = app.$('[data-act="draw"]');
+    t.eq(app.doc.activeElement, drawBtn, '面板打開：焦點在「收集明信片」');
+    const skip = app.$('[data-act="skip-draw"]');
+    t.ok(skip && skip.hidden, '跳過動畫平常收著');
+    await app.click(drawBtn);
+    t.ok(skip && !skip.hidden, '開始抽卡：跳過動畫出現');
+    t.eq(app.doc.activeElement, skip, '焦點沒有掉到 body（在跳過動畫）');
+    t.ok(!app.$('[data-stage-cap]').hasAttribute('aria-live'), '蓄力說明字不是 live region（不會每 0.5 秒打斷報讀器）');
+    skip.blur();
+    t.eq(app.win.getComputedStyle(skip).opacity, '0', '沒有鍵盤焦點時看不到它（點畫面本來就能快轉）');
+    skip.focus();
+    await app.click(skip);
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '跳過 → 直接看結果');
+    t.ok(skip.hidden, '跳過動畫收起來');
+    const lab = app.$('[data-draw]');
+    t.eq(app.doc.activeElement, lab, '焦點在結果那一行（tabindex=-1）');
+    t.includes(lab && lab.textContent, '抽到', '報讀器念「抽到」');
+    t.includes(lab && lab.textContent, '木刻版畫', '念出畫風');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+
+    /* 不跳過、一路點畫面跑完：收尾一樣把焦點放到結果 */
+    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'oil' } } });
+    await app.go('/unlock/glass-kiln');
+    await drawThrough(app);
+    t.eq(app.doc.activeElement, app.$('[data-draw]'), '跑完：焦點在結果那一行');
+    t.ok(app.$('[data-act="skip-draw"]').hidden, '跑完：跳過動畫收起來');
+    await app.reset();
+  }, { timeout: 20000 });
+
+  /* 審查 5：抵達的鐘聲與光點排在 420ms 之後；在那之前就開始抽卡，它不能在抽卡中冒出來。靜音、離開都切掉排好的聲音 */
+  t.test('抵達的鐘聲：還沒亮就開始抽卡 → 不再響；靜音與離開 /unlock 都呼叫 sfx.stopAll()', async function (app) {
+    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'watercolor' } } });
+    const sfx = app.APP.fx.sfx;
+    t.eq(typeof sfx.stopAll, 'function', 'APP.fx.sfx.stopAll');
+    let arrive = 0, stops = 0;
+    const a0 = sfx.arrive, s0 = sfx.stopAll;
+    sfx.arrive = function () { arrive++; };
+    sfx.stopAll = function () { stops++; return s0.apply(this, arguments); };
+    /* 對照組：不動它，亮起來時響一次 */
+    await app.go('/unlock/glass-kiln');
+    await app.waitFor(function () { return arrive > 0; }, 3000, '亮起來的鐘聲');
+    t.eq(arrive, 1, '對照組：響一次');
+    /* 把時間放慢十倍（全部跟著 --t-scene 縮放），趁鐘聲還沒排到就按收集 */
+    await app.go('/album');
+    arrive = 0;
+    app.doc.documentElement.style.setProperty('--t-scene', '12000ms');
+    await app.go('/unlock/glass-kiln');
+    await app.click('[data-act="open-spot"]');
+    await app.click('[data-act="draw"]');
+    await app.tick(4800);
+    t.eq(arrive, 0, '抽卡開始之後，抵達的鐘聲（與光點）不再出現');
+    const s1 = stops;
+    await app.click('[data-act="toggle-sound"]');
+    t.eq(app.APP.store.get('fxMute'), true, '靜音');
+    t.ok(stops > s1, '靜音 → sfx.stopAll()');
+    const s2 = stops;
+    await app.go('/album');
+    t.ok(stops > s2, '離開 /unlock → sfx.stopAll()');
+    sfx.arrive = a0; sfx.stopAll = s0;
+    app.doc.documentElement.style.removeProperty('--t-scene');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    await app.reset();
+  }, { timeout: 20000 });
+
+  /* 審查 6、8：結果頁不會一直動（光芒、全息掃光跑有限次）；?still=1 直接關掉，縮圖每次一樣 */
+  t.test('金框結果頁：光芒與全息掃光有限次；still 關掉', async function (app) {
+    await app.reset({ store: { draws: { 'glass-kiln': 'gold' } } });
+    await app.go('/unlock/glass-kiln');
+    const cs = function (sel) { const el = app.$(sel); return el ? app.win.getComputedStyle(el) : null; };
+    t.eq(cs('.ex-rays i') && cs('.ex-rays i').animationName, 'none', 'still：光芒不轉');
+    t.eq(cs('.ex-face__holo') && cs('.ex-face__holo').animationName, 'none', 'still：全息掃光不掃');
+    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'gold' } } });
+    await app.go('/unlock/glass-kiln');
+    await drawThrough(app);
+    const rays = cs('.ex-rays i'), holo = cs('.ex-face__holo');
+    t.eq(rays && rays.animationName, 'ex-rays-settle', '結果：光芒在轉（昇格之後才開始）');
+    t.ok(rays && rays.animationIterationCount !== 'infinite', '光芒：有限次（' + (rays && rays.animationIterationCount) + '）');
+    t.eq(holo && holo.animationName, 'ex-holo', '結果：全息掃光（翻開之後才開始）');
+    t.ok(holo && holo.animationIterationCount !== 'infinite', '全息掃光：有限次（' + (holo && holo.animationIterationCount) + '）');
+    await app.reset();
+  }, { timeout: 20000 });
+
+  /* 審查 11：render 是純函式（契約 §3.1）；走路抵達的抽卡在 mount 做；重進、重整都不重抽 */
+  t.test('render 不寫 store：/unlock 在 mount 才抽；重進、重整都是同一款', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    const before = JSON.stringify(A.store.all);
+    let writes = 0;
+    const off = A.on('store:change', function () { writes++; });
+    const html = A.views.unlock.render({ id: 'glass-kiln' }, { query: new app.win.URLSearchParams(''), store: A.store });
+    off();
+    t.eq(writes, 0, 'render 沒有 store:change');
+    t.eq(JSON.stringify(A.store.all), before, 'render 沒有改 store');
+    t.ok(html.indexOf('data-style=') < 0, '還沒抽：沒有款式');
+    t.ok(html.indexOf('ex-flip__back') >= 0, '還沒抽：畫卡背');
+    await app.go('/unlock/glass-kiln');
+    const k = (A.store.get('draws') || {})['glass-kiln'];
+    t.ok(!!k, 'mount 抽了一款：' + k);
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '畫面是抽到的那一款');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), k, '卡面也是');
+    t.ok(app.$('[data-draw="' + k + '"]'), '結果寫出畫風名');
+    const arts = app.$$('[data-unlock] [data-art]');
+    t.ok(arts.length > 0 && arts.every(function (el) { return el.querySelector(':scope > .postcard__art'); }), '重畫之後插圖照樣畫上去');
+    t.noDeadButtons(app, '/unlock 抽完重畫之後');
+    await app.go('/album');
+    await app.go('/unlock/glass-kiln');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '重進不重抽');
+    await app.reload('/unlock/glass-kiln');
+    t.eq((app.APP.store.get('draws') || {})['glass-kiln'], k, '重整不重抽（store）');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '重整不重抽（畫面）');
     await app.reset();
   });
 

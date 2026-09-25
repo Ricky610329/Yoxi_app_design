@@ -31,7 +31,7 @@
 }
 .sys-welcome__brand { font-weight: var(--fw-heavy); font-size: var(--fs-body); letter-spacing: .02em; }
 .sys-welcome__skip {
-  min-height: 36px;
+  min-height: 44px;                  /* 命中區 ≥ 44 */
   padding: 0 var(--sp-3);
   color: var(--yoxi-white);
   font-size: var(--fs-body);
@@ -160,7 +160,8 @@
   background: var(--yoxi-mist);
 }
 .sys-set__who { font-weight: var(--fw-heavy); color: var(--yoxi-navy); }
-.sys-set__who--me { color: var(--yoxi-red); }    /* 強調：只有你 */
+/* 「只有你」：紅色只給品牌情緒、底線像連結，都不用；改用奶油色底（跟上面「一天最多兩則」的說明卡同一種不可按的底） */
+.sys-set__col--me { background: var(--yoxi-cream); }
 
 .sys-set__small {
   margin-top: var(--sp-3);
@@ -169,8 +170,22 @@
   color: var(--app-muted);
 }
 
+/* 清除足跡／重設 demo 是可按的按鈕 → 海軍藍（btn-ghost 本色）；危險由確認框把關（預設焦點在「先不要」） */
 .sys-set__wipe,
-.sys-set__danger { border-color: var(--yoxi-red); color: var(--yoxi-red); }
+.sys-set__danger { border-color: var(--yoxi-navy); color: var(--yoxi-navy); }
+
+/* 開關本體 50×30（components.css 的 .sw-toggle）：用透明的 ::before 把命中區撐到 58×48，外觀不變（::after 是圓鈕）。
+   跟 app.css 的通用命中區同一套寫法（置中＋translate），這裡再撐大一點、而且不靠 app.css 也成立 */
+.sys-set .sw-toggle { position: relative; }
+.sys-set .sw-toggle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 58px);
+  height: max(100%, 48px);
+  transform: translate(-50%, -50%);
+}
 
 .sys-set__more {
   display: flex;

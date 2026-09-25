@@ -29,7 +29,11 @@ export const MOCK_STUB = {
   findPlace(id) { return [this.TODAY, this.FAR_PLACE].find(p => p.id === id) || null; },
 };
 
-export function loadApp({ storage = memoryStorage(), noStorage = false } = {}) {
+/* prototype/js/mock.js（只讀）：APP.place 的正規化要對真的資料測，stub 太小看不出 p1 → station 這種事 */
+export const MOCK_JS = fileURLToPath(new URL('../../../prototype/js/mock.js', import.meta.url));
+
+/* realMock：先在同一個 context 跑 prototype/js/mock.js，window.MOCK 就是真的那份 */
+export function loadApp({ storage = memoryStorage(), noStorage = false, realMock = false } = {}) {
   if (!existsSync(APP_JS)) throw new Error('app/js/app.js 還不存在（core 還沒寫）');
   const ctx = {
     console, setTimeout, clearTimeout, URLSearchParams, Date, Math, JSON,
@@ -42,6 +46,11 @@ export function loadApp({ storage = memoryStorage(), noStorage = false } = {}) {
   else Object.defineProperty(ctx, 'localStorage', { get() { throw new Error('SecurityError: access denied'); } });
   ctx.window = ctx;
   vm.createContext(ctx);
+  if (realMock) {
+    delete ctx.MOCK;
+    vm.runInContext(readFileSync(MOCK_JS, 'utf8'), ctx, { filename: 'mock.js' });
+    if (!ctx.MOCK) throw new Error('prototype/js/mock.js 載入後沒有 window.MOCK');
+  }
   vm.runInContext(readFileSync(APP_JS, 'utf8'), ctx, { filename: 'app.js' });
   if (!ctx.APP) throw new Error('app.js 載入後沒有 window.APP');
   return { APP: ctx.APP, ctx, storage };

@@ -4,6 +4,9 @@
 T.spec('system', function (t) {
 
   function pushmock(app) { return app.$('.device > .pushmock'); }
+  /* 元素比對的訊息：t.eq 印 DOM 元素只會印出 {} */
+  function tag(el) { return el ? (el.getAttribute && el.getAttribute('data-act')) || el.tagName || String(el) : String(el); }
+  function same(a, b, msg) { return t.ok(a === b, msg + '（得到 ' + tag(a) + '，預期 ' + tag(b) + '）'); }
 
   t.test('/welcome render、無死按鈕與禁用詞、沒有「登入」', async function (app) {
     await app.reset();
@@ -294,6 +297,200 @@ T.spec('system', function (t) {
     await app.click('#demo-panel [data-act="push-am"]');
     t.ok(!pushmock(app), '第三次不出現');
     t.eq(app.APP.store.get('pushes').length, 2, '最多兩則');
+  });
+
+  /* ---------------------------------------------------------------- 浮層約定（data-overlay＋_dismiss） */
+  t.test('分享面板是浮層：data-overlay、換頁（返回鍵）就收掉', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    await app.go('/postcard/p1');
+    app.APP.ui.share({ kind: 'postcard', card: 'p1' });
+    await app.waitFor(function () { return app.$('.device > .sys-share'); }, 2000, '.sys-share');
+    const sh = app.$('.device > .sys-share');
+    t.ok(sh.hasAttribute('data-overlay'), '.sys-share 有 data-overlay');
+    t.eq(typeof sh._dismiss, 'function', '有 _dismiss');
+    t.noDeadButtons(app, '分享面板開著');
+    t.noBannedWords(app, { msg: '分享面板開著' });
+    await app.click('main.view a[data-back]');
+    await app.at('/ride');
+    await app.waitFor(function () { return !app.$('.device > .sys-share'); }, 2000, '換頁後分享面板收掉');
+    t.ok(!app.$('.sharesheet'), '回到 /ride 沒有殘留的分享面板');
+    sh._dismiss();                                       /* 再呼叫一次也沒事 */
+    t.eq(app.errors.length, 0, '沒有錯誤 ' + app.errors.join('；'));
+  });
+
+  t.test('推播浮層是浮層：data-overlay、換頁就收掉', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    app.APP.ui.push({ when: 'am' });
+    await app.waitFor(function () { return pushmock(app); }, 2000, '.pushmock');
+    const pm = pushmock(app);
+    t.ok(pm.hasAttribute('data-overlay'), '.pushmock 有 data-overlay');
+    t.eq(typeof pm._dismiss, 'function', '有 _dismiss');
+    t.noDeadButtons(app, '推播開著');
+    t.noBannedWords(app, { msg: '推播開著' });
+    await app.go('/album');
+    await app.waitFor(function () { return !pushmock(app); }, 2000, '換頁後推播收掉');
+    t.ok(true, '推播收掉');
+  });
+
+  t.test('複製連結：複製的是打開面板那一刻的網址（opt.url 有給就用它）', async function (app) {
+    await app.reset();
+    await app.go('/postcard/p1');
+    const want = app.win.location.href;
+    let got = null;
+    try {
+      Object.defineProperty(app.win.navigator, 'clipboard', { configurable: true,
+        value: { writeText: function (s) { got = s; return Promise.resolve(); } } });
+    } catch (e) { /* 換不掉就只驗 data-share-url */ }
+    app.APP.ui.share({ kind: 'postcard', card: 'p1' });
+    await app.waitFor(function () { return app.$('.sys-share'); }, 2000, '.sys-share');
+    t.eq(app.$('.sys-share').getAttribute('data-share-url'), want, '面板記下打開時的網址');
+    app.APP.nav.replaceQuery('x=1');                     /* 面板開著時網址變了（不換頁） */
+    t.ok(app.win.location.href !== want, '網址已經變了');
+    await app.click('[data-act="share-link"]');
+    t.eq(got, want, '複製的是打開時的網址');
+    t.ok(!app.$('.sys-share'), '面板收掉');
+    t.includes(app.text('.toast') || '', '連結已複製', 'toast');
+
+    app.APP.ui.share({ kind: 'week', url: '#/week' });
+    await app.waitFor(function () { return app.$('.sys-share'); }, 2000, '.sys-share');
+    await app.click('[data-act="share-link"]');
+    t.ok(/^(file|https?):/.test(String(got)) && /#\/week$/.test(String(got)), 'opt.url 轉成完整網址：' + got);
+  });
+
+  t.test('傳給家人帶著這張明信片：#/elder?card=<明信片 id>', async function (app) {
+    await app.reset();
+    await app.go('/postcard/p1');
+    app.APP.ui.share({ kind: 'postcard', card: 'p1' });
+    await app.waitFor(function () { return app.$('.sys-share'); }, 2000, '.sys-share');
+    await app.click('[data-act="share-family"]');
+    await app.at('/elder');
+    t.eq(app.route().query.get('card'), 'p1', 'opt.card → ?card=p1');
+
+    /* 明信片頁自己的分享鈕（舊呼叫 kind:'postcard' 帶 id 也認） */
+    await app.go('/postcard/p2');
+    await app.click('main.view [data-act="share"]');
+    await app.waitFor(function () { return app.$('.sys-share'); }, 2000, '.sys-share');
+    await app.click('[data-act="share-family"]');
+    await app.at('/elder');
+    t.eq(app.route().query.get('card'), 'p2', '明信片頁的分享 → ?card=p2');
+
+    /* 週回顧沒有指定哪一張：/elder 不帶 card */
+    await app.go('/week');
+    app.APP.ui.share({ kind: 'week' });
+    await app.waitFor(function () { return app.$('.sys-share'); }, 2000, '.sys-share');
+    await app.click('[data-act="share-family"]');
+    await app.at('/elder');
+    t.eq(app.route().query.get('card'), null, '沒給 card 就不帶');
+    t.eq(app.errors.length, 0, '沒有錯誤 ' + app.errors.join('；'));
+  });
+
+  /* ---------------------------------------------------------------- 清除足跡、重設 */
+  t.test('清除我的足跡：app store 的足跡一起清（偏好留著），確認框標成危險動作', async function (app) {
+    const now = new Date().toISOString();
+    await app.reset({ store: {
+      dropoff: { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' },
+      trip: { placeId: 'lake', phase: 'done', startedAt: now, rated: true, km: 6.4 },
+      arrivedDemo: 'moat',
+      rideVia: { p9: 'k1' }, cardStyle: { p1: 'gold' }, draws: { moat: 'ink' },
+      pushes: [{ when: 'am', at: now }],
+      tabPaths: { ride: '/points', explore: '/routes', album: '/badges' },
+      fxMute: true, rideSpots: false,
+    } });
+    let seen = null;
+    const orig = app.APP.ui.confirm;
+    app.APP.ui.confirm = function (o) { seen = o; return orig.apply(this, arguments); };
+    await app.go('/settings');
+    await app.click('[data-act="more"]');
+    await app.click('[data-act="wipe"]');
+    await app.click('[data-act="confirm-yes"]');
+    app.APP.ui.confirm = orig;
+    t.ok(seen && seen.danger === true, '清除足跡的確認框帶 danger:true');
+    const ls = app.storage('store') || {};
+    t.eq(JSON.stringify(ls.rideVia), '{}', 'rideVia 清掉');
+    t.eq(JSON.stringify(ls.cardStyle), '{}', 'cardStyle 清掉');
+    t.eq(JSON.stringify(ls.draws), '{}', 'draws 清掉');
+    t.eq(JSON.stringify(ls.pushes), '[]', 'pushes 清掉');
+    t.eq(JSON.stringify(ls.tabPaths), JSON.stringify(app.APP.store.fresh().tabPaths), 'tabPaths 回預設');
+    t.eq(ls.dropoff, null, 'dropoff');
+    t.eq(ls.trip, null, 'trip');
+    t.eq(ls.arrivedDemo, null, 'arrivedDemo');
+    t.eq(ls.onboarded, true, 'onboarded 留著');
+    t.eq(ls.fxMute, true, 'fxMute 留著');
+    t.eq(ls.rideSpots, false, 'rideSpots 開關留著');
+    t.eq(app.STATE.count(), 0, 'STATE 清空');
+  });
+
+  t.test('重設 demo 的確認框也標成危險動作', async function (app) {
+    await app.reset();
+    let seen = null;
+    const orig = app.APP.ui.confirm;
+    app.APP.ui.confirm = function (o) { seen = o; return orig.apply(this, arguments); };
+    await app.go('/settings');
+    await app.click('[data-act="more"]');
+    await app.click('main.view [data-act="reset-demo"]');
+    t.ok(seen && seen.danger === true, 'danger:true');
+    await app.click('[data-act="confirm-no"]');
+    app.APP.ui.confirm = orig;
+  });
+
+  /* ---------------------------------------------------------------- demo 面板的地點 */
+  t.test('demo 面板：路線站／明信片 id 的地方詳情，下拉選單也選得到、走路抵達走得到', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    for (const id of ['p1', 'p3', 'p14']) {
+      await app.go('/place/' + id);
+      const sel = app.$('#demo-panel [data-demo-place]');
+      t.ok(sel && sel.selectedIndex >= 0 && sel.value, '/place/' + id + '：選單有選到東西（' + (sel && sel.value) + '）');
+      const picked = A.place(sel && sel.value);
+      const here = A.place(id);
+      t.ok(picked && here && (picked.id === here.id || (picked.card && picked.card === here.card)),
+        '/place/' + id + '：選到的是這一頁的地方（' + (picked && picked.name) + '）');
+    }
+    /* p14（玻璃工藝博物館）不在地圖景點裡：多一個選項，走路抵達進得了抵達頁 */
+    const val = app.$('#demo-panel [data-demo-place]').value;
+    await app.click('#demo-panel [data-act="arrive-walk"]');
+    await app.at('/unlock/' + val);
+    t.eq(A.store.get('arrivedDemo'), val, 'arrivedDemo');
+    t.ok(!/先選一個地方/.test(app.text('.toast') || ''), '沒有「先選一個地方」');
+    t.eq(app.errors.length, 0, '沒有錯誤 ' + app.errors.join('；'));
+  });
+
+  /* ---------------------------------------------------------------- 可及性 */
+  t.test('/welcome：鍵盤在第二張按「下一張」，焦點交給「開始」', async function (app) {
+    await app.reset({ onboarded: false, hash: '/welcome' });
+    await app.at('/welcome');
+    const next = app.$('[data-act="next"]');
+    const start = app.$('[data-act="start"]');
+    next.focus();
+    await app.click(next);                               /* 第 2 張 */
+    same(app.doc.activeElement, next, '第 2 張：焦點還在「下一張」');
+    await app.click(next);                               /* 第 3 張：「下一張」藏起來 */
+    t.ok(next.hidden && !start.hidden, '最後一張換成「開始」');
+    same(app.doc.activeElement, start, '焦點交給「開始」，不掉回 body');
+    await app.click('[data-dot="0"]');                   /* 回第 1 張：「開始」藏起來 */
+    same(app.doc.activeElement, next, '焦點交回「下一張」');
+  });
+
+  t.test('設定頁的開關命中區 ≥ 44px 高（外觀不變）；看不見的 demo 鈕 hit 測試點不到', async function (app) {
+    await app.reset();
+    await app.go('/settings');
+    const sw = app.$('main.view [data-switch="pushAm"]');
+    const r = sw.getBoundingClientRect();
+    t.eq(Math.round(r.height), 30, '開關外觀仍是 30 高');
+    const x = r.left + r.width / 2;
+    same(app.doc.elementFromPoint(x, r.top - 6), sw, '上緣外 6px 仍點到開關');
+    same(app.doc.elementFromPoint(x, r.bottom + 6), sw, '下緣外 6px 仍點到開關');
+    same(app.doc.elementFromPoint(r.left - 2, r.top + r.height / 2), sw, '左緣外 2px 仍點到開關');
+    await app.click('main.view [data-switch="pushAm"]', { hit: true });
+    t.eq(app.STATE.all.settings.pushAm, false, 'hit:true 點得到看得見的開關');
+
+    /* 手機寬的 iframe 裡 #demo-panel 是藏著的：一般 click 點得到（舊測試靠它），hit:true 要點不到 */
+    let err = null;
+    try { await app.click('#demo-panel [data-act="push-am"]', { hit: true, ms: 200 }); } catch (e) { err = e; }
+    t.ok(err && /hit:true/.test(err.message), 'hit:true 點藏起來的 demo 鈕會失敗：' + (err && err.message));
+    t.ok(!pushmock(app), '沒有真的點下去');
   });
 
   t.test('system.css 沒有 hex 色碼', async function (app) {

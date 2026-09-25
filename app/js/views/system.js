@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v15';
+const VERSION = 'chengshi-app-v16';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -86,18 +86,38 @@ function arriveTarget(cur) {
   return null;
 }
 
-/* 浮層一律從這裡拆：順便還焦點、拿掉 Esc 的 listener */
+/* 浮層一律從這裡拆：順便還焦點、拿掉 Esc 的 listener（重複呼叫沒事：remove 與 _release 都是冪等的） */
 function dropOverlay(el) {
   if (!el) return;
   el.remove();
   if (typeof el._release === 'function') el._release();
 }
+
+/* 浮層約定：掛在 .device（main.view 之外）、換頁就該消失的東西加 data-overlay，
+   並提供 el._dismiss()（拆掉自己、還焦點、拿掉 listener；可重複呼叫）。core 每次導覽開頭呼叫 APP.ui.dismissOverlays()。
+   _navSeq 給還沒有 dismissOverlays 的 core 用（見下面 route:change）：導覽進行中（data-view-ready 拿掉了）才開的浮層屬於下一頁。 */
+let navSeq = 0;
+function markOverlay(el) {
+  el.setAttribute('data-overlay', '');
+  el._dismiss = function () { dropOverlay(el); };
+  el._navSeq = document.documentElement.hasAttribute('data-view-ready') ? navSeq : navSeq + 1;
+  return el;
+}
 function closeOverlays() {
-  document.querySelectorAll('.device > .pushmock, .device > .sys-share').forEach(dropOverlay);
+  document.querySelectorAll('.device > [data-overlay], .device > .pushmock, .device > .sys-share').forEach(function (el) {
+    if (typeof el._dismiss === 'function') el._dismiss(); else dropOverlay(el);
+  });
+}
+function dismissAll() {
+  if (typeof APP.ui.dismissOverlays === 'function') APP.ui.dismissOverlays();
+  else closeOverlays();
 }
 
 /* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。
-   state.js 沒有清空的 API；STATE.all 回傳的是活物件，改完用 setToday() 觸發 save。 */
+   state.js 沒有清空的 API；STATE.all 回傳的是活物件，改完用 setToday() 觸發 save。
+   app store 裡跟「你去過哪、做過什麼」有關的也一起清：下車點、行程、抵達暫存、
+   叫車歸因（rideVia）、抽到的款式（cardStyle、draws）、各 tab 停在哪（tabPaths 回預設）、今天發過的推播。
+   留著的是偏好：onboarded、fxMute、rideSpots 與 STATE.settings 的開關。 */
 function wipeFootprint() {
   if (window.STATE) {
     const A = STATE.all;
@@ -108,15 +128,20 @@ function wipeFootprint() {
     A.today = { photo: null, mood: null, done: false };
     STATE.setToday({ photo: null, mood: null, done: false });
   }
-  APP.store.patch({ dropoff: null, trip: null, arrivedDemo: null });
+  const fresh = APP.store.fresh ? APP.store.fresh() : {};
+  APP.store.patch({
+    dropoff: null, trip: null, arrivedDemo: null,
+    rideVia: {}, cardStyle: {}, draws: {}, pushes: [],
+    tabPaths: fresh.tabPaths || { ride: '/ride', explore: '/explore', album: '/album' },
+  });
   emitState();
 }
 
 function resetDemo() {
-  return APP.ui.confirm({ text: '回到 demo 初始狀態（8 張明信片、原本的點數與設定）？', yes: '重設', no: '先不要' })
+  return APP.ui.confirm({ text: '回到 demo 初始狀態（8 張明信片、原本的點數與設定）？', yes: '重設', no: '先不要', danger: true })
     .then(function (yes) {
       if (!yes) return false;
-      closeOverlays();
+      dismissAll();
       if (window.STATE) STATE.reset();
       APP.store.reset();
       APP.store.set('onboarded', true);       /* 重設不該再看一次 onboarding */
@@ -188,6 +213,7 @@ function push(opt) {
   el.querySelector('[data-act="close-push"]').onclick = function () { dropOverlay(el); };
 
   const host = $('.device') || document.body;
+  markOverlay(el);
   host.appendChild(el);
   el._release = APP.ui.a11yDialog(el, { label: '推播通知：' + title, onEsc: function () { dropOverlay(el); } });
 
@@ -198,13 +224,24 @@ function push(opt) {
 }
 
 /* --------------------------------------------------------------------------
-   APP.ui.share(opt)：第一格永遠是「傳給家人」→ #/elder
+   APP.ui.share(opt)：第一格永遠是「傳給家人」→ #/elder（opt.card 有給就帶 ?card=<明信片 id>）
+   opt = { title, kind:'postcard'|'week', card, url }
+   - card：明信片 id；長輩圖用這一張。舊的呼叫（kind:'postcard' 帶 id）也認。
+   - url：「複製連結」要複製的網址；沒給就是「打開面板那一刻」的這一頁（之後換頁或改 query 都不影響）。
+   面板是浮層（data-overlay）：換頁時由 core 的 APP.ui.dismissOverlays() 收掉。
    -------------------------------------------------------------------------- */
+function shareUrl(u) {
+  try { return u ? new URL(String(u), location.href).href : location.href; }
+  catch (e) { return location.href; }
+}
+
 function share(opt) {
   opt = opt || {};
   const host = $('.device') || document.body;
   const old = host.querySelector(':scope > .sys-share');
   if (old) dropOverlay(old);
+  const url = shareUrl(opt.url);
+  const card = opt.card || (opt.kind === 'postcard' && opt.id) || null;
 
   const title = opt.title ||
     (opt.kind === 'postcard' ? '分享這張明信片' : opt.kind === 'week' ? '分享這一週' : '分享');
@@ -217,6 +254,8 @@ function share(opt) {
 
   const scrim = document.createElement('div');
   scrim.className = 'scrim sys-share';
+  scrim.setAttribute('data-share-url', url);
+  if (card) scrim.setAttribute('data-share-card', card);
   scrim.innerHTML =
     '<div class="sharesheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
       '<div class="sharesheet__handle"></div>' +
@@ -236,7 +275,7 @@ function share(opt) {
   scrim.onclick = function (e) { if (e.target === scrim) close(); };
   scrim.querySelector('[data-act="share-family"]').onclick = function () {
     close();
-    APP.nav.go('/elder');
+    APP.nav.go(card ? '/elder?card=' + encodeURIComponent(card) : '/elder');
   };
   scrim.querySelector('[data-act="share-save"]').onclick = function () {
     close();
@@ -247,7 +286,7 @@ function share(opt) {
     const done = function () { APP.ui.toast('連結已複製'); };
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(location.href).then(done, done);
+        navigator.clipboard.writeText(url).then(done, done);
         return;
       }
     } catch (e) { /* 不支援就當作複製了（demo） */ }
@@ -255,6 +294,7 @@ function share(opt) {
   };
 
   if (window.SHELL) SHELL.injectIcons(scrim);
+  markOverlay(scrim);
   host.appendChild(scrim);
   scrim._release = APP.ui.a11yDialog(scrim.querySelector('.sharesheet'), { label: title, onEsc: close });
   return scrim;
@@ -326,8 +366,12 @@ APP.view('welcome', {
         d.setAttribute('aria-current', k === idx ? 'true' : 'false');
       });
       const last = idx === SLIDES.length - 1;
+      /* 焦點在要藏起來的那顆上（鍵盤按 Enter 翻到最後一張）：交給接手的那顆，不然焦點掉回 body */
+      const active = document.activeElement;
       next.hidden = last;
       start.hidden = !last;
+      const to = (last && active === next) ? start : (!last && active === start) ? next : null;
+      if (to) { try { to.focus({ preventScroll: true }); } catch (e) { to.focus(); } }
       root.setAttribute('data-slide-at', String(idx));
     }
     function goTo(i) {
@@ -443,7 +487,7 @@ APP.view('settings', {
           '<div class="card card--pad">' +
             '<div class="sys-set__privhd"><span data-icon="lock" class="sys-ico sys-ico--navy"></span><b>誰看得到什麼</b></div>' +
             '<div class="sys-set__priv">' +
-              '<div class="sys-set__col"><span class="sys-set__who sys-set__who--me">只有你</span>' +
+              '<div class="sys-set__col sys-set__col--me"><span class="sys-set__who sys-set__who--me">只有你</span>' +
                 '<span>日誌、心情、照片、走過的路線</span></div>' +
               '<div class="sys-set__col"><span class="sys-set__who">你可分享</span>' +
                 '<span>明信片、獎章、週回顧、長輩圖</span></div>' +
@@ -497,7 +541,7 @@ APP.view('settings', {
     });
 
     root.querySelector('[data-act="wipe"]').onclick = function () {
-      APP.ui.confirm({ text: '會清掉這一個月的明信片、獎章、點數與日誌，而且不能復原。確定要清除？', yes: '清除', no: '先不要' })
+      APP.ui.confirm({ text: '會清掉這一個月的明信片、獎章、點數與日誌，而且不能復原。確定要清除？', yes: '清除', no: '先不要', danger: true })
         .then(function (yes) {
           if (!yes) return;
           wipeFootprint();
@@ -549,6 +593,25 @@ function demoPlaces() {
   return ids.map(function (id) { return APP.place(id); }).filter(Boolean);
 }
 function placeGot(p) { return !!(p && p.card && window.STATE && STATE.has(p.card)); }
+
+/* 地點 id（也可能是明信片 id、路線站 id）→ 下拉選單裡的哪一個。
+   先認選單裡本來就有的；再把明信片換成它所在的地方：CARD_TO_PLACE（p19 → moat）→ 景點的 card 欄位
+   → 選單裡 card 相同的地方（p1 → 新竹車站 station）。都對不上（p3 護城河親水公園、p14 玻璃工藝博物館這種
+   只在路線上的站）就回它自己，updatePanel 會為它多加一個選項——不然選單是空白、「走路抵達」只會說先選一個地方。 */
+function pickFor(id, list) {
+  const p = APP.place(id);
+  if (!p) return null;
+  const inList = function (x) { return !!x && list.some(function (q) { return q.id === x; }); };
+  if (inList(p.id)) return p.id;
+  const M = window.MOCK || {};
+  const card = p.card || id;
+  const map = M.CARD_TO_PLACE || {};
+  if (Object.prototype.hasOwnProperty.call(map, card) && inList(map[card])) return map[card];
+  const spot = (M.SPOTS || []).filter(function (s) { return s.card && s.card === card; })[0];
+  if (spot && inList(spot.id)) return spot.id;
+  const same = list.filter(function (q) { return q.card && q.card === card; })[0];
+  return same ? same.id : p.id;
+}
 
 /* 這一頁在講哪個地方：地方詳情／前往中／抵達頁的 :id → 進行中行程的目的地 → 下車點 */
 function contextPlace(cur) {
@@ -625,14 +688,16 @@ function updatePanel(cur) {
   const panel = fillPanel();
   if (!panel) return;
   const sel = panel.querySelector('[data-demo-place]');
-  const list = demoPlaces();
+  let list = demoPlaces();
   const here = contextPlace(cur);
-  if (here) panelPick = here;
+  if (here) panelPick = pickFor(here, list);
   else if (panelPick && placeGot(APP.place(panelPick))) panelPick = null;
   if (!panelPick || !APP.place(panelPick)) {
     const first = list.filter(function (p) { return !placeGot(p); })[0] || list[0];
     panelPick = first ? first.id : null;
   }
+  /* 選單外的地方（路線上的站）：排在最前面，選起來 */
+  if (panelPick && !list.some(function (p) { return p.id === panelPick; })) list = [APP.place(panelPick)].concat(list);
   sel.innerHTML = list.map(function (p) {
     return '<option value="' + esc(p.id) + '">' + esc(p.name) + (placeGot(p) ? '（已收藏）' : '') + '</option>';
   }).join('');
@@ -643,6 +708,14 @@ function updatePanel(cur) {
    訂閱（載入時，不在 view 內）
    -------------------------------------------------------------------------- */
 APP.on('route:change', function (cur) {
+  navSeq++;
+  /* 換頁收掉上一頁開的推播與分享面板。有 APP.ui.dismissOverlays 的 core 在導覽開頭就收了；
+     還沒有的版本由這裡收（只收這一頁之前開的，mount 裡或轉場中才開的留著） */
+  if (typeof APP.ui.dismissOverlays !== 'function') {
+    document.querySelectorAll('.device > .pushmock[data-overlay], .device > .sys-share[data-overlay]').forEach(function (el) {
+      if ((el._navSeq || 0) < navSeq && typeof el._dismiss === 'function') el._dismiss();
+    });
+  }
   if (cur) {
     recent.push({ path: cur.path, pattern: cur.pattern, params: cur.params });
     if (recent.length > 8) recent.shift();

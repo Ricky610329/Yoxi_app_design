@@ -4,25 +4,29 @@
 
    這支註冊九個 view：
      /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近三張疊卡，點了進 /postcards）、統計兩格、
-                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。
-                      舊的書架＋pill 四段留在 legacyAlbumHome 當對照，不註冊。
-     /postcards       明信片子頁：收下的一段（最近的在前）、還沒去的一段，左上返回。
+                      「回顧」一列三格（今天的回顧 → /lookback、這一週 → /week、城市足跡 → /footprint）、
+                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。390×844 一屏放得下。
+                      舊連結 ?tab=journal|week|badges|cards 落在同一頁：捲到對應的那一塊、亮一下，再把 ?tab 拿掉。
+     /postcards       明信片子頁：收下的一段（最近的在前，每張連到詳情）、還沒去的一段，左上返回。
      /badges          全部獎章：三欄六角章牆，收下的寫日期、還在路上的寫「收集 n/m」。
      /postcard/:id    明信片詳情，點一下翻面看背面敘事。來源：postcard.html。
      /badge/:id       獎章詳情。來源：badge.html。
-     /footprint       城市足跡：真實地圖＋霧、覆蓋率由 hsmap 取樣格算。來源：fogmap.html、concept-map-footprint.html。
+     /footprint       城市足跡：真實地圖＋霧、覆蓋率用固定範圍算、城市顏色由去過的地方算。來源：fogmap.html、concept-map-footprint.html。
      /lookback        每日回顧四幕（只有你）。來源：lookback.html。
      /week            週回顧（唯一可分享的匯總）。來源：week.html。
-     /elder           長輩圖。來源：elder.html。
+     /elder           長輩圖（?card=<明信片 id>：從哪一張分享過來，那一張排第一）。來源：elder.html。
+   子頁的返回鍵都走 subMount（見「子頁的返回鍵」）：從上一層點進來就照歷史退一格，
+   切 tab 停回來、重新整理、直接開網址就回邏輯上的上一層。
 
    刻意沒有的東西：
    - 連續天數、排名、限量、倒數、未讀數字；獎章的進度環與集點卡（X4 選了勳章牆）。
    - 獎章章面不刻年份：刻了像「年度限定」，跟「沒有期限、不會過期」相衝；也不拿文字當圖示，地標是線稿。
    - 明信片網格不逐張貼「AI 生成示意」（22 張會變成標籤牆），/postcards 底下一行講一次。
-   - 日誌／心情／照片沒有分享鍵（隱私分軌）；只有明信片與週回顧右上有分享。
-   - 書架沒有「一次攤開 22 張」：L1 一屏一事，/album 可按數 ≤ 12，
-     所以同一時間只攤開一層書架（最多 3 格＋「全部 n 張」），其他層收成書脊。
-   - 路線書脊不連到路線詳情（/route/:id 在探索側）：可按數預算給了明信片格。
+   - 日誌／心情／照片沒有分享鍵（隱私分軌）：首頁「今天的回顧」那一格標「只有你」、沒有分享；
+     只有明信片、週回顧、長輩圖可以分享。
+   - /album 不攤開明信片網格：L1 一屏一事、可按數 ≤ 12；網格在 /postcards（整片算一個可按的東西，見 harness 的 data-gallery）。
+   - 「yoxi 限定版」只給 APP.ride.limitedCard（搭 yoxi 去走不到的地方、+50 點）；其他金框卡寫「yoxi 金框」。
+   - 城市足跡不寫「多久沒回去會變淡」：app 沒有記回訪，寫了就是假的。
    - 回顧不靠計時器自動翻頁：每一幕都等使用者按「下一步」或做選擇。
    - 數字一律從 STATE／MOCK／APP.fmt 算；步幅＝LOOKBACK.steps ÷ LOOKBACK.km，不另寫常數。
    ========================================================================== */
@@ -78,20 +82,37 @@ function footprintSeen() {
   return { seen: seen, missing: missing };
 }
 
+/* 去過的地方（不重複）：好幾張卡可能是同一個地方（p3／p19 都是護城河、p6／p21 十八尖山、p8／p22 青草湖），
+   所以「去過的地方」不是 STATE.count()。對不到地點的卡自己算一個地方。 */
+function visitedPlaces() {
+  const out = [];
+  M().POSTCARDS.forEach(function (p) {
+    if (!STATE.has(p.id)) return;
+    const k = placeOfCard(p.id) || p.id;
+    if (out.indexOf(k) < 0) out.push(k);
+  });
+  return out;
+}
+
 function badgeOfCard(cardId) {
   return (M().BADGES || []).filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0] || null;
 }
 
-function limitedCard(cardId) {
-  const c = STATE.card(cardId);
-  if (!c) return false;
-  /* 收下的是金框那一款（explore.js 的 cardStyleOf：抽到的，或 demo 一開始就有的搭車卡）就是金框 */
+/* 金框：收下的是金框那一款（explore.js 的 cardStyleOf：抽到的，或 demo 一開始就有的搭車卡）。
+   契約：「金框的明信片在收藏裡也是金框」。explore.js 沒載到時退回 store.cardStyle。 */
+function goldCard(cardId) {
+  if (!STATE.card(cardId)) return false;
   if (APP.explore && APP.explore.cardStyleOf) {
     const d = APP.explore.cardStyleOf(cardId);
-    if (d && d.gold) return true;
-  } else if ((APP.store.get('cardStyle') || {})[cardId] === 'gold') return true;
-  if (c.by !== 'ride') return false;
-  return APP.ride && APP.ride.limitedCard ? APP.ride.limitedCard(cardId) : true;
+    return !!(d && d.gold);
+  }
+  return (APP.store.get('cardStyle') || {})[cardId] === 'gold';
+}
+/* yoxi 限定版（金框＋和泰 Points +50）：只看 ride.js 的判斷（搭 yoxi 去走不到的地方）。
+   搭車收的卡一定是金框，所以不能拿「金框」回推「限定版」—— 搭車去 900 m 外的玻璃窯是金框、不是限定版。 */
+function limitedCard(cardId) {
+  if (!STATE.card(cardId)) return false;
+  return !!(APP.ride && APP.ride.limitedCard && APP.ride.limitedCard(cardId));
 }
 
 function badgeProg(r) { return '收集 ' + r.done + '/' + r.total; }
@@ -249,11 +270,14 @@ function dateLabel(d) {
   return (d.getMonth() + 1) + '月' + d.getDate() + '日 星期' + '日一二三四五六'.charAt(d.getDay());
 }
 
-/* ---- 這一週：範圍是固定的 ----
+/* ---- 這一週：範圍是固定的 7 天 ----
    本週＝HEALTH_STEPS.month 最後一個有步數的日子往前 7 天；上週＝再往前 7 天。不看卡片日期
    （之前用「最近收卡那天」當結尾：今天收一張，整週往後滑到沒有步數的日子，公里與步數反而倒退）。
-   卡片：日期落在本週範圍、或在範圍之後（例如今天剛收的）→ 本週；落在上週範圍 → 上週。
-   步數與公里只取範圍內的資料。月份＝POSTCARDS 第一張的月份（HEALTH_STEPS 是那個月）。 */
+   標題、長條圖、步數、公里、地方數全部用同一個 7 天：卡片只算日期落在範圍裡的。
+   範圍之後才收的（例如今天剛收的）放在 now.after，畫面另寫一行照實說「還沒算進這一週」，不偷偷塞進本週。
+   月份＝POSTCARDS 第一張的月份（HEALTH_STEPS 是那個月）。
+   已知限制：卡片日期是 'MM.DD'、沒有年份（格式是 prototype/js/state.js 的），這裡用 MM×100＋DD 比先後，
+   所以跨年會錯（去年 12 月的卡會排在今年 9 月之後）。demo 只有一個月的資料，不在這裡補年份。 */
 function weekStats() {
   const m = M();
   const month = (m.HEALTH_STEPS && m.HEALTH_STEPS.month) || [];
@@ -272,24 +296,26 @@ function weekStats() {
     .map(function (x) { x.key = keyOf(x.c.date); return x; });
 
   const spk = stepsPerKm();
-  function range(a, b, openEnd) {
+  const inKeys = function (lo, hi) {
+    return got.filter(function (x) { return x.key >= lo && x.key <= hi; })
+      .sort(function (x, y) { return x.key - y.key; })
+      .map(function (x) { return x.p; });
+  };
+  function range(a, b) {
     const days = [];
     for (let d = a; d <= b; d++) days.push({ day: d, steps: d >= 1 ? (month[d - 1] || 0) : 0 });
     const steps = days.reduce(function (s, x) { return s + x.steps; }, 0);
-    const lo = mm * 100 + a, hi = mm * 100 + b;
-    const cards = got.filter(function (x) { return x.key >= lo && (openEnd || x.key <= hi); })
-      .sort(function (x, y) { return x.key - y.key; })
-      .map(function (x) { return x.p; });
-    /* 標題的終點：範圍之後還有卡（例如今天剛收的）就延到最晚那張的日子，列出來的卡才都落在標題的日期裡。
-       步數與公里仍只算 days（有資料的日子），起點不動。 */
-    let showTo = b;
-    if (openEnd) got.forEach(function (x) {
-      if (x.key > hi && Math.floor(x.key / 100) === mm) showTo = Math.max(showTo, x.key % 100);
-    });
-    return { from: a, to: b, showTo: showTo, days: days, steps: steps,
-             km: spk ? Math.round(steps / spk * 10) / 10 : 0, cards: cards, places: cards.length };
+    const cards = inKeys(mm * 100 + a, mm * 100 + b);
+    /* 地方數跟收藏首頁同一個算法：同一個地方的兩張卡算一個 */
+    const places = cards.map(function (p) { return placeOfCard(p.id) || p.id; })
+      .filter(function (k, i, arr) { return arr.indexOf(k) === i; }).length;
+    return { from: a, to: b, days: days, steps: steps,
+             km: spk ? Math.round(steps / spk * 10) / 10 : 0, cards: cards, places: places };
   }
-  return { month: mm, now: range(end - 6, end, true), prev: range(end - 13, end - 7, false) };
+  const now = range(end - 6, end);
+  /* 範圍之後才收的：不算進本週，只拿來寫那一行說明 */
+  now.after = inKeys(mm * 100 + end + 1, Infinity);
+  return { month: mm, now: now, prev: range(end - 13, end - 7) };
 }
 function mdLabel(month, day) {
   if (day < 1) return '上個月';
@@ -298,15 +324,16 @@ function mdLabel(month, day) {
 
 /* ---------------------------------------------------------------- 零件 */
 
+/* 紅色頁首的關閉鍵、分享鈕：.alb-hdr 底下把它們本身撐到 44×44（album.css），不只靠 app.css 的 ::before */
 function backBtn(fallback) {
   return '<a class="hdr-red__close" href="#" data-back="' + esc(fallback) + '" aria-label="返回">' +
     '<span data-icon="close"></span></a>';
 }
 
 function header(o) {
-  return '<header class="hdr-red hdr-red--compact"><div class="hdr-red__bar">' +
+  return '<header class="hdr-red hdr-red--compact alb-hdr"><div class="hdr-red__bar">' +
     (o.back ? backBtn(o.back) : '') +
-    '<h1 class="hdr-red__title"' + (o.back ? ' style="flex:1; margin-left:8px"' : '') + '>' + esc(o.title) + '</h1>' +
+    '<h1 class="hdr-red__title' + (o.back ? ' alb-hdr__title' : '') + '">' + esc(o.title) + '</h1>' +
     (o.action || '') +
     '</div></header>';
 }
@@ -327,160 +354,93 @@ function notFound(o) {
     '</div></div></div>';
 }
 
-/* 書架上的一格：收過彩色、沒收灰階＋鎖；一律連到 /postcard/:id */
-function cellHTML(p) {
-  const got = STATE.card(p.id);
-  const fresh = !!got && STATE.lastIsNew && STATE.all.lastCard === p.id;
-  const ride = !!got && limitedCard(p.id);
-  const cls = 'postcard alb-cell' + (got ? '' : ' postcard--locked') + (ride ? ' postcard--gold' : '') +
-    (fresh ? ' postcard--fresh' : '');
-  return '<a class="' + cls + '" href="#/postcard/' + esc(p.id) + '" data-card="' + esc(p.id) + '"' +
-    (got ? '' : ' aria-label="' + esc(p.name) + '（還沒去）"') + '>' +
-    '<div data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '" style="position:absolute;inset:0"></div>' +
-    (fresh ? '<span class="postcard__new">新</span>' : '') +
-    (got ? '' : '<span class="alb-cell__lock"><span data-icon="lock"></span></span>') +
-    '<span class="postcard__foot"><span class="postcard__name">' + esc(p.name) + '</span>' +
-      (got ? '<span class="postcard__date">' + esc(got.date) + '</span>' : '') +
-    '</span></a>';
+/* ---------------------------------------------------------------- 子頁的返回鍵
+   收藏的子頁有兩種來法：
+   1. 從上一層點進來（/album → /badges → /badge/b3、/trips → /postcard/p8、分享 → /elder）：返回＝照歷史退一格。
+   2. 切到叫車再點「收藏」停回這一頁（這一筆的上一筆是叫車）、重新整理、直接開網址、從流程頁（/unlock…）過來：
+      照歷史退一格會跑錯頁（退回叫車、退回抽卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）。
+   做法：每一筆歷史（history.state.i）停的是哪一頁記在 sessionStorage（路由每換一頁就記，見下面的 route:change）。
+   按返回時看「退一格會落在哪一頁」：是一般的頁（有 tab 的 view、不是自己）→ APP.nav.back()；不然 → 上一層。
+   有兩種「上一筆不是來處」的要另外標 up：切 tab 停回來的（上一筆可能是 /trips —— 本來就會連到明信片的頁 ——
+   但使用者不是從那裡點進來的），以及返回時 replace 出來的上一層（上一筆是叫車，那一層的返回也要再往上走）。
+   之前只看 ctx.from：從更深的一頁返回時 ctx.from 是那一頁，會被當成「不是從上一層來」而多疊一筆 /album。 */
+const PARENT = { postcards: '/album', badges: '/album', postcard: '/postcards', badge: '/badges',
+                 week: '/album', elder: '/week', footprint: '/album' };
+const NAV_KEY = 'yoxi-album-nav';
+
+function histI() {
+  try { const st = history.state; return st && typeof st.i === 'number' ? st.i : null; }
+  catch (e) { return null; }
+}
+function navLoad() {
+  try { const o = JSON.parse(sessionStorage.getItem(NAV_KEY)); if (o && typeof o === 'object') return o; }
+  catch (e) { /* 私密視窗、被擋 */ }
+  return {};
+}
+function navSave(H) {
+  try { sessionStorage.setItem(NAV_KEY, JSON.stringify(H)); } catch (e) { /* ignore */ }
+}
+/* 新開的一頁（history.state 還沒有序號：不是重新整理、也不是上一頁／下一頁回來的）：上一次留下的紀錄對不上現在的歷史，清掉 */
+try { if (!history.state || typeof history.state.i !== 'number') sessionStorage.removeItem(NAV_KEY); }
+catch (e) { /* ignore */ }
+function pathOnly(p) { return String(p || '').split('?')[0]; }
+function tabOfPath(p) {
+  if (!p) return null;
+  const r = APP.resolve(pathOnly(p));
+  const def = APP.views && APP.views[r.name];
+  return def && r.name !== '_404' && r.name !== '_placeholder' ? (def.tab || null) : null;
 }
 
-/* 書脊上的小軌道 ●─●─○ */
-function trackMini(ids) {
-  return '<span class="track-mini">' + ids.map(function (cid, i) {
-    const done = STATE.has(cid);
-    const prev = i > 0 && STATE.has(ids[i - 1]);
-    return (i ? '<span class="track-mini__link' + (prev && done ? ' is-done' : '') + '"></span>' : '') +
-      '<span class="track-mini__node' + (done ? ' is-done' : '') + '"></span>';
-  }).join('') + '</span>';
-}
+/* 收藏 tab 上一次停的頁（切 tab 回來會回到這一頁）：每換一頁之後記一次，所以子頁 mount 時它還是「進來之前」的值。
+   一開始用 store 裡存的（重新整理之後切 tab 回來也認得）。 */
+let albumTabBefore = pathOnly(((APP.store && APP.store.get('tabPaths')) || {}).album) || '/album';
 
-/* ================================================================ /album */
-
-const TABS = ['cards', 'badges', 'journal', 'week'];
-const TAB_NAME = { cards: '明信片', badges: '獎章', journal: '日誌', week: '這一週' };
-const SHELF_K = 3;          /* 攤開的那一層先給幾格：L1 可按數 ≤ 12 的預算（見檔頭） */
-
-function shelves() {
-  const inRoute = {};
-  const list = M().ROUTES.map(function (R) {
-    const ids = STATE.routeIds(R.id);
-    ids.forEach(function (c) { inRoute[c] = 1; });
-    return { key: R.id, name: R.name, sub: R.sub, art: R.art, ids: ids };
-  });
-  const loose = M().POSTCARDS.filter(function (p) { return !inRoute[p.id]; }).map(function (p) { return p.id; });
-  if (loose.length) list.push({ key: '_loose', name: '散頁', sub: '不屬於任何路線', art: null, ids: loose });
-  return list;
-}
-
-function spineInner(L) {
-  const pr = STATE.progress(L.ids);
-  return (L.art
-      ? '<span class="alb-shelf__thumb" data-art="' + esc(L.art) + '" data-seed="3"></span>'
-      : '<span class="alb-shelf__thumb alb-shelf__thumb--loose"><span data-icon="postcard"></span></span>') +
-    '<span class="u-fill alb-shelf__body">' +
-      '<span class="alb-shelf__name">' + esc(L.name) + '</span>' +
-      '<span class="alb-shelf__meta">收集 <span class="num">' + pr.done + '</span>/' + pr.total +
-        ' · ' + esc(L.sub) + '</span>' +
-      trackMini(L.ids) +
-    '</span>';
-}
-
-function shelfHTML(L, open, expanded) {
-  if (!open) {
-    return '<section class="alb-shelf" data-shelf="' + esc(L.key) + '">' +
-      '<button class="alb-shelf__spine" type="button" data-act="open-shelf" data-shelf-open="' + esc(L.key) + '">' +
-        spineInner(L) + '<span class="alb-shelf__open">打開</span></button></section>';
+APP.on('route:change', function (cur) {
+  if (!cur) return;
+  const i = histI();
+  /* 路由的 route:change 可能晚到（轉場中又點了別的，網址已經換了）：那時的序號不是這一頁的，不記 */
+  const hashPath = pathOnly(String(location.hash).replace(/^#/, '')).replace(/(.)\/+$/, '$1') || '/';
+  if (i != null && hashPath === cur.path) {
+    const H = navLoad();
+    const rec = H[i];
+    if (!rec || rec.p !== cur.path) { H[i] = { p: cur.path }; navSave(H); }
   }
-  let ids = L.ids.slice();
-  if (!expanded && ids.length > SHELF_K) {
-    const fresh = STATE.lastIsNew ? STATE.all.lastCard : null;
-    const vis = ids.slice(0, SHELF_K);
-    /* 新收的那張一定要露出來，不然「新」角標會藏在「全部」後面 */
-    if (fresh && ids.indexOf(fresh) >= SHELF_K) vis[SHELF_K - 1] = fresh;
-    ids = vis;
+  const tp = APP.store.get('tabPaths') || {};
+  albumTabBefore = pathOnly(tp.album) || '/album';
+});
+
+/* 每個子頁的 mount 都呼叫：記下這一筆歷史、把返回鍵（第一個 a[data-back]）換成上面的規則 */
+function subMount(root, ctx, name) {
+  const here = ctx.path;
+  const parent = PARENT[name] || '/album';
+  const i = histI();
+  if (i != null) {
+    const H = navLoad();
+    const rec = H[i];
+    const from = ctx.from ? pathOnly(ctx.from) : null;
+    let up;
+    if (rec && rec.p === here && rec.pend) up = true;          /* 自己的返回 replace 出來的這一層 */
+    else if (rec && rec.p === here && from && H[i + 1] && H[i + 1].p === from) up = !!rec.up;   /* 從更深的一頁退回來：沿用 */
+    else up = !!(from && tabOfPath(from) !== 'album' && albumTabBefore === here);           /* 新的一筆：是不是切 tab 停回來的 */
+    H[i] = up ? { p: here, up: 1 } : { p: here };
+    navSave(H);
   }
-  const cells = ids.map(function (cid) { const p = cardById(cid); return p ? cellHTML(p) : ''; }).join('');
-  const more = (!expanded && L.ids.length > SHELF_K)
-    ? '<button class="alb-shelf__all" type="button" data-act="shelf-all">全部 ' + L.ids.length + ' 張</button>'
-    : '';
-  return '<section class="alb-shelf is-open" data-shelf="' + esc(L.key) + '">' +
-    '<div class="alb-shelf__spine alb-shelf__spine--open">' + spineInner(L) + '</div>' +
-    '<div class="postcard-wall alb-shelf__cells">' + cells + '</div>' + more +
-    '</section>';
+  const a = root.querySelector('a[data-back]');
+  if (!a) return;
+  a.setAttribute('data-back', parent);
+  a.onclick = function (e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const n = histI();
+    const H = navLoad();
+    const rec = n != null ? H[n] : null;
+    const prev = n ? H[n - 1] : null;
+    if (prev && !(rec && rec.up) && pathOnly(prev.p) !== here && tabOfPath(prev.p)) { APP.nav.back(parent); return; }
+    if (n != null) { H[n] = { p: parent, up: 1, pend: 1 }; navSave(H); }
+    APP.nav.go(parent, { replace: true, dir: 'back' });
+  };
 }
 
-function cardsPanel(open, expanded) {
-  return shelves().map(function (L) { return shelfHTML(L, L.key === open, expanded); }).join('') +
-    '<p class="alb-foot">灰色的是還沒去過的地方，到了就會上色。路線沒有期限，也不用照順序。</p>';
-}
-
-function badgesPanel() {
-  return '<div class="alb-badges">' + M().BADGES.map(function (b) {
-    const r = STATE.badge(b.id);
-    return '<a class="badge' + (r.got ? '' : ' badge--locked') + '" href="#/badge/' + esc(b.id) + '" data-badge="' + esc(b.id) + '">' +
-      '<span class="badge__disc"><span data-icon="' + esc(r.icon) + '"></span></span>' +
-      '<span class="badge__name">' + esc(r.name) + '</span>' +
-      '<span class="badge__prog">' + badgeProg(r) + '</span></a>';
-  }).join('') + '</div>' +
-  '<p class="alb-foot">灰色的獎章還在路上。沒有期限，也不會過期。</p>';
-}
-
-function journalPanel() {
-  const A = STATE.all;
-  const L = M().LOOKBACK;
-  const T = A.today || {};
-  const mood = moodOf(T.mood);
-  const last = A.lastCard ? cardById(A.lastCard) : null;
-  const photo = T.photo != null ? (L.photos || [])[T.photo] : null;
-  return '<div class="card alb-journal" data-journal>' +
-      '<div class="alb-journal__in">' +
-        '<div class="alb-journal__date">' + esc(dateLabel()) + '</div>' +
-        '<div class="u-row u-gap3 alb-journal__line">' +
-          (mood
-            ? '<span class="alb-journal__mood" data-icon="' + mood.icon + '" data-mood-now="' + mood.k + '"></span>' +
-              '<span class="alb-journal__moodt">' + esc(mood.t) + '</span>'
-            : '<span class="alb-journal__moodt alb-journal__moodt--none">還沒記心情</span>') +
-        '</div>' +
-        '<div class="alb-journal__steps"><span class="num" data-steps>' + APP.fmt.num(L.steps) + '</span> 步 · ' +
-          '<span class="num">' + esc(L.km) + '</span> 公里</div>' +
-        '<div class="alb-journal__places">' + (L.places || []).map(esc).join(' · ') + '</div>' +
-        ((last || photo)
-          ? '<div class="alb-journal__pics">' +
-              (photo ? '<span class="alb-journal__pic" data-art="' + esc(photo) + '" data-seed="2"></span>' : '') +
-              (last ? '<a class="alb-journal__pic" href="#/postcard/' + esc(last.id) + '" data-act="go-last" data-art="' +
-                      esc(last.art) + '" data-seed="1" aria-label="今天多了〈' + esc(last.name) + '〉"></a>' : '') +
-            '</div>' +
-            (last ? '<div class="alb-journal__new">今天多了〈' + esc(last.name) + '〉</div>' : '')
-          : '') +
-      '</div>' +
-      '<p class="privacy-note alb-journal__privacy"><span data-icon="lock" style="width:14px;height:14px"></span>只有你看得到</p>' +
-    '</div>' +
-    '<a class="card alb-row alb-row--navy" href="#/lookback" data-act="go-lookback">' +
-      '<span class="tile-icon tile-icon--md alb-row__icon"><span class="ic-ondark" data-icon="steps"></span></span>' +
-      '<span class="u-fill"><span class="alb-row__t">今天的回顧</span>' +
-      '<span class="alb-row__s">' + (T.done ? '看過了 · 再看一次' :
-        '走了 ' + APP.fmt.num(L.steps) + ' 步，經過 ' + (L.places || []).length + ' 個地方') + '</span></span>' +
-      '<span class="arrow arrow--onred"></span></a>';
-}
-
-function weekPanel() {
-  const w = weekStats();
-  return '<a class="card alb-row" href="#/week" data-act="go-week">' +
-      '<span class="tile-icon tile-icon--md"><span data-icon="share"></span></span>' +
-      '<span class="u-fill"><span class="alb-row__t">這一週 · ' + esc(mdLabel(w.month, w.now.from)) + ' – ' +
-        esc(mdLabel(w.month, w.now.showTo)) + '</span>' +
-      '<span class="alb-row__s">去了 <span class="num">' + w.now.places + '</span> 個地方 · 走了 <span class="num">' +
-        w.now.km + '</span> 公里</span>' +
-      '<span class="alb-row__s">可以分享的那一半：不含心情與日誌</span></span>' +
-      '<span class="arrow"></span></a>' +
-    '<a class="card alb-row" href="#/elder" data-act="go-elder">' +
-      '<span class="tile-icon tile-icon--md"><span data-icon="elder"></span></span>' +
-      '<span class="u-fill"><span class="alb-row__t">做一張圖傳給家人</span>' +
-      '<span class="alb-row__s">把去過的地方變成可以傳的問候圖</span></span>' +
-      '<span class="arrow"></span></a>';
-}
-
-/* 雙主頁第一版：明信片主卡（點進去看全部）、統計、獎章精選卡往下看。舊的細節 view 仍可讀舊連結。 */
+/* 雙主頁第一版：明信片主卡（點進去看全部）、統計、回顧一列、獎章精選卡。 */
 function isFresh(p) { return STATE.has(p.id) && STATE.lastIsNew && STATE.all.lastCard === p.id; }
 
 /* 子頁的頁首（/postcards、/badges）：返回鍵＋大標題＋一句說明 */
@@ -490,37 +450,29 @@ function subHeader(title, sub) {
     '<h1>' + esc(title) + '</h1><p>' + sub + '</p></header>';
 }
 
-/* 子頁的返回鍵：上一頁是收藏首頁才照歷史退一格（router 的 data-back）。
-   切到叫車再點「收藏」會停回這個子頁，這時上一筆歷史是叫車，退一格就跑錯頁；重新整理、直接開網址也一樣，
-   所以上一頁不是收藏首頁就直接回收藏首頁。 */
-function subBackMount(root, ctx) {
-  const a = root.querySelector('.alb-v2__back');
-  const from = ctx && ctx.from ? ctx.from.split('?')[0] : '';
-  if (!a || from === '/album') return;
-  a.onclick = function (e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    APP.nav.go('/album', { replace: true, dir: 'back' });
-  };
-}
-
-/* /postcards 的一格：收下的彩色寫日期，還沒去的灰階 */
+/* /postcards 的一格：收下的彩色寫日期、連到詳情（金框的也是金框）；還沒去的灰階、不連 */
 function albumV2CardHTML(p) {
   const got = STATE.card(p.id);
   const fresh = isFresh(p);
-  return '<div class="alb-v2__postcard' + (got ? ' is-collected' : '') + '" data-card="' + esc(p.id) + '">' +
+  const gold = !!got && goldCard(p.id);
+  const inner =
     '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '">' +
       (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
     '<strong>' + esc(p.name) + '</strong>' +
-    (got ? '<small>' + (fresh ? '新收下' : esc(got.date) + ' 收下') + '</small>' : '') + '</div>';
+    (got ? '<small>' + (fresh ? '新收下' : esc(got.date) + ' 收下') + (gold ? ' · 金框' : '') + '</small>' : '');
+  if (!got) return '<div class="alb-v2__postcard" data-card="' + esc(p.id) + '">' + inner + '</div>';
+  return '<a class="alb-v2__postcard is-collected' + (gold ? ' is-gold' : '') + '" href="#/postcard/' + esc(p.id) + '" ' +
+    'data-card="' + esc(p.id) + '"' + (gold ? ' data-gold' : '') + '>' + inner + '</a>';
 }
 
-/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges） */
+/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges）。
+   一枚都還沒收下時，放大的位置不拿還在路上的章充數（那一格的意思是「最近收下」），改成一個空的章位＋一句話。 */
 const MEDAL_MINI = 5;
 function albumV2MedalsHTML() {
   const list = badgeOrder();
   const bc = badgeCount();
-  const top = list[0];
-  const rest = list.slice(1);
+  const top = list[0] && list[0].r.got ? list[0] : null;
+  const rest = top ? list.slice(1) : list;
   const extra = rest.length - MEDAL_MINI;
   return '<section class="alb-v2__medals" aria-label="獎章">' +
     '<div class="alb-v2__section-head"><h2>獎章</h2><span data-stat="badges">' + bc.got + '/' + bc.total + '</span></div>' +
@@ -529,7 +481,10 @@ function albumV2MedalsHTML() {
           medalSVG(top.b, top.r.got) +
           '<strong>' + esc(top.r.name) + '</strong>' +
           '<small data-badge-when>' + esc(badgeWhen(top)) + '</small></a>'
-      : '') +
+      : '<div class="alb-v2__medal-top alb-v2__medal-top--empty" data-medal-empty>' +
+          '<svg class="alb-hex alb-hex--empty" viewBox="0 0 100 100" aria-hidden="true"><path d="' + HEX_RIM + '"/></svg>' +
+          '<strong>還沒有收下的獎章</strong>' +
+          '<small>湊齊一組地方，就收下一枚</small></div>') +
     '<div class="alb-v2__medal-foot">' +
       '<span class="alb-v2__medal-row" aria-hidden="true">' + rest.slice(0, MEDAL_MINI).map(function (x) {
         return '<span class="alb-v2__medal-mini">' + medalSVG(x.b, x.r.got) + '</span>';
@@ -540,16 +495,57 @@ function albumV2MedalsHTML() {
   '</section>';
 }
 
+/* 今天的回顧有沒有看過：STATE.today 沒有日期，回顧結束時多記一個 date（'MM.DD'，同卡片日期）；
+   日期不是今天的心情與照片不算今天的（昨天選的心情不能今天還掛在首頁）。 */
+function todayLook() {
+  const T = (STATE.all && STATE.all.today) || {};
+  const isToday = !!T.done && T.date === APP.fmt.todayMMDD();
+  const L = M().LOOKBACK || {};
+  return {
+    done: isToday,
+    mood: isToday ? moodOf(T.mood) : null,
+    photo: isToday && T.photo != null ? (L.photos || [])[T.photo] || null : null,
+  };
+}
+
+/* 回顧一列三格：今天的回顧（只有你、沒有分享）、這一週、城市足跡。
+   數字都現算：步數＝LOOKBACK、地方數＝weekStats、覆蓋率＝足跡同一個公式。 */
+function albumV2LookHTML() {
+  const t = todayLook();
+  const L = M().LOOKBACK || {};
+  const w = weekStats();
+  const cov = fixedCoverage({ seen: footprintSeen().seen, fade: [] });
+  const tile = function (o) {
+    return '<a class="alb-v2__look-tile" href="' + o.href + '" data-act="' + o.act + '" data-look-tile="' + o.k + '">' +
+      '<span class="alb-v2__look-top">' + o.top + '</span>' +
+      '<strong>' + o.t + '</strong><small' + (o.attr || '') + '>' + o.s + '</small></a>';
+  };
+  const ic = function (name) { return '<span class="alb-v2__look-ic" data-icon="' + name + '"></span>'; };
+  const todayTop = (t.photo ? '<span class="alb-v2__look-pic" data-art="' + esc(t.photo) + '" data-seed="2" data-look-photo></span>' : '') +
+    (t.mood ? '<span class="alb-v2__look-ic" data-icon="' + t.mood.icon + '" data-mood-now="' + t.mood.k + '"></span>' :
+      t.photo ? '' : ic('steps')) +
+    '<span class="alb-v2__look-lock" data-icon="lock" role="img" aria-label="只有你看得到"></span>';
+  return '<section class="alb-v2__look" data-look aria-label="回顧">' +
+    tile({ k: 'journal', href: '#/lookback', act: 'go-lookback', top: todayTop, t: '今天的回顧',
+           attr: ' data-look-today',
+           s: t.done ? esc(t.mood ? t.mood.t : '看過了') : '走了 ' + APP.fmt.num(L.steps || 0) + ' 步' }) +
+    tile({ k: 'week', href: '#/week', act: 'go-week', top: ic('route'), t: '這一週',
+           s: '去了 <span class="num" data-look-week>' + w.now.places + '</span> 個地方' }) +
+    tile({ k: 'footprint', href: '#/footprint', act: 'go-footprint', top: ic('place'), t: '城市足跡',
+           s: '點亮 <span class="num" data-look-cov>' + cov + '</span>%' }) +
+  '</section>';
+}
+
 function albumV2Render() {
   const cards = M().POSTCARDS || [];
   const got = cards.filter(function (p) { return STATE.has(p.id); });
-  return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
+  return '<div class="alb alb-v2 alb-v2--home"><div class="scroll alb-scroll alb-v2__scroll">' +
       '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
         '<p>走過的地方，都留在這裡。</p></header>' +
       '<a class="alb-v2__hero" href="#/postcards" data-act="go-postcards">' +
         '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
           '<strong data-stat="cards">' + got.length + '</strong><span>／' + cards.length + ' 張</span></div>' +
-          '<p>一張卡，記下一個到過的地方。</p>' +
+          '<p>' + (got.length ? '一張卡，記下一個到過的地方。' : '到了一個地方，就收下一張。') + '</p>' +
           '<span class="alb-v2__hero-go">看全部<span class="arrow arrow--onred"></span></span></div>' +
         '<div class="alb-v2__stack" aria-hidden="true">' + recentCards(3).map(function (p, i) {
           return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + '" data-card="' + esc(p.id) +
@@ -558,15 +554,29 @@ function albumV2Render() {
         }).join('') + '</div>' +
       '</a>' +
       '<div class="alb-v2__stats">' +
-        '<div class="alb-v2__stat"><span>去過的地方</span><strong data-stat="places">' + STATE.count() + '</strong><small>個地方</small></div>' +
+        '<div class="alb-v2__stat"><span>去過的地方</span><strong data-stat="places">' + visitedPlaces().length + '</strong><small>個地方</small></div>' +
         '<div class="alb-v2__stat"><span>留下的距離</span><strong data-stat="km">' + esc(STATE.all.km) + '</strong><small>公里</small></div>' +
       '</div>' +
+      albumV2LookHTML() +
       albumV2MedalsHTML() +
     '</div></div>';
 }
-function albumV2Mount() {
+
+/* 舊連結的 ?tab=（每日回顧結束落在 ?tab=journal、舊的 pill 四段）：落在同一頁，把對應的那一塊捲進畫面、亮一下，
+   再用 replaceQuery 把 ?tab 拿掉（不重畫、不多一筆歷史；切 tab 回來也不會又亮一次）。 */
+const LAND = { journal: '[data-look-tile="journal"]', week: '[data-look-tile="week"]',
+               badges: '.alb-v2__medals', cards: '.alb-v2__hero' };
+function albumV2Mount(root, params, ctx) {
   /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
   if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+  const q = ctx && ctx.query;
+  if (!q || !q.has('tab')) return;
+  const el = LAND[q.get('tab')] ? root.querySelector(LAND[q.get('tab')]) : null;
+  if (el) {
+    el.classList.add('is-landed');
+    if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+  }
+  if (APP.nav.replaceQuery) APP.nav.replaceQuery('');
 }
 
 APP.view('album', {
@@ -582,7 +592,8 @@ APP.view('album', {
 /* ================================================================ /postcards */
 
 /* 明信片子頁：收下的（最近的在前）一段、還沒去的一段。
-   格子不做成連結：22 張全是連結會超過 L1 的可按數上限（≤ 10），明信片詳情從獎章與週回顧進。 */
+   收下的每一格連到明信片詳情（p19–p22 不屬於任何獎章、週回顧也不一定列到，這裡是唯一穩定的入口）。
+   整片網格包在 data-gallery 裡：L1 的可按數把它算成一個（跟地圖上的景點不算一樣，是同一種東西排成一片）。 */
 APP.view('postcards', {
   path: '/postcards',
   tab: 'album',
@@ -592,24 +603,24 @@ APP.view('postcards', {
     const cards = M().POSTCARDS || [];
     const got = recentCards(cards.length);
     const todo = cards.filter(function (p) { return !STATE.has(p.id); });
-    const grid = function (list) {
-      return '<div class="alb-v2__card-grid">' + list.map(albumV2CardHTML).join('') + '</div>';
+    const grid = function (list, gallery) {
+      return '<div class="alb-v2__card-grid"' + (gallery ? ' data-gallery' : '') + '>' + list.map(albumV2CardHTML).join('') + '</div>';
     };
     return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
       subHeader('明信片', '收集 <span data-stat="cards">' + got.length + '</span>/' + cards.length +
         ' 張。還沒去的地方，到了就會上色。') +
       (got.length
-        ? '<section class="alb-v2__cards" data-group="got"><h2>收下的 ' + got.length + ' 張</h2>' + grid(got) + '</section>'
+        ? '<section class="alb-v2__cards" data-group="got"><h2>收下的 ' + got.length + ' 張</h2>' + grid(got, true) + '</section>'
         : '') +
       (todo.length
-        ? '<section class="alb-v2__cards" data-group="todo"><h2>還沒去的 ' + todo.length + ' 張</h2>' + grid(todo) + '</section>'
+        ? '<section class="alb-v2__cards" data-group="todo"><h2>還沒去的 ' + todo.length + ' 張</h2>' + grid(todo, false) + '</section>'
         : '') +
       '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，不是實景照片。沒有期限，也不用照順序。</p>' +
     '</div></div>';
   },
   mount: function (root, params, ctx) {
     if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
-    subBackMount(root, ctx);
+    subMount(root, ctx, 'postcards');
   },
 });
 
@@ -632,85 +643,8 @@ APP.view('badges', {
       }).join('') + '</div>' +
     '</div></div>';
   },
-  mount: function (root, params, ctx) { subBackMount(root, ctx); },
+  mount: function (root, params, ctx) { subMount(root, ctx, 'badges'); },
 });
-
-/* 舊版首頁的組織方式留作視覺對照，不註冊到主頁。 */
-const legacyAlbumHome = {
-  render: function (params, ctx) {
-    let tab = ctx.query.get('tab');
-    if (TABS.indexOf(tab) < 0) tab = 'cards';
-    const bc = badgeCount();
-    const panel = function (k, html) {
-      return '<section class="alb-panel' + (k === tab ? '' : ' u-hidden') + '" data-panel="' + k + '">' + html + '</section>';
-    };
-    return '<div class="alb" data-panel-scope>' +
-      '<header class="hdr-red hdr-red--compact"><div class="hdr-red__bar">' +
-        '<h1 class="hdr-red__title">收藏</h1>' +
-        '<a class="hdr-red__action u-row u-gap2" href="#/footprint" data-act="go-footprint">城市足跡' +
-        '<span class="arrow arrow--onred"></span></a>' +
-      '</div></header>' +
-      '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
-        '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>' +
-        '<div class="alb-pad alb-pad--stat"><div class="statbar">' +
-          '<span class="statbar__cell"><span class="statbar__n" data-stat="places">' + STATE.count() + '</span>' +
-            '<span class="statbar__k">去過的地方</span></span>' +
-          '<span class="statbar__cell"><span class="statbar__n" data-stat="km">' + esc(STATE.all.km) + '</span>' +
-            '<span class="statbar__k">公里</span></span>' +
-          '<span class="statbar__cell"><span class="statbar__n" data-stat="badges">' + bc.got +
-            '<small class="alb-stat__of">/' + bc.total + '</small></span>' +
-            '<span class="statbar__k">獎章</span></span>' +
-        '</div></div>' +
-        '<div class="alb-pad alb-pad--pills"><div class="pill-group pill-group--onwhite" data-pills>' +
-          TABS.map(function (k) {
-            return '<button class="pill' + (k === tab ? ' is-active' : '') + '" type="button" data-tab="' + k + '">' +
-              TAB_NAME[k] + '</button>';
-          }).join('') +
-        '</div></div>' +
-        panel('cards', '<div data-shelves></div>') +
-        panel('badges', badgesPanel()) +
-        panel('journal', journalPanel()) +
-        panel('week', weekPanel()) +
-      '</div></div>';
-  },
-  mount: function (root, params, ctx) {
-    const host = root.querySelector('[data-shelves]');
-    const list = shelves();
-    let open = ctx.query.get('shelf');
-    const fresh = STATE.lastIsNew ? STATE.all.lastCard : null;
-    if (fresh) {
-      const L = list.filter(function (x) { return x.ids.indexOf(fresh) >= 0; })[0];
-      if (L) open = L.key;
-    }
-    if (!list.some(function (x) { return x.key === open; })) open = list[0] && list[0].key;
-    let expanded = false;
-
-    function paint() {
-      host.innerHTML = cardsPanel(open, expanded);
-      SHELL.injectArt(host);
-      SHELL.injectIcons(host);
-      host.querySelectorAll('[data-shelf-open]').forEach(function (b) {
-        b.onclick = function () { open = b.getAttribute('data-shelf-open'); expanded = false; paint(); };
-      });
-      const all = host.querySelector('[data-act="shelf-all"]');
-      if (all) all.onclick = function () { expanded = true; paint(); };
-    }
-    paint();
-
-    const group = root.querySelector('[data-pills]');
-    INTERACT.initPills(group);
-    /* pill 狀態寫回網址（不重畫、經 router）：從明信片返回、切 tab 再回來都停在同一段 */
-    group.querySelectorAll('.pill').forEach(function (p) {
-      p.onclick = function () {
-        if (APP.nav.replaceQuery) APP.nav.replaceQuery('tab=' + p.dataset.tab);
-        else { try { history.replaceState(history.state, '', '#/album?tab=' + p.dataset.tab); } catch (e) { /* ignore */ } }
-      };
-    });
-
-    /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
-    if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
-  },
-};
 
 /* ================================================================ /postcard/:id */
 
@@ -722,7 +656,7 @@ APP.view('postcard', {
   render: function (params) {
     const P = cardById(params.id);
     if (!P) {
-      return notFound({ title: '明信片', back: '/album', eyebrow: '明信片',
+      return notFound({ title: '明信片', back: '/postcards', eyebrow: '明信片',
                         t: '找不到這張', p: '這張明信片不在收藏裡。' });
     }
     const got = STATE.card(P.id);
@@ -743,7 +677,7 @@ APP.view('postcard', {
       /* 搭車抵達了、評分後直接回首頁的那一趟：這張卡就是它的限定版 → 回去解鎖的入口 */
       const pu = APP.ride && APP.ride.pendingUnlock ? APP.ride.pendingUnlock() : null;
       const pend = pu && pu.card === P.id ? pu : null;
-      return header({ title: '明信片', back: '/album' }) +
+      return header({ title: '明信片', back: '/postcards' }) +
         '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
           '<div class="alb-big">' +
             '<div class="postcard postcard--locked alb-big__card" data-card="' + esc(P.id) + '">' +
@@ -768,7 +702,11 @@ APP.view('postcard', {
     }
 
     const ride = got.by === 'ride';
-    const gold = limitedCard(P.id);          /* 金框只給走不到的地方（ride.js 的門檻） */
+    /* 金框＝收下的是金框那一款；限定版＝ride.js 的判斷（搭 yoxi 去走不到的地方，+50 點）。
+       限定版一定是金框（搭 yoxi 抵達必得金框），金框不一定是限定版（走路抽到的、搭車去走得到的地方）。
+       框用 ::after 畫在插圖上面（album.css 的 .alb-big__card.postcard--gold）：chengshi.css 的 inset 陰影會被滿版插圖蓋住。 */
+    const limited = limitedCard(P.id);
+    const gold = limited || goldCard(P.id);
     const pid = placeOfCard(P.id);
     const pl = pid ? APP.place(pid) : APP.place(P.id);
     const dist = pl && pl.dist != null ? pl.dist : null;
@@ -778,14 +716,15 @@ APP.view('postcard', {
     const byText = ride ? '搭 yoxi 抵達' : '走路抵達';
     const date = YEAR() + '.' + got.date;
 
-    return header({ title: '明信片', back: '/album', action: shareBtn() }) +
+    return header({ title: '明信片', back: '/postcards', action: shareBtn() }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
         '<div class="alb-big">' +
           '<button class="postcard alb-big__card' + (gold ? ' postcard--gold' : '') + '" type="button" data-flip data-act="flip" ' +
             'data-card="' + esc(P.id) + '" aria-label="翻面">' +
             '<div data-art="' + esc(P.art) + '" data-seed="' + i + '" data-card-art="' + esc(P.id) + '" style="position:absolute;inset:0"></div>' +
             '<span class="ai-mark">AI 生成示意</span>' +
-            (gold ? '<span class="postcard__ribbon" data-ribbon>yoxi 限定版</span>' : '') +
+            (limited ? '<span class="postcard__ribbon" data-ribbon="limited">yoxi 限定版</span>'
+              : gold ? '<span class="postcard__ribbon" data-ribbon="gold">yoxi 金框</span>' : '') +
             '<span class="postcard__foot"><span class="postcard__name alb-big__name">' + esc(P.name) + '</span>' +
               '<span class="postcard__date">' + esc(date) + '</span></span>' +
             '<span class="postcard__back alb-big__back">' +
@@ -821,7 +760,8 @@ APP.view('postcard', {
         '</div>' +
       '</div>';
   },
-  mount: function (root, params) {
+  mount: function (root, params, ctx) {
+    subMount(root, ctx, 'postcard');
     const P = cardById(params.id);
     if (!P) return;
     const card = root.querySelector('[data-flip]');
@@ -832,7 +772,8 @@ APP.view('postcard', {
       card.classList.toggle('is-flipped');
     };
     const share = root.querySelector('[data-act="share"]');
-    if (share) share.onclick = function () { APP.ui.share({ title: '分享這張', kind: 'postcard', id: P.id }); };
+    /* card：system 的「傳給家人」帶著它去 #/elder?card=<id>，長輩圖先用這一張 */
+    if (share) share.onclick = function () { APP.ui.share({ title: '分享這張', kind: 'postcard', id: P.id, card: P.id }); };
     const again = root.querySelector('[data-act="again"]');
     if (again) again.onclick = function () {
       root.querySelector('[data-again]').classList.remove('u-hidden');
@@ -883,6 +824,7 @@ APP.view('badge', {
         '</div>' +
       '</div>';
   },
+  mount: function (root, params, ctx) { subMount(root, ctx, 'badge'); },
 });
 
 /* ================================================================ /footprint */
@@ -890,12 +832,33 @@ APP.view('badge', {
 /* 以 hs-core（車站周圍 3×3 km）為主：舊城、十八尖山在框內；南寮、青草湖、竹中、內灣走不到，不硬擠進來 */
 const FP_SPAN = 3200;
 
+/* 你的城市顏色：每一個去過的地方（不重複）取它那張明信片的色票（MOCK.ART[art].sky 最深的一格），
+   照第一次去的先後排；同一個顏色的地方越多，那一道越寬。一個地方都沒去過就沒有顏色。
+   以前是寫死的 MOCK.CITY_COLORS：0 張卡也有六道，不是「由你去過的地方決定」。 */
+function cityColors() {
+  const ART = M().ART || {};
+  const places = {};
+  const bands = [];
+  recentCards(M().POSTCARDS.length).reverse().forEach(function (p) {
+    const k = placeOfCard(p.id) || p.id;
+    if (places[k]) return;
+    places[k] = 1;
+    const sky = (ART[p.art] || {}).sky || [];
+    const c = sky[2] || sky[1] || sky[0];
+    if (!c) return;
+    const b = bands.filter(function (x) { return x.c === c; })[0];
+    if (b) b.n++; else bands.push({ c: c, n: 1 });
+  });
+  return bands;
+}
+
 APP.view('footprint', {
   path: '/footprint',
   tab: 'album',
   status: 'dark',
   title: '城市足跡',
   render: function () {
+    const bands = cityColors();
     return '<div class="alb-fp">' +
       '<div class="alb-fp__map" data-fp-map>' +
         '<a class="alb-fp__back" href="#" data-back="/album" aria-label="返回"><span data-icon="close"></span></a>' +
@@ -912,14 +875,17 @@ APP.view('footprint', {
         '</div>' +
         '<div class="sec alb-fp__sec"><h2 class="sec__t sec__t--sm">你的城市顏色</h2>' +
           '<span class="sec__m">由你去過的地方決定</span></div>' +
-        '<div class="citycolor">' + (M().CITY_COLORS || []).map(function (c) {
-          return '<span class="citycolor__band" style="background:' + esc(c) + '"></span>';
-        }).join('') + '</div>' +
-        '<p class="alb-foot">超過 90 天沒回去的地方，顏色會慢慢變淡。但明信片不會消失。</p>' +
+        (bands.length
+          ? '<div class="citycolor" data-citycolor>' + bands.map(function (b) {
+              return '<span class="citycolor__band" data-n="' + b.n + '" style="background:' + esc(b.c) + ';flex-grow:' + b.n + '"></span>';
+            }).join('') + '</div>' +
+            '<p class="alb-foot">每一道顏色取自你收下的明信片。同一種風景去得越多，那一道越寬。</p>'
+          : '<p class="alb-fp__nocolor" data-citycolor-empty>還沒有顏色。去過一個地方，這裡就多一道。</p>') +
       '</div>' +
     '</div>';
   },
-  mount: function (root) {
+  mount: function (root, params, ctx) {
+    subMount(root, ctx, 'footprint');
     const host = root.querySelector('[data-fp-map]');
     const fs = footprintSeen();
     const fog = { seen: fs.seen, fade: [] };
@@ -1059,7 +1025,9 @@ APP.view('lookback', {
   render: function () {
     const L = M().LOOKBACK;
     const A = STATE.all;
-    const last = A.lastCard ? cardById(A.lastCard) : null;
+    /* 「今天多了一張」只說今天收的：lastCard 不會自己清掉，九月一日收的卡不能到二十五日還說是今天的 */
+    const lastC = A.lastCard ? STATE.card(A.lastCard) : null;
+    const last = lastC && lastC.date === APP.fmt.todayMMDD() ? cardById(A.lastCard) : null;
     let act2;
     if (last) {
       const owner = badgeOfCard(last.id);
@@ -1119,7 +1087,8 @@ APP.view('lookback', {
     const acts = root.querySelectorAll('[data-lb-act]');
     const next = root.querySelector('[data-act="next"]');
     let idx = 0;
-    let photo = STATE.all.today ? STATE.all.today.photo : null;
+    const T0 = STATE.all.today || {};
+    let photo = T0.date === APP.fmt.todayMMDD() ? T0.photo : null;   /* 別天選的照片不帶進今天 */
     let timer = null;
 
     /* 幕 1：數字從 0 往上跳，線頭跟著數字畫、走到的點才冒出來；數完地名才淡入。
@@ -1169,8 +1138,12 @@ APP.view('lookback', {
       next.setAttribute('data-act', i === 3 ? 'no-mood' : 'next');
     }
     function finish(mood) {
-      const patch = { photo: photo, done: true };
+      /* date：STATE.today 本身沒有日期；記下是哪一天看的，收藏首頁「今天的回顧」只認今天的心情與照片 */
+      const day = APP.fmt.todayMMDD();
+      const patch = { photo: photo, done: true, date: day };
+      /* 「先不選」：今天稍早選過的心情留著；別天留下來的清掉，不然它會被當成今天的 */
       if (mood) patch.mood = mood;
+      else if ((STATE.all.today || {}).date !== day) patch.mood = null;
       STATE.setToday(patch);
       APP.emit('state:change');
       APP.nav.go('/album?tab=journal', { replace: true });
@@ -1232,7 +1205,7 @@ APP.view('week', {
       '</div>';
     };
     const shown = N.cards.slice(-6);
-    return header({ title: '這一週', back: '/album?tab=week', action: shareBtn() }) +
+    return header({ title: '這一週', back: '/album', action: shareBtn() }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
         '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>' +
         '<div class="alb-pad"><div class="card alb-cover">' +
@@ -1242,10 +1215,16 @@ APP.view('week', {
               }).join('') + '</div>'
             : '') +
           '<div class="alb-cover__txt">' +
-            '<div class="alb-cover__range">' + esc(mdLabel(w.month, N.from)) + ' – ' + esc(mdLabel(w.month, N.showTo)) + '</div>' +
+            '<div class="alb-cover__range">' + esc(mdLabel(w.month, N.from)) + ' – ' + esc(mdLabel(w.month, N.to)) + '</div>' +
             '<div class="alb-cover__t">這一週你去了 <span class="num" data-week-places>' + N.places + '</span> 個地方</div>' +
           '</div>' +
-        '</div></div>' +
+        '</div>' +
+        /* 範圍之後才收的卡：不偷偷算進本週，照實說一句（見 weekStats） */
+        (N.after.length
+          ? '<p class="alb-foot" data-week-after>' + esc(mdLabel(w.month, N.to)) + '之後又收了 <span class="num">' +
+              N.after.length + '</span> 張，還沒算進這一週。</p>'
+          : '') +
+        '</div>' +
         '<div class="alb-pad"><div class="card card--pad">' +
           '<div class="sec"><h2 class="sec__t sec__t--sm">跟上週比</h2>' +
             '<span class="sec__m">' + esc(mdLabel(w.month, P.from)) + ' – ' + esc(mdLabel(w.month, P.to)) + '</span></div>' +
@@ -1283,7 +1262,8 @@ APP.view('week', {
           '心情與日誌不會出現在這一頁，分享出去的只有去過的地方與走了多少。</p></div>' +
       '</div>';
   },
-  mount: function (root) {
+  mount: function (root, params, ctx) {
+    subMount(root, ctx, 'week');
     const share = root.querySelector('[data-act="share"]');
     if (share) share.onclick = function () { APP.ui.share({ title: '分享這一週', kind: 'week' }); };
   },
@@ -1291,12 +1271,24 @@ APP.view('week', {
 
 /* ================================================================ /elder */
 
+/* 最近收的 n 張：日期新的在前；同一天的，最後收的那張（STATE.all.lastCard）排第一，
+   其餘照 POSTCARDS 倒序（沒有時間，只能這樣）。收藏首頁的疊卡、長輩圖的預設都用它。 */
 function recentCards(n) {
+  const last = STATE.all && STATE.all.lastCard;
   return M().POSTCARDS.filter(function (p) { return STATE.has(p.id); })
-    .map(function (p, i) { return { p: p, d: STATE.card(p.id).date, i: i }; })
-    .sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : b.i - a.i; })
+    .map(function (p, i) { return { p: p, d: STATE.card(p.id).date, i: i, l: p.id === last ? 1 : 0 }; })
+    .sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : (b.l - a.l) || (b.i - a.i); })
     .slice(0, n)
     .map(function (x) { return x.p; });
+}
+
+/* 長輩圖用哪幾張：從明信片分享過來（?card=<id>，收過的）那一張排第一，其餘補最近的，共三張 */
+function elderCards(ctx) {
+  const want = ctx && ctx.query ? ctx.query.get('card') : null;
+  const shared = want && STATE.has(want) ? cardById(want) : null;
+  const recent = recentCards(3);
+  if (!shared) return { cards: recent, shared: null };
+  return { cards: [shared].concat(recent.filter(function (p) { return p !== shared; })).slice(0, 3), shared: shared };
 }
 
 APP.view('elder', {
@@ -1304,14 +1296,15 @@ APP.view('elder', {
   tab: 'album',
   status: 'light',
   title: '做一張圖傳給家人',
-  render: function () {
-    const cards = recentCards(3);
+  render: function (params, ctx) {
+    const E = elderCards(ctx);
+    const cards = E.cards;
     const first = cards[0];
     const caps = [APP.fmt.greet() + ' 平安喜樂', '身體健康 萬事如意', '我今天去走走了', '有空一起來'];
     const got = first ? STATE.card(first.id) : null;
     return header({ title: '傳給家人', back: '/week' }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
-        '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>' +
+        (first ? '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>' : '') +
         '<div class="alb-pad">' +
           '<div class="alb-elder" data-elder>' +
             '<div class="alb-elder__art" data-elder-art' + (first ? ' data-art="' + esc(first.art) + '" data-seed="' + cardIdx(first) + '" data-wide' : '') + '></div>' +
@@ -1323,7 +1316,9 @@ APP.view('elder', {
             '</div>' +
             '<span class="alb-elder__sig">yoxi 城事</span>' +
           '</div>' +
-          '<p class="alb-foot">用你去過的地方做的。圖是 AI 畫的，不是照片。</p>' +
+          (first
+            ? '<p class="alb-foot">用你去過的地方做的。圖是 AI 畫的，不是照片。</p>'
+            : '<p class="alb-foot" data-elder-empty>還沒有去過的地方可以放進圖裡，先傳一句問候。收下第一張明信片之後，這裡就能換成那個地方。</p>') +
         '</div>' +
         '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">換一句話</h2></div>' +
           '<div class="card">' + caps.map(function (c, i) {
@@ -1331,7 +1326,9 @@ APP.view('elder', {
           }).join('') + '</div></div>' +
         (cards.length
           ? '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">換一個地方</h2>' +
-            '<span class="sec__m">最近 ' + cards.length + ' 張</span></div>' +
+            '<span class="sec__m">' + (E.shared
+              ? (cards.length > 1 ? '分享的這張＋最近 ' + (cards.length - 1) + ' 張' : '分享的這張')
+              : '最近 ' + cards.length + ' 張') + '</span></div>' +
             '<div class="alb-elder__picks">' + cards.map(function (p, i) {
               return '<button class="alb-elder__pick' + (i ? '' : ' is-on') + '" type="button" data-act="pick-card" data-card="' + esc(p.id) + '">' +
                 '<span class="alb-elder__pickart" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide></span>' +
@@ -1345,7 +1342,8 @@ APP.view('elder', {
         '</div>' +
       '</div>';
   },
-  mount: function (root) {
+  mount: function (root, params, ctx) {
+    subMount(root, ctx, 'elder');
     const big = root.querySelector('[data-elder-big]');
     const small = root.querySelector('[data-elder-small]');
     const art = root.querySelector('[data-elder-art]');
@@ -1372,6 +1370,7 @@ APP.view('elder', {
 
 /* 給別的區塊／測試用 */
 APP.album = { placeOfCard: placeOfCard, footprintSeen: footprintSeen, weekStats: weekStats,
+              visitedPlaces: visitedPlaces, recentCards: recentCards, cityColors: cityColors,
               coverage: function () { return fixedCoverage({ seen: footprintSeen().seen, fade: [] }); } };
 
 })();

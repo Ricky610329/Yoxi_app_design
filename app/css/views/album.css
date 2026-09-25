@@ -1,7 +1,8 @@
 /* ==========================================================================
-   yoxi 城事 web app — album 區塊樣式（/album /postcard /badge /footprint /lookback /week /elder）
-   沿用 chengshi.css 的 .postcard／.badge／.track-mini／.statbar／.lookback／.mood／.citycolor／.fogmap__*；
-   這裡只補 app 版需要的版面。不准 hex：顏色、圓角、時間全用 tokens.css 的變數。
+   yoxi 城事 web app — album 區塊樣式（/album /postcards /badges /postcard /badge /footprint /lookback /week /elder）
+   沿用 chengshi.css 的 .postcard／.lookback／.mood／.citycolor／.fogmap__*；
+   這裡只補 app 版需要的版面。不准 hex、不寫 rgba：顏色、字級、圓角、陰影、時間全用 tokens.css 的變數，
+   半透明用 color-mix(in srgb, var(--token) N%, transparent)。
    ========================================================================== */
 
 /* ---- 共用 ---- */
@@ -9,10 +10,7 @@
 .alb-scroll { padding-bottom: var(--sp-6); }   /* tab bar 的高度 .device__screen.has-tabbar 已經讓過 */
 body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-pad { padding: var(--sp-4) var(--gutter) 0; }
-.alb-pad--stat { padding-top: var(--sp-1); padding-bottom: var(--sp-3); }
-.alb-pad--pills { padding-top: 0; padding-bottom: var(--sp-3); }
 .alb-pad--end { padding-bottom: var(--sp-6); }
-.alb-panel { padding: 0 var(--gutter) var(--sp-5); }
 .alb-foot {
   margin-top: var(--sp-3);
   font-size: var(--fs-cap);
@@ -25,13 +23,28 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-sub { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--app-muted); }
 .alb-gap { margin-top: var(--sp-4); }
 .alb-empty { padding-top: var(--sp-5); background: none; }
-.hdr-red__action[data-act="share"] { padding: var(--sp-1) 0; }
 
-.alb-stat__of { font-size: var(--fs-sm); font-weight: var(--fw-bold); opacity: .6; }
+/* 紅色頁首（album.js header()）：關閉鍵、分享鈕本身就撐到 44×44（不只靠 app.css 的 ::before 命中區）。
+   關閉鍵圖示的位置不變：34 → 44 寬，左邊界多往外 5px。 */
+.alb-hdr .hdr-red__close { width: 44px; height: 44px; margin-left: -9px; }
+.alb-hdr__title { flex: 1; margin-left: var(--sp-1); }
+.alb-hdr .hdr-red__action[data-act="share"] { min-width: 44px; min-height: 44px; justify-content: center; }
 
 /* 雙主頁第一版：借用摘要式層級，內容仍是城市收藏。 */
 .alb-v2__scroll { background: var(--yoxi-paper); }
-.alb-v2__header { padding: var(--sp-5) var(--gutter) var(--sp-4); }
+/* 白底頁首也要避開狀態列（契約 §9：一律 var(--statusbar-h)）：之前直接從最上緣排，
+   桌機外框裡「yoxi 城事」壓在時間底下，手機安全區（瀏海）也一樣 */
+.alb-v2__header { padding: calc(var(--statusbar-h) + var(--sp-2)) var(--gutter) var(--sp-4); }
+/* 收藏首頁一屏放得下（主卡、統計、回顧一列、獎章卡；390×844 與桌機外框都是）：
+   「yoxi 城事」跟大標題排同一行（省一行）、頁首與頁底各讓一點 */
+.alb-v2--home .alb-v2__header {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline;
+  padding-top: calc(var(--statusbar-h) + var(--sp-1)); padding-bottom: var(--sp-3);
+}
+.alb-v2--home .alb-v2__header h1 { grid-column: 1; grid-row: 1; margin-top: 0; }
+.alb-v2--home .alb-v2__brand { grid-column: 2; grid-row: 1; }
+.alb-v2--home .alb-v2__header p { grid-column: 1 / -1; }
+.alb-v2--home .alb-v2__scroll { padding-bottom: var(--sp-3); }
 .alb-v2__brand { color: var(--yoxi-red); font-size: var(--fs-cap); font-weight: var(--fw-heavy); letter-spacing: .04em; }
 .alb-v2__header h1 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-display); line-height: var(--lh-tight); }
 .alb-v2__header p { color: var(--app-muted); font-size: var(--fs-sm); }
@@ -46,30 +59,61 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__hero-count { display: flex; align-items: baseline; margin-top: var(--sp-3); }
 .alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.88); line-height: 1; font-weight: var(--fw-heavy); }
 .alb-v2__hero-count span { font-size: var(--fs-sm); }
-.alb-v2__hero p { max-width: 155px; margin-top: var(--sp-3); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
-.alb-v2__hero-go { display: inline-flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.alb-v2__hero p { max-width: 155px; margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
+.alb-v2__hero-go { display: inline-flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
 .alb-v2__stack { position: absolute; width: 146px; height: 156px; right: var(--sp-2); bottom: var(--sp-2); }
 .alb-v2__stack-art { position: absolute; display: block; width: 89px; height: 126px; overflow: hidden; border: 3px solid var(--yoxi-white); border-radius: var(--r-img); box-shadow: var(--sh-lift); }
 .alb-v2__stack-art > .postcard__art { width: 100%; height: 100%; }
 .alb-v2__stack-art--0 { right: 0; bottom: 0; transform: rotate(8deg); z-index: 3; }
 .alb-v2__stack-art--1 { right: 28px; bottom: 8px; transform: rotate(-7deg); z-index: 2; }
 .alb-v2__stack-art--2 { right: 49px; bottom: 15px; transform: rotate(-16deg); z-index: 1; }
+/* 統計兩格：只放一個數字，高度收到內容那麼高（原本 128px 的空白讓給下面的「回顧」一列，首頁仍是一屏） */
 .alb-v2__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-3) var(--gutter) 0; }
-.alb-v2__stat { min-height: 128px; padding: var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }
+.alb-v2__stat { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }
 .alb-v2__stat span, .alb-v2__stat small { display: block; font-size: var(--fs-cap); }
 .alb-v2__stat span { font-weight: var(--fw-bold); }
-.alb-v2__stat strong { display: inline-block; margin-top: var(--sp-3); color: var(--yoxi-red); font-size: var(--fs-display); line-height: 1; }
+.alb-v2__stat strong { display: inline-block; margin-top: var(--sp-1); color: var(--yoxi-red); font-size: var(--fs-display); line-height: 1; }
 .alb-v2__stat small { display: inline-block; margin-left: var(--sp-1); color: var(--app-muted); }
+
+/* 回顧一列三格（今天的回顧／這一週／城市足跡）：白底細框＝可以按（統計格是霧色底、不能按）；
+   圖示海軍藍。今天的回顧右上一個鎖：只有你看得到，這一格沒有分享。 */
+.alb-v2__look { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); padding: var(--sp-3) var(--gutter) 0; }
+.alb-v2__look-tile {
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-white); box-shadow: var(--sh-card); color: var(--yoxi-navy);
+}
+.alb-v2__look-top { display: flex; align-items: center; gap: var(--sp-1); height: 24px; }
+.alb-v2__look-ic { width: 22px; height: 22px; display: block; color: var(--yoxi-navy); }
+.alb-v2__look-pic { position: relative; display: block; width: 24px; height: 24px; overflow: hidden; border-radius: var(--r-img); }
+.alb-v2__look-lock { position: absolute; top: var(--sp-2); right: var(--sp-2); width: 14px; height: 14px; display: block; color: var(--app-muted); }
+.alb-v2__look-tile strong { margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: var(--lh-tight); white-space: nowrap; }
+.alb-v2__look-tile small { margin-top: 2px; overflow: hidden; color: var(--app-muted); font-size: var(--fs-xs); line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; }
+main.view .alb-v2__look-ic > svg, main.view .alb-v2__look-lock > svg { width: 100%; height: 100%; display: block; }
+/* 舊連結 ?tab=journal 等落在首頁：那一塊亮一下（海軍藍外框淡出），定格與減少動態效果時不動 */
+.alb-v2 .is-landed { animation: alb-land var(--t-scene) var(--ease-out) both; }
+@keyframes alb-land {
+  from { box-shadow: 0 0 0 3px var(--yoxi-navy), var(--sh-card); }
+  to   { box-shadow: 0 0 0 3px transparent, var(--sh-card); }
+}
+html[data-still] .alb-v2 .is-landed { animation: none; }
+@media (prefers-reduced-motion: reduce) { .alb-v2 .is-landed { animation: none; } }
 .alb-v2__section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .alb-v2__section-head h2 { font-size: var(--fs-title); }
 .alb-v2__section-head span { color: var(--app-muted); font-size: var(--fs-cap); }
-/* 明信片子頁（/postcards）：兩段，每段兩欄；格子不加外框，圖就是明信片 */
+/* 明信片子頁（/postcards）：兩段，每段兩欄；格子不加外框，圖就是明信片。收下的每一格是連到詳情的 <a> */
 .alb-v2__cards { padding: var(--sp-4) var(--gutter) 0; }
 .alb-v2__cards h2 { margin-bottom: var(--sp-3); font-size: var(--fs-lead); }
 .alb-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); }
-.alb-v2__postcard { min-width: 0; }
+.alb-v2__postcard { display: block; min-width: 0; }
 .alb-v2__art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-img); box-shadow: var(--sh-card); }
 .alb-v2__art > .postcard__art { width: 100%; height: 100%; }
+/* 金框：框畫在成品圖（.card-gen）與插圖上面，不然會被滿版的圖蓋住 */
+.alb-v2__postcard.is-gold .alb-v2__art::after {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit; box-shadow: inset 0 0 0 3px var(--gold);
+}
 .alb-v2__postcard:not(.is-collected) .alb-v2__art > .postcard__art { filter: grayscale(1); opacity: .55; }
 .alb-v2__postcard strong, .alb-v2__postcard small { display: block; }
 .alb-v2__postcard strong { margin-top: var(--sp-2); font-size: var(--fs-sm); line-height: 1.3; }
@@ -79,18 +123,23 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 /* 獎章精選卡：最近收下的一枚（左邊章、右邊名字與日期），下面一列小章疊在一起＋「顯示全部」。
    做成橫排而不是大章置中：收藏首頁在 390×844 一屏放得下，不用往下捲 */
 .alb-v2__medals {
-  margin: var(--sp-4) var(--gutter) 0; padding: var(--sp-4);
+  margin: var(--sp-3) var(--gutter) 0; padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
   background: var(--yoxi-white); box-shadow: var(--sh-card);
 }
 .alb-v2__medals .alb-v2__section-head { margin-bottom: 0; }
 .alb-v2__medal-top {
   display: grid; grid-template-columns: 68px minmax(0, 1fr); column-gap: var(--sp-4);
-  align-items: center; padding: var(--sp-2) 0 var(--sp-3); text-align: left;
+  align-items: center; padding: var(--sp-2) 0; text-align: left;
 }
 .alb-v2__medal-top .alb-hex { grid-row: 1 / 3; width: 68px; height: 68px; }
 .alb-v2__medal-top strong { align-self: end; font-size: var(--fs-lead); line-height: var(--lh-tight); }
 .alb-v2__medal-top small { align-self: start; margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-sm); }
+/* 一枚都還沒收下：空的章位（虛線六角），不拿還在路上的章放大 */
+.alb-v2__medal-top--empty strong { color: var(--app-muted); font-size: var(--fs-body); }
+.alb-v2__medal-top--empty small { font-size: var(--fs-cap); }
+.alb-hex--empty { filter: none; }
+.alb-hex--empty path { fill: var(--yoxi-mist); stroke: var(--yoxi-slate-lite); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .alb-v2__medal-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .alb-v2__medal-row { display: flex; padding-left: 10px; }
 .alb-v2__medal-mini { position: relative; width: 40px; height: 40px; margin-left: -10px; }
@@ -107,7 +156,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__medal-all small { color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-med); }
 
 /* 全部獎章（/badges）：三欄章牆 */
-.alb-v2__header--sub { padding-top: var(--sp-3); }
+.alb-v2__header--sub { padding-top: calc(var(--statusbar-h) + var(--sp-1)); }
 .alb-v2__back {
   display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: var(--sp-3);
   border-radius: var(--r-pill); background: var(--yoxi-mist);
@@ -120,7 +169,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 
 /* 六角章本體（album.js medalSVG）：金屬框＋明信片天色的章面＋銀色地面＋同粗細的地標線稿。
    銀色全用 tokens；天色在 SVG 裡取 MOCK.ART 色票。還沒收下的：章面換成素面金屬（不是半透明的灰影）。 */
-.alb-hex { display: block; overflow: visible; filter: drop-shadow(0 3px 4px rgba(6, 32, 64, .22)); }
+.alb-hex { display: block; overflow: visible; filter: drop-shadow(0 3px 4px color-mix(in srgb, var(--yoxi-navy) 22%, transparent)); }
 .alb-hex__s1 { stop-color: var(--yoxi-white); }
 .alb-hex__s2 { stop-color: var(--yoxi-slate-lite); }
 .alb-hex__s3 { stop-color: var(--yoxi-slate); }
@@ -136,7 +185,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-hex.is-locked .alb-hex__sun { fill: var(--yoxi-line); opacity: .45; }
 .alb-hex.is-locked { opacity: .82; }
 
-/* ---- 一列可按的卡（回顧入口、週回顧入口、長輩圖、所屬獎章） ---- */
+/* ---- 一列可按的卡（週回顧的長輩圖入口、明信片所屬的獎章） ---- */
 .alb-row {
   display: flex;
   align-items: center;
@@ -146,77 +195,11 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 }
 .alb-row__t { display: block; font-weight: var(--fw-heavy); line-height: 1.35; }
 .alb-row__s { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); line-height: 1.5; }
-.alb-row--navy { background: var(--yoxi-navy); border: 0; color: var(--yoxi-white); }
-.alb-row--navy .alb-row__s { color: var(--yoxi-white); opacity: .75; }
-.alb-row__icon { background: rgba(255, 255, 255, .14); }
-.alb-row__icon [data-icon] { width: 24px; height: 24px; display: block; }
 .alb-row .tile-icon [data-icon] { width: 24px; height: 24px; display: block; }
 .alb-row__medal { width: 52px; height: 52px; flex: none; }
 .alb-row__medal .alb-hex { width: 100%; height: 100%; }
 
-/* ---- S3 書架 ---- */
-.alb-shelf { margin-bottom: var(--sp-3); }
-.alb-shelf__spine {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  width: 100%;
-  padding: var(--sp-3) 14px var(--sp-3) 18px;
-  border-radius: var(--r-card);
-  background: var(--yoxi-white);
-  box-shadow: var(--sh-card);
-  text-align: left;
-  overflow: hidden;
-}
-/* 左緣那一條：書的側面 */
-.alb-shelf__spine::before {
-  content: "";
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  background: var(--yoxi-navy);
-}
-.alb-shelf__spine--open { border-radius: var(--r-card) var(--r-card) 0 0; }
-.alb-shelf__thumb {
-  position: relative;
-  width: 40px;
-  height: 52px;
-  flex: none;
-  border-radius: var(--r-btn);
-  overflow: hidden;
-}
-.alb-shelf__thumb--loose {
-  display: grid;
-  place-items: center;
-  background: var(--yoxi-cream);
-}
-.alb-shelf__thumb--loose [data-icon] { width: 22px; height: 22px; display: block; }
-.alb-shelf__body { min-width: 0; }
-.alb-shelf__open { flex: none; font-size: var(--fs-cap); font-weight: var(--fw-bold); color: var(--yoxi-navy); }
-.alb-shelf__name { display: block; font-weight: var(--fw-heavy); line-height: 1.35; font-size: var(--fs-sm); }
-.alb-shelf__meta { display: block; margin: 2px 0 var(--sp-2); font-size: var(--fs-xs); color: var(--app-muted); }
-.alb-shelf__cells {
-  padding: var(--sp-3);
-  background: var(--yoxi-white);
-  border-radius: 0 0 var(--r-card) var(--r-card);
-  box-shadow: var(--sh-card);
-}
-.alb-shelf.is-open .alb-shelf__cells { animation: alb-rise var(--t-base) var(--ease-out) both; }
-.alb-shelf__all {
-  display: block;
-  width: 100%;
-  margin-top: var(--sp-2);
-  padding: var(--sp-2) 0;
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-  color: var(--yoxi-navy);
-  text-align: center;
-}
-@keyframes alb-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-.alb-cell .postcard__name { font-size: var(--fs-xs); line-height: 1.25; }
-.alb-cell .postcard__foot { padding: var(--sp-3) var(--sp-2) var(--sp-2); }
+/* ---- 還沒收的明信片詳情：右上角的鎖 ---- */
 .alb-cell__lock {
   position: absolute;
   right: var(--sp-2);
@@ -235,49 +218,31 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-cell__lock--big { width: 34px; height: 34px; }
 .alb-cell__lock--big [data-icon] { width: 18px; height: 18px; }
 
-/* ---- X4 勳章牆（沒有進度環） ---- */
-.alb-badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); padding-top: var(--sp-2); }
-.alb-badges .badge { width: auto; }
-.alb-badges .badge__prog { font-style: normal; }
-
-/* ---- 日誌（只有你） ---- */
-.alb-journal { position: relative; overflow: hidden; }
-.alb-journal__in { padding: var(--sp-4); }
-.alb-journal__date { font-size: var(--fs-cap); color: var(--app-muted); }
-.alb-journal__line { margin-top: var(--sp-3); }
-.alb-journal__mood { width: 26px; height: 26px; display: block; color: var(--yoxi-red); }
-.alb-journal__moodt { font-weight: var(--fw-heavy); }
-.alb-journal__moodt--none { font-weight: var(--fw-med); color: var(--app-muted); }
-.alb-journal__steps { margin-top: var(--sp-2); font-weight: var(--fw-bold); }
-.alb-journal__places { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--app-muted); }
-.alb-journal__pics { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
-.alb-journal__pic {
-  position: relative;
-  display: block;
-  width: 64px;
-  height: 64px;
-  border-radius: var(--r-btn);
-  overflow: hidden;
-}
-.alb-journal__new { margin-top: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
-/* 角落一行小字 */
-.alb-journal__privacy {
-  justify-content: flex-end;
-  padding: var(--sp-2) var(--sp-3);
-  border-top: 1px solid var(--yoxi-line);
-  font-size: var(--fs-xs);
-}
-
 /* ---- 明信片詳情 ---- */
 .alb-big { padding: var(--sp-5) 42px var(--sp-2); }
 .alb-big__card { box-shadow: var(--sh-lift); text-align: left; }
+/* 金框（契約：金框的明信片在收藏裡也是金框）。chengshi.css 的 .postcard--gold 是 inset 陰影：
+   一來被上面這條 --sh-lift 蓋掉（同權重、後載入），二來就算留著也會被滿版的插圖／成品圖蓋住。
+   所以框另外用 ::after 畫在所有內容上面；背面不轉，翻過去時靠 backface-visibility 藏起來，背面自己再畫一圈。 */
+.alb-big__card.postcard--gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px var(--gold), inset 0 0 0 4px color-mix(in srgb, var(--gold-lite) 70%, transparent);
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+.alb-big__card.postcard--gold .postcard__back { box-shadow: inset 0 0 0 3px var(--gold); }
 .alb-big__name { font-size: var(--fs-body); }
 .alb-big__back { padding: 18px; }
 .alb-big__back b { font-size: var(--fs-body); }
 .alb-big__back small { font-size: var(--fs-xs); }
 .alb-big__back p { font-size: var(--fs-xs); line-height: 1.8; margin-top: var(--sp-2); }
-.alb-big__back .postcard__stamp { width: 40px; height: 40px; font-size: 10px; }
+.alb-big__back .postcard__stamp { width: 40px; height: 40px; font-size: var(--fs-xs); }
 .alb-big__note { font-weight: var(--fw-heavy); font-size: var(--fs-cap) !important; }
+
 .alb-hint { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-cap); color: var(--app-muted); }
 .alb-fact { padding: var(--sp-3) var(--sp-4); }
 .alb-fact .tile-icon [data-icon] { width: 22px; height: 22px; display: block; }
@@ -322,8 +287,8 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
   z-index: 8;
   left: var(--gutter);
   top: calc(var(--statusbar-h) + var(--sp-2));
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border-radius: var(--r-pill);
@@ -335,9 +300,9 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-fp__title {
   position: absolute;
   z-index: 8;
-  left: calc(var(--gutter) + 52px);
+  left: calc(var(--gutter) + 56px);
   top: calc(var(--statusbar-h) + var(--sp-2));
-  height: 40px;
+  height: 44px;
   display: flex;
   align-items: center;
   padding: 0 var(--sp-4);
@@ -362,16 +327,23 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-fp__covk { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
 .alb-fp__sec { margin: var(--sp-4) 0 var(--sp-2); }
 .alb-fp .citycolor { height: 28px; }
+.alb-fp__nocolor { padding: var(--sp-3) var(--sp-4); border: 1px dashed var(--yoxi-slate-lite); border-radius: var(--r-img); color: var(--app-muted); font-size: var(--fs-cap); line-height: var(--lh-body); }
 
 /* ---- 每日回顧（深色底；幕與幕之間用 --t-scene） ---- */
 .alb-lb { z-index: 5; }
 .alb-lb .lookback__top { padding-top: calc(var(--statusbar-h) + var(--sp-2)); }
 .alb-lb .lookback__act.is-on { animation: alb-scene var(--t-scene) var(--ease-out) both; }
 @keyframes alb-scene { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.alb-lb__exit { color: var(--yoxi-white); opacity: .8; font-weight: var(--fw-bold); }
+/* 「先離開」：字不變，連結本身撐到 44×44（負邊距抵掉，頁首高度不變） */
+.alb-lb__exit {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px; margin: calc(var(--sp-3) * -1) calc(var(--sp-2) * -1);
+  padding: 0 var(--sp-2);
+  color: var(--yoxi-white); opacity: .8; font-weight: var(--fw-bold);
+}
 .alb-lb__t { font-size: var(--fs-title); }
 .alb-lb__sub { margin-bottom: var(--sp-5); }
-.alb-lb__km { font-size: 44px; }
+.alb-lb__km { font-size: calc(var(--fs-display) * 1.3); }
 .alb-lb__card { width: 170px; margin: 0 auto 28px; }
 .alb-lb__photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .alb-lb__photo { aspect-ratio: 1 / 1; }
@@ -436,7 +408,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
   background: var(--yoxi-cream);
 }
 .alb-elder__art { position: absolute; inset: 0; }
-.alb-elder__shade { position: absolute; inset: 0; background: rgba(0, 0, 0, .18); }
+.alb-elder__shade { position: absolute; inset: 0; background: color-mix(in srgb, var(--yoxi-navy) 18%, transparent); }
 .alb-elder__cap {
   position: absolute;
   inset: 0;
@@ -449,7 +421,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
   text-align: center;
 }
 .alb-elder__big {
-  font-size: 30px;
+  font-size: calc(var(--fs-h1) * 15 / 14);   /* 30px：長輩圖的大字比頁面標題再大一號 */
   font-weight: var(--fw-heavy);
   line-height: 1.25;
   color: var(--gold-lite);
@@ -460,7 +432,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
   font-size: var(--fs-body);
   font-weight: var(--fw-heavy);
   color: var(--yoxi-white);
-  text-shadow: 1.5px 1.5px 0 rgba(0, 0, 0, .55);
+  text-shadow: 1.5px 1.5px 0 color-mix(in srgb, var(--yoxi-navy) 55%, transparent);
 }
 .alb-elder__sig {
   position: absolute;

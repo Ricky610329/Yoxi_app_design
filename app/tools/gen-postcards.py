@@ -7,7 +7,7 @@ gen-postcards.py —— 每張明信片五種畫風的成品：景點照片 → 
     python app/tools/gen-postcards.py --cards p1,p15       # 只做這幾張
     python app/tools/gen-postcards.py --styles ink --redo  # 只重畫水墨（不跳過已有的）
     python app/tools/gen-postcards.py --export-only        # 不生成，只把工作資料夾的 PNG 轉成網頁用的 JPEG
-    匯出後把印出來的 POSTCARD_GEN 貼回 app/js/views/explore.js（只有表上的明信片會用成品）
+    匯出後把印出來的 POSTCARD_GEN 貼回 app/js/views/explore-cards.js（只有表上的明信片會用成品）
 
 怎麼做的：
     底圖    prototype/assets/photos/ 的實景照片（Wikimedia Commons，授權在 credits.js；來源見 prototype/tools/fetch-photos.py）
@@ -18,14 +18,14 @@ gen-postcards.py —— 每張明信片五種畫風的成品：景點照片 → 
             （只用 img2img 時，「木刻版畫」會把新竹車站畫成日式寶塔）。
     輸出    app/assets/postcards/<明信片 id>-<款式>.jpg（480×640，JPEG q80）
             app/assets/postcards/index.json：每張的底圖、提示詞、種子、參數，可以重現。
-    款式    watercolor／oil／woodcut／ink／gold，跟 app/js/views/explore.js 的 DRAW_STYLES 一致。
+    款式    watercolor／oil／woodcut／ink／gold，跟 app/js/views/explore-cards.js 的 DRAW_STYLES 一致。
 
 環境（不進 repo；模型第一次跑會下載到 ~/.cache/huggingface，約 3 GB）：
     python3.13 -m venv .venv-sd && .venv-sd/bin/pip install torch diffusers transformers accelerate safetensors pillow opencv-python-headless
     .venv-sd/bin/python app/tools/gen-postcards.py
     Apple Silicon 用 MPS（fp16 在 MPS 上容易解出全黑，整條用 fp32）；M4 Pro 一張約 30 秒，110 張約一小時。
 
-授權：CC BY-SA 的底圖，改作也以 CC BY-SA 4.0 分享；頁面上一律標「AI 生成示意」並顯示底圖作者與授權（explore.js 的 creditHTML）。
+授權：CC BY-SA 的底圖，改作也以 CC BY-SA 4.0 分享；頁面上一律標「AI 生成示意」並顯示底圖作者與授權（explore-unlock.js 的 creditHTML）。
 """
 import argparse
 import json
@@ -201,7 +201,7 @@ def export(cards, styles):
                                    ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     print('匯出 %d 張，共 %.1f MB → %s' % (n, total / 1048576.0, OUT))
     done = [c for c in CARD_PHOTO if all((OUT / ('%s-%s.jpg' % (c, st))).exists() for st in STYLE)]
-    print('五款齊全的明信片（貼到 app/js/views/explore.js 的 POSTCARD_GEN）：')
+    print('五款齊全的明信片（貼到 app/js/views/explore-cards.js 的 POSTCARD_GEN）：')
     print('const POSTCARD_GEN = [%s];' % ', '.join("'%s'" % c for c in done))
 
 

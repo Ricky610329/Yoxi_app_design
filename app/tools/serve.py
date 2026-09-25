@@ -2,8 +2,11 @@
 
 用法：python app/tools/serve.py [port=8420]
 從 repo 根起站（app 用 ../prototype/... 載共用檔），開 http://localhost:<port>/app/。
-開發用：Cache-Control: no-store。注意 service worker 仍是 cache-first，
-改了檔要把 sw.js 的 VERSION 加一，或在 DevTools → Application 勾「Update on reload」。
+開發用：Cache-Control: no-store。service worker 的策略（見 app/sw.js 檔頭）：
+  - index.html（導覽）network-first：改了重新整理一次就看得到。
+  - css／js 等預先快取的檔 stale-while-revalidate：改了要重新整理「兩次」（第一次在背景更新快取）。
+  - 明信片與照片 cache-first：換了同名的圖要把 sw.js 的 VERSION 加一（或 DevTools → Application 清快取）。
+  要一次到位：DevTools → Application → Service workers 勾「Update on reload」，或 VERSION 加一。
 """
 import http.server
 import socket

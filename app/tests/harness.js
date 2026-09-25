@@ -11,6 +11,9 @@
      只要有一條失敗整個 test 就是 FAIL。例外與 timeout 也是 FAIL。
    - app.click() 一律派一個真的 click 事件：element.onclick、href 導覽、
      router 的 data-back 攔截都會照真實順序發生。直接呼叫 el.onclick() 會跳過 href。
+     el.click() 不管元素看不看得到；要驗「手指點得到」用 app.click(sel, { hit:true })（命中測試）。
+   - 死按鈕與禁用詞不只掃 main.view：.device 裡看得到的浮層（推播、分享、確認框、吐司、[data-overlay]）
+     與顯示中的 #demo-panel 也一起掃（scanRoots）。
    - 每個 spec 開跑前自動 reset 一次，spec 之間不互相污染；spec 內的 test 要自己 reset。
    ========================================================================== */
 (function () {
@@ -101,6 +104,68 @@
   }
 
   function stripQuery(p) { return String(p || '').split('?')[0].split('#')[0]; }
+
+  function describe(el) {
+    if (!el || !el.tagName) return String(el);
+    const cls = el.classList && el.classList.length ? '.' + Array.prototype.slice.call(el.classList, 0, 2).join('.') : '';
+    const act = el.getAttribute && el.getAttribute('data-act');
+    return '<' + el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + cls + (act ? ' data-act=' + act : '') + '>';
+  }
+
+  /* app.click(sel, { hit:true })：元素中心點真的點得到它嗎（真的手指點不到藏起來或被蓋住的東西） */
+  function hitTest(el, sel) {
+    const d = el.ownerDocument;
+    const w = d && d.defaultView;
+    const name = typeof sel === 'string' ? sel : describe(el);
+    const head = 'click(' + name + ', {hit:true})：';
+    let r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) throw new Error(head + '元素看不見（寬高 0 或 display:none）');
+    /* 在捲動區外：先捲進來（使用者也會先捲過去） */
+    if (w && (r.bottom <= 0 || r.right <= 0 || r.top >= w.innerHeight || r.left >= w.innerWidth)) {
+      try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch (e) { el.scrollIntoView(); }
+      r = el.getBoundingClientRect();
+    }
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const top = d.elementFromPoint(x, y);
+    if (!top || (top !== el && !el.contains(top))) {
+      throw new Error(head + '中心點 (' + Math.round(x) + ', ' + Math.round(y) + ') 點到的是 ' +
+        (top ? describe(top) : '畫面外'));
+    }
+  }
+
+  /* 死按鈕與禁用詞要掃的範圍：main.view、#tabbar，
+     加上 .device 裡、main.view 之外「看得到」的浮層（data-overlay、確認框／分享面板的 .scrim、推播、吐司），
+     以及顯示中的 #demo-panel（桌機才顯示；測試的 iframe 是手機寬，平常是藏著的）。 */
+  const OVERLAY_SEL = '[data-overlay], .scrim, .sharesheet, .sys-share, .pushmock, .toast';
+  function shownEl(w, el) {
+    if (!w || !el || !el.isConnected) return false;
+    const s = w.getComputedStyle(el);
+    if (s.display === 'none' || s.visibility === 'hidden') return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+  function scanRoots(appObj) {
+    const w = appObj.win;
+    const main = appObj.$('main.view[data-view]');
+    const roots = [];
+    if (main) roots.push({ el: main, where: '' });
+    const tb = appObj.$('#tabbar');
+    if (tb) roots.push({ el: tb, where: '〔#tabbar〕' });
+    const dev = appObj.$('.device');
+    if (dev && w) {
+      dev.querySelectorAll(OVERLAY_SEL).forEach(function (el) {
+        if (el.closest('main.view') || !shownEl(w, el)) return;   /* main.view 裡的已經掃過；離場中的舊 view 不算 */
+        roots.push({ el: el, where: '〔浮層 ' + describe(el) + '〕' });
+      });
+    }
+    const dp = appObj.$('#demo-panel');
+    if (dp && shownEl(w, dp)) roots.push({ el: dp, where: '〔#demo-panel〕' });
+    /* 巢狀的只留最外層（.sys-share 是 .scrim，裡面還有 .sharesheet） */
+    return roots.filter(function (r) {
+      return !roots.some(function (o) { return o !== r && o.el !== r.el && o.el.contains(r.el); });
+    });
+  }
 
   /* ------------------------------------------------------------ iframe */
   function ensureFrame() {
@@ -248,11 +313,17 @@
       }, ms || 4000, 'at(' + path + ')，目前 ' + stripQuery(app.route().path));
     },
 
-    click: function (sel, ms) {
+    /* click(sel|el, ms) 或 click(sel|el, { ms, hit:true })。
+       預設跟以前一樣直接 el.click()（藏起來的元素也點得到）。
+       hit:true 先做命中測試：元素中心點的 elementFromPoint 必須是它自己或它的子孫，
+       不然就丟例外（display:none、寬高 0、被浮層蓋住、pointer-events:none 都算點不到）。 */
+    click: function (sel, opt) {
+      const o = typeof opt === 'number' ? { ms: opt } : (opt || {});
       return waitFor(function () { return typeof sel === 'string' ? app.$(sel) : sel; },
-        ms || 2000, 'click 找不到 ' + sel)
+        o.ms || 2000, 'click 找不到 ' + sel)
         .then(function (el) {
           const w = win();
+          if (o.hit) hitTest(el, sel);
           if (typeof el.click === 'function') el.click();
           else el.dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true, view: w }));
           return sleep(30).then(function () { return el; });
@@ -316,6 +387,9 @@
     for (let i = 0; i < BEHAVIOR_ATTRS.length; i++) if (el.hasAttribute(BEHAVIOR_ATTRS[i])) return true;
     const href = el.getAttribute('href');
     if (href && href.indexOf('#/') === 0) return routeKnown(A, href.slice(1)) ? true : 'unknown-route';
+    /* 另開分頁的真連結（demo 面板的「原型總覽」）：不會把 app 導走，算有行為 */
+    if (el.tagName === 'A' && href && href[0] !== '#' && !/^javascript:/i.test(href) &&
+        el.getAttribute('target') === '_blank') return true;
     return false;
   }
 
@@ -335,14 +409,14 @@
     },
     fail: function (msg) { return record(false, msg || 'fail'); },
 
-    /* 死按鈕：main.view 與 #tabbar 內的 a／button／[role=button] 都要有行為 */
+    /* 死按鈕：main.view、#tabbar、看得到的浮層與 #demo-panel（見 scanRoots）內的 a／button／[role=button] 都要有行為 */
     noDeadButtons: function (appObj, msg) {
       appObj = appObj || app;
       const A = appObj.APP;
-      const roots = [appObj.$('main.view[data-view]'), appObj.$('#tabbar')].filter(Boolean);
       const dead = [];
       const seen = new Set();
-      roots.forEach(function (root) {
+      scanRoots(appObj).forEach(function (r) {
+        const root = r.el;
         root.querySelectorAll('a, button, [role="button"]').forEach(function (el) {
           if (seen.has(el)) return;
           seen.add(el);
@@ -355,18 +429,18 @@
             p = p.parentElement;
           }
           dead.push(label(el) + (b === 'unknown-route' ? '（' + el.getAttribute('href') + ' 不是已註冊的 route）' :
-            b === 'back-not-a' ? '（data-back 要放在 <a> 上，router 只攔 a[data-back]）' : ''));
+            b === 'back-not-a' ? '（data-back 要放在 <a> 上，router 只攔 a[data-back]）' : '') + r.where);
         });
       });
       return record(dead.length === 0, (msg ? msg + '：' : '') + '死按鈕 ' + dead.length + ' 個：' + dead.join('、'));
     },
 
-    /* 禁用詞：main.view 的文字節點＋title／aria-label／placeholder 屬性＋document.title */
+    /* 禁用詞：main.view、#tabbar、看得到的浮層（推播、分享、確認框、吐司…）與顯示中的 #demo-panel 的
+       文字節點＋title／aria-label／placeholder 屬性＋document.title */
     noBannedWords: function (appObj, opt) {
       appObj = appObj || app;
       opt = opt || {};
       const allow = WORD_OK.concat(opt.allow || []);
-      const root = appObj.$('main.view[data-view]');
       const d = appObj.doc;
       const hits = [];
       function scan(txt, where) {
@@ -377,20 +451,21 @@
           if (i >= 0) hits.push(w + '「' + txt.slice(Math.max(0, i - 8), i + w.length + 8).replace(/\s+/g, ' ').trim() + '」' + where);
         });
       }
-      if (root && d) {
+      if (d) scanRoots(appObj).forEach(function (r) {
+        const root = r.el;
         const walker = d.createTreeWalker(root, 4 /* SHOW_TEXT */, null);
         let n;
         while ((n = walker.nextNode())) {
           const par = n.parentElement;
           if (par && par.closest('script, style, template, noscript')) continue;
-          scan(n.nodeValue, '');
+          scan(n.nodeValue, r.where);
         }
-        root.querySelectorAll('[title], [aria-label], [placeholder]').forEach(function (el) {
+        [root].concat(Array.prototype.slice.call(root.querySelectorAll('[title], [aria-label], [placeholder]'))).forEach(function (el) {
           ['title', 'aria-label', 'placeholder'].forEach(function (a) {
-            if (el.hasAttribute(a)) scan(el.getAttribute(a), '（' + a + '）');
+            if (el.hasAttribute(a)) scan(el.getAttribute(a), '（' + a + '）' + r.where);
           });
         });
-      }
+      });
       if (d) scan(d.title, '（document.title）');
       return record(hits.length === 0, (opt.msg ? opt.msg + '：' : '') + '禁用詞 ' + hits.join('、'));
     },
@@ -436,9 +511,19 @@
         return true;
       });
       const set = new Set(keep);
-      return keep.filter(function (el) {
+      const top = keep.filter(function (el) {
         let p = el.parentElement;
         while (p && p !== root.parentElement) { if (set.has(p)) return false; p = p.parentElement; }
+        return true;
+      });
+      /* [data-gallery]：一整片同一種東西的格子（例：/postcards 收下的明信片網格）不管裡面幾格都算一個，
+         跟地圖上的景點不算一樣 —— 認知上是「一面牆」一件事，一格一格算的話 22 張卡就把 L1 的上限吃光。 */
+      const galleries = new Set();
+      return top.filter(function (el) {
+        const g = el.closest('[data-gallery]');
+        if (!g || !root.contains(g)) return true;
+        if (galleries.has(g)) return false;
+        galleries.add(g);
         return true;
       }).length;
     },
@@ -551,8 +636,10 @@
       const pre = document.getElementById('result');
       if (pre) pre.textContent = JSON.stringify(out);
       const st = document.getElementById('status');
-      if (st) st.textContent = out.summary.ok ? '全部通過 ' + out.summary.pass + '/' + out.summary.total
-        : '未通過 ' + out.summary.fail + '/' + out.summary.total;
+      /* 找不到的 spec 檔＝那一塊整個沒跑：run.py 判 FAIL，這裡的標題也不說「全部通過」 */
+      if (st) st.textContent = out.summary.ok && !out.missing.length ? '全部通過 ' + out.summary.pass + '/' + out.summary.total
+        : !out.summary.ok ? '未通過 ' + out.summary.fail + '/' + out.summary.total
+        : '未通過：找不到的 spec 檔 ' + out.missing.length + ' 個（其餘 ' + out.summary.pass + '/' + out.summary.total + '）';
       document.documentElement.setAttribute('data-tests-done', '1');
     }
   }

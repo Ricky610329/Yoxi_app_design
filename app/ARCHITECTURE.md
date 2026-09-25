@@ -17,11 +17,11 @@
 | 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
 | 地圖歸誰 | **F＋E** 同頁切模式 | 叫車首頁是真實新竹地圖（`HSMAP` paper）；搭車不顯示景點，探索同時最多 **4** 個景點，可設為下車點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
-| 收藏組織 | 摘要式首頁 | 「我的明信片」主卡（張數＋最近三張疊卡，點了進 `/postcards`）、兩張統計卡、獎章精選卡；舊路線書架只作對照 |
+| 收藏組織 | 摘要式首頁 | 「我的明信片」主卡（張數＋最近三張疊卡，點了進 `/postcards`，收下的每一格都點得進詳情）、兩張統計卡（「去過的地方」＝不重複的地點數）、「回顧」一列（今天的回顧 → `/lookback`、這一週 → `/week`、城市足跡 → `/footprint`）、獎章精選卡 |
 | 獎章呈現 | **X4** 勳章牆（六角金屬章，章面是地標線稿） | 首頁放大最近收下的一枚＋一列小章＋「顯示全部」→ `/badges` 三欄章牆；沒有進度環、沒有集點卡；還在路上的寫「收集 4/8」 |
 | 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
 | 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/explore`／`/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
-| 儀式 | 抵達 → 收集 → 抽卡 | 夜色地圖上這個地方亮起光柱 → 點它出「收集明信片」→ 卡背蓄力、翻開（特效照稀有度分級，金框最重）→ 結果；點畫面可快轉，減少動態效果時直接看結果 |
+| 儀式 | 抵達 → 收集 → 抽卡 | 夜色地圖上這個地方亮起光柱 → 點它出「收集明信片」→ 卡背蓄力、翻開（特效照稀有度分級，金框最重）→ 結果（只寫畫風名，不寫機率，也不寫「必得」；機率只在「?」裡）；點畫面可快轉、鍵盤有「跳過動畫」，抽完焦點停在「抽到 ○○」；減少動態效果時直接看結果 |
 | 家人 | 分享選項 | 長輩圖在分享面板第一格；沒有「家人模式」 |
 | 好康任務 | 不同頁 | 原封不動，不合併 |
 | 好友 | 不做 | 五個未決還在，不進 app |
@@ -36,6 +36,7 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 ### 雙主頁的叫車面板
 
 - `#/ride` 預設是一般搭車地圖與叫車欄位；搭車面板跟探索一樣上下拉：往下拉收到只剩拉把（整張地圖露出來），往上拉或點拉把回到叫車欄位，拖曳時跟手、放開後接續動畫。面板頂端的「探索」切到 `#/ride?mode=explore`，地圖顯示四個附近地點，並依 `APP.place(id).dist` 預選最近的地區。探索面板收合態用一張精簡地點卡顯示名稱、短句、距離與步行分鐘，動作是「用 yoxi」及「收集」；上拉或點「收集」時保留完整地點卡與兩個動作，卡片堆接在下方，內容過長可捲動。點卡片開啟可翻面的懸浮小卡，不進地點詳情頁。地區只從地圖圖釘切換，不另設附近地區清單。選點後網址寫成 `#/ride?mode=explore&area=<地點 id>`；往下拉只收合面板，仍留在探索。探索面板有三段：展開（卡片）／收合（地點卡）／只剩拉把。兩個模式的地圖都一開始就畫成最大可見高度、貼齊上緣，面板收放不縮放地圖；定位鈕與地圖署名跟著貼到可見範圍底邊（`ride.js` 的 `mountFullMap`／`bindDragSheet`）。從地圖點選會把面板帶回收合態（只剩拉把時也會叫回來）；切回「搭車」清除探索 query。
+- 手勢與可及性（2026-09-25 review）：拉把是 `<button class="sheet__grip" data-act="toggle-sheet" aria-expanded>`，44 px 高（面板 padding-top 0，只剩拉把時高 44）；移動 ≤ 8 px 算點一下，超過就照拖的方向（加放手速度）換段；只認主要指標的左鍵、`setPointerCapture`，失焦或 `lostpointercapture` 就作廢回原段；拖曳一開始就拿掉 `is-collapsed`，卡片堆跟著手長出來。視窗改大小（ResizeObserver＋resize）整張地圖重畫。探索模式的上車點只留 pin、不畫地址標籤；地點卡的標籤是「今天的地方／離你最近／你選的地方」（照 `MOCK.TODAY`）。懸浮小卡掛在 `.device`（`data-overlay`），用 `APP.ui.a11yDialog`。已經有下車點時不放「機場接送」（可按數）。
 - 四組展示對應：`glass-kiln → p11,p17`、`market → p1,p2,p7,p20`、`moat → p3,p19`、`hill → p6,p21`。群組只定義卡片歸屬，收集與公里數仍由 `STATE`／`MOCK`／`APP.fmt` 計算；卡片不連地點詳情。
 - 舊 `/place/:id`、探索與回顧路由仍能直接開啟，供既有資料和流程對照；新底欄和叫車卡片面板不導向它們。
 
@@ -53,11 +54,13 @@ app/
   js/app.js                 核心：window.APP（router、view registry、store、fmt、nav、ui、map）
   js/views/system.js        設定、onboarding、推播浮層、demo 工具、分享
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
-  js/views/explore-fx.js    explore 的特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）；在 explore.js 之前載入
-  js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、抵達與抽卡、路線列表／詳情
+  js/views/explore-fx.js    explore 的特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）；在 explore-cards.js 之前載入
+  js/views/explore-cards.js 明信片與抽卡的共用 API（DRAW_STYLES、drawStyle、cardStyleOf、postcardSrc、POSTCARD_GEN、paintCardArt、openOdds、collect）
+  js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、路線列表／詳情
+  js/views/explore-unlock.js 抵達與抽卡（/unlock）
   js/views/album.js         收藏（摘要式＋X4 六角章）、明信片子頁、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
-  assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，載不到時卡面退回照片＋SVG 濾鏡
+  assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore-cards.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，由 sw 在執行期 cache-first 存（看過一次離線也有），載不到時卡面退回照片＋SVG 濾鏡
   tools/serve.py            本機靜態伺服器（測 PWA 用）
   tools/make-icons.py       產生 PWA 圖示
   tools/gen-postcards.py    生成明信片成品：實景照片 → Stable Diffusion img2img＋ControlNet（本機跑，環境見檔頭）
@@ -65,7 +68,7 @@ app/
   tests/runner.html         瀏覽器端測試跑者（iframe 載入 index.html）
   tests/harness.js          瀏覽器端測試 API（T／app）
   tests/specs/*.spec.js     各區塊的瀏覽器測試
-  tests/unit/*.test.mjs     node 單元測試（router、fmt、store）
+  tests/unit/*.test.mjs     node 單元測試（router、fmt、store、place；helpers 的 loadApp({realMock:true}) 載真的 mock.js）
 ```
 
 **不動 `prototype/`。** 全部只讀。需要共用的東西從 `../prototype/...` 載入；
@@ -79,7 +82,7 @@ css: ../prototype/css/tokens.css → base.css → components.css → chengshi.cs
 js:  ../prototype/js/icons.js → mock.js → state.js → shell.js → interact.js
      → ../prototype/assets/map/hs-core.js → hs-wide.js → hs-places.js → ../prototype/js/hsmap.js
      → ../prototype/assets/photos/credits.js → ../prototype/js/photos.js
-     → js/app.js → js/views/system.js → ride.js → explore.js → album.js
+     → js/app.js → js/views/system.js → ride.js → explore-fx.js → explore-cards.js → explore.js → explore-unlock.js → album.js
 ```
 傳統 `<script>`，不用 ES module（file:// 會被 CORS 擋）。`APP.start()` 在 DOMContentLoaded 之後才跑，
 所以四支 views 在它之前都已註冊完。`concept.css` 不載；`hsmap` 需要的規則（`.hsmap-*`、署名）由 `app.css` 自備。
@@ -111,6 +114,7 @@ render／mount 丟例外時畫面換成錯誤卡（`[data-app-error]`）、錯�
 `render` 出來的第一層會被包在 `<main class="view" data-view="place">` 裡，放進 `#view`。
 每次導覽：舊 view 的 cleanup → `html[data-view-ready]` 移除 → 新 view render＋mount → 轉場 → `html[data-view-ready="1"]`。
 首屏完成後 `html[data-app-ready="1"]`。
+其他選項：`remember: false`＝不把這條路由記進 `tabPaths`（暫時的畫面，例 `/drawer`）。`tab: 'explore'` 的舊路由歸在叫車底下：底欄亮「叫車」、位置記在 `tabPaths.ride`。
 
 ### 3.2 導覽
 ```js
@@ -127,6 +131,10 @@ tab 切換：`APP.nav.tab('album')` 記住各 tab 最後停的 path（切回來�
 頁內狀態（例：收藏的 pill）要寫回網址時用 `APP.nav.replaceQuery('tab=journal')`：只換目前這頁的 query，不重畫、不新增歷史，同步 `current()` 與 `tabPaths`（切 tab 再回來停在同一段）。不要自己呼叫 `history.replaceState`，router 看不到。
 mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initSheet／initPan`）由 router 記下，離開該頁時自動移除。
 轉場：push 從右滑入、back 從左滑回、tab 切換淡入；`html[data-still]` 或 `?still=1` 時關動畫。
+- `nav.go` 的目標跟目前網址相同時一律 replace（不然退回那一筆只有 popstate、沒有 hashchange，要按兩次返回）；網址沒變的 popstate 用 `state.i` 對齊序號。
+- 每次導覽一開始呼叫 `APP.ui.dismissOverlays()`（§3.5）。
+- 導覽完焦點移到新畫面第一個 `h1`（加 `tabindex=-1`、`[data-nav-focus]`，不畫外框），沒有就放 `main`；mount 自己放了焦點、或焦點在對話框／浮層／demo 面板裡時不搶。
+- 這次載入的第一個 route 是不帶 query 的 `/ride` 或 `/album`、而且還沒看過 onboarding → 先去 `/welcome`（裝成 app 從主畫面開也看得到介紹）。
 
 ### 3.3 狀態
 - 收藏／獎章／路線／點數／設定：**沿用 `STATE`**（`../prototype/js/state.js`，localStorage `yoxi-chengshi-v1-2`）。
@@ -144,16 +152,20 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   | 鍵 | 型別 | 說明 |
   |---|---|---|
   | `onboarded` | bool | 看過 onboarding |
-  | `dropoff` | `{ id, name, km, setAt, via:'k1'|'e'|'search'|'route' }` 或 null | 下車點。km 從 MOCK 的距離算，車資與分鐘不存，畫面用 `APP.fmt` 現算 |
+  | `dropoff` | `{ id, name, km, setAt, via:'k1'|'e'|'search'|'route' }` 或 null | 下車點。km 從 MOCK 的距離算（距離不明時是 null，畫面寫「距離待確認」、不顯示車資與分鐘），車資與分鐘不存，畫面用 `APP.fmt` 現算 |
   | `trip` | `{ placeId, phase:'matching'|'riding'|'done', startedAt, rated:bool, km }` 或 null | 進行中的叫車 |
   | `pushes` | `[{ when:'am'|'pm', at:ISO }]` | 今天發過的推播（最多兩則） |
   | `arrivedDemo` | string 或 null | demo「模擬抵達」暫存的 placeId |
   | `draws` | `{ 地點 id: 款式 key }` | 走路抵達抽到、還沒收的款式（重進不重抽；收下就清掉） |
   | `cardStyle` | `{ 明信片 id: 款式 key }` | 收下時抽到的款式（金框的明信片在收藏裡也是金框） |
   | `fxMute` | bool | 抵達與抽卡的音效關掉 |
-  | `tabPaths` | `{ ride, explore, album }` | 各 tab 最後停的 path（由 nav 維護） |
+  | `tabPaths` | `{ ride, album }` | 各 tab 最後停的 path（由 nav 維護；`remember:false` 的不記） |
+  | `version` | number | store 的結構版本（目前 2）；load 時每個鍵照 `fresh()` 的型別檢查，型別不對退回預設，不認得的鍵原樣保留 |
 - 事件：`APP.on('store:change'|'state:change'|'route:change', fn)`／`APP.emit(...)`。
-  任何寫 `STATE.*` 的地方請跟著 `APP.emit('state:change')`，tab bar 的小紅點與統計才會更新。
+  任何寫 `STATE.*` 的地方請跟著 `APP.emit('state:change')`，統計才會更新（底欄不聽這些事件，也沒有小紅點）。
+- id 認不得的 `trip`／`dropoff`（舊版資料、手改）在 `/ride`、`/trip`、`/trip/done` 的 mount 與 `arrive()` 被清掉，不會卡住叫車。
+- 「清除我的足跡」（system）清 STATE 與 `dropoff`、`trip`、`arrivedDemo`、`rideVia`、`cardStyle`、`draws`、`pushes`，`tabPaths` 回預設；保留 `onboarded`、`fxMute`、`rideSpots` 與 `STATE.settings`。
+- 每日回顧結束時用 `STATE.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情與照片。
 
 ### 3.4 格式與公式（不准手寫數字）
 ```js
@@ -170,22 +182,30 @@ APP.fmt.km(m)         // 公尺 → 公里（一位小數的數字），給 fare
 APP.fmt.clock(d)      // '9:05'（狀態列用）
 APP.esc(s)            // HTML escape
 ```
+`fmt.dist` 先四捨五入再挑單位（999.6 → '1.0 km'）。
 `APP.place(id)` → `MOCK.findPlace` 的正規化結果：`{ id, name, art, dist(m), type, hook, story[], why[], card(明信片 id), lat?, lon? }`，
 另有 `area, eyebrow, tip, hours, state（SPOTS 上的 today/seen/new 或 null）, raw（findPlace 原物件）`。
-接受地點 id、明信片 id（p9 → neiwan）、路線站 id；**不認得的 id 回 `null`**（findPlace 會默默退回今天的地方，這裡擋掉），`/place/:id` 請自己顯示找不到。
+接受地點 id、明信片 id、路線站 id，一律正規化成地點（p1 → station、p2 → market、p9 → neiwan；只出現在路線上的卡如 p3、p14 保留卡片 id）；**不認得的 id 回 `null`**（findPlace 會默默退回今天的地方，這裡擋掉），`/place/:id` 請自己顯示找不到。
 `card` 找不到明信片時是 `null`。距離以 findPlace 為準（例：brick 在 PENDING 是 2400、SPOTS 是 1500，取 2400）。
 `APP.places()` → 全部可去的地方（SPOTS ∪ PENDING ∪ TODAY ∪ FAR_PLACE，去重）。
 
 ### 3.5 UI 零件
 ```js
 APP.ui.toast(msg)                                 // 沿用 SHELL.toast，掛在 .device 內
-APP.ui.confirm({ text, yes:'清除', no:'先不要' })  // Promise<bool>，沿用 interact.js 的 .scrim/.modal 樣式
-APP.ui.share(opt)                                 // SHELL.shareSheet；第一格永遠是「傳給家人（長輩圖）」→ #/elder
+APP.ui.confirm({ text, yes:'清除', no:'先不要', danger })  // Promise：按是 true、按否 false、沒有回答就被關掉（Esc、點遮罩、導覽離開、已經有一個開著）null；
+                                                  // danger:true 時預設焦點在「否」。「否」本身是動作的（叫車前的「直接叫車」）要寫 === false
+APP.ui.dismissOverlays()                          // 收掉 .device 裡所有 [data-overlay]（router 每次導覽一開始自己呼叫）
+APP.ui.announce(text)                             // 念給報讀器聽（常駐的 #app-live）
+APP.ui.share({ title, kind, card, url })          // 分享面板；第一格永遠是「傳給家人（長輩圖）」→ #/elder（有 card 時 #/elder?card=<id>）；
+                                                  // url 沒給就用打開那一刻的網址（面板上 data-share-url）
 APP.ui.push({ when:'am'|'pm' })                   // 推播浮層（system.js 實作並掛到 APP.ui.push）
 APP.ui.setStatus(tone)                            // 切狀態列字色
 ```
-tab bar：`<nav class="tabbar" id="tabbar">` 沿用 chengshi.css 樣式與 `TABSETS.default` 的圖示；
-探索 tab 在「今天的地方還沒收」時有 `.tabbar__dot`（不是未讀數字）。
+tab bar：`<nav class="tabbar" id="tabbar">` 沿用 chengshi.css 樣式與 `TABSETS.default` 的圖示；只建一次，換頁只更新 `is-active`／`aria-current`。沒有小紅點。
+
+**浮層約定**：掛在 `.device`（`main.view` 外面）、換頁就該消失的東西（分享面板、推播、確認框、機率說明、懸浮小卡）加 `data-overlay`；要收尾的設 `el._dismiss = function(){…}`（移除自己、還焦點、拆 listener，可重複呼叫）。toast 不是浮層，會跟著跳到下一頁。
+**對話框**：`APP.ui.a11yDialog(el, { label, onEsc, focus })` → release。Tab／Shift+Tab 在框裡繞；開著時 `#view`、`#tabbar`、`#demo-panel` 設 `inert`（疊層計數，全部關掉才解除）；只有最上層吃 Esc；沒標 `data-overlay` 的對話框在導覽時當作按了 Esc。
+**toast**：畫面上的 toast 是 `aria-hidden`，文字另外放進常駐的 `#app-live`（`role=status`），先清空、稍後再放字，報讀器才念得到。
 
 ### 3.6 地圖
 ```js
@@ -210,6 +230,7 @@ container 要有尺寸（.map 以 `position:absolute; inset:0` 填滿它；conta
 沒給 `onSpot` 時景點是 `<a href="#/place/:id">`；有給時是 `<button>` 並以 `onclick` 呼叫。每顆 `.spot` 有 `data-spot="<id>"`。
 選到的景點加 `.is-selected`（app.css：從底部尖角放大 1.4 倍、框換海軍藍、壓在其他景點上面）；叫車首頁的探索模式與 `/explore/map` 共用。景點縮圖維持插圖不換實景照片（38–46 px 的照片糊成一團、跟「還沒去＝灰階」的狀態搶辨識度）。
 max 預設 10；`spots.length > max` 直接 throw。
+景點會自動推開（`declutter`，預設開；`declutter:false` 關）：量每顆 `.spot` 的大小兩兩推開幾輪、夾在地圖框內（上緣留 `spotsTop`，預設 64 px），有 `onSpot` 的地圖連選到放大 1.4 倍的空間都算進去（倍數在 app.js 的 `SPOT_SELECTED_SCALE` 與 app.css 各寫一次，要一起改）。推完 `m.spots` 的 x/y/px/py 是實際畫的位置，原位在 `px0／py0`。
 內部：建 `<div class="map app-map" data-pan><svg class="map__svg"></svg><div class="map__spots" data-panlayer></div></div>`，
 `HSMAP.render(svg, …)` → `handle.spotsAt(list, {clamp:true})` → `SHELL.renderSpots`。右下角 ODbL 署名由 hsmap 自帶，不要關。
 叫車首頁的 pin（上車點）與景點 `.spot` 是兩套標記，不共用 class。
@@ -223,7 +244,11 @@ body[data-view="place"][data-tab="explore"][data-route="/place/:id"]
                                   .device > nav.tabbar#tabbar（tab 為 null 時 hidden）
 #demo-panel（.stage 內、.device 的旁邊；桌機才顯示；內容空的時候 :empty 隱藏）
 <pre id="app-errors" hidden>（window.onerror／render 錯誤；headless 驗收讀它）
+#app-live（body 底下，role=status aria-live=polite，視覺隱藏；toast 與 APP.ui.announce 的文字）
+html[data-layout="desktop"|"phone"]（§9 的判斷結果，給測試與除錯）
+[data-nav-focus]（導覽後拿到焦點的 h1／main）
 ```
+demo 面板的「模擬抵達」下拉選單遇到清單外的地方（路線站的明信片 id，例 /place/p14）會多一個選項排在最前面並選起來。
 demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-panel__btn`（海軍藍）、`.demo-panel__btn--ghost`、`.demo-panel__note`；模擬抵達那一組（system.css 提供）：`.demo-panel__group`、`__label`、`__select`（`[data-demo-place]`）、`__row`、`.demo-panel__btn--gold`，按鈕是 `data-act="arrive-walk"`／`"arrive-ride"`。
 內建卡片：`.app-empty > .app-empty__card`（`__eyebrow`、`__t`、`__p`），views 要做「找不到」也可以沿用。
 - 每個可按的東西都要有行為：`href="#/…"`（必須是已註冊的 route）、`element.onclick`、或 `data-toast="…"`。
@@ -258,6 +283,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 ```
 Chrome 旗標沿用 `prototype/tools/verify-quiet.py`：`--headless=new --disable-gpu --hide-scrollbars --allow-file-access-from-files --force-device-scale-factor=1 --virtual-time-budget=N --dump-dom`（預設 N=180000，`--budget` 可調）。
 結果寫在 `runner.html` 的 `<pre id="result">`（JSON：`{specs:[{name, tests:[{name, ok, msg, ms}]}], missing:[找不到的 spec 檔], only, summary:{pass, fail, total, ok}}`），完成時 `html[data-tests-done="1"]`，Python 解析它。
+找不到的 spec 檔（`missing`）算 FAIL、exit 1。virtual time 下改 iframe 大小不會送出 ResizeObserver／resize，要測的話自己補發 `resize`。
 手動看：`chrome --allow-file-access-from-files app/tests/runner.html`（file:// 下 iframe 要同源才讀得到），或經 `app/tools/serve.py`。
 
 ### 6.2 瀏覽器端 API（`tests/harness.js`）
@@ -279,6 +305,8 @@ T.spec('ride', function (t) {
 - 斷言是軟的：失敗記下來繼續跑，任何一條失敗該 test 就 FAIL；例外與逾時（預設 8 s）也是 FAIL，附 stack 前兩行。
 - `app.click` 派一個真的 click 事件（`el.click()`），`element.onclick`、href 導覽、router 的 `a[data-back]` 都照真實順序發生。
 - 每個 spec 開跑前 harness 自動 `reset()` 一次；spec 內各 test 要不要 reset 自己決定。
+- `app.click(sel, ms | { ms, hit:true })`：`hit` 時用 `elementFromPoint` 做命中測試，點不到（被蓋住、display:none）就丟例外；預設照舊 `el.click()`。
+- `noDeadButtons`／`noBannedWords` 除了 `main.view`（與 `#tabbar`），也掃看得到的浮層（`[data-overlay]`、`.scrim`、`.sharesheet`、`.sys-share`、`.pushmock`、`.toast`）與顯示中的 `#demo-panel`；`target="_blank"` 的真連結算有行為。
 - 死按鈕判準：`href="#/…"` 且 `APP.resolve` 落在已註冊的 view（落到 `_404`／`_placeholder` 都算死）、`element.onclick`、`data-toast／data-switch／data-pills／data-flip／data-share／data-reset／data-recenter／data-tab／data-i`、或祖先有這些；`data-back` 只在 `<a>` 上才算（app.js 只攔 `a[data-back]`）。
 - 禁用詞白名單（yoxi 既有文案）：「好康任務」「行程完成」，在 `harness.js` 的 `WORD_OK`。
 每個 spec 檔在 `runner.html` 用 `<script src="specs/xxx.spec.js" onerror="T.missing(…)">` 登記（新增 spec 要加一行；檔案不在時會列在「找不到的 spec 檔」，不擋其他 spec）。
@@ -287,7 +315,7 @@ T.spec('ride', function (t) {
 1. 該區塊每個 route 都能 render（`await app.go(path)` 不丟例外、`main.view[data-view]` 存在、`t.noDeadButtons`、`t.noBannedWords`）。
 2. 每個主要互動改到狀態（例：collect 之後 `STATE.count()` +1；set-dropoff 之後 `store.dropoff.id` 對）。
 3. 畫面上的數字跟公式一致（車資、分鐘、距離、收集 n/m、點數＝明細相加）。
-4. 可按數：`/explore` 與 `/album` 兩個索引頁 ≤ 12，其餘畫面 ≤ 10（`t.countTappables(app)`；地圖上的景點與 tab bar 不算；清單超過就收成「更多」或「全部」）。
+4. 可按數：`/explore` 與 `/album` 兩個索引頁 ≤ 12，其餘畫面 ≤ 10（`t.countTappables(app)`；地圖上的景點與 tab bar 不算；`[data-gallery]` 容器裡的連結整片算一個（例：`/postcards` 的明信片格）；清單超過就收成「更多」或「全部」）。
 5. 返回鍵回到正確的來處（從 A 進 B 再 back，回 A）。
 
 ## 7. 誰動哪些檔（並行時不要踩到別人）
@@ -303,19 +331,21 @@ T.spec('ride', function (t) {
 需要 core 多給一個 helper 時：先在自己的 view 檔裡以 `APP.<area>.<fn>` 命名空間放（例 `APP.ride.setDropoff()`），
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
-- `APP.explore.collect(placeId, { by, note, km, style })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）；`style` 記進 `store.cardStyle[卡片 id]`，並清掉 `store.draws[地點 id]`
-- 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框；走路抵達的結果先記在 `store.draws[地點 id]`，重進不重抽。機率只放在 `/unlock` 收集面板與成品右上角的「?」（`data-act="open-odds"`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
-- `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`
+- `APP.explore.collect(placeId, { by, note, km, style })`：包 `STATE.collect` ＋ emit；**只有 `by:'ride'` 才清 `trip`**（走路收下不會吃掉還沒領的限定版）（explore 提供；ride 的限定版解鎖也用它）；`style` 記進 `store.cardStyle[卡片 id]`，並清掉 `store.draws[地點 id]`
+- `APP.ride.RIDE_BONUS`（ride 提供）：搭車抵達走不到的地方的加點，＝`MOCK.FAR_PLACE.ridePoints`（資料缺了才用 50）；全 app 唯一來源，explore 的「+50 點」也讀它。`APP.ride.pointsRows()` 每一列多一個 `place` 欄位
+- 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框：是不是搭車只看 `store.trip`（這個地方、phase done），`?ride=1` 只是入口的記號；走路抵達在 mount 抽一次、記在 `store.draws[地點 id]`（render 只讀，還沒抽就畫卡背），重進不重抽。機率只放在 `/unlock` 收集面板與成品右上角的「?」（`data-act="open-odds"`）；面板與結果都不寫機率、不寫「必得」。`openOdds()` 掛在 `.device`，帶 `data-overlay`＋`_dismiss`。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
+- `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
 - 生成的明信片（explore 提供）：`APP.explore.postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片；`cardStyleOf(cardId)` 收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡以明信片 id 為種子照機率表抽一次）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore.js 監看 `#view` 自動把成品 `<img class="card-gen">` 疊上去（還沒收的不疊；載不到就拿掉）
 - `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `arrivedDemo` ＋ `/unlock/:id`（行程進行中不行）；搭 yoxi → `store.trip` 設成這個地方、phase done（取代原本的行程）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
-- `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用）
+- `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用；明信片分享帶 `card`，長輩圖 `/elder?card=<id>` 把那張排第一）
+- `APP.album`（album 提供）：`visitedPlaces()`（不重複的地點）、`recentCards()`（同一天時 `lastCard` 排第一）、`cityColors()`（足跡頁的城市顏色，從去過的地方算）、`weekStats()`（`now.after`＝範圍之後才收的卡）。角標：`APP.ride.limitedCard(id)` 為真寫「yoxi 限定版」，其他金框卡寫「yoxi 金框」
 
 ## 8. 路由總表
 
 | path | view | tab | 來源原型 | 誰做 |
 |---|---|---|---|---|
-| `/` | 導到 `/ride`（第一次開先 `/welcome`） | — | — | core |
+| `/` | 導到 `/ride`（第一次開先 `/welcome`；首次載入不帶 query 的 `/ride`、`/album` 也一樣） | — | — | core |
 | `/welcome` | onboarding 三張 | null | 新 | system |
 | `/ride` | 預設搭車；面板內 pill 切探索（`?mode=explore`），選地區再加 `&area=` | ride | `variant-f-home.html`、`variant-e-home.html`、`concept-map-home.html` | ride |
 | `/dropoff` | 設定下車地點（清單＋搜尋） | ride | 新（參考 `pickup.html` 版型） | ride |
@@ -329,31 +359,36 @@ T.spec('ride', function (t) {
 | `/explore` | 探索（X2 缺口導向＋今天的地方） | explore | `variant-x2-explore.html`、`explore.html`、`variant-l1-explore.html` | explore |
 | `/explore/map` | 探索地圖（真實地圖 ≤ 10 景點、小卡） | explore | `map.html`、`concept-map-explore.html` | explore |
 | `/place/:id` | 地方詳情（K1） | explore | `variant-k1-place.html`、`place.html` | explore |
-| `/going/:id` | 前往中（走路） | null | `going.html` | explore |
-| `/unlock/:id` | 抵達 → 收集 → 抽卡（`?ride=1` 搭 yoxi 抵達，必得金框；`data-at` 1 抵達／2 抽卡／3 結果） | null | `unlock.html` | explore |
+| `/going/:id` | 前往中（走路；這個地方已搭 yoxi 抵達、明信片還沒收時改顯示「收下這張明信片」卡） | null | `going.html` | explore |
+| `/unlock/:id` | 抵達 → 收集 → 抽卡（搭 yoxi 抵達必得金框，看 `store.trip`；`?ride=1` 只是入口記號；`data-at` 1 抵達／2 抽卡／3 結果） | null | `unlock.html` | explore |
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
-| `/album` | 收藏（明信片主卡、統計、獎章精選卡；`?tab=` 舊連結照樣落在這頁） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
-| `/postcards` | 明信片子頁，標題「明信片」（收下的／還沒去的兩段，左上返回） | album | 新 | album |
+| `/album` | 收藏（明信片主卡、統計、「回顧」一列、獎章精選卡；`?tab=journal／week／badges` 舊連結落在這頁、對應那一塊亮一下，再用 `replaceQuery('')` 拿掉） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
+| `/postcards` | 明信片子頁，標題「明信片」（收下的／還沒去的兩段，收下的每一格連到詳情，左上返回） | album | 新 | album |
 | `/badges` | 全部獎章（三欄六角章牆） | album | 新（參考 `variant-x4-badges.html`） | album |
 | `/postcard/:id` | 明信片詳情（翻面） | album | `postcard.html` | album |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
 | `/footprint` | 城市足跡（真實地圖＋霧、覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |
 | `/lookback` | 每日回顧四幕（只有你） | null | `lookback.html` | album |
 | `/week` | 週回顧（可分享） | album | `week.html` | album |
-| `/elder` | 長輩圖 | album | `elder.html` | album |
+| `/elder` | 長輩圖（`?card=<id>` 把那張排第一並預選） | album | `elder.html` | album |
 | `/settings` | 城事設定（隱私開關、重設、demo 工具） | null | `settings.html` | system |
 | `/*` | 404：一句話＋回叫車 | null | 新 | core |
 
+**返回規則**（2026-09-25）：
+- 叫車：`/dropoff` 選好、`/pickup` 選好、取消行程、`/trip/done`「回首頁」都是「上一格是 `/ride` 就退回，不是就就地換成 `/ride`」；「在地圖上挑」把 `/dropoff` 那一格換成探索模式，選好後退回原本那一格 `/ride`。
+- 收藏子頁：每筆歷史停在哪一頁記在 sessionStorage 的 `yoxi-album-nav`。按返回時，退一格會落在有 tab 的一般頁（而且不是自己）就 `nav.back()`；切 tab 停回來、直接開網址、從流程頁（例 `/unlock`）進來的，改成 `go(上一層, {replace})`。上一層：`/postcards`、`/badges`、`/week`、`/footprint` → `/album`；`/badge/:id` → `/badges`；`/postcard/:id` → `/postcards`；`/elder` → `/week`。
+- 探索舊路由的保底去處（找不到頁、先不去了、已收過的「回探索」、`/routes` 的關閉）是 `/ride?mode=explore(&area=<id>)`，不是舊的 `/explore`。
+
 ## 9. 桌機／手機
 
-- 桌機（viewport ≥ 560px）：沿用 `.stage > .device` 手機外框（390×844），狀態列顯示真實時間；旁邊 `#demo-panel`。
-- 手機（< 560px）：`.device` 滿版（100vw × 100dvh，無圓角、無瀏海、隱藏原型狀態列與 home indicator），`#demo-panel` 隱藏。
+- 桌機：寬度 ≥ 560，而且（有 hover 加細指標，或高度 ≥ 700）——手機橫放（844×390、觸控）算手機。JS 的 `DESKTOP_MQ` 與 app.css 的兩個 `@media` 要同步。沿用 `.stage > .device` 手機外框（390×844），縮放量的是 `.stage` 實際的 padding；狀態列顯示真實時間；旁邊 `#demo-panel`（高度上限＝縮放後外框的高度，太高就在面板裡捲）。
+- 手機（其餘）：`.device` 滿版（100vw × 100dvh，無圓角、無瀏海、隱藏原型狀態列與 home indicator），`#demo-panel` 隱藏。
   安全區的做法是在 `.device` 上把 `--statusbar-h` 改成 `max(env(safe-area-inset-top), 12px)`、`--safe-bottom` 改成 `max(env(safe-area-inset-bottom), 4px)`，
   而不是給 `.device__screen` 加 padding：紅色頁首照樣延伸到最上緣，內容（本來就 `padding-top: var(--statusbar-h)`）自然避開瀏海，不會多留 54px 空白。
   所以 views 需要避開狀態列時一律用 `var(--statusbar-h)`，不要寫 54px。
-- `manifest.webmanifest`：`display: standalone`、`theme_color` 用 yoxi 紅、`start_url: ./index.html#/ride`。
-- `sw.js`：`location.protocol` 是 http(s) 才註冊；cache-first 同源靜態檔（清單由 pwa agent 維護）。
+- `manifest.webmanifest`：`display: standalone`、`theme_color` 用 yoxi 紅、`start_url: ./index.html`（從主畫面開會先看 onboarding）。
+- `sw.js`：`location.protocol` 是 http(s) 才註冊。導覽 network-first（3 秒逾時或離線退回快取）；PRECACHE 清單裡的靜態檔 stale-while-revalidate；`assets/postcards/`、`../prototype/assets/photos/` 的圖片 cache-first，第一次抓到就存進 `<VERSION>-img`；activate 清掉兩種快取的舊版。新 sw 接手、而且之前已經有一個在管這一頁時，toast「有新版本，重新整理就會套用」；回到前景時 `reg.update()`。`python app/tools/check-sw.py`：清單缺檔即 FAIL，index.html 載的每個檔與 manifest 的 icons 都要在 PRECACHE，載外部網址也算 FAIL。
 
 ## 10. 驗收
 
