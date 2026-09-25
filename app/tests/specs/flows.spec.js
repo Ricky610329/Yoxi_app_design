@@ -772,7 +772,7 @@ T.spec('flows', function (t) {
     let second = 'pending';
     app.APP.ui.confirm({ text: 'x' }).then(function (v) { second = v; });
     await app.tick(30);
-    t.eq(second, false, '已經開著時，新的 confirm 直接回 false');
+    t.eq(second, null, '已經開著時，新的 confirm 直接回 null（沒有回答）');
     t.eq(app.$$('.app-confirm').length, 1, '還是一個');
     await app.click('.app-confirm [data-act="confirm-yes"]');
     await app.at('/ride');

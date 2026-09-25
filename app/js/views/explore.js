@@ -417,65 +417,12 @@ function mountMap(root) {
   });
   placeMe(m, root.querySelector('[data-ex-me]'));
   SHELL.injectIcons(wrap);
-  spreadSpots(m);
 
   /* 一打開就有一個明確的答案：先開今天的地方 */
   const today = m.spots.filter(function (s) { return s.state === 'today'; })[0] || m.spots[0];
   if (today) show(today);
 
   return function () { m.destroy(); };
-}
-
-/* 市中心的景點（舊城區一帶）真實座標只差一兩百公尺，縮圖會疊成一團。
-   mount 後量每顆 .spot 的實際大小，兩兩重疊就沿著圓心連線各推開一半，反覆幾輪；
-   推的時候夾在地圖框內（頂部留給頁首）。跟 ride.js 的 keepClear 同一個想法：寧可離真實位置遠一點，也不要疊。
-   core 的 APP.map.mount 已經推過（它會在 m.spots 留下原本的位置 px0）就不再推：那一版連選到放大後的大小都算進去了。
-   core 那一版合進來之後這整段可以刪掉。 */
-function spreadSpots(m) {
-  if ((m.spots || []).some(function (s) { return s && s.px0 != null; })) return;
-  const layer = m.spotsEl;
-  const box = layer.getBoundingClientRect();
-  if (!box.width || !box.height) return;
-  const els = Array.prototype.slice.call(layer.querySelectorAll('.spot'));
-  const it = els.map(function (el) {
-    const r = el.getBoundingClientRect();
-    return { el: el, w: r.width, h: r.height,
-             x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2,
-             dx: 0, dy: 0 };
-  });
-  const GAP = 4;
-  for (let round = 0; round < 60; round++) {
-    let moved = false;
-    for (let i = 0; i < it.length; i++) for (let j = i + 1; j < it.length; j++) {
-      const a = it[i], b = it[j];
-      const ox = (a.w + b.w) / 2 + GAP - Math.abs(a.x - b.x);
-      const oy = (a.h + b.h) / 2 + GAP - Math.abs(a.y - b.y);
-      if (ox <= 0 || oy <= 0) continue;
-      moved = true;
-      /* 沿重疊較小的軸推開（位移最少）；完全同點時往左右分 */
-      if (ox < oy) {
-        const sx = (a.x < b.x || (a.x === b.x && i < j)) ? -1 : 1;
-        a.x += sx * ox / 2; b.x -= sx * ox / 2;
-      } else {
-        const sy = (a.y < b.y || (a.y === b.y && i < j)) ? -1 : 1;
-        a.y += sy * oy / 2; b.y -= sy * oy / 2;
-      }
-    }
-    it.forEach(function (s) {
-      s.x = Math.max(s.w / 2 + 4, Math.min(box.width - s.w / 2 - 4, s.x));
-      s.y = Math.max(s.h / 2 + 64, Math.min(box.height - s.h / 2 - 4, s.y));
-    });
-    if (!moved) break;
-  }
-  it.forEach(function (s) {
-    const r = s.el.getBoundingClientRect();
-    const cx = r.left - box.left + r.width / 2, cy = r.top - box.top + r.height / 2;
-    const dx = s.x - cx, dy = s.y - cy;
-    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-    const L = parseFloat(s.el.style.left) || 0, T = parseFloat(s.el.style.top) || 0;
-    s.el.style.left = (L + dx / box.width * 100).toFixed(2) + '%';
-    s.el.style.top = (T + dy / box.height * 100).toFixed(2) + '%';
-  });
 }
 
 /* 你的位置：投影到地圖上；出框或壓在某顆景點上（HOME 跟玻璃窯幾乎同一點）就不畫 */

@@ -999,9 +999,12 @@ const ui = {
   /* o.danger：做了就回不去的動作（清除、重設、取消行程），預設焦點放在「不要」那顆 */
   confirm: function (o) {
     o = o || {};
-    /* 同一時間只有一個確認框：連按「取消行程」「重設」會開第二個，兩個都按「是」動作就做兩次。
-       已經有一個開著時，新的這次直接回 false（第一個照常等使用者回答）。 */
-    if (document.querySelector('.app-confirm')) return Promise.resolve(false);
+    /* 回傳 Promise：按「是」→ true、按「否」→ false、沒有回答就被關掉（Esc、點遮罩、導覽離開）→ null。
+       null 跟 false 一樣是 falsy，只問「要不要做」的呼叫端照舊寫 if (!yes)；
+       「否」本身也是一個動作的（例：叫車前的「直接叫車」）要寫 === false，關掉時才不會誤觸。
+       同一時間只有一個確認框：連按「取消行程」「重設」會開第二個，兩個都按「是」動作就做兩次。
+       已經有一個開著時，新的這次直接回 null（第一個照常等使用者回答）。 */
+    if (document.querySelector('.app-confirm')) return Promise.resolve(null);
     return new Promise(function (resolve) {
       const host = $('.device') || document.body;
       const scrim = document.createElement('div');
@@ -1027,13 +1030,13 @@ const ui = {
       const noB = scrim.querySelector('[data-act="confirm-no"]');
       yesB.onclick = function () { end(true); };
       noB.onclick = function () { end(false); };
-      scrim.onclick = function (e) { if (e.target === scrim) end(false); };
-      /* 導覽時（APP.ui.dismissOverlays）當作「先不要」 */
-      scrim._dismiss = function () { end(false); };
+      scrim.onclick = function (e) { if (e.target === scrim) end(null); };
+      /* 導覽時（APP.ui.dismissOverlays）：沒有回答，動作不會落在新的一頁上 */
+      scrim._dismiss = function () { end(null); };
       host.appendChild(scrim);
       release = a11yDialog(scrim.querySelector('.modal'), {
         label: o.text || '確定嗎？',
-        onEsc: function () { end(false); },
+        onEsc: function () { end(null); },
         focus: o.danger ? noB : yesB,
       });
     });

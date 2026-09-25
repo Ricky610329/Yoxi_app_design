@@ -277,7 +277,7 @@ T.spec('app', function (t) {
   }
   function act(app) { const a = app.doc.activeElement; return a ? (a.getAttribute('data-act') || a.tagName) : null; }
 
-  t.test('導覽時收掉浮層：確認框回 false、有 _dismiss 的叫它、沒有的直接拿掉', async function (app) {
+  t.test('導覽時收掉浮層：確認框回 null、有 _dismiss 的叫它、沒有的直接拿掉', async function (app) {
     await app.reset();
     await app.go('/ride');
     const A = app.APP, d = app.doc;
@@ -303,7 +303,7 @@ T.spec('app', function (t) {
     await app.go('/album');
     await app.tick(20);
     t.ok(!app.$('.app-confirm'), '換頁後確認框不在了');
-    t.eq(got, false, '確認框回 false（動作不會落在新的一頁上）');
+    t.eq(got, null, '確認框回 null＝沒有回答（動作不會落在新的一頁上）');
     t.eq(called, 1, '_dismiss 叫了一次');
     t.ok(!b.isConnected, '沒有 _dismiss 的直接移除');
     t.ok(!c.isConnected, '沒標 data-overlay 的 a11yDialog 也收掉（onEsc）');
@@ -328,6 +328,15 @@ T.spec('app', function (t) {
     t.eq(act(app), 'confirm-yes', '一般：焦點在 confirm-yes');
     await app.click('[data-act="confirm-yes"]');
     t.eq(await p, true, '按「好」回 true');
+    /* 沒有回答就被關掉：null（跟「按了否」分得開） */
+    p = A.ui.confirm({ text: '要嗎', yes: '要', no: '不要' });
+    await app.tick(20);
+    key(app, 'Escape');
+    t.eq(await p, null, 'Esc 回 null');
+    p = A.ui.confirm({ text: '要嗎', yes: '要', no: '不要' });
+    await app.tick(20);
+    app.$('.app-confirm').click();
+    t.eq(await p, null, '點遮罩回 null');
   });
 
   t.test('對話框：Tab 在框裡繞、背景 inert、疊兩層時全部關掉才解除', async function (app) {
@@ -364,7 +373,7 @@ T.spec('app', function (t) {
     box.remove();
     t.ok(app.$('#view').hasAttribute('inert'), '關掉第二層後確認框還開著：背景仍 inert');
     key(app, 'Escape');
-    t.eq(await p, false, 'Esc 關確認框');
+    t.eq(await p, null, 'Esc 關確認框（沒有回答＝null）');
     t.ok(!app.$('#view').hasAttribute('inert') && !app.$('#tabbar').hasAttribute('inert') &&
          !app.$('#demo-panel').hasAttribute('inert'), '全部關掉後背景解除 inert');
   });

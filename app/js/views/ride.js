@@ -268,27 +268,19 @@ function callRide() {
   const d = store().get('dropoff');
   if (!d || !d.id || !APP.place(d.id)) { APP.ui.toast('先選一個下車點'); return; }
   /* 上一趟的限定版還沒收：先問一次。先去解鎖 → 不建新 trip；直接叫車 → 新行程覆蓋舊的（契約 §3.3 只有一筆 trip）。
-     APP.ui.confirm 只回 true／false：按「直接叫車」、按 Esc、點遮罩、導覽離開（core 的 dismissOverlays）都是 false。
-     叫車是有後果的動作，只認真的按了「直接叫車」那一顆（在確認框上用 capture 記下來）；其餘的 false 什麼都不做。 */
+     APP.ui.confirm：按「直接叫車」是 false；按 Esc、點遮罩、導覽離開（core 的 dismissOverlays）是 null。
+     叫車是有後果的動作，只認真的按了「直接叫車」（=== false）；null 什麼都不做。 */
   const pend = pendingUnlock();
   if (pend) {
     if (asking || document.querySelector('.app-confirm')) return;
     asking = true;
     const snap = rideSnapshot();
-    let pickedNo = false;
-    const ask = APP.ui.confirm({ text: pend.limited ? '上一趟的限定明信片還沒收，要先去解鎖嗎？' : '上一趟的明信片還沒收，要先去收下嗎？',
-                                 yes: pend.limited ? '先去解鎖' : '先去收下', no: '直接叫車' });
-    const box = document.querySelector('.app-confirm');
-    if (box) {
-      box.addEventListener('click', function (e) {
-        if (e.target && e.target.closest && e.target.closest('[data-act="confirm-no"]')) pickedNo = true;
-      }, true);
-    }
-    ask.then(function (yes) {
+    APP.ui.confirm({ text: pend.limited ? '上一趟的限定明信片還沒收，要先去解鎖嗎？' : '上一趟的明信片還沒收，要先去收下嗎？',
+                     yes: pend.limited ? '先去解鎖' : '先去收下', no: '直接叫車' }).then(function (yes) {
       asking = false;
       if (!stillOnRide() || rideSnapshot() !== snap) return;
-      if (yes) APP.nav.go(pend.href.slice(1));
-      else if (pickedNo) startTrip(d);
+      if (yes === true) APP.nav.go(pend.href.slice(1));
+      else if (yes === false) startTrip(d);
     }, function () { asking = false; });
     return;
   }
