@@ -932,7 +932,11 @@ T.spec('flows', function (t) {
         await app.tick(200);
         const W = app.win;
         const scale = Number(W.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale'));
-        t.eq(scale, Math.round(Math.min(1, (sz[1] - 48) / 844) * 1000) / 1000, sz.join('×') + ' 的 --device-scale');
+        /* 外框上下留 .stage 的 padding（量出來的，不寫死） */
+        const cs = W.getComputedStyle(app.$('.stage'));
+        const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        t.eq(scale, Math.round(Math.min(1, (sz[1] - pad) / 844) * 1000) / 1000, sz.join('×') + ' 的 --device-scale');
+        t.ok(app.doc.documentElement.scrollHeight <= sz[1] + 1, sz.join('×') + '：整頁不用捲');
         const tb = app.$('#tabbar').getBoundingClientRect();
         t.ok(tb.height > 0 && tb.bottom <= W.innerHeight, sz.join('×') + '：tab bar 底 ' + Math.round(tb.bottom) + ' ≤ ' + W.innerHeight);
         const dv = app.$('.device').getBoundingClientRect();
@@ -1339,15 +1343,20 @@ T.spec('flows', function (t) {
     t.eq(app.route().path, '/week', '多按的 Esc 沒有副作用');
   });
 
-  t.test('無障礙 4：toast 是 live region、停留至少 3 秒', async function (app) {
+  t.test('無障礙 4：toast 經由常駐的 live region 念出、停留至少 3 秒', async function (app) {
     await app.reset();
     await app.go('/ride');
+    /* live region 一開始就在（先有 region 再換內容才會被念）；畫面上的 toast 不重複念 */
+    const live = app.$('#app-live');
+    t.eq(live && live.getAttribute('role'), 'status', '#app-live role=status');
+    t.eq(live && live.getAttribute('aria-live'), 'polite', '#app-live aria-live=polite');
     app.APP.ui.toast('測試一句話');
     const el = app.$('.device .toast');
-    t.eq(el && el.getAttribute('role'), 'status', 'role=status');
-    t.eq(el && el.getAttribute('aria-live'), 'polite', 'aria-live=polite');
     t.eq(el && el.textContent, '測試一句話', '文字');
-    await app.tick(2900);
+    t.eq(el && el.getAttribute('aria-hidden'), 'true', '畫面上的 toast aria-hidden');
+    await app.tick(150);
+    t.eq(live && live.textContent, '測試一句話', 'live region 放進同一句');
+    await app.tick(2750);
     t.ok(app.$('.device .toast'), '2.9 秒時還在');
     await app.tick(600);
     t.ok(!app.$('.device .toast'), '之後收掉');

@@ -55,14 +55,23 @@ html, body { height: 100%; }
 
 /* 桌機螢幕矮（1280×720、1366×768）時整支手機等比縮小，tab bar 才看得到。
    --device-scale 由 app.js 的 fitDevice() 依 innerHeight 算（手機模式固定 1）。
-   transform 不改版面佔位，所以用負 margin 把佔位一起縮掉：置中、demo 面板的間距都照縮放後的大小排。 */
-@media (min-width: 560px) {
+   transform 不改版面佔位，所以用負 margin 把佔位一起縮掉：置中、demo 面板的間距都照縮放後的大小排。
+   「桌機」＝寬 ≥ 560 而且（有滑鼠，或高 ≥ 700）：跟 app.js 的 DESKTOP_MQ 同一句，改了一起改。
+   只看寬度的話，手機橫放（844×390）會拿到縮成四成的外框、tab bar 掉到畫面外。 */
+@media (min-width: 560px) and (hover: hover) and (pointer: fine), (min-width: 560px) and (min-height: 700px) {
   .device {
+    flex: none;
     transform: scale(var(--device-scale, 1));
     transform-origin: top center;
     margin-bottom: calc(var(--device-h) * (var(--device-scale, 1) - 1));
     margin-left: calc(var(--device-w) * (var(--device-scale, 1) - 1) / 2);
     margin-right: calc(var(--device-w) * (var(--device-scale, 1) - 1) / 2);
+  }
+  /* demo 面板不比縮放後的外框高：比它高的話，置中會把外框往下推、底部（tab bar）被切掉。放不下就在面板裡捲 */
+  #demo-panel {
+    max-height: calc(var(--device-h) * var(--device-scale, 1));
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
@@ -205,6 +214,24 @@ main.view[data-leaving] { pointer-events: none; }
 /* 錯誤收集（給 headless 驗收讀；永遠不顯示） */
 #app-errors { display: none; }
 
+/* 只給報讀器的文字（#app-live：toast 的 live region） */
+.app-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 換頁後 router 把焦點放在新畫面的標題（或 main 本身）讓報讀器念出來：它們不是可按的東西，不畫外框 */
+main.view:focus,
+main.view [data-nav-focus]:focus { outline: none; }
+
 /* --------------------------------------------------------------------------
    hsmap（從 prototype/css/concept.css 只挑真正需要的；concept.css 不載）
    -------------------------------------------------------------------------- */
@@ -286,14 +313,14 @@ main.view[data-leaving] { pointer-events: none; }
   border-radius: var(--r-btn);
   background: var(--yoxi-navy-60);
   color: var(--yoxi-white);
-  font-size: 9px;
+  font-size: calc(var(--fs-xs) - 2px);
   font-weight: var(--fw-bold);
   letter-spacing: .03em;
 }
 .photo__credit {
   display: block;
   margin-top: 4px;
-  font-size: 10px;
+  font-size: calc(var(--fs-xs) - 1px);
   line-height: 1.4;
   color: var(--app-muted);
 }
@@ -306,10 +333,14 @@ main.view[data-leaving] { pointer-events: none; }
 .tile-icon > [data-icon] > svg { display: block; width: 100%; height: 100%; }
 
 /* --------------------------------------------------------------------------
-   手機（< 560px）：滿版、無圓角、無瀏海、無原型狀態列、無 demo 面板
+   手機：滿版、無圓角、無瀏海、無原型狀態列、無 demo 面板
    --statusbar-h 改成安全區高度：紅色頁首照樣延伸到最上緣，內容避開瀏海。
+   條件是上面「桌機」那句的反面：寬 < 560，或（沒有滑鼠而且高 < 700）——手機橫放也是手機。
    -------------------------------------------------------------------------- */
-@media (max-width: 559px) {
+@media (max-width: 559.98px),
+       (max-height: 699.98px) and (hover: none),
+       (max-height: 699.98px) and (pointer: coarse),
+       (max-height: 699.98px) and (pointer: none) {
   body { background: var(--yoxi-paper); }
   .stage {
     min-height: 100vh;
