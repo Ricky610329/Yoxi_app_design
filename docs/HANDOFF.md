@@ -203,14 +203,14 @@ python app/tests/run.py                           # web app：node 單元＋head
 
 | 狀態／動作 | 現行行為 |
 |---|---|
-| 搭車 | 地圖沒有探索圖釘；面板只接受向下拉收合，點「展開搭車」平順恢復。 |
+| 搭車 | 地圖沒有探索圖釘；面板跟探索一樣上下拉，往下收到只剩拉把看整張地圖，往上拉或點拉把回到叫車欄位（2026-09-25 起，原本的「展開搭車」按鈕拿掉）。 |
 | 切到探索 | `#/ride?mode=explore&area=<id>`；四個展示地區中依 `APP.place(id).dist` 預選最近的。地圖圖釘可改選地區，選後面板先收合。 |
 | 探索收合態 | 顯示一張精簡地點資訊卡與「用 yoxi／收集」。用 yoxi 回搭車並填下車點；收集打開卡片面板。 |
 | 探索上拉 | 地點資訊卡、兩個按鈕留在上方；下方直接接所選地區的疊放卡片。沒有「附近的地方」清單，也不進地點詳情頁。內容超過面板高度時可捲動。 |
 | 點卡片 | 在原頁打開可翻面的懸浮小卡，背面只有簡短收藏狀態。這裡的「收集」是查看卡片的入口；真正收下卡片仍走抵達／既有 `STATE` 流程。 |
-| 探索下拉 | 只收合面板，仍留在探索與原選定地區。 |
+| 探索下拉 | 只收合面板，仍留在探索與原選定地區；再往下收到只剩拉把，點景點或拉把叫回來。 |
 
-實作入口：`app/js/views/ride.js` 的 `rideV2Render／rideV2Mount`、`CARD_AREAS`、`bindExploreSheet`，樣式在 `app/css/views/ride.css` 的 `.ride-v2__*`；搭車的跟手收合在同檔的 `bindRideDownSheet`。收藏在 `app/js/views/album.js` 與 `app/css/views/album.css`。主路由與資料契約以 `app/ARCHITECTURE.md` 為準，使用說明在 `app/README.md`。PWA 快取版號目前是 `chengshi-app-v9`（`app/sw.js` 與 `app/js/views/system.js` 需同步）。
+實作入口：`app/js/views/ride.js` 的 `rideV2Render／rideV2Mount`、`CARD_AREAS`、`bindExploreSheet`，樣式在 `app/css/views/ride.css` 的 `.ride-v2__*`；兩個模式的拉法共用同檔的 `bindDragSheet`，全高地圖是 `mountFullMap`。收藏在 `app/js/views/album.js` 與 `app/css/views/album.css`。主路由與資料契約以 `app/ARCHITECTURE.md` 為準，使用說明在 `app/README.md`。PWA 快取版號目前是 `chengshi-app-v9`（`app/sw.js` 與 `app/js/views/system.js` 需同步）。
 
 目前畫面截圖：`app/assets/shots/ride.png`（預設搭車）、`ride-peek.png`（探索收合）、`ride-cards.png`（預選地區展開，保留上方資訊卡）、`ride-float.png`／`ride-float-back.png`（卡片互動）、`album.png`（收藏）。使用者原始排版圖、草圖與四輪回饋截圖集中在 [`docs/references/README.md`](references/README.md)；參考圖不是 app 資產。重拍用 `python app/tools/shoot-app.py --only ride,ride-peek,ride-cards,ride-float,ride-float-back,album`。
 

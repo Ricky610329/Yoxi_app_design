@@ -131,7 +131,7 @@
 .ride-call { margin-top: var(--sp-4); }
 .ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--app-muted); }
 
-/* 變體 F：模式切換在面板頂端，搭車面板固定；探索面板才可上下拉。 */
+/* 變體 F：模式切換在面板頂端。搭車與探索的面板都可上下拉，最低收到只剩拉把。 */
 .ride-mode__pills { margin-bottom: var(--sp-4); }
 .ride-mode__active {
   display: inline-flex; align-items: center; height: 44px; padding: 0 var(--sp-4);
@@ -147,14 +147,21 @@
 .ride-mode__grip { height: 22px; touch-action: none; cursor: grab; }
 .ride-mode__grip .sheet__handle { margin-bottom: 0; }
 .ride-sheet--ride .ride-call { width: 100%; }
-.ride-mode__restore {
-  display: flex; align-items: center; justify-content: space-between;
-  width: 100%; height: 0; min-height: 0; overflow: hidden; opacity: 0;
-  color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold);
-  transition: height var(--t-fast) var(--ease-out), opacity var(--t-fast) var(--ease-out);
+
+/* 地圖畫成面板收到只剩拉把時的高度（--ride-map-h，JS 量）、貼齊上緣；
+   面板收放只是露出多少，地圖不跟著縮放。署名與定位鈕放在容器上，貼著可見範圍的底邊。 */
+.ride-map--full { overflow: hidden; }
+.ride-map--full > .app-map { bottom: auto; height: var(--ride-map-h, 100%); }
+.ride-map--full [data-layer="credit"] { display: none; }
+.ride-map__credit {
+  position: absolute; right: 6px; bottom: 6px; z-index: 1;
+  color: var(--app-muted); font-size: 9px; opacity: .7; pointer-events: none;
 }
-.ride-sheet--ride.is-condensed { max-height: var(--ride-closed-height); }
-.ride-sheet--ride.is-condensed .ride-mode__restore { height: 44px; min-height: 44px; opacity: 1; }
+/* 只剩拉把：高度 --ride-peek-h（JS 量），拉把下緣露出的那一截模式切換淡掉 */
+.ride-sheet--ride.is-hidden,
+.ride-v2__sheet.is-collapsed.is-hidden { max-height: var(--ride-peek-h); }
+.ride-sheet .ride-mode__pills { transition: opacity var(--t-fast) var(--ease-out); }
+.ride-sheet.is-hidden .ride-mode__pills { opacity: 0; }
 
 .ride-v2__map { flex: 1 1 auto; }
 .ride-v2__sheet { --sheet-max: 82%; padding-top: var(--sp-2); }
@@ -189,7 +196,6 @@
 .ride-v2__card:not(.is-collected) .ride-v2__card-art > :first-child { filter: grayscale(1); opacity: .65; }
 .ride-v2__card .ai-mark { position: absolute; bottom: var(--sp-1); left: var(--sp-1); z-index: 2; }
 .ride-v2__card strong { display: block; margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: 1.35; }
-.ride-v2__map .spot.is-selected .spot__img { outline: 3px solid var(--yoxi-navy); outline-offset: 2px; }
 
 .ride-card-float[hidden] { display: none; }
 .ride-card-float { position: absolute; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: var(--sp-4); background: var(--yoxi-navy-60); }
@@ -199,7 +205,7 @@
 .ride-card-float__object.is-flipped { transform: rotateY(180deg); }
 .ride-card-float__front, .ride-card-float__back { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; backface-visibility: hidden; border-radius: var(--r-card); }
 .ride-card-float__front { background: var(--yoxi-white); }
-.ride-card-float__art { display: block; flex: 1; min-height: 0; }
+.ride-card-float__art { position: relative; display: block; flex: 1; min-height: 0; }
 .ride-card-float__art > * { width: 100%; height: 100%; }
 .ride-card-float__name { position: absolute; right: 0; bottom: 0; left: 0; z-index: 2; display: block; min-height: 46px; padding: var(--sp-3); background: var(--yoxi-white); color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-heavy); text-align: left; }
 .ride-card-float__front .ai-mark { position: absolute; top: var(--sp-2); left: var(--sp-2); }
@@ -384,6 +390,25 @@
    /drawer
    -------------------------------------------------------------------------- */
 .ride-drawer__bg { position: absolute; inset: 0; background: var(--map-land); }
+
+/* 開關抽屜不走整頁右滑：底下那頁不動，遮罩淡入、紅色抽屜從左邊滑出；關的時候原路收回左邊。
+   只接管「打開抽屜」（drawer 以 push 進場）與「關掉抽屜」（drawer 以 back 離場）；
+   抽屜 → 設定／點數等子頁、子頁返回抽屜，照 app.css 的左右滑。 */
+.view--out-push:has(~ .view--in-push > .ride-drawer),
+.view--in-push:has(> .ride-drawer),
+.view--out-back:has(> .ride-drawer),
+.view--out-back:has(> .ride-drawer) ~ .view--in-back { animation: none; box-shadow: none; }
+.view--in-push:has(> .ride-drawer),
+.view--out-back:has(> .ride-drawer) { background: transparent; }
+.view--in-push > .ride-drawer__bg,
+.view--in-push > .ride-drawer__scrim { animation: app-fade-in var(--t-base) var(--ease) both; }
+.view--in-push > .ride-drawer { animation: ride-drawer-in var(--t-base) var(--ease) both; }
+.view--out-back > .ride-drawer__bg,
+.view--out-back > .ride-drawer__scrim { animation: ride-fade-out var(--t-base) var(--ease) both; }
+.view--out-back > .ride-drawer { animation: ride-drawer-out var(--t-base) var(--ease) both; }
+@keyframes ride-drawer-in  { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes ride-drawer-out { from { transform: none; } to { transform: translateX(-100%); } }
+@keyframes ride-fade-out   { from { opacity: 1; } to { opacity: 0; } }
 .ride-drawer__scrim { position: absolute; inset: 0; background: var(--yoxi-navy-60); cursor: pointer; }
 .ride-drawer { padding-top: calc(var(--statusbar-h) + var(--sp-2)); }
 .ride-drawer__top { justify-content: flex-end; }

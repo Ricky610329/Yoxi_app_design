@@ -239,7 +239,7 @@ T.spec('system', function (t) {
     t.eq(app.APP.store.get('onboarded'), true, 'onboarded 不變');
   });
 
-  t.test('demo 面板：填好、模擬抵達依路徑切換，/going/:id → /unlock/:id', async function (app) {
+  t.test('demo 面板：選地點＋走路／搭 yoxi 抵達，地點跟著這一頁', async function (app) {
     await app.reset();
     await app.go('/ride');
     const panel = app.$('#demo-panel');
@@ -247,16 +247,39 @@ T.spec('system', function (t) {
     t.eq(app.text('#demo-panel .demo-panel__t'), 'demo 工具', '標題');
     const proto = app.$('#demo-panel a[href="../prototype/index.html"]');
     t.ok(proto && proto.target === '_blank' && /noopener/.test(proto.rel), '原型總覽另開分頁');
-    t.ok(app.$('#demo-panel [data-act="arrive"]').disabled, '在 /ride 時模擬抵達不可按');
-    await app.go('/going/glass-kiln', { redirectOk: true });
-    if (app.route().path !== '/going/glass-kiln') {
-      t.fail('/going/glass-kiln 被導走到 ' + app.route().path + '（explore 的前往中頁不接受直接進入？）');
-      return;
-    }
-    t.ok(!app.$('#demo-panel [data-act="arrive"]').disabled, '前往中可按');
-    await app.click('#demo-panel [data-act="arrive"]');
-    await app.at('/unlock/glass-kiln');
-    t.eq(app.APP.store.get('arrivedDemo'), 'glass-kiln', 'arrivedDemo 記下地點');
+    const sel = app.$('#demo-panel [data-demo-place]');
+    const ids = Array.prototype.map.call(sel ? sel.options : [], function (o) { return o.value; });
+    t.ok(ids.indexOf('glass-kiln') >= 0 && ids.indexOf('neiwan') >= 0, '選單有地圖景點＋走不到的內灣：' + ids.join(','));
+    t.ok(!app.STATE.has(app.APP.place(sel.value).card), '沒有指定時預設一個還沒收的地方：' + sel.value);
+    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]').disabled && !app.$('#demo-panel [data-act="arrive-ride"]').disabled, '兩顆抵達鈕在 /ride 也能按');
+
+    /* 走路抵達：地點跟著地方詳情 */
+    await app.go('/place/moat');
+    t.eq(app.$('#demo-panel [data-demo-place]').value, 'moat', '地點跟著這一頁');
+    await app.click('#demo-panel [data-act="arrive-walk"]');
+    await app.at('/unlock/moat');
+    t.eq(app.APP.store.get('arrivedDemo'), 'moat', 'arrivedDemo 記下地點');
+    t.ok(!app.$('[data-unlock][data-ride]'), '走路：不是搭車版');
+
+    /* 搭 yoxi 抵達：行程直接在這裡結束，抵達頁認得這一趟 → 必得金框 */
+    await app.go('/place/lake');
+    await app.click('#demo-panel [data-act="arrive-ride"]');
+    await app.at('/unlock/lake');
+    t.includes(app.win.location.hash, '?ride=1', '網址帶 ?ride=1');
+    const tr = app.APP.store.get('trip');
+    t.ok(tr && tr.placeId === 'lake' && tr.phase === 'done', 'store.trip 是這一趟、phase done');
+    t.eq(tr && tr.km, app.APP.fmt.km(app.APP.place('lake').dist), '公里數用公式');
+    t.ok(app.$('[data-unlock][data-ride]'), '搭車版');
+    t.ok(app.$('[data-final-card].postcard--gold'), '必得金框');
+
+    /* 行程進行中：地點是行程的目的地，走路抵達不行（人在車上） */
+    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: new Date().toISOString(), rated: false, km: 6.4 } } });
+    await app.go('/explore');
+    t.eq(app.$('#demo-panel [data-demo-place]').value, 'lake', '行程中：地點是行程的目的地');
+    await app.click('#demo-panel [data-act="arrive-walk"]');
+    await app.tick(60);
+    t.eq(app.route().path, '/explore', '行程進行中不能走路抵達');
+    await app.reset();
   });
 
   t.test('demo 面板的早上推播也遵守一天兩則', async function (app) {

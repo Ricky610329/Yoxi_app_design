@@ -20,9 +20,15 @@
    /going/:id      前往中（走路）
      原型：going.html —— 這一頁刻意什麼都不做。
      刻意沒有：倒數、步數、沿途收集物、任何進度。只說「到了會響」與抵達怎麼驗。
-   /unlock/:id     抵達解鎖三幕（灰點爆開上色 → AI 生成中 → 成品；?ride=1 金框限定版）
-     原型：unlock.html。點畫面任意處跳到成品；html[data-still] 直接停在第三幕。
+   /unlock/:id     抵達 → 收集 → 抽卡（?ride=1 是搭 yoxi 抵達，必得金框）
+     幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板。
+     抽卡（data-at=2）：卡背升起 → 蓄力（拍數＝稀有度）→ 點一下翻開 → 依款式給特效（金框最重）。
+     結果（data-at=3）：卡面＋畫風名＋出現機率、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
+     特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
+     原型：unlock.html（三幕解鎖的前身）。
      刻意沒有：分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
+     抽卡：每個地方五款（四種畫風＋金框），抵達時抽一款。搭 yoxi 抵達必得金框；走路抵達照 DRAW_STYLES 的機率。
+     機率依法要揭露，但不擺在畫面上搶戲：收在收集面板與成品右上角的「?」裡（data-act="open-odds"）。
    /routes         這個月的路線
      原型：routes.html
    /route/:id      路線詳情（站點軌道；斷點處可設為下車點，K4 精神）
@@ -49,6 +55,144 @@ const ARRIVE_STAY_MIN = 1;
 function ridePoints() {
   return (window.MOCK && MOCK.FAR_PLACE && MOCK.FAR_PLACE.ridePoints) || 50;
 }
+/* 抽卡機率表（全 app 唯一來源；畫面上的百分比都從這裡算，不另外手寫）。
+   每個地方五款：四種一般畫風，越後面越難抽；一款金框（yoxi 限定版），搭 yoxi 抵達必得，走路抵達機率極低。
+   權重用千分比，避免浮點誤差；walk 與 ride 各自加總都是 1000。
+   畫風之後會以該地的景點照片為底、用 diffusion 生成；現在的原型先用濾鏡示意（explore.css 的 [data-style]）。 */
+const DRAW_STYLES = [
+  { key: 'watercolor', name: '水彩',     walk: 450, ride: 0 },
+  { key: 'oil',        name: '油畫',     walk: 300, ride: 0 },
+  { key: 'woodcut',    name: '木刻版畫', walk: 165, ride: 0 },
+  { key: 'ink',        name: '水墨',     walk: 80,  ride: 0 },
+  { key: 'gold',       name: 'yoxi 金框', walk: 5,   ride: 1000, gold: true },
+];
+
+/* 依抵達方式與 r ∈ [0, 1) 抽一款（純函式，給測試與機率頁用） */
+function drawStyle(by, r) {
+  const k = by === 'ride' ? 'ride' : 'walk';
+  const total = DRAW_STYLES.reduce(function (a, d) { return a + d[k]; }, 0);
+  let x = Math.min(Math.max(Number(r) || 0, 0), 0.999999) * total;
+  for (let i = 0; i < DRAW_STYLES.length; i++) {
+    x -= DRAW_STYLES[i][k];
+    if (x < 0) return DRAW_STYLES[i];
+  }
+  return DRAW_STYLES[0];
+}
+
+function styleOf(key) {
+  return DRAW_STYLES.filter(function (d) { return d.key === key; })[0] || null;
+}
+
+/* 千分比 → 「45%」「16.5%」 */
+function oddsPct(w) { return (Math.round(w) / 10) + '%'; }
+
+/* 這一次抵達抽到的款式。走路抵達的結果先記在 store.draws（地點 id → key），
+   重整或返回再進來都是同一張，不能靠重開頁面重抽；收下之後清掉，下次抵達重新抽。 */
+function arrivalDraw(p, isRide) {
+  if (isRide) return drawStyle('ride', 0);
+  const draws = APP.store.get('draws') || {};
+  const had = styleOf(draws[p.id]);
+  if (had) return had;
+  const d = drawStyle('walk', Math.random());
+  APP.store.set('draws', Object.assign({}, draws, { [p.id]: d.key }));
+  return d;
+}
+
+/* ---- 生成好的明信片 ----
+   每張明信片五款的成品：景點照片 → Stable Diffusion img2img＋ControlNet（照片的輪廓鎖住構圖）→ 各畫風。
+   產生器是 app/tools/gen-postcards.py；檔名 assets/postcards/<明信片 id>-<款式>.jpg。
+   只有 POSTCARD_GEN 裡的明信片有成品（匯出時工具會印出這張表）；其餘的卡面退回「照片＋SVG 濾鏡」的示意。 */
+const POSTCARD_DIR = 'assets/postcards/';
+const POSTCARD_GEN = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'];
+function postcardSrc(cardId, key) {
+  if (!cardId || !styleOf(key) || POSTCARD_GEN.indexOf(cardId) < 0) return '';
+  return POSTCARD_DIR + cardId + '-' + key + '.jpg';
+}
+/* 明信片的底圖照片：明信片自己的一張（p10、p19…）→ 所在地點的（station…）。照片與授權在 prototype/assets/photos/credits.js */
+const CARD_PHOTO = { p1: 'station', p2: 'market', p3: 'moat', p4: 'harbour', p5: 'rail', p6: 'hill', p7: 'temple',
+                     p8: 'lake', p9: 'neiwan', p11: 'glass-kiln', p20: 'brick' };
+function cardPhoto(cardId) {
+  const P = window.PHOTOS;
+  if (!cardId || !P || !P.get) return null;
+  return P.get(cardId, 0) || P.get(CARD_PHOTO[cardId], 0) || null;
+}
+/* 收下的明信片是哪一款：抽到的（store.cardStyle）→ 沒有紀錄的（demo 一開始就有的 8 張）：
+   搭車收的是金框；走路的照機率表、用明信片 id 當種子抽一次（每次打開都一樣） */
+function cardStyleOf(cardId) {
+  const had = styleOf((APP.store.get('cardStyle') || {})[cardId]);
+  if (had) return had;
+  const c = S() && S().card(cardId);
+  if (!c) return null;
+  if (c.by === 'ride') return styleOf('gold');
+  let h = 7;
+  String(cardId).split('').forEach(function (ch) { h = (h * 31 + ch.charCodeAt(0)) % 100003; });
+  const goldW = styleOf('gold').walk;
+  return drawStyle('walk', ((h * 7919) % 1000) / 1000 * (1 - goldW / 1000));
+}
+
+/* 別的畫面（收藏、叫車首頁的卡片）要顯示「收下的那一張」：元素帶 data-card-art="<明信片 id>"，
+   這裡把那一款的成品疊在插圖上面；圖載不到就拿掉，插圖照舊。還沒收的不疊（維持灰階插圖）。 */
+function paintCardArt(root) {
+  if (!root || !root.querySelectorAll) return;
+  root.querySelectorAll('[data-card-art]:not([data-card-painted])').forEach(function (el) {
+    const id = el.getAttribute('data-card-art');
+    el.setAttribute('data-card-painted', '');
+    if (!S() || !S().has(id)) return;
+    const d = cardStyleOf(id);
+    const src = postcardSrc(id, d && d.key);
+    if (!src) return;
+    const img = document.createElement('img');
+    img.className = 'card-gen';
+    img.alt = '';
+    img.decoding = 'async';
+    img.setAttribute('data-style', d.key);
+    img.onerror = function () { img.remove(); };
+    img.src = src;
+    /* 放在插圖（第一個子元素）後面、「新」之類的角標前面 */
+    const art = el.querySelector(':scope > .postcard__art');
+    el.insertBefore(img, art ? art.nextSibling : el.firstChild);
+  });
+}
+(function watchCardArt() {
+  const view = document.getElementById('view');
+  if (!view || !window.MutationObserver) return;
+  let queued = false;
+  new MutationObserver(function () {
+    if (queued) return;
+    queued = true;
+    Promise.resolve().then(function () { queued = false; paintCardArt(view); });
+  }).observe(view, { childList: true, subtree: true });
+})();
+
+/* 收在「?」裡的機率說明 */
+function openOdds() {
+  if (document.querySelector('.ex-odds')) return;
+  const host = document.querySelector('.device') || document.body;
+  const rows = function (k) {
+    return DRAW_STYLES.map(function (d) {
+      return '<li class="ex-odds__row' + (d.gold ? ' is-gold' : '') + '">' +
+        '<span>' + esc(d.name) + '</span><span class="num">' + esc(oddsPct(d[k])) + '</span></li>';
+    }).join('');
+  };
+  const scrim = document.createElement('div');
+  scrim.className = 'scrim ex-odds';
+  scrim.innerHTML =
+    '<div class="modal app-modal ex-odds__box">' +
+      '<h2 class="ex-odds__t">明信片抽取機率</h2>' +
+      '<p class="ex-odds__p">每個地方有 ' + num(DRAW_STYLES.length) + ' 款明信片，抵達時依抵達方式抽出一款。</p>' +
+      '<h3 class="ex-odds__h">走路抵達</h3><ul class="ex-odds__list" data-odds="walk">' + rows('walk') + '</ul>' +
+      '<h3 class="ex-odds__h">搭 yoxi 抵達</h3><ul class="ex-odds__list" data-odds="ride">' + rows('ride') + '</ul>' +
+      '<p class="ex-odds__note">機率固定，不因抵達次數改變。畫風以該地景點照片為底，由 AI 生成。</p>' +
+      '<button class="btn-primary" type="button" data-act="close-odds">知道了</button>' +
+    '</div>';
+  let release = null;
+  const end = function () { scrim.remove(); if (release) release(); };
+  scrim.querySelector('[data-act="close-odds"]').onclick = end;
+  scrim.onclick = function (e) { if (e.target === scrim) end(); };
+  host.appendChild(scrim);
+  release = APP.ui.a11yDialog(scrim.querySelector('.modal'), { label: '明信片抽取機率', onEsc: end });
+}
+
 /* 探索首頁的可按數上限（L1 一屏一事；§6.3 第 4 條） */
 const EXPLORE_TAP_MAX = 12;
 /* 探索地圖的視野寬度（公尺）。新竹市區五個景點擠在 800 公尺內，
@@ -147,6 +291,16 @@ function collect(placeId, opt) {
     date: fmt.todayMMDD(),
   });
   const pid = p ? p.id : placeId;
+  /* 抽到的款式記在 app store（STATE 的卡片結構不動）；這次抵達的暫存抽卡用完就清 */
+  if (isNew && opt.style) {
+    APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: opt.style }));
+  }
+  const draws = APP.store.get('draws');
+  if (draws && (draws[pid] || draws[placeId])) {
+    const rest = Object.assign({}, draws);
+    delete rest[pid]; delete rest[placeId];
+    APP.store.set('draws', rest);
+  }
   const trip = APP.store.get('trip');
   if (trip && (trip.placeId === pid || trip.placeId === placeId)) APP.store.set('trip', null);
   const drop = APP.store.get('dropoff');
@@ -160,6 +314,15 @@ function collect(placeId, opt) {
 
 APP.explore = Object.assign(APP.explore || {}, {
   collect: collect,
+  /* 抽卡：機率表、純抽取函式、機率說明（契約 §7） */
+  DRAW_STYLES: DRAW_STYLES,
+  drawStyle: drawStyle,
+  /* 生成好的明信片（收藏與叫車首頁用 data-card-art 掛上來） */
+  cardStyleOf: cardStyleOf,
+  postcardSrc: postcardSrc,
+  cardPhoto: cardPhoto,
+  paintCardArt: paintCardArt,
+  openOdds: openOdds,
   /* 給別的區塊與測試用的純計算（沒有副作用） */
   gap: gapPick,
   breakpoint: function (routeId) {
@@ -388,9 +551,10 @@ function mountMap(root) {
     const p = APP.place(s.id);
     if (!p) return;
     if (openId === p.id && peek.classList.contains('is-on')) {
-      peek.classList.remove('is-on'); openId = null; return;
+      peek.classList.remove('is-on'); openId = null; markSpot(null); return;
     }
     openId = p.id;
+    markSpot(s.id);
     const got = collected(p) || s.state === 'seen';
     const img = peek.querySelector('[data-peek-img]');
     img.innerHTML = SHELL.postcardArt(p.art, { seed: 2 });
@@ -411,7 +575,16 @@ function mountMap(root) {
     peek.classList.add('is-on');
   }
 
-  const m = APP.map.mount(wrap, {
+  /* 選到的景點放大（樣式在 app.css 的 .app-map .spot.is-selected） */
+  function markSpot(id) {
+    if (!m) return;
+    m.spotsEl.querySelectorAll('.spot').forEach(function (el) {
+      el.classList.toggle('is-selected', !!id && el.getAttribute('data-spot') === id);
+    });
+  }
+
+  let m = null;
+  m = APP.map.mount(wrap, {
     style: 'paper',
     center: 'station',
     spanM: MAP_SPAN_M,
@@ -727,6 +900,68 @@ function limitedPlace(p) {
   return !!p && p.dist != null && p.dist > fmt.WALK_MAX_M;
 }
 
+/* 稀有度 1–5 就是 DRAW_STYLES 的順序（越後面越難抽）。特效照稀有度分級給，常見的輕、稀有的重：
+   | 稀有度 | 款式     | 蓄力        | 翻開之後                                                        |
+   | 1      | 水彩     | 1 拍        | 水彩暈開、幾顆柔光                                              |
+   | 2      | 油畫     | 2 拍        | 筆刷掃過、暖色光點、卡片彈一下                                  |
+   | 3      | 木刻版畫 | 3 拍        | 砸下來、停格 50ms、輕震、衝擊環、木屑                           |
+   | 4      | 水墨     | 4 拍        | 墨滴落下、停格 80ms、夜色洗成宣紙、墨暈、圓相                   |
+   | 5      | 金框     | 4 拍＋昇格  | 閃光（整次唯一一次）、光芒、轉一圈半、停格 120ms、重震、金粉噴泉，金粉留著慢慢飄 |
+   蓄力每一拍換一個光色（白 → 暖橙 → 朱紅 → 墨 → 金），停在哪一色就透露是哪一級。 */
+function tierOf(d) {
+  const i = d ? DRAW_STYLES.indexOf(d) : -1;
+  return i < 0 ? 1 : i + 1;
+}
+function auraColor(i) {
+  const F = APP.fx;
+  if (!F) return [255, 255, 255];
+  if (i <= 0) return F.color('--yoxi-white');
+  if (i === 1) return F.mix(F.color('--gold'), F.color('--yoxi-red'), .38);
+  if (i === 2) return F.color('--yoxi-red');
+  if (i === 3) return F.mix(F.color('--yoxi-slate-lite'), F.color('--yoxi-white'), .35);
+  return F.color('--gold');
+}
+const CHARGE_CAPS = ['正在畫下今天的這裡', '讀取今天的天氣與光線', '鎖定畫風', '收筆'];
+
+/* 卡面：有實景照片就用照片（PHOTOS，授權一定要露出），沒有就用插圖；畫風是 explore-fx.js 的 SVG 濾鏡 */
+function photoOf(p) {
+  if (!p) return null;
+  const P = window.PHOTOS;
+  return cardPhoto(p.card) || (P && P.get ? P.get(p.id, 0) : null);
+}
+function faceHTML(p, d) {
+  const key = d ? d.key : '';
+  const ph = photoOf(p);
+  const photo = ph ? window.PHOTOS.base + ph.file : '';
+  const gen = postcardSrc(p.card, key);
+  /* 生成好的成品優先；載不到（data-fallback）就退回「照片＋SVG 濾鏡」的示意，再沒有就是插圖 */
+  const base = gen
+    ? '<img class="ex-face__img" src="' + esc(gen) + '" alt="" draggable="false"' +
+        (photo ? ' data-fallback="' + esc(photo) + '"' : '') + '>'
+    : (photo
+        ? '<img class="ex-face__img" src="' + esc(photo) + '" alt="" draggable="false">'
+        : '<div class="ex-face__img ex-fill" data-art="' + esc(p.art) + '" data-seed="1"></div>');
+  return '<div class="ex-face' + (key ? ' ex-face--' + esc(key) : '') + (gen ? ' ex-face--gen' : '') + '">' + base +
+      (key === 'watercolor' || key === 'ink'
+        ? '<svg class="ex-face__paper" aria-hidden="true" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg>' : '') +
+      (key === 'ink' ? '<span class="ex-face__seal" aria-hidden="true">城事</span>' : '') +
+      (key === 'gold' ? '<span class="ex-face__holo" aria-hidden="true"></span>' : '') +
+    '</div>';
+}
+function creditHTML(p) {
+  const ph = photoOf(p);
+  if (!ph) return '';
+  return '<p class="ex-credit" data-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') +
+    ' <a class="ex-credit__a" href="' + esc(ph.source) + '" target="_blank" rel="noopener" data-act="open-credit">出處</a></p>';
+}
+
+const SOUND_ICON =
+  '<svg class="ex-sound__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    '<path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/>' +
+    '<path class="ex-sound__on" d="M15.5 8.8a4.5 4.5 0 0 1 0 6.4M18 6.3a8 8 0 0 1 0 11.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+    '<path class="ex-sound__off" d="M16 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+  '</svg>';
+
 function renderUnlock(params, ctx) {
   const p = APP.place(params.id);
   if (!p) {
@@ -734,9 +969,12 @@ function renderUnlock(params, ctx) {
   }
   const trip = rideTripFor(p, ctx);
   const isRide = !!trip;
-  /* 金框＋50 點只給走不到的地方（ride.js 的 limitedPlace）；近的地方搭車抵達是一般卡 */
-  const gold = isRide && limitedPlace(p);
   const got = collected(p);
+  /* 已收過的地方不重抽：顯示當初收下的那一款 */
+  const draw = got ? cardStyleOf(p.card) : arrivalDraw(p, isRide);
+  /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
+  const gold = !got && !!draw && !!draw.gold;
+  const bonus = isRide && limitedPlace(p);
   const name = cardName(p);
   const today = fmt.todayMMDD();
   const year = new Date().getFullYear();
@@ -744,6 +982,65 @@ function renderUnlock(params, ctx) {
   const arriveBy = isRide
     ? '搭 yoxi 抵達 · ' + num(km) + ' 公里'
     : (p.dist != null ? '走了 ' + distHTML(p.dist) + ' 抵達' : '走路抵達');
+  const tier = tierOf(draw);
+  const odds = '<button class="ex-odds-btn" type="button" data-act="open-odds" aria-label="抽取機率"><span class="ex-odds-btn__i">?</span></button>';
+
+  /* ---- 幕一：抵達。夜色地圖上，這個地方亮起來；點它拉出「收集明信片」 ---- */
+  const scene1 = got ? '' :
+    '<div class="unlock__scene ex-arrive is-on" data-scene="1">' +
+      '<div class="ex-arrive__head">' +
+        '<span class="ex-arrive__chip"><span data-icon="' + (isRide ? 'hail' : 'steps') + '" class="ex-ic16"></span>' +
+          (isRide ? '搭 yoxi 抵達' : '走路抵達') + '</span>' +
+        '<h1 class="unlock__title">你到了<br>' + esc(name) + '</h1>' +
+        '<p class="unlock__sub">' + arriveBy + '</p>' +
+      '</div>' +
+      '<div class="ex-spot-wrap">' +
+        '<button class="ex-spot" type="button" data-act="open-spot" aria-label="' + esc(name) + '：收集這裡的明信片">' +
+          '<span class="ex-spot__beam"></span>' +
+          '<span class="ex-spot__ring"></span><span class="ex-spot__ring"></span><span class="ex-spot__ring"></span>' +
+          '<span class="ex-spot__halo"></span>' +
+          '<span class="ex-spot__pin"><span class="ex-spot__art" data-art="' + esc(p.art) + '" data-seed="1"></span></span>' +
+        '</button>' +
+      '</div>' +
+      '<p class="ex-arrive__hint" data-arrive-hint>點一下發光的地方</p>' +
+      '<div class="ex-sheet" data-arrive-sheet hidden>' +
+        '<div class="ex-sheet__row">' +
+          '<span class="ex-sheet__art" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
+          '<span class="ex-sheet__txt">' +
+            '<span class="ex-sheet__t">' + esc(name) + '</span>' +
+            '<span class="ex-sheet__p">這裡有 ' + num(DRAW_STYLES.length) + ' 款明信片，收集時隨機抽出一款</span>' +
+          '</span>' +
+          odds +
+        '</div>' +
+        (isRide
+          ? '<p class="ex-sheet__gold"><span data-icon="badge" class="ex-ic16"></span>搭 yoxi 抵達 · 這一次必得 yoxi 金框</p>'
+          : '') +
+        '<button class="btn-primary ex-sheet__go" type="button" data-act="draw">收集明信片</button>' +
+      '</div>' +
+    '</div>';
+
+  /* ---- 抽卡舞台的特效層（只放這一款用得到的） ---- */
+  const key = draw ? draw.key : '';
+  const stageFx = got ? '' :
+    '<div class="ex-stage__fx" aria-hidden="true">' +
+      (key === 'gold' ? '<span class="ex-rays"><i></i></span>' : '') +
+      '<span class="ex-aura"></span>' +
+      (key === 'watercolor' ? '<span class="ex-blots"><i></i><i></i><i></i><i></i></span>' : '') +
+      (key === 'oil' ? '<span class="ex-stroke"></span>' : '') +
+      (key === 'ink'
+        ? '<svg class="ex-enso" viewBox="0 0 200 200" focusable="false"><path d="M142 37 A74 74 0 1 0 172 86" pathLength="1"/></svg><span class="ex-drop"></span>'
+        : '') +
+    '</div>';
+
+  const label = draw
+    ? '<p class="ex-unlock__style" data-draw="' + esc(draw.key) + '">' +
+        '<b class="ex-unlock__sname">' + esc(draw.name) + '</b>' +
+        (got ? '' : '<span class="ex-unlock__rare">' +
+          (isRide && draw.gold ? '搭 yoxi 抵達必得'
+            : num(DRAW_STYLES.length) + ' 款之一 · 出現機率 ' + num(oddsPct(draw[isRide ? 'ride' : 'walk']))) +
+        '</span>') +
+      '</p>'
+    : '';
 
   const act3Acts = got
     ? '<p class="ex-unlock__have">已在收藏裡</p>' +
@@ -751,10 +1048,10 @@ function renderUnlock(params, ctx) {
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看這張明信片</a>' : '') +
         '<a class="btn-link ex-center ex-unlock__link" href="#/explore" data-act="go-explore">回探索</a>' +
       '</div>'
-    : (gold
+    : (isRide
         ? '<div class="ex-unlock__gold" data-gold-note>' +
             '<span class="ex-unlock__goldrow"><span data-icon="badge" class="ex-ic16"></span>司機同行紀念 · 這一段是 yoxi 陪你到的</span>' +
-            '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' +
+            (bonus ? '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' : '') +
           '</div>'
         : '') +
       '<div class="ex-unlock__in">' +
@@ -764,45 +1061,49 @@ function renderUnlock(params, ctx) {
         '<button class="btn-primary ex-unlock__btn" type="button" data-act="collect">收進收藏</button>' +
       '</div>';
 
-  return '<div class="unlock ex-unlock" data-unlock' + (gold ? ' data-ride' : '') + '>' +
-      '<div class="unlock__scene' + (got ? '' : ' is-on') + '" data-scene="1">' +
-        '<div class="burst ex-burst">' +
-          '<span class="burst__wave"></span><span class="burst__wave"></span>' +
-          '<span class="ex-burst__bits">' +
-            [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<i style="--i:' + i + '"></i>'; }).join('') +
-          '</span>' +
-          '<span class="burst__dot ex-burst__dot"></span>' +
-        '</div>' +
-        '<h1 class="unlock__title">你到了<br>' + esc(name) + '</h1>' +
-        '<p class="unlock__sub">' + arriveBy + '</p>' +
-      '</div>' +
-      '<div class="unlock__scene" data-scene="2">' +
-        '<div class="gen">' +
-          '<div class="gen__layer" data-art="' + esc(p.art) + '" data-seed="1"></div>' +
-          '<div class="gen__layer ex-gen__l2"></div>' +
-          '<div class="gen__layer ex-gen__l3"></div>' +
-          '<div class="gen__layer ex-gen__l4"></div>' +
-          '<div class="gen__sweep"></div>' +
-          '<span class="gen__tag" data-gen-tag>yoxi ✕ AI 生成中</span>' +
-        '</div>' +
-        '<h2 class="unlock__title ex-unlock__t2">正在畫下今天的這裡</h2>' +
-        '<p class="unlock__sub">依這個地方的樣子、今天的天氣與光線生成</p>' +
-        '<p class="unlock__sub ex-unlock__skip">點一下畫面直接看結果</p>' +
-      '</div>' +
-      '<div class="unlock__scene' + (got ? ' is-on' : '') + '" data-scene="3">' +
-        '<div class="ex-unlock__card">' +
-          '<div class="postcard' + (gold && !got ? ' postcard--gold' : '') + '" data-final-card>' +
-            (gold && !got ? '<span class="postcard__ribbon">yoxi 限定版</span>' : '') +
-            '<div class="ex-fill" data-art="' + esc(p.art) + '" data-seed="1"></div>' +
-            '<span class="ai-mark">AI 生成示意</span>' +
-            '<span class="postcard__foot">' +
-              '<span class="postcard__name">' + esc(name) + '</span>' +
-              '<span class="postcard__date">' + year + '.' + esc(today) + ' · ' + esc(p.area || '新竹市') + '</span>' +
-            '</span>' +
+  const mute = !!APP.store.get('fxMute');
+
+  return '<div class="unlock ex-unlock" data-unlock data-at="' + (got ? '3' : '1') + '"' + (isRide ? ' data-ride' : '') +
+      (draw ? ' data-style="' + esc(draw.key) + '" data-tier="' + tier + '"' : '') + '>' +
+      (got ? '' : '<div class="ex-unlock__map" data-arrive-map aria-hidden="true"></div>' +
+                  (key === 'ink' ? '<div class="ex-paper" aria-hidden="true"><svg class="ex-face__paper" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg></div>' : '') +
+                  '<canvas class="ex-fx ex-fx--back" data-fx-back aria-hidden="true"></canvas>') +
+      scene1 +
+      '<div class="unlock__scene ex-stage' + (got ? ' is-on' : '') + '" data-scene="3">' +
+        '<div class="ex-stage__shake" data-shake>' +
+          '<div class="ex-unlock__card" data-card-box>' +
+            stageFx +
+            '<div class="ex-flip" data-flip>' +
+              (got ? '' :
+                '<div class="ex-flip__back" aria-hidden="true">' +
+                  '<span class="ex-back__dot"></span><span class="ex-back__mark">yoxi</span><span class="ex-back__sub">城事</span>' +
+                '</div>') +
+              '<div class="postcard ex-flip__front' + (gold ? ' postcard--gold' : '') + '" data-final-card' +
+                  (draw ? ' data-style="' + esc(draw.key) + '"' : '') + '>' +
+                (gold ? '<span class="postcard__ribbon" data-ribbon-new>yoxi 限定版</span>' : '') +
+                faceHTML(p, draw) +
+                '<span class="ai-mark">AI 生成示意</span>' +
+                '<span class="postcard__foot">' +
+                  '<span class="postcard__name">' + esc(name) + '</span>' +
+                  '<span class="postcard__date">' + year + '.' + esc(today) + ' · ' + esc(p.area || '新竹市') + '</span>' +
+                '</span>' +
+              '</div>' +
+            '</div>' +
+            odds +
           '</div>' +
+          (got ? '' : '<p class="ex-stage__cap" data-stage-cap aria-live="polite">' + CHARGE_CAPS[0] + '</p>') +
         '</div>' +
-        act3Acts +
+        '<div class="ex-result" data-result>' +
+          label +
+          creditHTML(p) +
+          act3Acts +
+        '</div>' +
       '</div>' +
+      (got ? '' :
+        '<canvas class="ex-fx ex-fx--front" data-fx aria-hidden="true"></canvas>' +
+        '<div class="ex-flash" data-flash aria-hidden="true"></div>' +
+        '<button class="ex-sound" type="button" data-act="toggle-sound" aria-pressed="' + (mute ? 'false' : 'true') + '" aria-label="音效">' +
+          SOUND_ICON + '</button>') +
     '</div>';
 }
 
@@ -815,41 +1116,453 @@ function sceneMs() {
   return 1200;
 }
 
+/* 抵達畫面的底圖：以這個地方為中心的真實地圖，壓成夜色；地點落在發光點的位置（高度 SPOT_Y） */
+const SPOT_Y = .42;
+const ARRIVE_SPAN_M = 1400;
+function mountArriveMap(host, p) {
+  const geo = window.HSINCHU_PLACES && HSINCHU_PLACES[p.id];
+  if (!host || !geo || !window.HSMAP || !APP.map) return null;
+  try {
+    const W = host.clientWidth || 390, H = host.clientHeight || 844;
+    const southM = (.5 - SPOT_Y) * H * (ARRIVE_SPAN_M / W);
+    return APP.map.mount(host, { style: 'paper', center: HSMAP.toLL(geo.x, geo.y + southM), spanM: ARRIVE_SPAN_M, spots: false });
+  } catch (e) {
+    console.error('arrive map', e);
+    return null;
+  }
+}
+
 function mountUnlock(root, params, ctx) {
   const p = APP.place(params.id);
   if (!p) { APP.ui.setStatus('dark'); return; }
+  const F = APP.fx;
   const isRide = !!rideTripFor(p, ctx);
   const box = root.querySelector('[data-unlock]');
+  const got = collected(p);
+  const draw = styleOf(box.getAttribute('data-style'));
+  const tier = Number(box.getAttribute('data-tier')) || 1;
+  const u = sceneMs() / 1200;                    /* 全部時間跟著 --t-scene 縮放 */
   const timers = [];
-  const show = function (n) {
-    box.querySelectorAll('.unlock__scene').forEach(function (s) {
-      s.classList.toggle('is-on', s.getAttribute('data-scene') === String(n));
-    });
-    box.setAttribute('data-at', String(n));
+  const later = function (fn, ms) { timers.push(setTimeout(fn, Math.round(ms * u))); };
+  let map = null, back = null, front = null, shake = null, motes = null, dust = null, run = null;
+  let sheetOpen = false, collecting = false;
+  if (F) F.filters();
+
+  const q = function (s) { return box.querySelector(s); };
+  /* 生成的成品載不到：換回照片＋SVG 濾鏡的示意 */
+  box.querySelectorAll('img[data-fallback]').forEach(function (img) {
+    const back = function () {
+      img.onerror = null;
+      img.src = img.getAttribute('data-fallback');
+      img.removeAttribute('data-fallback');
+      const face = img.closest('.ex-face');
+      if (face) face.classList.remove('ex-face--gen');
+    };
+    img.onerror = back;
+    if (img.complete && !img.naturalWidth) back();
+  });
+  const cardBox = q('[data-card-box]');
+  const flip = q('[data-flip]');
+  const cap = q('[data-stage-cap]');
+  const engs = {
+    set speed(v) { if (back) back.speed = v; if (front) front.speed = v; },
+    get speed() { return front ? front.speed : 1; },
   };
-  const finish = function () {
+
+  const setAt = function (n) {
+    box.setAttribute('data-at', String(n));
+    box.querySelectorAll('.unlock__scene').forEach(function (s) {
+      s.classList.toggle('is-on', s.getAttribute('data-scene') === (n === 1 ? '1' : '3'));
+    });
+  };
+
+  /* 結果：不論是跑完、被點掉、還是 still，最後都停在同一個 class 狀態（WAAPI 的動畫全部拿掉，交給 CSS） */
+  const finish = function (quiet) {
+    if (run) run.dead = true;
     timers.forEach(clearTimeout);
     timers.length = 0;
-    show(3);
+    if (motes) { motes.stop(); motes = null; }
+    box.classList.remove('is-drawing', 'is-ready', 'is-sheet');
+    box.classList.add('is-done');
+    if (flip) flip.classList.add('is-front');
+    setAt(3);
+    if (run) run.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* ignore */ } });
+    if (shake) shake.stop();
+    if (draw && !got && F) box.style.setProperty('--aura', 'rgb(' + auraColor(tier - 1).join(' ') + ')');
+    if (draw && draw.key === 'ink' && !got) { box.classList.add('is-paper'); APP.ui.setStatus('dark'); }
+    if (draw && draw.gold && !got) box.classList.add('is-gold-up');
+    /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見）；其他款式安靜收尾 */
+    if (!quiet && front && draw && draw.gold && !F.calm() && !dust) {
+      const gc = [F.color('--gold'), F.color('--gold-lite')];
+      dust = front.stream({
+        rate: 11,
+        one: function () {
+          const at = front.at(box);
+          return { x: F.rnd(0, at.W), y: -8, vx: F.rnd(-12, 12), vy: F.rnd(34, 80), life: [3.2, 5.2],
+                   size: [1, 2.6], kinds: ['star', 'glow'], colors: gc, tw: [4, 9], alpha: [.35, .85], fin: .1, fout: .45 };
+        },
+      });
+    }
   };
 
-  if (collected(p) || APP.reduceMotion()) {
-    finish();
+  /* 已收過、still、減少動態效果（APP.reduceMotion）：直接停在結果，不演抵達與抽卡 */
+  if (got || APP.reduceMotion() || !F) {
+    finish(true);
   } else {
-    show(1);
-    const T = sceneMs();
-    const tag = box.querySelector('[data-gen-tag]');
-    timers.push(setTimeout(function () { show(2); if (tag) tag.textContent = '讀取今天的天氣與光線'; }, Math.round(T * 1.4)));
-    timers.push(setTimeout(function () { if (tag) tag.textContent = '鎖定風格 · yoxi ✕ AI'; }, Math.round(T * 2.8)));
-    timers.push(setTimeout(finish, Math.round(T * 4.2)));
+    setAt(1);
+    map = mountArriveMap(q('[data-arrive-map]'), p);
+    back = F.engine(q('[data-fx-back]'));
+    front = F.engine(q('[data-fx]'));
+    shake = F.shaker(q('[data-shake]'));
+    /* 先讓瀏覽器算一次「還沒亮」的樣式，再加 is-lit，上色的 transition 才有起點（不用 rAF：畫面外會被停掉） */
+    void box.offsetWidth;
+    box.classList.add('is-lit');
+    /* 亮起來的那一刻：一小圈光點、鐘聲，之後光點慢慢從地上升起 */
+    later(function () {
+      const spot = q('.ex-spot__pin');
+      if (!spot || F.calm()) return;
+      const lit = isRide ? [F.color('--gold'), F.color('--gold-lite')] : [F.color('--yoxi-cream'), F.color('--yoxi-white')];
+      const at = front.at(spot);
+      F.sfx.arrive(isRide);
+      front.burst({ x: at.x, y: at.y, n: 22, speed: [50, 170], life: [.6, 1.2], size: [1.4, 3.2], kinds: ['glow', 'star'], colors: lit, drag: 2.4, tw: [8, 14] });
+      front.ring({ x: at.x, y: at.y, size: 26, grow: 4.5, life: .9, colors: [lit[0]], lw: 2.5 });
+      motes = front.stream({
+        rate: 7,
+        one: function () {
+          const s = front.at(spot);
+          return { x: s.x + F.rnd(-26, 26), y: s.y + F.rnd(-6, 10), vx: F.rnd(-6, 6), vy: F.rnd(-70, -28),
+                   life: [1.6, 2.8], size: [1, 2.8], kinds: ['glow', 'star'], colors: lit, tw: [5, 10], alpha: [.5, 1] };
+        },
+      });
+    }, 420);
   }
-  /* 點畫面任意處跳到成品（成品那一幕本身不攔） */
-  box.onclick = function () {
-    if (box.getAttribute('data-at') !== '3') finish();
+
+  /* ---- 幕一：點發光的地方 → 收集面板 ---- */
+  const openSheet = function () {
+    if (sheetOpen || box.getAttribute('data-at') !== '1') return;
+    sheetOpen = true;
+    const sheet = q('[data-arrive-sheet]');
+    if (!sheet) return;
+    if (F) F.sfx.tap();
+    sheet.hidden = false;
+    box.classList.add('is-sheet');
+    if (sheet.animate && F && !F.calm()) {
+      sheet.animate([{ transform: 'translateY(105%)' }, { transform: 'none' }], { duration: 420, easing: F.ease.out });
+      const spot = q('.ex-spot');
+      if (spot) spot.animate([{ transform: 'scale(1)' }, { transform: 'scale(.9)', offset: .3 }, { transform: 'scale(1)' }],
+        { duration: 420, easing: F.ease.back });
+    }
+    const go = q('[data-act="draw"]');
+    if (go) try { go.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+  };
+  const spotBtn = q('[data-act="open-spot"]');
+  if (spotBtn) spotBtn.onclick = function (e) { if (e) e.stopPropagation(); openSheet(); };
+
+  box.querySelectorAll('[data-act="open-odds"]').forEach(function (b) {
+    b.onclick = function (e) { if (e) e.stopPropagation(); openOdds(); };
+  });
+  const credit = q('[data-act="open-credit"]');
+  if (credit) credit.onclick = function (e) { if (e) e.stopPropagation(); };
+
+  const snd = q('[data-act="toggle-sound"]');
+  if (snd) snd.onclick = function (e) {
+    if (e) e.stopPropagation();
+    const mute = !APP.store.get('fxMute');
+    APP.store.set('fxMute', mute);
+    snd.setAttribute('aria-pressed', mute ? 'false' : 'true');
+    if (!mute && F) F.sfx.tap();
+    APP.ui.toast(mute ? '音效關了' : '音效開了');
   };
 
-  const btn = box.querySelector('[data-act="collect"]');
-  let collecting = false;
+  /* 點畫面：幕一打開面板；抽卡中蓄力 → 快轉到可以翻、可以翻 → 翻開、翻開中 → 直接看結果 */
+  box.onclick = function (e) {
+    if (e && e.target && e.target.closest && e.target.closest('button, a, input')) return;
+    const at = box.getAttribute('data-at');
+    if (at === '1') { openSheet(); return; }
+    if (at !== '2' || !run) return;
+    if (run.phase === 'charge' || run.phase === 'summon') run.fast = true;
+    else if (run.phase === 'ready' && run.tap) run.tap();
+    else if (run.phase === 'reveal') finish();
+  };
+
+  /* ---- 抽卡 ---- */
+  function play() {
+    const R = run = { dead: false, fast: false, anims: [], phase: 'summon', tap: null };
+    const alive = function () { return !R.dead; };
+    const W = function (ms) { return new Promise(function (res) { later(res, ms); }); };
+    /* 動畫只管畫面；流程用計時器接（不等 animation.finished）：
+       畫面外的 iframe、背景分頁會把動畫時鐘停掉，等 finished 就會整段卡住 */
+    const A = function (el, kf, o) {
+      const dur = (o.duration || 300) + (o.delay || 0);
+      if (R.dead) return Promise.resolve();
+      if (el && el.animate) {
+        R.anims.push(el.animate(kf, Object.assign({ fill: 'forwards' }, o,
+          { duration: Math.round((o.duration || 300) * u), delay: Math.round((o.delay || 0) * u) })));
+      }
+      return W(dur);
+    };
+    const aura = q('.ex-aura');
+    const setAura = function (i) {
+      box.style.setProperty('--aura', 'rgb(' + auraColor(i).join(' ') + ')');
+    };
+    const white = F.color('--yoxi-white'), gold = F.color('--gold'), goldLite = F.color('--gold-lite');
+    const red = F.color('--yoxi-red'), cream = F.color('--yoxi-cream'), navy = F.color('--yoxi-navy');
+    const slateLite = F.color('--yoxi-slate-lite');
+
+    /* 蓄力的一拍：光往卡片吸、光暈脹一下、卡片抖（越後面抖越大） */
+    const beat = function (i) {
+      const c = auraColor(i);
+      setAura(i);
+      F.sfx.charge(i);
+      const at = front.at(cardBox);
+      front.converge({ x: at.x, y: at.y, n: 14 + i * 10, radius: [150, 280], life: [.42, .66], size: [.9, 2.2],
+                       kinds: ['spark', 'glow'], colors: [c, white], len: .06 });
+      A(aura, [{ opacity: .3 + i * .1, transform: 'scale(.86)' },
+               { opacity: .8, transform: 'scale(' + (1.08 + i * .05) + ')', offset: .35 },
+               { opacity: .5 + i * .1, transform: 'scale(1)' }], { duration: 520, easing: F.ease.out });
+      const a = 1 + i * .9;
+      A(flip, [{ transform: 'none' }, { transform: 'translateX(' + (-a) + 'px) rotate(' + (-a * .4) + 'deg)' },
+               { transform: 'translateX(' + a + 'px) rotate(' + (a * .4) + 'deg)' }, { transform: 'translateX(' + (-a * .5) + 'px)' },
+               { transform: 'none' }], { duration: 240, easing: F.ease.inOut });
+      if (cap) cap.textContent = CHARGE_CAPS[Math.min(i, CHARGE_CAPS.length - 1)];
+      return W(560);
+    };
+
+    /* 金框的昇格：光收進去 → 停格 → 閃白、轉金、光芒展開 */
+    const upgrade = function () {
+      if (cap) cap.textContent = '';
+      A(aura, [{ transform: 'scale(1)', opacity: .9 }, { transform: 'scale(.55)', opacity: 1 }], { duration: 380, easing: F.ease.in });
+      return A(flip, [{ transform: 'none' }, { transform: 'scale(.93)' }], { duration: 380, easing: F.ease.in })
+        .then(function () { return alive() ? F.hitstop(box, engs, 140) : null; })
+        .then(function () {
+          if (!alive()) return null;
+          F.sfx.upgrade();
+          F.flash(q('[data-flash]'), white);
+          setAura(4);
+          box.classList.add('is-gold-up');
+          shake.add(.45);
+          const at = front.at(cardBox);
+          back.burst({ x: at.x, y: at.y, n: 64, r0: [at.w * .4, at.w * .6], speed: [200, 560], life: [.45, 1], size: [1, 2.6],
+                       kinds: ['spark'], colors: [gold, goldLite, white], drag: 2.4, len: .05 });
+          front.ring({ x: at.x, y: at.y, size: 40, grow: 7, life: .7, colors: [goldLite], lw: 3 });
+          A(aura, [{ transform: 'scale(.55)', opacity: 1 }, { transform: 'scale(1.18)', opacity: 1 }], { duration: 520, easing: F.ease.out });
+          return A(flip, [{ transform: 'scale(.93)' }, { transform: 'scale(1.06)', offset: .4 }, { transform: 'none' }],
+                   { duration: 560, easing: F.ease.elastic });
+        })
+        .then(function () { return alive() ? W(260) : null; });
+    };
+
+    /* 翻開：每一款各自的反應（earned juice：越稀有越重） */
+    const PRE = 'translateY(6px) scale(.92)';
+    const REVEAL = {
+      watercolor: function (at) {
+        const done = A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(0) scale(1.03) rotateY(180deg)', offset: .75 },
+                              { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 560, easing: F.ease.out });
+        return W(190).then(function () {
+          if (!alive()) return null;
+          F.sfx.reveal(1);
+          const pastel = [cream, F.mix(red, white, .72), F.mix(slateLite, white, .5), goldLite];
+          box.querySelectorAll('.ex-blots i').forEach(function (b, k) {
+            const ang = k * Math.PI / 2 + .6, dx = Math.cos(ang) * 100, dy = Math.sin(ang) * 128;
+            A(b, [{ transform: 'translate(' + dx * .3 + 'px,' + dy * .3 + 'px) scale(.2)', opacity: 0 },
+                  { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.15)', opacity: .75, offset: .4 },
+                  { transform: 'translate(' + dx * 1.3 + 'px,' + dy * 1.3 + 'px) scale(1.5)', opacity: 0 }],
+              { duration: 1500 + k * 140, delay: k * 70, easing: F.ease.out });
+          });
+          back.burst({ x: at.x, y: at.y, n: 14, r0: [at.w * .3, at.w * .55], speed: [30, 100], life: [1.2, 2], size: [2, 4.5], kinds: ['glow'],
+                       colors: pastel, g: -24, drag: .9, alpha: [.5, .9] });
+          return done;
+        });
+      },
+      oil: function (at) {
+        const done = A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(0) scale(1.07) rotateY(180deg)', offset: .7 },
+                              { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 520, easing: F.ease.back });
+        return W(170).then(function () {
+          if (!alive()) return null;
+          F.sfx.reveal(2);
+          A(q('.ex-stroke'), [{ transform: 'translate(-50%, -50%) rotate(-16deg) translateX(-70%) scaleX(.3)', opacity: 0 },
+                              { transform: 'translate(-50%, -50%) rotate(-16deg) translateX(0) scaleX(1)', opacity: .95, offset: .42 },
+                              { transform: 'translate(-50%, -50%) rotate(-16deg) translateX(18%) scaleX(1.05)', opacity: 0 }],
+            { duration: 950, easing: F.ease.out });
+          const amber = auraColor(1);
+          front.burst({ x: at.x, y: at.y, n: 20, r0: [at.w * .35, at.w * .6], speed: [80, 230], life: [.6, 1.2], size: [2, 5],
+                        kinds: ['star', 'glow'], colors: [amber, goldLite, cream], drag: 2.6, tw: [10, 18] });
+          return done;
+        });
+      },
+      woodcut: function (at) {
+        return A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(-4px) scale(1.24) rotateY(180deg)' }],
+                 { duration: 380, easing: F.ease.out })
+          .then(function () {
+            return A(flip, [{ transform: 'translateY(-4px) scale(1.24) rotateY(180deg)' }, { transform: 'translateY(0) scale(1) rotateY(180deg)' }],
+                     { duration: 150, easing: F.ease.heavy });
+          })
+          .then(function () {
+            if (!alive()) return null;
+            F.sfx.thud(false);
+            F.sfx.reveal(3);
+            return F.hitstop(box, engs, 50);
+          })
+          .then(function () {
+            if (!alive()) return null;
+            shake.add(.42);
+            const c = front.at(cardBox);
+            front.ring({ x: c.x, y: c.y, size: c.w * .55, grow: 2.3, life: .55, colors: [red], lw: 4 });
+            front.burst({ x: c.x, y: c.y + c.h * .3, n: 24, speed: [160, 420], angle: [-Math.PI * .95, -Math.PI * .05],
+                          life: [.6, 1], size: [3, 7], kinds: ['shard'], colors: [red, cream, slateLite], g: 900, drag: 1.2,
+                          spin: [4, 12], blend: 'source-over', fout: .3 });
+            back.burst({ x: c.x, y: c.y + c.h * .45, n: 10, speed: [20, 70], life: [.8, 1.4], size: [6, 12], grow: 2,
+                         kinds: ['soft'], colors: [cream], alpha: [.15, .3], blend: 'source-over' });
+            return A(flip, [{ transform: 'rotateY(180deg) scale(1)' }, { transform: 'rotateY(180deg) scale(1.02)', offset: .3 },
+                            { transform: 'rotateY(180deg) scale(1)' }], { duration: 320, easing: F.ease.out });
+          });
+      },
+      ink: function (at) {
+        const drop = q('.ex-drop');
+        return A(drop, [{ transform: 'translate(-50%, -50%) translateY(-260px) scale(.6, 1.5)', opacity: 0 },
+                        { transform: 'translate(-50%, -50%) translateY(-70px) scale(.7, 1.3)', opacity: 1, offset: .6 },
+                        { transform: 'translate(-50%, -50%) translateY(0) scale(1.2, .7)', opacity: 1 }],
+                 { duration: 440, easing: F.ease.heavy })
+          .then(function () {
+            if (!alive()) return null;
+            F.sfx.plip();
+            A(drop, [{ transform: 'translate(-50%, -50%) scale(1.2, .7)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(3.2, .2)', opacity: 0 }],
+              { duration: 260, easing: F.ease.out });
+            return F.hitstop(box, engs, 80);
+          })
+          .then(function () {
+            if (!alive()) return null;
+            /* 夜色洗成宣紙：墨在紙上才看得見 */
+            box.classList.add('is-paper');
+            APP.ui.setStatus('dark');
+            F.sfx.reveal(4);
+            shake.add(.3);
+            const c = back.at(cardBox);
+            const ink = [navy, F.mix(navy, slateLite, .35)];
+            back.burst({ x: c.x, y: c.y, n: 26, speed: [24, 96], life: [1.6, 2.6], size: [10, 22], grow: [2.5, 4],
+                         kinds: ['soft'], colors: ink, drag: 1.2, alpha: [.18, .42], blend: 'source-over', fin: .05, fout: .6 });
+            back.burst({ x: c.x, y: c.y - c.h * .5, n: 16, speed: [220, 460], angle: [-Math.PI * .92, -Math.PI * .08], life: [.5, .9],
+                         size: [1.5, 4], kinds: ['soft'], colors: [navy], g: 700, drag: .6, blend: 'source-over', alpha: [.6, .9] });
+            back.ring({ x: c.x, y: c.y, size: c.w * .5, grow: 2.6, life: 1.2, colors: [navy], lw: 1.6 });
+            back.ring({ x: c.x, y: c.y, size: c.w * .5, grow: 3.4, life: 1.6, colors: [navy], lw: 1.2 });
+            const enso = q('.ex-enso path');
+            A(q('.ex-enso'), [{ opacity: 0, transform: 'translate(-50%, -53%) rotate(-30deg) scale(.9)' },
+                              { opacity: .8, transform: 'translate(-50%, -53%) rotate(0deg) scale(1)' }], { duration: 1100, easing: F.ease.out });
+            A(enso, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1100, delay: 80, easing: F.ease.out });
+            return A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(0) scale(1.04) rotateY(180deg)', offset: .7 },
+                            { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 640, easing: F.ease.out });
+          });
+      },
+      gold: function (at) {
+        const spin = A(flip, [{ transform: PRE + ' rotateY(0deg)' },
+                              { transform: 'translateY(0) scale(1.22) rotateY(420deg)', offset: .62 },
+                              { transform: 'translateY(0) scale(1.14) rotateY(540deg)' }], { duration: 980, easing: F.ease.out });
+        return W(560).then(function () {
+          if (!alive()) return null;
+          F.sfx.thud(true);
+          F.sfx.reveal(5);
+          return F.hitstop(box, engs, 120);
+        }).then(function () {
+          if (!alive()) return null;
+          shake.add(.62);
+          const c = front.at(cardBox);
+          const gc = [gold, goldLite, white];
+          front.ring({ x: c.x, y: c.y, size: c.w * .5, grow: 3.2, life: .7, colors: [goldLite], lw: 5 });
+          front.ring({ x: c.x, y: c.y, size: c.w * .4, grow: 4.4, life: 1, colors: [gold], lw: 3 });
+          back.burst({ x: c.x, y: c.y, n: 90, r0: [c.w * .35, c.w * .55], speed: [260, 720], life: [.5, 1.1], size: [1, 2.8],
+                       kinds: ['spark'], colors: gc, drag: 2, g: 260, len: .045 });
+          front.burst({ x: c.x, y: c.y - c.h * .3, n: 70, r0: [c.w * .3, c.w * .5], speed: [300, 680], angle: [-Math.PI * .92, -Math.PI * .08],
+                        life: [1.2, 2], size: [1.6, 4], kinds: ['star', 'glow'], colors: gc, g: 720, drag: .9, tw: [8, 16] });
+          back.burst({ x: c.x, y: c.y, n: 18, speed: [40, 140], life: [1, 1.8], size: [18, 34], grow: 1.6, kinds: ['glow'],
+                       colors: [gold], alpha: [.25, .45], drag: 1.4 });
+          A(q('[data-ribbon-new]'), [{ transform: 'scale(2.4) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.9) rotate(0deg)', opacity: 1, offset: .7 },
+                                     { transform: 'none', opacity: 1 }], { duration: 480, delay: 260, easing: F.ease.back });
+          return spin;
+        }).then(function () {
+          return A(flip, [{ transform: 'translateY(0) scale(1.14) rotateY(540deg)' }, { transform: 'translateY(0) scale(1) rotateY(540deg)' }],
+                   { duration: 620, easing: F.ease.elastic });
+        });
+      },
+    };
+
+    const scene1 = q('[data-scene="1"]');
+    const sheet = q('[data-arrive-sheet]');
+    const mapEl = q('[data-arrive-map]');
+    if (motes) { motes.stop(); motes = null; }
+    F.sfx.unlock();
+    F.sfx.tap();
+    A(sheet, [{ transform: 'none' }, { transform: 'translateY(110%)' }], { duration: 260, easing: F.ease.in });
+    return A(scene1, [{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: F.ease.in })
+      .then(function () {
+        if (!alive()) return null;
+        if (F.calm()) { finish(); return null; }      /* 減少動態：直接看結果（CSS 的淡入接手） */
+        box.classList.add('is-drawing');
+        setAt(2);
+        /* 抽卡時卡片放在畫面正中；翻完才滑回結果的位置 */
+        const b = box.getBoundingClientRect(), c = cardBox.getBoundingClientRect();
+        const k = b.width / (box.offsetWidth || b.width) || 1;
+        box.style.setProperty('--dy', (((b.top + b.height * .45) - (c.top + c.height / 2)) / k).toFixed(1) + 'px');
+        if (mapEl) A(mapEl, [{ opacity: .55 }, { opacity: .1 }], { duration: 700, easing: F.ease.out });
+        setAura(0);
+        F.sfx.whoosh();
+        /* 透明度動在外層：.ex-flip 自己有 opacity 動畫時，Chrome 會把 preserve-3d 壓平，翻面就只看得到反過來的卡背 */
+        A(cardBox, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: F.ease.out });
+        return A(flip, [{ transform: 'translateY(60px) scale(.3) rotate(-10deg)' },
+                        { transform: 'translateY(-8px) scale(1.04) rotate(2deg)', offset: .7 },
+                        { transform: 'none' }], { duration: 620, easing: F.ease.out });
+      })
+      .then(function () {
+        if (!alive()) return null;
+        R.phase = 'charge';
+        const beats = Math.min(tier, 4);
+        let chain = Promise.resolve();
+        for (let i = 0; i < beats; i++) {
+          chain = chain.then(function () { return alive() && !R.fast ? beat(i) : null; });
+        }
+        return chain;
+      })
+      .then(function () {
+        if (!alive()) return null;
+        if (tier === 5) {
+          if (!R.fast) return upgrade();
+          box.classList.add('is-gold-up');
+        }
+        return null;
+      })
+      .then(function () {
+        if (!alive()) return null;
+        setAura(tier - 1);
+        A(aura, [{ opacity: .85 }, { opacity: .85 }], { duration: 10 });
+        /* 等你翻開（沒動作 3.6 秒後自己翻，demo 不會卡住） */
+        R.phase = 'ready';
+        box.classList.add('is-ready');
+        if (cap) cap.textContent = '點一下翻開';
+        return Promise.race([new Promise(function (res) { R.tap = res; }), W(3600)]);
+      })
+      .then(function () {
+        if (!alive()) return null;
+        R.tap = null;
+        R.phase = 'reveal';
+        box.classList.remove('is-ready');
+        if (cap) cap.textContent = '';
+        F.sfx.flip();
+        const at = front.at(cardBox);
+        return A(flip, [{ transform: 'none' }, { transform: PRE }], { duration: 140, easing: F.ease.in })
+          .then(function () { return alive() ? (REVEAL[draw ? draw.key : 'watercolor'] || REVEAL.watercolor)(at) : null; });
+      })
+      .then(function () { return alive() ? W(tier >= 4 ? 900 : 520) : null; })
+      .then(function () { if (alive()) finish(); });
+  }
+
+  const drawBtn = q('[data-act="draw"]');
+  if (drawBtn) drawBtn.onclick = function (e) {
+    if (e) e.stopPropagation();
+    if (run || !F) { if (!F) finish(); return; }
+    drawBtn.disabled = true;
+    play();
+  };
+
+  const btn = q('[data-act="collect"]');
   if (btn) {
     btn.onclick = function (e) {
       if (e) e.stopPropagation();
@@ -857,7 +1570,7 @@ function mountUnlock(root, params, ctx) {
       if (collecting) return;
       collecting = true;
       btn.disabled = true;
-      const input = box.querySelector('[data-one-line]');
+      const input = q('[data-one-line]');
       const note = input ? String(input.value || '').trim().slice(0, 40) : '';
       /* 收的當下再判一次（畫面開著的時候行程可能被取消或換掉了） */
       const trip = rideTripFor(p, ctx);
@@ -869,12 +1582,23 @@ function mountUnlock(root, params, ctx) {
         rv[p.card] = trip.via;
         APP.store.set('rideVia', rv);
       }
-      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km });
+      const drawn = ride ? drawStyle('ride', 0) : arrivalDraw(p, false);
+      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km, style: drawn.key });
       APP.ui.toast('收進收藏了');
       APP.nav.go('/album', { dir: 'push' });
     };
   }
-  return function () { timers.forEach(clearTimeout); };
+
+  return function () {
+    if (run) run.dead = true;
+    timers.forEach(clearTimeout);
+    if (motes) motes.stop();
+    if (dust) dust.stop();
+    if (shake) shake.stop();
+    if (back) back.destroy();
+    if (front) front.destroy();
+    if (map) map.destroy();
+  };
 }
 
 /* ---------------------------------------------------------------- /routes */

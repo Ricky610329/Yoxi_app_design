@@ -16,7 +16,8 @@
      /notify      notify.html                            /trips      trips.html
 
    刻意沒有的東西：
-      - 搭車地圖沒有探索景點；只支援往下收合面板。探索地圖同時最多 4 個景點，面板可上下拉。
+      - 搭車地圖沒有探索景點。探索地圖同時最多 4 個景點。兩個模式的面板都可上下拉，
+        最低收到只剩拉把（看整張地圖）；搭車點拉把拉回來，探索也可以點景點叫回來。
       - 收藏仍在底欄；沒有數字徽章、沒有未讀數字。
      - 金色橫幅只在評分之後出現（評分與付款是 yoxi 的既有職責，城事排在它們後面）。
      - 行程地圖上不畫路線：這份原型沒有做路徑規劃，一條假的線等於一個沒算過的數字。
@@ -44,6 +45,8 @@ const HOME_LL = [24.7990, 120.9800];
    家會落在地圖最右緣（x≈97%），地址標籤被切掉。改用那張概念稿量出來的中心與 2.4 km。 */
 const RIDE_CENTER = [24.80217, 120.97604];
 const RIDE_SPAN = 2400;
+/* 地圖畫得比可見範圍高（mountFullMap），svg 底邊的署名會被面板蓋住，改成貼在容器底邊的 HTML */
+const RIDE_CREDIT = '<span class="ride-map__credit">地圖資料 © OpenStreetMap 貢獻者（ODbL）</span>';
 /* 變體 E 的四個地方，順序＝重要性（今天的地方先佔位）。座標只是 nearSpots 的格式要求，
    真正的位置由 HSMAP 的經緯度決定。 */
 const NEAR_POS = { 'glass-kiln': [0, 0], market: [0, 0], moat: [0, 0], hill: [0, 0] };
@@ -333,7 +336,8 @@ function keepClear(map, me) {
     return [(r.left - box.left) * sx, (r.top - box.top) * sy, (r.right - box.left) * sx, (r.bottom - box.top) * sy];
   };
   const rects = [[0, 0, H.width, 60]];
-  map.el.querySelectorAll('.fab, .pin, .pin__label').forEach(function (el) { rects.push(rel(el)); });
+  /* 從地圖的容器找：探索把定位鈕搬到了 map.el 外面 */
+  map.el.parentElement.querySelectorAll('.fab, .pin, .pin__label').forEach(function (el) { rects.push(rel(el)); });
   const hit = function (a, b, pad) {
     return !(a[2] + pad < b[0] || a[0] - pad > b[2] || a[3] + pad < b[1] || a[1] - pad > b[3]);
   };
@@ -391,7 +395,7 @@ function rideRender() {
   const callText = trip ? '回到行程' : dp ? '叫車前往 ' + dp.name : '選好下車點就可以叫車';
 
   return '' +
-    '<div class="ride-map" data-ride-map></div>' +
+    '<div class="ride-map ride-map--full" data-ride-map>' + RIDE_CREDIT + '</div>' +
 
     '<div class="banner ride-banner">' +
       '<div class="banner__item ride-banner__promo">' +
@@ -402,7 +406,6 @@ function rideRender() {
     '<div class="sheet ride-sheet ride-sheet--ride">' +
       '<div class="sheet__grip ride-mode__grip"><div class="sheet__handle"></div></div>' +
       rideModePills('ride') +
-      '<button class="ride-mode__restore" type="button" data-act="restore-ride" tabindex="-1" aria-hidden="true">展開搭車 <span class="arrow"></span></button>' +
       '<h1 class="sheet__greet">' + esc(F.greet(new Date().getHours())) + '，' + esc(M().USER.name) + ' 今天要去哪？</h1>' +
       '<div class="card">' +
         '<div class="route-input">' +
@@ -450,13 +453,8 @@ function rideMount(root) {
   if (t0 && t0.phase === 'done' && !pendingUnlock()) store().set('trip', null);
 
   /* ---- 地圖 ---- */
-  const host = root.querySelector('[data-ride-map]');
-  const map = APP.map.mount(host, {
-    style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
-    spots: false, max: 4, compact: true, pan: true,
-    layers: { label: true },
-    overlay: rideOverlay(),
-  });
+  const sheet = root.querySelector('.ride-sheet');
+  const map = mountFullMap(root.querySelector('[data-ride-map]'), sheet, { spots: false, max: 4, overlay: rideOverlay() });
   offs.push(function () { map.destroy(); });
 
   /* 上車點 pin 落在家的真實經緯度 */
@@ -476,10 +474,20 @@ function rideMount(root) {
   if (clr) clr.onclick = function () { clearDropoff(); };
   const call = root.querySelector('[data-act="call-ride"]');
   if (call) call.onclick = function () { callRide(); };
-  const stopDown = bindRideDownSheet(root.querySelector('.ride-sheet'));
+  /* 兩段：open 叫車欄位／hidden 只剩拉把。跟探索同一套拉法：跟手、放開接續動畫、點拉把切換 */
+  const openH = Math.ceil(sheet.scrollHeight);
+  sheet.style.setProperty('--ride-open-height', openH + 'px');
+  let state = 'open';
+  const stopDrag = bindDragSheet(sheet, {
+    order: ['hidden', 'open'],
+    get: function () { return state; },
+    set: function (next) { state = next; hideSheetBody(sheet, next === 'hidden'); },
+    tap: function (from) { return from === 'open' ? 'hidden' : 'open'; },
+    heights: function () { return { hidden: map.peek, open: openH }; },
+  });
 
   return function () {
-    stopDown();
+    stopDrag();
     offs.forEach(function (f) { try { f(); } catch (e) { /* ignore */ } });
     if (tb) tb.classList.remove('is-yield');
   };
@@ -514,10 +522,16 @@ function areaCardsHTML(a) {
       if (!c) return '';
       const got = S().has(id);
       return '<button class="ride-v2__card' + (got ? ' is-collected' : '') + '" type="button" data-act="open-card" data-card="' + esc(id) + '" aria-label="看看卡片：' + esc(c.name) + '">' +
-        '<span class="ride-v2__card-art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '">' +
+        '<span class="ride-v2__card-art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '" data-card-art="' + esc(id) + '">' +
           '<span class="ai-mark">AI 生成示意</span></span>' +
         '<strong>' + esc(c.name) + '</strong></button>';
     }).join('') + '</div>';
+}
+/* 探索面板收合態的自然高度：拉把＋模式切換＋地點資訊（卡片收合時不佔位）。
+   寫回 --sheet-min，收合／收起的動畫才不會先在多出來的高度裡空轉。 */
+function exploreCollapsedH(sheet) {
+  const intro = sheet.querySelector('[data-area-intro]');
+  return Math.ceil(intro.offsetTop + intro.offsetHeight + parseFloat(getComputedStyle(sheet).paddingBottom));
 }
 function areaIntroHTML(a) {
   const p = APP.place(a.id);
@@ -557,7 +571,7 @@ function rideV2Overlay() {
 }
 function rideV2Render(params, ctx) {
   const a = cardArea(ctx.query.get('area')) || nearestCardArea();
-  return '<div class="ride-map ride-v2__map" data-ride-map></div>' +
+  return '<div class="ride-map ride-map--full ride-v2__map" data-ride-map>' + RIDE_CREDIT + '</div>' +
     '<section class="sheet sheet--drag is-collapsed ride-sheet ride-v2__sheet" style="--sheet-min:390px">' +
       '<div class="sheet__grip"><div class="sheet__handle"></div></div>' +
       rideModePills('explore') +
@@ -575,9 +589,8 @@ function rideV2Mount(root, params, ctx) {
   let selected = cardArea(ctx.query.get('area')) || nearestCardArea();
   let returnFocus = null;
   if (!cardArea(ctx.query.get('area'))) APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
-  const map = APP.map.mount(root.querySelector('[data-ride-map]'), {
-    style: 'paper', center: RIDE_CENTER, spanM: RIDE_SPAN,
-    spots: store().get('rideSpots') === false ? false : rideSpots(), max: 4, compact: true, pan: true, layers: { label: true },
+  const map = mountFullMap(root.querySelector('[data-ride-map]'), sheet, {
+    spots: store().get('rideSpots') === false ? false : rideSpots(), max: 4,
     overlay: rideV2Overlay(), onSpot: function (s) { selectArea(s.id, true); },
   });
   const H = map.handle, me = H.project(HOME_LL[0], HOME_LL[1]);
@@ -585,9 +598,13 @@ function rideV2Mount(root, params, ctx) {
   if (pin) { pin.style.left = (me[0] / H.width * 100).toFixed(1) + '%'; pin.style.top = (me[1] / H.height * 100).toFixed(1) + '%'; }
   SHELL.injectIcons(root);
   keepClear(map, me);
-  function setOpen(open) {
-    sheet.classList.toggle('is-collapsed', !open);
-    if (tabbar) tabbar.classList.toggle('is-yield', open);
+  /* 三段：hidden 只剩拉把（看整張地圖）／collapsed 地點資訊／open 接著看卡片 */
+  let state = 'collapsed';
+  function setSheet(next) {
+    state = next;
+    sheet.classList.toggle('is-collapsed', next !== 'open');
+    hideSheetBody(sheet, next === 'hidden');
+    if (tabbar) tabbar.classList.toggle('is-yield', next === 'open');
   }
   function paint() {
     intro.innerHTML = areaIntroHTML(selected);
@@ -595,7 +612,8 @@ function rideV2Mount(root, params, ctx) {
     SHELL.injectArt(intro);
     SHELL.injectArt(expanded);
     SHELL.injectIcons(sheet);
-    intro.querySelector('[data-act="expand-cards"]').onclick = function () { setOpen(true); };
+    sheet.style.setProperty('--sheet-min', exploreCollapsedH(sheet) + 'px');
+    intro.querySelector('[data-act="expand-cards"]').onclick = function () { setSheet('open'); };
     intro.querySelector('[data-act="use-yoxi"]').onclick = function () { setDropoff(selected.id, 'e'); };
     expanded.querySelectorAll('[data-act="open-card"]').forEach(function (b) {
       b.onclick = function () { openCard(b.getAttribute('data-card'), b); };
@@ -608,7 +626,7 @@ function rideV2Mount(root, params, ctx) {
     selected = cardArea(id) || nearestCardArea();
     APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
     paint();
-    if (fromMap) setOpen(false);
+    if (fromMap) setSheet('collapsed');    /* 收到只剩拉把時，點景點把面板叫回來 */
   }
   function closeCard() {
     floating.hidden = true;
@@ -624,7 +642,7 @@ function rideV2Mount(root, params, ctx) {
     floatCard.setAttribute('aria-pressed', 'false');
     floatCard.setAttribute('aria-label', '翻到卡片背面');
     floating.querySelector('[data-card-front]').innerHTML =
-      '<span class="ride-card-float__art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '"></span>' +
+      '<span class="ride-card-float__art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '" data-card-art="' + esc(id) + '"></span>' +
       '<span class="ride-card-float__name">' + esc(c.name) + '</span><span class="ai-mark">AI 生成示意</span>';
     floating.querySelector('[data-card-back]').innerHTML =
       '<span class="ride-card-float__back-mark">yoxi 城事</span><strong>' + esc(c.name) + '</strong>' +
@@ -643,7 +661,15 @@ function rideV2Mount(root, params, ctx) {
   floating.onclick = function (e) { if (e.target === floating) closeCard(); };
   function onEscape(e) { if (e.key === 'Escape' && !floating.hidden) closeCard(); }
   document.addEventListener('keydown', onEscape);
-  const stopDrag = bindExploreSheet(sheet, setOpen);
+  const stopDrag = bindDragSheet(sheet, {
+    order: ['hidden', 'collapsed', 'open'],
+    get: function () { return state; },
+    set: setSheet,
+    tap: function (from) { return from === 'collapsed' ? 'open' : 'collapsed'; },
+    heights: function () {
+      return { hidden: map.peek, collapsed: exploreCollapsedH(sheet), open: sheet.parentElement.clientHeight * .82 };
+    },
+  });
   return function () {
     stopDrag();
     document.removeEventListener('keydown', onEscape);
@@ -652,55 +678,85 @@ function rideV2Mount(root, params, ctx) {
   };
 }
 
-/* 搭車只有往下收合；回到叫車欄位靠明確按鈕，沒有向上拖曳手勢。 */
-function bindRideDownSheet(sheet) {
-  const grip = sheet.querySelector('.ride-mode__grip');
-  const restore = sheet.querySelector('[data-act="restore-ride"]');
-  const pills = sheet.querySelector('.ride-mode__pills');
-  const css = getComputedStyle(sheet);
-  const openHeight = Math.ceil(sheet.scrollHeight);
-  const closedHeight = Math.ceil(parseFloat(css.paddingTop) + grip.offsetHeight + pills.offsetHeight +
-    parseFloat(getComputedStyle(pills).marginBottom) + 44 + parseFloat(css.paddingTop));
-  sheet.style.setProperty('--ride-open-height', openHeight + 'px');
-  sheet.style.setProperty('--ride-closed-height', closedHeight + 'px');
-  let y0 = null, delta = 0, pointer = null;
-  function setCondensed(closed) {
-    sheet.classList.toggle('is-condensed', closed);
-    restore.tabIndex = closed ? 0 : -1;
-    restore.setAttribute('aria-hidden', closed ? 'false' : 'true');
-  }
+/* ==========================================================================
+   面板收到只剩拉把、整張地圖露出來（搭車與探索同一套）
+   ========================================================================== */
+/* 地圖一開始就畫成面板只剩拉把時的高度、貼齊上緣，面板只是蓋在上面：
+   收放時地圖不縮放，pin 與景點不會跟街道錯開。中心往南挪（全高 − 現在可見高）的一半，
+   現在看到的範圍跟原本一樣。定位鈕搬到容器上，貼著可見範圍的右下角跟著面板上下
+   （它的回到原位在 mount 時已經綁好）。回傳的 map 多一個 peek：只剩拉把時面板的高度。 */
+function mountFullMap(host, sheet, opt) {
+  const peek = Math.ceil(parseFloat(getComputedStyle(sheet).paddingTop) * 2 + sheet.querySelector('.sheet__grip').offsetHeight);
+  sheet.style.setProperty('--ride-peek-h', peek + 'px');
+  const fullH = Math.max(host.clientHeight, host.clientHeight + sheet.offsetHeight - peek);
+  host.style.setProperty('--ride-map-h', fullH + 'px');
+  const c = HSMAP.toM(RIDE_CENTER[0], RIDE_CENTER[1]);
+  const map = APP.map.mount(host, Object.assign({
+    style: 'paper', spanM: RIDE_SPAN, compact: true, pan: true, layers: { label: true },
+    center: HSMAP.toLL(c[0], c[1] + (fullH - host.clientHeight) / 2 * RIDE_SPAN / host.clientWidth),
+  }, opt));
+  host.appendChild(map.el.querySelector('.ride-fab--loc'));
+  map.peek = peek;
+  return map;
+}
+
+/* 只剩拉把：拉把以外的東西不能被 Tab 到（看不見，但還在版面裡） */
+function hideSheetBody(sheet, hidden) {
+  sheet.classList.toggle('is-hidden', hidden);
+  Array.prototype.forEach.call(sheet.children, function (el) {
+    if (!el.classList.contains('sheet__grip')) el.inert = hidden;
+  });
+}
+
+/* 拉把跟手，放手時只往拖的方向換段；那個方向有兩段可選時挑離放手高度最近的。
+   點一下拉把（移動 ≤ 24 px）換到 opt.tap(目前段)。高度一律用 CSS px（桌機外框會縮放，clientY 要除回去）。
+   opt：order 由低到高的段名、heights() → { 段名: px }、get()／set(段名)、tap(段名) → 段名 */
+function bindDragSheet(sheet, opt) {
+  const grip = sheet.querySelector('.sheet__grip');
+  const order = opt.order;
+  let y0 = null, pointer = null, moved = 0, base = 0, k = 1, from = null;
   function down(e) {
     if (y0 !== null) return;
     y0 = e.clientY;
     pointer = e.pointerId;
-    delta = 0;
+    moved = 0;
+    base = sheet.offsetHeight;
+    k = sheet.getBoundingClientRect().height / base || 1;
+    from = opt.get();
+    sheet.style.transition = 'none';
   }
   function move(e) {
-    if (y0 === null || e.pointerId !== pointer || sheet.classList.contains('is-condensed')) return;
-    delta = e.clientY - y0;
-    if (delta <= 4) return;
-    e.preventDefault();
-    sheet.style.transition = 'none';
-    sheet.style.maxHeight = Math.max(closedHeight, openHeight - delta) + 'px';
+    if (y0 === null || e.pointerId !== pointer) return;
+    moved = (y0 - e.clientY) / k;
+    if (Math.abs(moved) > 4) e.preventDefault();
+    const h = opt.heights();
+    sheet.style.maxHeight = Math.max(h[order[0]], Math.min(h[order[order.length - 1]], base + moved)) + 'px';
+  }
+  function end() {
+    sheet.style.transition = '';
+    sheet.style.maxHeight = '';
+    y0 = null;
+    pointer = null;
   }
   function up(e) {
     if (y0 === null || e.pointerId !== pointer) return;
-    const wasClosed = sheet.classList.contains('is-condensed');
-    const closed = wasClosed ? Math.abs(e.clientY - y0) > 8 : e.clientY - y0 > 24;
-    if (sheet.style.maxHeight) void sheet.offsetHeight;
-    setCondensed(closed);
-    sheet.style.transition = '';
-    sheet.style.maxHeight = '';
-    y0 = null;
-    pointer = null;
+    const i = order.indexOf(from);
+    let next = from;
+    if (Math.abs(moved) <= 24) next = opt.tap(from);
+    else {
+      const h = opt.heights(), at = base + moved;
+      order.forEach(function (s, j) {
+        if (moved > 0 ? j <= i : j >= i) return;
+        if (next === from || Math.abs(h[s] - at) < Math.abs(h[next] - at)) next = s;
+      });
+    }
+    end();
+    opt.set(next);
   }
-  function cancel() {
-    y0 = null;
-    pointer = null;
-    sheet.style.transition = '';
-    sheet.style.maxHeight = '';
+  function cancel(e) {
+    if (y0 !== null && e.pointerId === pointer) end();
   }
-  restore.onclick = function () { restore.blur(); setCondensed(false); };
+  grip.style.cursor = 'grab';
   grip.addEventListener('pointerdown', down);
   window.addEventListener('pointermove', move, { passive: false });
   window.addEventListener('pointerup', up);
@@ -710,40 +766,6 @@ function bindRideDownSheet(sheet) {
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', up);
     window.removeEventListener('pointercancel', cancel);
-  };
-}
-
-function bindExploreSheet(sheet, setOpen) {
-  const grip = sheet.querySelector('.sheet__grip');
-  let y0 = null, moved = 0, base = 0;
-  function down(e) {
-    y0 = e.clientY;
-    moved = 0;
-    base = sheet.getBoundingClientRect().height;
-    sheet.style.transition = 'none';
-  }
-  function move(e) {
-    if (y0 === null) return;
-    moved = y0 - e.clientY;
-    if (Math.abs(moved) > 4) e.preventDefault();
-    const max = sheet.parentElement.getBoundingClientRect().height * .82;
-    sheet.style.maxHeight = Math.max(120, Math.min(max, base + moved)) + 'px';
-  }
-  function up() {
-    if (y0 === null) return;
-    sheet.style.transition = '';
-    sheet.style.maxHeight = '';
-    setOpen(Math.abs(moved) > 24 ? moved > 0 : sheet.classList.contains('is-collapsed'));
-    y0 = null;
-  }
-  grip.style.cursor = 'grab';
-  grip.addEventListener('pointerdown', down);
-  window.addEventListener('pointermove', move, { passive: false });
-  window.addEventListener('pointerup', up);
-  return function () {
-    grip.removeEventListener('pointerdown', down);
-    window.removeEventListener('pointermove', move);
-    window.removeEventListener('pointerup', up);
   };
 }
 

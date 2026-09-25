@@ -4,7 +4,7 @@
    ========================================================================== */
 T.spec('album', function (t) {
 
-  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+  const ROUTES = ['/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
                   '/postcard/p1', '/postcard/p4', '/postcard/p11', '/postcard/nope',
                   '/badge/b1', '/badge/b4', '/badge/nope',
                   '/footprint', '/lookback', '/week', '/elder'];
@@ -57,35 +57,96 @@ T.spec('album', function (t) {
     t.ok(t.countTappables(app) <= 12, '有「新」時可按數仍 ≤ 12：' + t.countTappables(app));
   });
 
-  t.test('摘要：最近明信片與全部明信片切換', async function (app) {
+  t.test('我的明信片主卡 → /postcards：收下的在前、還沒去的另一段，返回回收藏', async function (app) {
     await app.reset();
     await app.go('/album');
-    t.eq(app.text('[data-stat="cards"]'), String(app.STATE.count()), '主卡顯示已收張數');
-    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '先顯示最近四張');
-    await app.click('[data-act="show-all-cards"]');
-    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, app.MOCK.POSTCARDS.length, '展開全部明信片');
-    await app.click('[data-act="show-recent-cards"]');
-    t.eq(app.$$('[data-alb-v2-cards] [data-card]').length, 4, '收起回最近四張');
+    const S = app.STATE, P = app.MOCK.POSTCARDS;
+    t.eq(app.text('[data-stat="cards"]'), String(S.count()), '主卡顯示已收張數');
+    t.eq(app.$$('.alb-v2__stack [data-card]').length, Math.min(3, S.count()), '主卡疊最近三張');
+    t.eq(app.$$('.alb-v2__postcard, [data-act="show-all-cards"]').length, 0, '收藏首頁不攤開明信片網格');
+    await app.click('[data-act="go-postcards"]');
+    await app.at('/postcards');
+    const got = P.filter(function (p) { return S.has(p.id); });
+    t.eq(app.$$('[data-group="got"] [data-card]').length, got.length, '收下的一段＝已收張數');
+    t.eq(app.$$('[data-group="todo"] [data-card]').length, P.length - got.length, '還沒去的一段＝其餘');
+    t.eq(app.text('main.view[data-view] [data-stat="cards"]'), String(got.length), '頁首收集張數');
+    const dates = app.$$('[data-group="got"] [data-card]').map(function (el) { return S.card(el.getAttribute('data-card')).date; });
+    t.eq(dates.join(','), dates.slice().sort().reverse().join(','), '收下的照日期由近到遠');
+    t.eq(app.$$('main.view[data-view] .ai-mark').length, 0, '不逐張貼 AI 標籤');
+    t.includes(app.text('main.view[data-view]'), 'AI 依地點生成', '頁底一行 AI 生成說明');
+    await app.click('main.view[data-view] a[data-back]');
+    await app.at('/album');
   });
 
-  /* 3. 獎章格文字＝STATE.badge */
-  t.test('勳章牆「收集 n/m」與 STATE.badge 一致、沒有進度環', async function (app) {
+  t.test('/postcards、/badges 切去叫車再點「收藏」停回子頁：返回回收藏首頁，不退回叫車', async function (app) {
+    for (const x of [['/postcards', 'go-postcards'], ['/badges', 'go-badges']]) {
+      await app.reset();
+      await app.go('/album');
+      await app.click('[data-act="' + x[1] + '"]');
+      await app.at(x[0]);
+      await app.click('#tabbar [data-tab-id="ride"]');
+      await app.at('/ride');
+      await app.click('#tabbar [data-tab-id="album"]');
+      await app.at(x[0]);
+      await app.click('main.view[data-view] a[data-back]');
+      await app.at('/album');
+      t.eq(app.route().path, '/album', x[0] + ' 返回落在收藏首頁');
+    }
+  });
+
+  /* 3. 獎章：收下的寫日期（組成的卡最晚那一張）、還在路上的寫「收集 n/m」；沒有進度環 */
+  function badgeExpect(app, id) {
+    const S = app.STATE;
+    const r = S.badge(id);
+    if (!r.got) return '收集 ' + r.done + '/' + r.total;
+    const last = r.ids.map(function (c) { return S.card(c).date; }).sort().pop();
+    return new Date().getFullYear() + '.' + last;
+  }
+
+  t.test('/badges 章牆：每一枚的日期或「收集 n/m」與 STATE 一致、收下在前', async function (app) {
     await app.reset();
-    await app.go('/album?tab=badges');
-    app.MOCK.BADGES.forEach(function (b) {
+    await app.go('/badges');
+    const B = app.MOCK.BADGES;
+    t.eq(app.$$('[data-badge]').length, B.length, '每一枚都在');
+    B.forEach(function (b) {
       const r = app.STATE.badge(b.id);
-      t.eq(app.text('[data-badge="' + b.id + '"] .badge__prog'), '收集 ' + r.done + '/' + r.total, b.id);
+      t.eq(app.text('[data-badge="' + b.id + '"] [data-badge-when]'), badgeExpect(app, b.id), b.id);
       const el = app.$('[data-badge="' + b.id + '"]');
-      t.eq(el && el.classList.contains('badge--locked'), !r.got, b.id + ' 亮／灰');
+      t.eq(el && el.classList.contains('is-locked'), !r.got, b.id + ' 亮／灰');
+      t.eq(el && el.getAttribute('href'), '#/badge/' + b.id, b.id + ' 連到詳情');
     });
+    const order = app.$$('[data-badge]').map(function (el) { return app.STATE.badge(el.getAttribute('data-badge')).got; });
+    t.eq(order.indexOf(false) < 0 || order.slice(order.indexOf(false)).indexOf(true) < 0, true, '收下的排在還在路上的前面');
     t.eq(app.$$('.ring, .stampcard').length, 0, '沒有進度環與集點卡');
     await app.go('/badge/b3');
     const r3 = app.STATE.badge('b3');
     t.eq(app.text('[data-prog]'), '收集 ' + r3.done + '/' + r3.total, '/badge/b3 收集 n/m');
     t.ok(r3.got ? !!app.$('[data-award]') : !app.$('[data-award]'), 'award 只在獲得後出現');
+    t.ok(app.$('.alb-medal__hex .alb-hex'), '詳情用同一枚六角章');
     await app.go('/badge/b4');
     t.ok(!app.$('[data-award]'), '未獲得的 b4 沒有 award 文案');
     t.eq(app.$$('[data-member]').length, app.STATE.badge('b4').ids.length, '組成清單');
+  });
+
+  t.test('/album 獎章卡：放大最近收下的一枚，其餘排成一列，顯示全部 → /badges', async function (app) {
+    await app.reset();
+    await app.go('/album');
+    const S = app.STATE, B = app.MOCK.BADGES;
+    const got = B.filter(function (b) { return S.badge(b.id).got; });
+    const newest = got.map(function (b) { return { id: b.id, d: badgeExpect(app, b.id) }; })
+      .sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; })[0];
+    const top = app.$('.alb-v2__medal-top');
+    t.eq(top && top.getAttribute('data-badge'), newest && newest.id, '放大的是最近收下的那一枚');
+    t.eq(app.text('.alb-v2__medal-top [data-badge-when]'), newest && newest.d, '日期＝組成的卡最晚那一張');
+    t.eq(app.$$('.alb-v2__medal-mini').length, Math.min(B.length - 1, 5), '其餘最多五枚小章');
+    await app.click('[data-act="go-badges"]');
+    await app.at('/badges');
+    /* 收一張讓〈水路〉收齊：它變成最近收下的一枚 */
+    S.collect('p18', { date: app.APP.fmt.todayMMDD() });
+    app.APP.emit('state:change');
+    await app.go('/album');
+    t.eq(app.$('.alb-v2__medal-top').getAttribute('data-badge'), 'b2', '收齊〈水路〉後換它放大');
+    t.eq(app.text('[data-stat="badges"]'), (got.length + 1) + '/' + B.length, '獎章數 +1');
   });
 
   /* 隱私分軌 */
@@ -115,7 +176,14 @@ T.spec('album', function (t) {
       await app.go('/lookback');
       const at = function () { const e = app.$('[data-lb]'); return e && e.getAttribute('data-lb-at'); };
       t.eq(at(), '0', '從第一幕開始');
-      t.ok(app.text('[data-lb-steps]') === app.APP.fmt.num(app.MOCK.LOOKBACK.steps), '步數來自 LOOKBACK');
+      const want = app.APP.fmt.num(app.MOCK.LOOKBACK.steps);
+      const n0 = Number((app.text('[data-lb-steps]') || '').replace(/,/g, ''));
+      t.ok(n0 < app.MOCK.LOOKBACK.steps, '步數從 0 往上跳（剛進來是 ' + n0 + '）');
+      t.ok(app.$('[data-lb][data-lb-run]'), '數的時候地名先藏著');
+      await app.waitFor(function () { return app.text('[data-lb-steps]') === want; }, 5000, '步數數到 LOOKBACK');
+      t.ok(true, '步數來自 LOOKBACK');
+      t.ok(!app.$('[data-lb][data-lb-run]'), '數完地名出現');
+      t.eq(app.$$('[data-zz-at].is-hit').length, app.$$('[data-zz-at]').length, '線上的點都冒出來');
       await app.click('[data-act="next"]');
       t.eq(at(), '1', '第二幕');
       t.includes(app.text('[data-lb-act="1"]'), '今天沒有新的卡', '沒有新卡時照實說');
@@ -142,6 +210,11 @@ T.spec('album', function (t) {
     const e = app.$('[data-lb]');
     t.eq(e && e.getAttribute('data-lb-at'), '3', 'data-still → 第四幕');
     t.eq(app.$$('[data-act="mood"]').length, 3, '心情三選一');
+    t.eq(app.text('[data-lb-steps]'), app.APP.fmt.num(app.MOCK.LOOKBACK.steps), '定格不數，直接是終值');
+    t.ok(!(e && e.hasAttribute('data-lb-run')), '定格沒有在數');
+    t.eq(app.$$('.zigzag text').length, 0, '折線上不寫地名');
+    const route = app.text('.alb-lb__route') || '';
+    app.MOCK.LOOKBACK.places.forEach(function (p) { t.includes(route, p, '地名整串寫在步數底下：' + p); });
   });
 
   /* 3. 覆蓋率算出來 */
@@ -243,13 +316,17 @@ T.spec('album', function (t) {
   /* 5. 返回鍵 */
   t.test('返回鍵回到來處', async function (app) {
     await app.reset();
-    await app.go('/album?tab=badges');
+    await app.go('/album');
+    await app.click('[data-act="go-badges"]');
+    await app.at('/badges');
     await app.click('[data-badge="b3"]');
     await app.at('/badge/b3');
     await app.click('[data-member="p1"]');
     await app.at('/postcard/p1');
     await app.click('main.view[data-view] a[data-back]');
     await app.at('/badge/b3');
+    await app.click('main.view[data-view] a[data-back]');
+    await app.at('/badges');
     await app.click('main.view[data-view] a[data-back]');
     await app.at('/album');
     await app.go('/footprint');

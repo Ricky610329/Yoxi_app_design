@@ -256,3 +256,29 @@
 .sys-share { place-items: end stretch; padding: 0; z-index: 90; }
 .sys-share .row-nav { padding-left: 0; padding-right: 0; }
 .sys-share .row-nav__title { font-size: var(--fs-body); }
+
+/* --------------------------------------------------------------------------
+   demo 面板的模擬抵達（#demo-panel 本體在 app.css；這裡只補地點選單與兩顆抵達鈕）
+   -------------------------------------------------------------------------- */
+.demo-panel__group {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--yoxi-line);
+  border-bottom: 1px solid var(--yoxi-line);
+}
+.demo-panel__label { font-size: var(--fs-cap); font-weight: var(--fw-heavy); }
+.demo-panel__select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--yoxi-slate-lite);
+  border-radius: var(--r-btn);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-sm);
+}
+.demo-panel__row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.demo-panel__row .demo-panel__btn { padding: 0 var(--sp-1); font-size: var(--fs-cap); }
+.demo-panel__btn--gold { background: var(--gold); color: var(--yoxi-navy); }
+.demo-panel__btn--gold:active { background: var(--gold-lite); }

@@ -16,7 +16,7 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v9';
+const VERSION = 'chengshi-app-v15';
 
 // 路徑相對於 sw.js（app/）。順序照 ARCHITECTURE §2 的載入順序。
 const PRECACHE = [
@@ -52,6 +52,7 @@ const PRECACHE = [
   './js/app.js',
   './js/views/system.js',
   './js/views/ride.js',
+  './js/views/explore-fx.js',
   './js/views/explore.js',
   './js/views/album.js',
   // 照片
@@ -65,6 +66,18 @@ const PRECACHE = [
   '../prototype/assets/photos/rail-1.jpg',
   '../prototype/assets/photos/station-1.jpg',
   '../prototype/assets/photos/temple-1.jpg',
+  '../prototype/assets/photos/glass-kiln-1.jpg',
+  '../prototype/assets/photos/p10-1.jpg',
+  '../prototype/assets/photos/p12-1.jpg',
+  '../prototype/assets/photos/p13-1.jpg',
+  '../prototype/assets/photos/p14-1.jpg',
+  '../prototype/assets/photos/p15-1.jpg',
+  '../prototype/assets/photos/p16-1.jpg',
+  '../prototype/assets/photos/p17-1.jpg',
+  '../prototype/assets/photos/p18-1.jpg',
+  '../prototype/assets/photos/p19-1.jpg',
+  '../prototype/assets/photos/p21-1.jpg',
+  '../prototype/assets/photos/p22-1.jpg',
   // 圖示
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',

@@ -23,6 +23,18 @@ T.spec('flows', function (t) {
 
   /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
+  /* 非 still 的抵達：點發光的地方 → 收集明信片 → 一路點畫面（蓄力快轉 → 翻開 → 看結果） */
+  async function drawThrough(app) {
+    await app.click('[data-act="open-spot"]');
+    await app.click('[data-act="draw"]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
+    for (let i = 0; i < 16 && app.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
+      await app.click('[data-unlock]');
+      await app.tick(300);
+    }
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
+  }
+
   async function walkAndCollect(app, note) {
     const A = app.APP;
     const T0 = app.MOCK.TODAY;
@@ -33,17 +45,16 @@ T.spec('flows', function (t) {
     t.eq(main && main.getAttribute('data-act'), 'go-walk', '地方詳情：走得到 → 主要動作是走路前往');
     await app.click('[data-place-foot] [data-act="go-walk"]');
     await app.at('/going/' + T0.id);
-    /* demo 面板的模擬抵達：只在前往中亮 */
-    const pa = app.$('#demo-panel [data-act="arrive"]');
-    t.ok(pa && !pa.disabled, 'demo 面板的模擬抵達在前往中可以按');
-    await app.click('#demo-panel [data-act="arrive"]');
+    /* demo 面板的模擬抵達：地點跟著前往中的目的地，走路抵達 */
+    t.eq(app.$('#demo-panel [data-demo-place]').value, T0.id, 'demo 面板的地點跟著前往中的目的地');
+    await app.click('#demo-panel [data-act="arrive-walk"]');
     await app.at('/unlock/' + T0.id);
     t.eq(A.store.get('arrivedDemo'), T0.id, 'demo 面板寫了 store.arrivedDemo');
     if (!app.still) {
-      t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：從第一幕開始');
-      await app.click('[data-unlock]');            /* 點畫面任意處 → 成品 */
+      t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先是抵達（這個地方亮起來）');
+      await drawThrough(app);
     }
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 2000, '第三幕');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 2000, '結果');
     const inp = app.$('[data-one-line]');
     inp.value = note;
     await app.click('[data-act="collect"]');
@@ -89,7 +100,8 @@ T.spec('flows', function (t) {
     t.ok(!app.$('#tabbar .tabbar__dot'), '底欄沒有提示小圓點');
     const b1 = S.badge('b5');
     t.eq(b1.done, b0.done + 1, '〈' + b0.name + '〉收集 +1');
-    t.eq(app.text('[data-badge="b5"] .badge__prog'), '收集 ' + b1.done + '/' + b1.total, '勳章牆「收集 n/m」');
+    await app.go('/badges');
+    t.eq(app.text('[data-badge="b5"] [data-badge-when]'), '收集 ' + b1.done + '/' + b1.total, '章牆「收集 n/m」');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   }, { timeout: 15000 });
 
@@ -189,6 +201,8 @@ T.spec('flows', function (t) {
     await app.at('/lookback');
     const lb = function () { return app.$('[data-lb]').getAttribute('data-lb-at'); };
     t.eq(lb(), '0', '第一幕：步數');
+    /* 非 still：步數從 0 往上跳，等它數完再比 */
+    await app.waitFor(function () { return app.text('[data-lb-steps]') === A.fmt.num(app.MOCK.LOOKBACK.steps); }, 5000, '步數數到 LOOKBACK.steps');
     t.includes(app.text('[data-lb-act="0"]'), A.fmt.num(app.MOCK.LOOKBACK.steps), '步數＝LOOKBACK.steps');
     await app.click('[data-act="next"]');
     t.eq(lb(), '1', '第二幕');
@@ -304,7 +318,7 @@ T.spec('flows', function (t) {
     const b = app.$('main.view [data-act="arrive"]');
     t.eq(b && b.textContent.trim(), '模擬抵達', '/going 按鈕文字與 /trip 一致');
     await app.go('/album');
-    t.eq(app.text('.alb-v2__section--badges h2'), '獎章', '獎章區標題');
+    t.eq(app.text('.alb-v2__medals h2'), '獎章', '獎章區標題');
     const bc = app.MOCK.BADGES.filter(function (x) { return app.STATE.badge(x.id).got; }).length;
     t.eq(app.text('[data-stat="badges"]'), bc + '/' + app.MOCK.BADGES.length, '第三格數字仍是 n/m');
   });
@@ -471,10 +485,13 @@ T.spec('flows', function (t) {
       const txt = pre ? pre.textContent : '';
       if (txt || app.errors.length) bad.push(list[i].path + '：' + (txt || app.errors.join('；')).slice(0, 160));
     }
-    /* 解鎖跑完三幕停在成品 */
+    /* 抵達：這個地方亮起來、等你點；點過去抽卡會停在結果 */
     await app.go('/unlock/moat');
-    await app.tick(5400);
-    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '非 still：三幕自己跑到成品');
+    await app.tick(1500);
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先停在抵達，等你點發光的地方');
+    t.ok(app.$('[data-unlock]').classList.contains('is-lit'), '這個地方亮起來了');
+    await drawThrough(app);
+    t.ok(app.$('[data-act="collect"]'), '結果有「收進收藏」');
     /* 行程：配對 → 行程中由計時器切換 */
     await app.reset({ still: false, store: { dropoff: { id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' } } });
     await app.go('/ride');
@@ -541,7 +558,7 @@ T.spec('flows', function (t) {
     await app.reset();
     let A = app.APP;
     await app.go('/explore');
-    t.ok(app.$('#demo-panel [data-act="arrive"]').disabled, '沒有前往或行程時 demo 面板的模擬抵達是灰的');
+    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]').disabled, 'demo 面板的走路抵達任何一頁都能按（地點從選單挑）');
     t.eq(A.ride.arrive(), false, '沒有行程 → 回 false');
     await app.tick(40);
     t.eq(app.route().path, '/explore', '沒有行程不導走');
@@ -601,7 +618,7 @@ T.spec('flows', function (t) {
       '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/lake', '/place/brick',
       '/going/glass-kiln', '/going/lake', '/unlock/glass-kiln', '/unlock/neiwan?ride=1', '/unlock/lake?ride=1',
       '/routes', '/route/rail', '/route/glass', '/route/water',
-      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
       '/postcard/p1', '/postcard/p9', '/postcard/p11', '/badge/b1', '/badge/b5',
       '/footprint', '/lookback', '/week', '/elder', '/settings',
     ].map(function (p) { return { path: p }; });
@@ -710,7 +727,8 @@ T.spec('flows', function (t) {
       { label: '這一趟還沒抵達', store: { trip: { placeId: 'neiwan', phase: 'riding', startedAt: now(), rated: false, km: 28 } } },
     ];
     for (const c of cases) {
-      await app.reset({ store: c.store });
+      /* 走路抽卡有極低機率抽到金框：先把這次抵達的抽卡定成水彩，這條只驗「不是 ride 版」 */
+      await app.reset({ store: Object.assign({ draws: { neiwan: 'watercolor' } }, c.store) });
       const pts0 = app.STATE.points;
       await app.go('/unlock/neiwan?ride=1');
       t.ok(!app.$('[data-final-card].postcard--gold'), c.label + '：沒有金框');
@@ -1112,7 +1130,7 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 6. 評估回報（最後一輪） */
 
-  t.test('評估 1：限定版＋50 點只給走不到的地方 —— 搭車去 moat（1.8 km）是一般卡、不加點', async function (app) {
+  t.test('評估 1：+50 點只給走不到的地方 —— 搭車去 moat（1.8 km）照樣必得金框，但不加點', async function (app) {
     const moat = { placeId: 'moat', phase: 'done', startedAt: now(), rated: true, km: 1.8, via: 'e' };
     await app.reset({ store: { trip: moat } });
     const A = app.APP, F = A.fmt;
@@ -1128,17 +1146,18 @@ T.spec('flows', function (t) {
     t.ok((app.text('[data-act="unlock-ride"]') || '').indexOf('限定') < 0, '/ride 入口不寫限定');
     await app.click('main.view [data-act="unlock-ride"]');
     await app.at('/unlock/moat');
-    t.ok(!app.$('[data-final-card].postcard--gold'), '沒有金框');
-    t.ok(!app.$('[data-gold-note]'), '沒有 +50');
+    t.ok(app.$('[data-final-card].postcard--gold'), '搭 yoxi 抵達必得金框');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'gold', '抽到的是金框');
+    t.ok(!app.$('[data-points]'), '沒有 +50');
     t.includes(app.text('.unlock__sub'), '搭 yoxi 抵達', '文案仍是搭車抵達');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.STATE.card('p19') && app.STATE.card('p19').by, 'ride', "by 'ride'（真的是搭車到的）");
     t.eq(A.ride.pointsRows().filter(function (r) { return r.city; }).length, city0, '城事解鎖回饋列數不變');
     t.eq(A.ride.pointsTotal() - total0, Math.floor(F.fare(km) / 20), '只多了一般的搭車回饋');
-    t.ok(!app.$('[data-card="p19"].postcard--gold'), '書架上不是金框');
     await app.go('/postcard/p19');
-    t.ok(!app.$('.postcard--gold') && !app.$('[data-ribbon]'), '明信片頁不是限定版');
+    t.ok(app.$('.postcard--gold'), '明信片頁是金框（抽到的款式）');
+    t.eq(app.APP.store.get('cardStyle').p19, 'gold', 'store.cardStyle 記下金框');
     await app.go('/points');
     const sum = app.$$('[data-amt]').reduce(function (s, e) { return s + Number(e.getAttribute('data-amt')); }, 0);
     t.eq(Number(app.text('[data-points-total]')), sum, '總數＝明細相加');
@@ -1264,7 +1283,8 @@ T.spec('flows', function (t) {
       ['/explore', '.sec__m'],
       ['/place/lake', '.ex-foot__note'],
       ['/points', '.row-nav__sub'],
-      ['/album?tab=badges', '.badge__prog'],
+      ['/badges', '.alb-v2__medal-cell small'],
+      ['/album', '.alb-v2__medal-top small'],
     ];
     for (const s of samples) {
       await app.go(s[0]);
@@ -1336,7 +1356,7 @@ T.spec('flows', function (t) {
   /* 可按元素：命中區（含 ::after 撐大的）至少 40×40；每個都有名字 */
   const A11Y_ROUTES = ['/ride', '/dropoff', '/pickup', '/drawer', '/points', '/notify', '/trips',
     '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/p1', '/going/glass-kiln', '/unlock/glass-kiln',
-    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
     '/postcard/p1', '/postcard/p11', '/badge/b1', '/footprint', '/lookback', '/week', '/elder', '/settings', '/welcome'];
   /* 例外（原型就如此、而且不是單一的點擊目標）：地圖景點（本身 38px，周圍是可平移的地圖） */
   const HIT_EXEMPT = '.spot';
