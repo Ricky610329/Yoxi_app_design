@@ -20,11 +20,17 @@
    /going/:id      前往中（走路）
      原型：going.html —— 這一頁刻意什麼都不做。
      刻意沒有：倒數、步數、沿途收集物、任何進度。只說「到了會響」與抵達怎麼驗。
-   /unlock/:id     抵達 → 收集 → 抽卡（?ride=1 是搭 yoxi 抵達，必得金框）
+     已經搭 yoxi 抵達這裡、明信片還沒收：不帶路，直接給「收下這張明信片」（→ /unlock/:id?ride=1）。
+   /unlock/:id     抵達 → 收集 → 抽卡（搭 yoxi 抵達必得金框。是不是搭車看 store.trip——這個地方、phase done；
+                   網址的 ?ride=1 只是入口的記號，手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉）
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板。
      抽卡（data-at=2）：卡背升起 → 蓄力（拍數＝稀有度）→ 點一下翻開 → 依款式給特效（金框最重）。
      結果（data-at=3）：卡面＋畫風名＋出現機率、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
      特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
+     鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；抽完焦點移到「抽到 ○○」那一行。
+     走路抵達的抽卡在 mount 做（render 是純函式），結果記在 store.draws，重整、返回都不重抽。
+     結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與機率說明一起收掉。
+     「回探索」與找不到、返回的保底都回叫車首頁的探索模式（/ride?mode=explore&area=<id>），不回舊的 /explore。
      原型：unlock.html（三幕解鎖的前身）。
      刻意沒有：分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
      抽卡：每個地方五款（四種畫風＋金框），抵達時抽一款。搭 yoxi 抵達必得金框；走路抵達照 DRAW_STYLES 的機率。
@@ -50,11 +56,15 @@ const fmt = APP.fmt;
 /* 抵達驗證的兩個數字：契約 §5 的文案規定（80 公尺內停 1 分鐘），全頁只寫在這裡 */
 const ARRIVE_RADIUS_M = 80;
 const ARRIVE_STAY_MIN = 1;
-/* 搭車抵達一張卡回饋的點數：跟 state.js 的 points（ride 卡數 × 50）同一個數，
-   MOCK.FAR_PLACE.ridePoints 是它在資料裡的來源 */
+/* 搭車抵達走不到的地方回饋的點數：唯一來源是 ride.js 的 APP.ride.RIDE_BONUS（/points 的明細也用它）。
+   ride 還沒匯出時退回 MOCK.FAR_PLACE.ridePoints（資料裡同一個數） */
 function ridePoints() {
+  const R = APP.ride && APP.ride.RIDE_BONUS;
+  if (typeof R === 'number') return R;
   return (window.MOCK && MOCK.FAR_PLACE && MOCK.FAR_PLACE.ridePoints) || 50;
 }
+/* 收下時寫的一句話最多幾個字：輸入框的 maxlength、提示文字、收下時的截斷都讀這一個 */
+const NOTE_MAX = 40;
 /* 抽卡機率表（全 app 唯一來源；畫面上的百分比都從這裡算，不另外手寫）。
    每個地方五款：四種一般畫風，越後面越難抽；一款金框（yoxi 限定版），搭 yoxi 抵達必得，走路抵達機率極低。
    權重用千分比，避免浮點誤差；walk 與 ride 各自加總都是 1000。
@@ -86,15 +96,19 @@ function styleOf(key) {
 /* 千分比 → 「45%」「16.5%」 */
 function oddsPct(w) { return (Math.round(w) / 10) + '%'; }
 
-/* 這一次抵達抽到的款式。走路抵達的結果先記在 store.draws（地點 id → key），
-   重整或返回再進來都是同一張，不能靠重開頁面重抽；收下之後清掉，下次抵達重新抽。 */
-function arrivalDraw(p, isRide) {
+/* 這一次抵達的款式（只讀；render 用這個）：搭 yoxi 抵達必得金框；走路抵達看 store.draws，
+   還沒抽就是 null（畫面先是卡背，mount 抽完再畫） */
+function storedDraw(p, isRide) {
   if (isRide) return drawStyle('ride', 0);
-  const draws = APP.store.get('draws') || {};
-  const had = styleOf(draws[p.id]);
+  return styleOf((APP.store.get('draws') || {})[p.id]);
+}
+/* 走路抵達抽一款，結果記在 store.draws（地點 id → key）。只在 mount 與收下時呼叫（契約 §3.1：render 不寫 store）。
+   重整或返回再進來都是同一張，不能靠重開頁面重抽；收下之後清掉，下次抵達重新抽。 */
+function rollDraw(p) {
+  const had = storedDraw(p, false);
   if (had) return had;
   const d = drawStyle('walk', Math.random());
-  APP.store.set('draws', Object.assign({}, draws, { [p.id]: d.key }));
+  APP.store.set('draws', Object.assign({}, APP.store.get('draws') || {}, { [p.id]: d.key }));
   return d;
 }
 
@@ -164,9 +178,12 @@ function paintCardArt(root) {
   }).observe(view, { childList: true, subtree: true });
 })();
 
-/* 收在「?」裡的機率說明 */
+/* 收在「?」裡的機率說明。掛在 .device 上（壓在全螢幕的解鎖頁上面），所以離開這一頁要自己收：
+   帶 data-overlay、el._dismiss()（core 導覽前會呼叫；/unlock 的 cleanup 也呼叫 closeOdds），可以重複呼叫。
+   Esc 與焦點交給 APP.ui.a11yDialog；它在點「?」時才掛 keydown，router 記不到，所以一定要經過 _dismiss 拆掉。 */
+let oddsOpen = null;
 function openOdds() {
-  if (document.querySelector('.ex-odds')) return;
+  if (oddsOpen && oddsOpen.isConnected) return oddsOpen;
   const host = document.querySelector('.device') || document.body;
   const rows = function (k) {
     return DRAW_STYLES.map(function (d) {
@@ -176,6 +193,7 @@ function openOdds() {
   };
   const scrim = document.createElement('div');
   scrim.className = 'scrim ex-odds';
+  scrim.setAttribute('data-overlay', '');
   scrim.innerHTML =
     '<div class="modal app-modal ex-odds__box">' +
       '<h2 class="ex-odds__t">明信片抽取機率</h2>' +
@@ -186,11 +204,22 @@ function openOdds() {
       '<button class="btn-primary" type="button" data-act="close-odds">知道了</button>' +
     '</div>';
   let release = null;
-  const end = function () { scrim.remove(); if (release) release(); };
+  const end = function () {
+    if (oddsOpen === scrim) oddsOpen = null;
+    scrim.remove();
+    if (release) { const r = release; release = null; r(); }
+  };
+  scrim._dismiss = end;
   scrim.querySelector('[data-act="close-odds"]').onclick = end;
   scrim.onclick = function (e) { if (e.target === scrim) end(); };
   host.appendChild(scrim);
+  oddsOpen = scrim;
   release = APP.ui.a11yDialog(scrim.querySelector('.modal'), { label: '明信片抽取機率', onEsc: end });
+  return scrim;
+}
+function closeOdds() {
+  if (oddsOpen && oddsOpen._dismiss) oddsOpen._dismiss();
+  oddsOpen = null;
 }
 
 /* 探索首頁的可按數上限（L1 一屏一事；§6.3 第 4 條） */
@@ -216,19 +245,25 @@ function distHTML(m) {
   return num(t[0]) + ' ' + t[1];
 }
 
+/* 新 UI 的「探索」是叫車首頁的探索模式（契約 §0：底欄只有叫車與收藏，舊的 /explore 只留給舊連結）。
+   找不到、返回的保底、「回探索」一律回這裡；知道是哪個地方就帶 area（ride 不認得的 area 會自己改成最近的地區） */
+function exploreHome(id) {
+  return '/ride?mode=explore' + (id ? '&area=' + encodeURIComponent(id) : '');
+}
+
 function notFound(o) {
   return '<div class="app-empty ex-empty">' +
     '<div class="app-empty__card app-empty__card--missing" data-ex-missing>' +
       '<p class="app-empty__eyebrow">' + esc(o.eyebrow || '找不到') + '</p>' +
       '<h1 class="app-empty__t">' + esc(o.title) + '</h1>' +
       '<p class="app-empty__p">' + esc(o.text || '') + '</p>' +
-      '<a class="btn-primary" href="#' + (o.href || '/explore') + '" data-act="go-explore">' +
+      '<a class="btn-primary" href="#' + esc(o.href || exploreHome()) + '" data-act="go-explore">' +
         esc(o.cta || '回探索') + '</a>' +
     '</div></div>';
 }
 
 function backFab(fallback) {
-  return '<a class="fab ex-back" href="#" data-back="' + fallback + '" aria-label="返回">' +
+  return '<a class="fab ex-back" href="#" data-back="' + esc(fallback) + '" aria-label="返回">' +
     '<span class="arrow arrow--left"></span></a>';
 }
 
@@ -248,6 +283,11 @@ function badgeOf(p) {
   return b ? S().badge(b.id) : null;
 }
 
+/* 路線 id → MOCK.ROUTES 的那一條（找不到回 null） */
+function routeById(id) {
+  return (M().ROUTES || []).filter(function (r) { return r.id === id; })[0] || null;
+}
+
 /* 地方所屬的路線（依明信片 id 比對站點） */
 function routeOf(p) {
   if (!p) return null;
@@ -262,16 +302,10 @@ function rideOf(p) {
   return { km: km, fare: fmt.fare(km), min: fmt.rideMin(km) };
 }
 
-/* 設為下車點：一律走 ride 提供的 APP.ride.setDropoff（契約 §7）。
-   ride.js 在 explore.js 之前載入，正常情況永遠走第一行；內嵌實作只是 ride 沒載到時的保底。 */
+/* 設為下車點：一律交給 ride 提供的 APP.ride.setDropoff（契約 §7；ride.js 在前面載入）。
+   不另寫一份：行程中不准改目的地、連點只寫一次，這些規則都在 ride 那邊。 */
 function setDropoff(id, via) {
-  if (APP.ride && typeof APP.ride.setDropoff === 'function') return APP.ride.setDropoff(id, via);
-  const p = APP.place(id);
-  if (!p) return;
-  APP.store.set('dropoff', { id: p.id, name: p.name, km: fmt.km(p.dist),
-                             setAt: new Date().toISOString(), via: via });
-  APP.ui.toast('已設為下車點');
-  APP.nav.go('/ride');
+  return !!(APP.ride && APP.ride.setDropoff && APP.ride.setDropoff(id, via));
 }
 
 /* ---------------------------------------------------------------- APP.explore */
@@ -282,10 +316,11 @@ function setDropoff(id, via) {
  */
 function collect(placeId, opt) {
   opt = opt || {};
+  const by = opt.by || 'walk';
   const p = APP.place(placeId);
   const target = (p && p.card) || placeId;
   const isNew = S().collect(target, {
-    by: opt.by || 'walk',
+    by: by,
     note: opt.note || '',
     km: opt.km,
     date: fmt.todayMMDD(),
@@ -301,8 +336,9 @@ function collect(placeId, opt) {
     delete rest[pid]; delete rest[placeId];
     APP.store.set('draws', rest);
   }
+  /* 搭車收下才算用掉這一趟。走路收同一個地方不碰 trip：不然還沒領的限定版（金框＋點數）會跟著永遠消失 */
   const trip = APP.store.get('trip');
-  if (trip && (trip.placeId === pid || trip.placeId === placeId)) APP.store.set('trip', null);
+  if (by === 'ride' && trip && (trip.placeId === pid || trip.placeId === placeId)) APP.store.set('trip', null);
   const drop = APP.store.get('dropoff');
   if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
   /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
@@ -326,7 +362,7 @@ APP.explore = Object.assign(APP.explore || {}, {
   /* 給別的區塊與測試用的純計算（沒有副作用） */
   gap: gapPick,
   breakpoint: function (routeId) {
-    const R = (M().ROUTES || []).filter(function (r) { return r.id === routeId; })[0];
+    const R = routeById(routeId);
     return R ? routeModel(R).brk : null;
   },
 });
@@ -675,8 +711,8 @@ function placeMe(m, pin, xy) {
 function renderPlace(params) {
   const p = APP.place(params.id);
   if (!p) {
-    return backFabBar('/explore') + notFound({ title: '找不到這個地方',
-      text: '這個地方可能還沒寫好內容，或網址打錯了。先回探索看看今天的地方。' });
+    return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方',
+      text: '這個地方可能還沒寫好內容，或網址打錯了。先回探索看看附近的地方。' });
   }
   const got = collected(p);
   const hasDist = p.dist != null;
@@ -735,7 +771,7 @@ function renderPlace(params) {
         '<div class="ex-hero__art" data-art="' + esc(p.art) + '" data-seed="1" data-wide></div>' +
         '<span class="ai-mark ex-hero__mark">AI 生成示意</span>' +
         (got ? '' : '<span class="ex-hero__lock"><span data-icon="lock" class="ex-ic36"></span>到了才上色</span>') +
-        backFab('/explore') +
+        backFab(exploreHome(p.id)) +
       '</div>' +
       '<section class="ex-pad ex-head">' +
         '<span class="ex-eyebrow">' + esc(p.type) + (p.area ? ' · ' + esc(p.area) : '') + '</span>' +
@@ -794,21 +830,33 @@ function mountPlace(root, params) {
 
 /* ---------------------------------------------------------------- /going/:id */
 
-/* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義 */
+/* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義。
+   已抵達（phase done）的那一趟不算「進行中」：人已經下車了，可以走去別的地方；
+   但如果它就是這個地方、明信片還沒收（rodeHere），就不必再走一趟，直接去收那一張。 */
 function activeTrip() {
   const t = APP.store.get('trip');
   return t && t.phase !== 'done' ? t : null;
 }
+function rodeHere(p) { return !!rideTripFor(p) && !collected(p); }
 
 function renderGoing(params) {
   const p = APP.place(params.id);
   if (!p) {
-    return backFabBar('/explore') + notFound({ title: '找不到這個地方', text: '沒有目的地就沒辦法帶路。先回探索挑一個。' });
+    return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有目的地就沒辦法帶路。先回探索挑一個。' });
+  }
+  if (rodeHere(p)) {
+    return backFabBar(exploreHome(p.id)) +
+      '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-rode>' +
+        '<p class="app-empty__eyebrow">搭 yoxi 抵達</p>' +
+        '<h1 class="app-empty__t">你已經搭 yoxi 到了' + esc(p.name) + '</h1>' +
+        '<p class="app-empty__p">這一趟的明信片還沒收下，不用再走一趟。</p>' +
+        '<a class="btn-primary" href="#/unlock/' + encodeURIComponent(p.id) + '?ride=1" data-act="unlock-ride">收下這張明信片</a>' +
+      '</div></div>';
   }
   const trip = activeTrip();
   if (trip) {
     const dest = APP.place(trip.placeId);
-    return backFabBar('/explore') +
+    return backFabBar(exploreHome(p.id)) +
       '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-trip>' +
         '<p class="app-empty__eyebrow">行程進行中</p>' +
         '<h1 class="app-empty__t">你正在搭車前往 ' + esc(dest ? dest.name : '目的地') + '</h1>' +
@@ -846,7 +894,7 @@ function renderGoing(params) {
 
 function mountGoing(root, params) {
   const p = APP.place(params.id);
-  if (!p || activeTrip()) { APP.ui.setStatus('dark'); return; }
+  if (!p || rodeHere(p) || activeTrip()) { APP.ui.setStatus('dark'); return; }
   const host = root.querySelector('[data-going-map]');
   let m = null;
   const geo = window.HSINCHU_PLACES && HSINCHU_PLACES[p.id];
@@ -873,7 +921,7 @@ function mountGoing(root, params) {
     APP.nav.go('/unlock/' + encodeURIComponent(p.id));
   };
   root.querySelector('[data-act="cancel-going"]').onclick = function () {
-    APP.nav.back('/explore');
+    APP.nav.back(exploreHome(p.id));
   };
   return function () { if (m) m.destroy(); };
 }
@@ -885,19 +933,22 @@ function cardName(p) {
   return c ? c.name : p.name;
 }
 
-/* ?ride=1 的限定版只給「真的搭車抵達這裡」的那一趟：store.trip 是這個地方、而且已抵達（phase done）。
-   跟 /ride 的金色入口、/trip/done 的金色橫幅同一個判斷（ride.js 的 pendingUnlock 也要 phase done）。
-   沒有這一趟就把網址上的 ?ride=1 當沒看到：不然手打一個網址就能拿金框和 +50 點。 */
-function rideTripFor(p, ctx) {
-  if (!p || !ctx || !ctx.query || ctx.query.get('ride') !== '1') return null;
+/* 搭 yoxi 抵達（必得金框；走不到的地方再加點數）只看「真的搭車抵達這裡」的那一趟：
+   store.trip 是這個地方、而且已抵達（phase done）。跟 /ride 的金色入口、/trip/done 的金色橫幅同一個判斷
+   （ride.js 的 pendingUnlock 也要 phase done）。網址上的 ?ride=1 只是入口的記號，不參與判斷：
+   - 沒有這一趟：手打 ?ride=1 也拿不到金框和點數；
+   - 有這一趟：不論從哪裡進來（demo 的走路抵達、/going 的模擬抵達、少了 ?ride=1 的連結）都是搭車抵達，
+     不然走路收下會把還沒領的限定版一起清掉。 */
+function rideTripFor(p) {
+  if (!p) return null;
   const trip = APP.store.get('trip');
   if (!trip || trip.phase !== 'done') return null;
   return trip.placeId === p.id ? trip : null;
 }
 
+/* 點數只給走不到的地方：判斷在 ride.js（APP.ride.limitedPlace），這裡不另寫一份 */
 function limitedPlace(p) {
-  if (APP.ride && APP.ride.limitedPlace) return APP.ride.limitedPlace(p);
-  return !!p && p.dist != null && p.dist > fmt.WALK_MAX_M;
+  return !!(APP.ride && APP.ride.limitedPlace && APP.ride.limitedPlace(p));
 }
 
 /* 稀有度 1–5 就是 DRAW_STYLES 的順序（越後面越難抽）。特效照稀有度分級給，常見的輕、稀有的重：
@@ -962,16 +1013,16 @@ const SOUND_ICON =
     '<path class="ex-sound__off" d="M16 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
   '</svg>';
 
-function renderUnlock(params, ctx) {
+function renderUnlock(params) {
   const p = APP.place(params.id);
   if (!p) {
-    return backFabBar('/explore') + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
+    return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  const trip = rideTripFor(p, ctx);
+  const trip = rideTripFor(p);
   const isRide = !!trip;
   const got = collected(p);
-  /* 已收過的地方不重抽：顯示當初收下的那一款 */
-  const draw = got ? cardStyleOf(p.card) : arrivalDraw(p, isRide);
+  /* 已收過的地方不重抽：顯示當初收下的那一款。走路抵達還沒抽的是 null（卡背；mount 抽完重畫） */
+  const draw = got ? cardStyleOf(p.card) : storedDraw(p, isRide);
   /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
   const gold = !got && !!draw && !!draw.gold;
   const bonus = isRide && limitedPlace(p);
@@ -1032,8 +1083,10 @@ function renderUnlock(params, ctx) {
         : '') +
     '</div>';
 
+  /* 抽完焦點移到這裡（tabindex=-1），報讀器念一次「抽到 ○○」 */
   const label = draw
-    ? '<p class="ex-unlock__style" data-draw="' + esc(draw.key) + '">' +
+    ? '<p class="ex-unlock__style" data-draw="' + esc(draw.key) + '" tabindex="-1">' +
+        (got ? '' : '<span class="ex-sr">抽到</span>') +
         '<b class="ex-unlock__sname">' + esc(draw.name) + '</b>' +
         (got ? '' : '<span class="ex-unlock__rare">' +
           (isRide && draw.gold ? '搭 yoxi 抵達必得'
@@ -1046,7 +1099,7 @@ function renderUnlock(params, ctx) {
     ? '<p class="ex-unlock__have">已在收藏裡</p>' +
       '<div class="ex-unlock__acts">' +
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看這張明信片</a>' : '') +
-        '<a class="btn-link ex-center ex-unlock__link" href="#/explore" data-act="go-explore">回探索</a>' +
+        '<a class="btn-link ex-center ex-unlock__link" href="#' + esc(exploreHome(p.id)) + '" data-act="go-explore">回探索</a>' +
       '</div>'
     : (isRide
         ? '<div class="ex-unlock__gold" data-gold-note>' +
@@ -1055,7 +1108,7 @@ function renderUnlock(params, ctx) {
           '</div>'
         : '') +
       '<div class="ex-unlock__in">' +
-        '<input class="ex-unlock__input" data-one-line maxlength="40" placeholder="寫一句話（選填，最多 40 字）" aria-label="寫一句話">' +
+        '<input class="ex-unlock__input" data-one-line maxlength="' + NOTE_MAX + '" placeholder="寫一句話（選填，最多 ' + NOTE_MAX + ' 字）" aria-label="寫一句話">' +
       '</div>' +
       '<div class="ex-unlock__acts">' +
         '<button class="btn-primary ex-unlock__btn" type="button" data-act="collect">收進收藏</button>' +
@@ -1091,7 +1144,8 @@ function renderUnlock(params, ctx) {
             '</div>' +
             odds +
           '</div>' +
-          (got ? '' : '<p class="ex-stage__cap" data-stage-cap aria-live="polite">' + CHARGE_CAPS[0] + '</p>') +
+          /* 蓄力的說明字每拍換一次，不放 aria-live（報讀器會被每 0.5 秒打斷一次）；鍵盤與報讀器走「跳過動畫」 */
+          (got ? '' : '<p class="ex-stage__cap" data-stage-cap>' + CHARGE_CAPS[0] + '</p>') +
         '</div>' +
         '<div class="ex-result" data-result>' +
           label +
@@ -1102,6 +1156,8 @@ function renderUnlock(params, ctx) {
       (got ? '' :
         '<canvas class="ex-fx ex-fx--front" data-fx aria-hidden="true"></canvas>' +
         '<div class="ex-flash" data-flash aria-hidden="true"></div>' +
+        /* 點畫面快轉只有滑鼠與觸控按得到：鍵盤與報讀器在抽卡時焦點停在這顆（平常看不到，鍵盤焦點才浮出來） */
+        '<button class="ex-skip" type="button" data-act="skip-draw" hidden>跳過動畫，直接看結果</button>' +
         '<button class="ex-sound" type="button" data-act="toggle-sound" aria-pressed="' + (mute ? 'false' : 'true') + '" aria-label="音效">' +
           SOUND_ICON + '</button>') +
     '</div>';
@@ -1132,38 +1188,55 @@ function mountArriveMap(host, p) {
   }
 }
 
-function mountUnlock(root, params, ctx) {
+/* 金框結果頁的金粉飄多久（毫秒，跟著 --t-scene 縮放）：之後停下來，頁面回到靜止，不再每秒 60 幀耗電 */
+const DUST_MS = 5600;
+
+function mountUnlock(root, params) {
   const p = APP.place(params.id);
   if (!p) { APP.ui.setStatus('dark'); return; }
   const F = APP.fx;
-  const isRide = !!rideTripFor(p, ctx);
-  const box = root.querySelector('[data-unlock]');
+  const isRide = !!rideTripFor(p);
   const got = collected(p);
+  /* 走路抵達還沒抽：在這裡抽（render 是純函式，不寫 store），抽完照新的款式重畫這一頁。
+     mount 在第一次繪製之前，看不到卡背閃一下；之後重整、返回都讀 store.draws，不會重抽 */
+  if (!got && !isRide && !storedDraw(p, false)) {
+    rollDraw(p);
+    root.innerHTML = renderUnlock(params);
+    if (window.SHELL) { SHELL.injectArt(root); SHELL.injectIcons(root); }
+  }
+  const box = root.querySelector('[data-unlock]');
   const draw = styleOf(box.getAttribute('data-style'));
   const tier = Number(box.getAttribute('data-tier')) || 1;
   const u = sceneMs() / 1200;                    /* 全部時間跟著 --t-scene 縮放 */
   const timers = [];
-  const later = function (fn, ms) { timers.push(setTimeout(fn, Math.round(ms * u))); };
+  const later = function (fn, ms) { const id = setTimeout(fn, Math.round(ms * u)); timers.push(id); return id; };
   let map = null, back = null, front = null, shake = null, motes = null, dust = null, run = null;
-  let sheetOpen = false, collecting = false;
+  let glow = 0, sheetOpen = false, collecting = false;
   if (F) F.filters();
 
   const q = function (s) { return box.querySelector(s); };
   /* 生成的成品載不到：換回照片＋SVG 濾鏡的示意 */
   box.querySelectorAll('img[data-fallback]').forEach(function (img) {
-    const back = function () {
+    const useFallback = function () {
       img.onerror = null;
       img.src = img.getAttribute('data-fallback');
       img.removeAttribute('data-fallback');
       const face = img.closest('.ex-face');
       if (face) face.classList.remove('ex-face--gen');
     };
-    img.onerror = back;
-    if (img.complete && !img.naturalWidth) back();
+    img.onerror = useFallback;
+    if (img.complete && !img.naturalWidth) useFallback();
   });
   const cardBox = q('[data-card-box]');
   const flip = q('[data-flip]');
   const cap = q('[data-stage-cap]');
+  const skipBtn = q('[data-act="skip-draw"]');
+  const noteInput = q('[data-one-line]');
+  const focusEl = function (el) {
+    if (!el) return;
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  };
+  const stopDust = function () { if (dust) { dust.stop(); dust = null; } };
   const engs = {
     set speed(v) { if (back) back.speed = v; if (front) front.speed = v; },
     get speed() { return front ? front.speed : 1; },
@@ -1176,11 +1249,14 @@ function mountUnlock(root, params, ctx) {
     });
   };
 
-  /* 結果：不論是跑完、被點掉、還是 still，最後都停在同一個 class 狀態（WAAPI 的動畫全部拿掉，交給 CSS） */
+  /* 結果：不論是跑完、被點掉、還是 still，最後都停在同一個 class 狀態（WAAPI 的動畫全部拿掉，交給 CSS）。
+     quiet＝一進來就是結果（已收過、still、減少動態效果）：不搶焦點、不飄金粉。
+     不是 quiet（剛抽完）：焦點移到「抽到 ○○」那一行，報讀器念一次抽到什麼；「跳過動畫」收起來 */
   const finish = function (quiet) {
     if (run) run.dead = true;
     timers.forEach(clearTimeout);
     timers.length = 0;
+    glow = 0;
     if (motes) { motes.stop(); motes = null; }
     box.classList.remove('is-drawing', 'is-ready', 'is-sheet');
     box.classList.add('is-done');
@@ -1191,19 +1267,23 @@ function mountUnlock(root, params, ctx) {
     if (draw && !got && F) box.style.setProperty('--aura', 'rgb(' + auraColor(tier - 1).join(' ') + ')');
     if (draw && draw.key === 'ink' && !got) { box.classList.add('is-paper'); APP.ui.setStatus('dark'); }
     if (draw && draw.gold && !got) box.classList.add('is-gold-up');
-    /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見）；其他款式安靜收尾 */
+    if (skipBtn) skipBtn.hidden = true;
+    if (!quiet) focusEl(q('[data-draw]') || q('[data-act="collect"]'));
+    /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見），DUST_MS 之後、或開始寫那一句話時停下來；其他款式安靜收尾 */
     if (!quiet && front && draw && draw.gold && !F.calm() && !dust) {
       const gc = [F.color('--gold'), F.color('--gold-lite')];
+      const W0 = front.at(box).W;
       dust = front.stream({
         rate: 11,
         one: function () {
-          const at = front.at(box);
-          return { x: F.rnd(0, at.W), y: -8, vx: F.rnd(-12, 12), vy: F.rnd(34, 80), life: [3.2, 5.2],
+          return { x: F.rnd(0, W0), y: -8, vx: F.rnd(-12, 12), vy: F.rnd(34, 80), life: [3.2, 5.2],
                    size: [1, 2.6], kinds: ['star', 'glow'], colors: gc, tw: [4, 9], alpha: [.35, .85], fin: .1, fout: .45 };
         },
       });
+      later(stopDust, DUST_MS);
     }
   };
+  if (noteInput) noteInput.onfocus = stopDust;
 
   /* 已收過、still、減少動態效果（APP.reduceMotion）：直接停在結果，不演抵達與抽卡 */
   if (got || APP.reduceMotion() || !F) {
@@ -1217,10 +1297,12 @@ function mountUnlock(root, params, ctx) {
     /* 先讓瀏覽器算一次「還沒亮」的樣式，再加 is-lit，上色的 transition 才有起點（不用 rAF：畫面外會被停掉） */
     void box.offsetWidth;
     box.classList.add('is-lit');
-    /* 亮起來的那一刻：一小圈光點、鐘聲，之後光點慢慢從地上升起 */
-    later(function () {
+    /* 亮起來的那一刻：一小圈光點、鐘聲，之後光點慢慢從地上升起。
+       抽卡已經開始（在它之前就按了「收集明信片」）就不演：play() 會清掉這個計時器，這裡再擋一次 */
+    glow = later(function () {
+      glow = 0;
       const spot = q('.ex-spot__pin');
-      if (!spot || F.calm()) return;
+      if (run || !spot || F.calm()) return;
       const lit = isRide ? [F.color('--gold'), F.color('--gold-lite')] : [F.color('--yoxi-cream'), F.color('--yoxi-white')];
       const at = front.at(spot);
       F.sfx.arrive(isRide);
@@ -1252,8 +1334,7 @@ function mountUnlock(root, params, ctx) {
       if (spot) spot.animate([{ transform: 'scale(1)' }, { transform: 'scale(.9)', offset: .3 }, { transform: 'scale(1)' }],
         { duration: 420, easing: F.ease.back });
     }
-    const go = q('[data-act="draw"]');
-    if (go) try { go.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    focusEl(q('[data-act="draw"]'));
   };
   const spotBtn = q('[data-act="open-spot"]');
   if (spotBtn) spotBtn.onclick = function (e) { if (e) e.stopPropagation(); openSheet(); };
@@ -1270,6 +1351,8 @@ function mountUnlock(root, params, ctx) {
     const mute = !APP.store.get('fxMute');
     APP.store.set('fxMute', mute);
     snd.setAttribute('aria-pressed', mute ? 'false' : 'true');
+    /* 關掉就是現在安靜：已經排好、還沒響完的（金框的鐘聲會拖三秒）一起切掉 */
+    if (F && F.sfx.stopAll && mute) F.sfx.stopAll();
     if (!mute && F) F.sfx.tap();
     APP.ui.toast(mute ? '音效關了' : '音效開了');
   };
@@ -1488,6 +1571,8 @@ function mountUnlock(root, params, ctx) {
     const scene1 = q('[data-scene="1"]');
     const sheet = q('[data-arrive-sheet]');
     const mapEl = q('[data-arrive-map]');
+    /* 抵達的光點與鐘聲到此為止（還沒亮起來就按了：連排好的那一次一起取消，不然抽卡中會響鐘、光點冒不停） */
+    if (glow) { clearTimeout(glow); glow = 0; }
     if (motes) { motes.stop(); motes = null; }
     F.sfx.unlock();
     F.sfx.tap();
@@ -1558,8 +1643,14 @@ function mountUnlock(root, params, ctx) {
   if (drawBtn) drawBtn.onclick = function (e) {
     if (e) e.stopPropagation();
     if (run || !F) { if (!F) finish(); return; }
+    /* 按下去這顆就停用、面板收走：焦點不能掉到 body，交給「跳過動畫」（鍵盤按 Enter／空白鍵就直接看結果） */
     drawBtn.disabled = true;
+    if (skipBtn) { skipBtn.hidden = false; focusEl(skipBtn); }
     play();
+  };
+  if (skipBtn) skipBtn.onclick = function (e) {
+    if (e) e.stopPropagation();
+    if (run && box.getAttribute('data-at') !== '3') finish();
   };
 
   const btn = q('[data-act="collect"]');
@@ -1570,10 +1661,9 @@ function mountUnlock(root, params, ctx) {
       if (collecting) return;
       collecting = true;
       btn.disabled = true;
-      const input = q('[data-one-line]');
-      const note = input ? String(input.value || '').trim().slice(0, 40) : '';
+      const note = noteInput ? String(noteInput.value || '').trim().slice(0, NOTE_MAX) : '';
       /* 收的當下再判一次（畫面開著的時候行程可能被取消或換掉了） */
-      const trip = rideTripFor(p, ctx);
+      const trip = rideTripFor(p);
       const ride = isRide && !!trip;
       const km = ride && trip.km != null ? trip.km : fmt.km(p.dist);
       /* 轉換歸因：這趟車是從哪個入口叫的，記在 app store（行程紀錄的小標），collect 會清掉 trip 所以先記 */
@@ -1582,7 +1672,7 @@ function mountUnlock(root, params, ctx) {
         rv[p.card] = trip.via;
         APP.store.set('rideVia', rv);
       }
-      const drawn = ride ? drawStyle('ride', 0) : arrivalDraw(p, false);
+      const drawn = ride ? drawStyle('ride', 0) : rollDraw(p);
       collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km, style: drawn.key });
       APP.ui.toast('收進收藏了');
       APP.nav.go('/album', { dir: 'push' });
@@ -1592,12 +1682,17 @@ function mountUnlock(root, params, ctx) {
   return function () {
     if (run) run.dead = true;
     timers.forEach(clearTimeout);
+    timers.length = 0;
+    glow = 0;
     if (motes) motes.stop();
-    if (dust) dust.stop();
+    stopDust();
     if (shake) shake.stop();
     if (back) back.destroy();
     if (front) front.destroy();
     if (map) map.destroy();
+    /* 掛在 .device 上的機率說明、還在響的音效：離開這一頁就收掉 */
+    closeOdds();
+    if (F && F.sfx.stopAll) F.sfx.stopAll();
   };
 }
 
@@ -1606,7 +1701,7 @@ function mountUnlock(root, params, ctx) {
 function renderRoutes() {
   return '<header class="hdr-red hdr-red--compact">' +
       '<div class="hdr-red__bar">' +
-        '<a class="hdr-red__close" href="#" data-back="/explore" aria-label="返回"><span data-icon="close"></span></a>' +
+        '<a class="hdr-red__close" href="#" data-back="' + esc(exploreHome()) + '" aria-label="返回"><span data-icon="close"></span></a>' +
         '<h1 class="hdr-red__title ex-hdr-title">這個月的路線</h1>' +
       '</div></header>' +
     '<div class="scroll ex-scroll">' +
@@ -1659,7 +1754,7 @@ function routeModel(R) {
 }
 
 function renderRoute(params) {
-  const R = (M().ROUTES || []).filter(function (r) { return r.id === params.id; })[0];
+  const R = routeById(params.id);
   if (!R) {
     return backFabBar('/routes') + notFound({ title: '找不到這條路線', text: '這條路線不在這個月的清單裡。',
       href: '/routes', cta: '看這個月的路線' });
@@ -1728,7 +1823,7 @@ function renderRoute(params) {
 }
 
 function mountRoute(root, params) {
-  const R = (M().ROUTES || []).filter(function (r) { return r.id === params.id; })[0];
+  const R = routeById(params.id);
   if (!R) { APP.ui.setStatus('dark'); return; }
   const md = routeModel(R);
   const b = root.querySelector('[data-breakpoint] [data-act="set-dropoff"]');
@@ -1772,7 +1867,7 @@ APP.view('routes', {
 APP.view('route', {
   path: '/route/:id', tab: 'explore', status: 'light',
   title: function (params) {
-    const R = (M().ROUTES || []).filter(function (r) { return r.id === params.id; })[0];
+    const R = routeById(params.id);
     return R ? R.name : '找不到這條路線';
   },
   render: renderRoute, mount: mountRoute,

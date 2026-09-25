@@ -17,7 +17,7 @@
      APP.fx.shaker(el)          以 trauma 計的震動（trauma² 決定幅度，會自己衰減）
      APP.fx.hitstop(root, eng, ms)  停格：root 底下的動畫與粒子一起停 ms 毫秒
      APP.fx.flash(el, color)    全螢幕閃一下（只給金框）
-     APP.fx.sfx                 合成音效（沒有音檔）；store.fxMute 為 true 時全部靜音
+     APP.fx.sfx                 合成音效（沒有音檔）；store.fxMute 為 true 時全部靜音；sfx.stopAll() 切掉已經排好還沒響完的
      APP.fx.filters()           在 body 放一次卡面畫風用的 SVG 濾鏡（#exf-*）
      APP.fx.color(name)         讀 tokens.css 的顏色 → [r, g, b]
      APP.fx.ease                與 tokens 一致的 easing 字串
@@ -124,7 +124,16 @@ function engine(canvas) {
   let raf = 0, last = 0, W = 0, H = 0, dpr = 1, dead = false;
   const api = { speed: 1 };
 
+  /* 畫布尺寸只在變了的時候量：ResizeObserver（版面變了）＋視窗 resize（手機外框的縮放）標成 dirty，
+     下一幀才 getBoundingClientRect。不再每一幀都量一次版面（金粉飄著的時候每秒 60 次強制排版）。
+     沒有 ResizeObserver 的瀏覽器退回每幀量。 */
+  let dirty = true;
+  const markDirty = function () { dirty = true; };
+  const ro = window.ResizeObserver ? new ResizeObserver(markDirty) : null;
+  if (ro) ro.observe(canvas);
+  window.addEventListener('resize', markDirty);
   function fit() {
+    dirty = !ro;
     const r = canvas.getBoundingClientRect();
     const d = Math.min(window.devicePixelRatio || 1, 2);
     if (r.width !== W || r.height !== H || d !== dpr) {
@@ -132,6 +141,9 @@ function engine(canvas) {
       canvas.width = Math.max(1, Math.round(W * dpr));
       canvas.height = Math.max(1, Math.round(H * dpr));
     }
+  }
+  function fitIfNeeded() {
+    if (dirty || Math.min(window.devicePixelRatio || 1, 2) !== dpr) fit();
   }
   function kick() {
     if (!raf && !dead) { last = performance.now(); raf = requestAnimationFrame(tick); }
@@ -179,7 +191,7 @@ function engine(canvas) {
   function tick(now) {
     raf = 0;
     if (dead) return;
-    fit();
+    fitIfNeeded();
     const dt = Math.min(.034, Math.max(0, (now - last) / 1000)) * api.speed;
     last = now;
     for (let i = emitters.length - 1; i >= 0; i--) {
@@ -219,7 +231,7 @@ function engine(canvas) {
   /* 從一點往外噴：angle 用弧度區間（預設 360°），speed 是 px/s，r0 是起點離中心多遠 */
   api.burst = function (o) {
     if (dead) return api;
-    fit();
+    fitIfNeeded();
     const n = Math.round(o.n || 12);
     for (let i = 0; i < n; i++) {
       const ang = o.angle ? range(o.angle, 0) : Math.random() * Math.PI * 2;
@@ -235,7 +247,7 @@ function engine(canvas) {
   /* 從四周往中心吸（蓄力）：在半徑 radius 的圓上生出來，life 秒後剛好抵達中心 */
   api.converge = function (o) {
     if (dead) return api;
-    fit();
+    fitIfNeeded();
     const n = Math.round(o.n || 24);
     for (let i = 0; i < n; i++) {
       const ang = Math.random() * Math.PI * 2;
@@ -251,7 +263,7 @@ function engine(canvas) {
   /* 一圈往外擴的細環（衝擊波） */
   api.ring = function (o) {
     if (dead) return api;
-    fit();
+    fitIfNeeded();
     const q = Object.assign({ kinds: ['ring'], blend: 'lighter', fin: .02, fout: .8 }, o);
     q.kinds = ['ring'];
     add(q, o.x, o.y, 0, 0);
@@ -274,7 +286,7 @@ function engine(canvas) {
       },
     };
     emitters.push(e);
-    fit();
+    fitIfNeeded();
     kick();
     return { stop: function () { e.off = true; } };
   };
@@ -298,6 +310,8 @@ function engine(canvas) {
     raf = 0;
     list.length = 0;
     emitters.length = 0;
+    if (ro) ro.disconnect();
+    window.removeEventListener('resize', markDirty);
   };
   return api;
 }
@@ -360,7 +374,7 @@ function flash(el, c) {
 /* ---------------------------------------------------------------- 音效（Web Audio 合成，沒有音檔） */
 
 const sfx = (function () {
-  let ac = null, out = null, noiseBuf = null;
+  let ac = null, comp = null, out = null, noiseBuf = null;
   function on() { return !APP.store.get('fxMute'); }
   function ctx() {
     if (!on()) return null;
@@ -369,15 +383,32 @@ const sfx = (function () {
     if (!ac) {
       try {
         ac = new AC();
+        comp = ac.createDynamicsCompressor();
+        comp.connect(ac.destination);
+      } catch (e) { ac = null; comp = null; return null; }
+    }
+    /* 總線：每個聲音都接在 out 上。stopAll() 把它拔掉，下一個聲音再接一條新的 */
+    if (!out) {
+      try {
         out = ac.createGain();
         out.gain.value = .55;
-        const comp = ac.createDynamicsCompressor();
         out.connect(comp);
-        comp.connect(ac.destination);
-      } catch (e) { ac = null; return null; }
+      } catch (e) { out = null; return null; }
     }
     if (ac.state === 'suspended' && ac.resume) ac.resume().catch(function () { /* 還沒有手勢 */ });
     return ac;
+  }
+  /* 現在就安靜：已經排進時間軸、還沒響完的聲音（金框的鐘聲會拖三秒）都接在舊的總線上，
+     把總線歸零並拔掉，它們就再也到不了喇叭。靜音、離開抵達頁時呼叫；可以重複呼叫 */
+  function stopAll() {
+    if (!out) return;
+    const old = out;
+    out = null;
+    try {
+      old.gain.cancelScheduledValues(0);
+      old.gain.value = 0;
+      old.disconnect();
+    } catch (e) { /* 已經拔掉了 */ }
   }
   /* 每次音高隨機差 ±4%，連續抽不會像機器 */
   function vary() { return 1 + (Math.random() * 2 - 1) * .04; }
@@ -428,6 +459,7 @@ const sfx = (function () {
   }
   const N = { C5: 523.25, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5, E6: 1318.5, G6: 1568, C7: 2093 };
   return {
+    stopAll: stopAll,
     unlock: function () { ctx(); },                    /* 在手勢裡先叫醒 AudioContext */
     arrive: function (ride) {
       bell(ride ? N.G5 : N.E5, 0, .16, 1.4);
