@@ -63,7 +63,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .alb-v2__section-head h2 { font-size: var(--fs-title); }
 .alb-v2__section-head span { color: var(--app-muted); font-size: var(--fs-cap); }
-/* 我的所有明信片（/postcards）：兩段，每段兩欄；格子不加外框，圖就是明信片 */
+/* 明信片子頁（/postcards）：兩段，每段兩欄；格子不加外框，圖就是明信片 */
 .alb-v2__cards { padding: var(--sp-4) var(--gutter) 0; }
 .alb-v2__cards h2 { margin-bottom: var(--sp-3); font-size: var(--fs-lead); }
 .alb-v2__card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); }

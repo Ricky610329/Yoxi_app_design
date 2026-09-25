@@ -55,7 +55,7 @@ app/
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
   js/views/explore-fx.js    explore 的特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）；在 explore.js 之前載入
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、抵達與抽卡、路線列表／詳情
-  js/views/album.js         收藏（摘要式＋X4 六角章）、所有明信片、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
+  js/views/album.js         收藏（摘要式＋X4 六角章）、明信片子頁、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   tools/serve.py            本機靜態伺服器（測 PWA 用）
   tools/make-icons.py       產生 PWA 圖示
@@ -330,7 +330,7 @@ T.spec('ride', function (t) {
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
 | `/album` | 收藏（明信片主卡、統計、獎章精選卡；`?tab=` 舊連結照樣落在這頁） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
-| `/postcards` | 我的所有明信片（收下的／還沒去的兩段，左上返回） | album | 新 | album |
+| `/postcards` | 明信片子頁，標題「明信片」（收下的／還沒去的兩段，左上返回） | album | 新 | album |
 | `/badges` | 全部獎章（三欄六角章牆） | album | 新（參考 `variant-x4-badges.html`） | album |
 | `/postcard/:id` | 明信片詳情（翻面） | album | `postcard.html` | album |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |

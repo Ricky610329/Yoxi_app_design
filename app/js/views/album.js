@@ -6,7 +6,7 @@
      /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近三張疊卡，點了進 /postcards）、統計兩格、
                       獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。
                       舊的書架＋pill 四段留在 legacyAlbumHome 當對照，不註冊。
-     /postcards       我的所有明信片：收下的一段（最近的在前）、還沒去的一段，左上返回。
+     /postcards       明信片子頁：收下的一段（最近的在前）、還沒去的一段，左上返回。
      /badges          全部獎章：三欄六角章牆，收下的寫日期、還在路上的寫「收集 n/m」。
      /postcard/:id    明信片詳情，點一下翻面看背面敘事。來源：postcard.html。
      /badge/:id       獎章詳情。來源：badge.html。
@@ -487,7 +487,7 @@ function subHeader(title, sub) {
     '<h1>' + esc(title) + '</h1><p>' + sub + '</p></header>';
 }
 
-/* 「我的所有明信片」的一格：收下的彩色寫日期，還沒去的灰階 */
+/* /postcards 的一格：收下的彩色寫日期，還沒去的灰階 */
 function albumV2CardHTML(p) {
   const got = STATE.card(p.id);
   const fresh = isFresh(p);
@@ -565,13 +565,13 @@ APP.view('album', {
 
 /* ================================================================ /postcards */
 
-/* 我的所有明信片：收下的（最近的在前）一段、還沒去的一段。
+/* 明信片子頁：收下的（最近的在前）一段、還沒去的一段。
    格子不做成連結：22 張全是連結會超過 L1 的可按數上限（≤ 10），明信片詳情從獎章與週回顧進。 */
 APP.view('postcards', {
   path: '/postcards',
   tab: 'album',
   status: 'dark',
-  title: '我的所有明信片',
+  title: '明信片',
   render: function () {
     const cards = M().POSTCARDS || [];
     const got = recentCards(cards.length);
@@ -580,7 +580,7 @@ APP.view('postcards', {
       return '<div class="alb-v2__card-grid">' + list.map(albumV2CardHTML).join('') + '</div>';
     };
     return '<div class="alb alb-v2"><div class="scroll alb-scroll alb-v2__scroll">' +
-      subHeader('我的所有明信片', '收集 <span data-stat="cards">' + got.length + '</span>/' + cards.length +
+      subHeader('明信片', '收集 <span data-stat="cards">' + got.length + '</span>/' + cards.length +
         ' 張。還沒去的地方，到了就會上色。') +
       (got.length
         ? '<section class="alb-v2__cards" data-group="got"><h2>收下的 ' + got.length + ' 張</h2>' + grid(got) + '</section>'
