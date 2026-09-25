@@ -218,7 +218,11 @@ T.spec('flows', function (t) {
     t.eq(S.all.today.mood, 'good', 'STATE.today.mood');
     t.eq(S.all.today.photo, 1, 'STATE.today.photo');
     t.ok(!app.$('main.view[data-view] [data-act="share"]'), '收藏主頁沒有分享鈕');
-    await app.go('/week');
+    /* 日誌：回顧結束落在收藏首頁的「回顧」一列（?tab=journal 用過就拿掉），今天的心情在那一格、只有你 */
+    t.ok(app.$('[data-look-tile="journal"].is-landed'), '「今天的回顧」那一格亮一下');
+    t.ok(!/tab=/.test(app.win.location.hash), '網址的 ?tab 拿掉了：' + app.win.location.hash);
+    t.ok(app.$('[data-look-tile="journal"] [data-mood-now="good"]'), '今天的心情在「今天的回顧」那一格');
+    await app.click('main.view [data-act="go-week"]');
     await app.at('/week');
     await app.click('main.view [data-act="share"]');
     const first = app.$('.device > .sys-share .row-nav');
@@ -1012,7 +1016,17 @@ T.spec('flows', function (t) {
     t.noDeadButtons(app, '/ride（行程中）');
   });
 
-  t.test('QA 5：/week 收一張卡之後：地方 +1、公里與步數不減、上週不變', async function (app) {
+  /* 今天（'MM.DD'）落在週回顧的哪一段：now（本週 7 天內）／prev（上週）／after（本週之後）／before */
+  function weekSlot(w, mmdd) {
+    const k = Number(mmdd.slice(0, 2)) * 100 + Number(mmdd.slice(3, 5));
+    const at = function (d) { return w.month * 100 + d; };
+    if (k >= at(w.now.from) && k <= at(w.now.to)) return 'now';
+    if (k > at(w.now.to)) return 'after';
+    if (k >= at(w.prev.from) && k <= at(w.prev.to)) return 'prev';
+    return 'before';
+  }
+
+  t.test('QA 5：/week 收一張卡之後：只有日期落在本週的才算進本週，公里與步數不減', async function (app) {
     await app.reset();
     await app.go('/week');
     const before = app.APP.album.weekStats();
@@ -1022,15 +1036,19 @@ T.spec('flows', function (t) {
     await app.go('/album');
     await app.go('/week');
     const after = app.APP.album.weekStats();
-    t.eq(after.now.places, before.now.places + 1, '地方數 +1');
+    const slot = weekSlot(before, app.APP.fmt.todayMMDD());
+    t.eq(after.now.places, before.now.places + (slot === 'now' ? 1 : 0), '本週地方數（今天在 ' + slot + '）');
     t.ok(after.now.km >= before.now.km, '公里不減 ' + before.now.km + ' → ' + after.now.km);
     t.ok(after.now.steps >= before.now.steps, '步數不減');
-    t.eq(JSON.stringify([after.prev.places, after.prev.km, after.prev.steps]), JSON.stringify([before.prev.places, before.prev.km, before.prev.steps]), '上週不變');
-    t.eq(app.text('.alb-cover__range').split(' – ')[0], range0.split(' – ')[0], '標題起點不變（終點延到最晚收的卡，見評估 5）');
+    if (slot !== 'prev') {
+      t.eq(JSON.stringify([after.prev.places, after.prev.km, after.prev.steps]), JSON.stringify([before.prev.places, before.prev.km, before.prev.steps]), '上週不變');
+    }
+    t.eq(app.text('.alb-cover__range'), range0, '標題就是圖表那 7 天，收卡不會拉長（見評估 5）');
     t.eq(app.text('[data-cmp="km"] [data-now]'), km0, '畫面公里不變');
     t.eq(app.text('[data-cmp="steps"] [data-now]'), st0, '畫面步數不變');
-    t.eq(app.text('[data-week-places]'), String(before.now.places + 1), '畫面地方數 +1');
-    t.ok(app.$('.alb-weekcard[data-card="p11"]'), '今天收的卡出現在這一週');
+    t.eq(app.text('[data-week-places]'), String(after.now.places), '畫面地方數＝weekStats');
+    t.eq(!!app.$('.alb-weekcard[data-card="p11"]'), slot === 'now', '今天收的卡只在今天落在本週時列在這一週');
+    if (slot === 'after') t.includes(app.text('[data-week-after]'), '1', '本週之後收的另寫一行，照實說還沒算進這一週');
   });
 
   t.test('QA 6：已收藏的地方頁不再推薦、寫清楚怎麼收的', async function (app) {
@@ -1224,7 +1242,9 @@ T.spec('flows', function (t) {
     t.eq(app.STATE.all.settings.rideSpots, undefined, '不寫進 STATE.settings');
   });
 
-  t.test('評估 5：/week 標題終點延到最晚收的那張卡，起點不變', async function (app) {
+  /* 評估 5 改過一次：以前收卡後標題終點延到今天（9月15日 – 9月25日，11 天），但長條圖與步數只有 7 天。
+     現在標題永遠是圖表那 7 天；範圍之後收的卡另寫一行，不算進本週。 */
+  t.test('評估 5：/week 標題永遠是圖表那 7 天，收卡後也不拉長', async function (app) {
     await app.reset();
     await app.go('/week');
     const w0 = app.APP.album.weekStats();
@@ -1232,19 +1252,17 @@ T.spec('flows', function (t) {
     const lab = function (d) { return w0.month + '月' + d + '日'; };
     t.eq(r0, lab(w0.now.from) + ' – ' + lab(w0.now.to), '收卡前：' + r0);
     t.eq(w0.now.to, 21, '固定範圍終點是 21 日（HEALTH_STEPS 最後一個有步數的日子）');
+    t.eq(w0.now.to - w0.now.from + 1, app.$$('.alb-days__col').length, '標題的天數＝長條圖的天數');
     app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
     await app.go('/album');
     await app.go('/week');
-    const today = app.APP.fmt.todayMMDD();
-    const day = Number(today.slice(3, 5));
-    const sameMonth = Number(today.slice(0, 2)) === w0.month;
-    const want = lab(w0.now.from) + ' – ' + lab(sameMonth && day > w0.now.to ? day : w0.now.to);
-    t.eq(app.text('.alb-cover__range'), want, '收卡後終點是今天：' + app.text('.alb-cover__range'));
+    t.eq(app.text('.alb-cover__range'), r0, '收卡後標題不變：' + app.text('.alb-cover__range'));
     const w1 = app.APP.album.weekStats();
     t.eq(w1.now.from, w0.now.from, '起點不變');
+    t.eq(w1.now.to, w0.now.to, '終點不變');
     t.eq(w1.now.steps, w0.now.steps, '步數只算有資料的日子（不變）');
     await app.go('/album');
-    t.ok(!app.$('[data-act="go-week"]'), '雙主頁收藏首頁不再放週回顧入口');
+    t.ok(app.$('[data-act="go-week"]'), '收藏首頁「回顧」一列有「這一週」入口（週回顧不再是孤兒頁）');
     await app.reset();
   });
 

@@ -511,9 +511,19 @@
         return true;
       });
       const set = new Set(keep);
-      return keep.filter(function (el) {
+      const top = keep.filter(function (el) {
         let p = el.parentElement;
         while (p && p !== root.parentElement) { if (set.has(p)) return false; p = p.parentElement; }
+        return true;
+      });
+      /* [data-gallery]：一整片同一種東西的格子（例：/postcards 收下的明信片網格）不管裡面幾格都算一個，
+         跟地圖上的景點不算一樣 —— 認知上是「一面牆」一件事，一格一格算的話 22 張卡就把 L1 的上限吃光。 */
+      const galleries = new Set();
+      return top.filter(function (el) {
+        const g = el.closest('[data-gallery]');
+        if (!g || !root.contains(g)) return true;
+        if (galleries.has(g)) return false;
+        galleries.add(g);
         return true;
       }).length;
     },
