@@ -391,6 +391,25 @@
    /drawer
    -------------------------------------------------------------------------- */
 .ride-drawer__bg { position: absolute; inset: 0; background: var(--map-land); }
+
+/* 開關抽屜不走整頁右滑：底下那頁不動，遮罩淡入、紅色抽屜從左邊滑出；關的時候原路收回左邊。
+   只接管「打開抽屜」（drawer 以 push 進場）與「關掉抽屜」（drawer 以 back 離場）；
+   抽屜 → 設定／點數等子頁、子頁返回抽屜，照 app.css 的左右滑。 */
+.view--out-push:has(~ .view--in-push > .ride-drawer),
+.view--in-push:has(> .ride-drawer),
+.view--out-back:has(> .ride-drawer),
+.view--out-back:has(> .ride-drawer) ~ .view--in-back { animation: none; box-shadow: none; }
+.view--in-push:has(> .ride-drawer),
+.view--out-back:has(> .ride-drawer) { background: transparent; }
+.view--in-push > .ride-drawer__bg,
+.view--in-push > .ride-drawer__scrim { animation: app-fade-in var(--t-base) var(--ease) both; }
+.view--in-push > .ride-drawer { animation: ride-drawer-in var(--t-base) var(--ease) both; }
+.view--out-back > .ride-drawer__bg,
+.view--out-back > .ride-drawer__scrim { animation: ride-fade-out var(--t-base) var(--ease) both; }
+.view--out-back > .ride-drawer { animation: ride-drawer-out var(--t-base) var(--ease) both; }
+@keyframes ride-drawer-in  { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes ride-drawer-out { from { transform: none; } to { transform: translateX(-100%); } }
+@keyframes ride-fade-out   { from { opacity: 1; } to { opacity: 0; } }
 .ride-drawer__scrim { position: absolute; inset: 0; background: var(--yoxi-navy-60); cursor: pointer; }
 .ride-drawer { padding-top: calc(var(--statusbar-h) + var(--sp-2)); }
 .ride-drawer__top { justify-content: flex-end; }
