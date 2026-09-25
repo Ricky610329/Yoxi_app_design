@@ -305,6 +305,63 @@
 .ex-unlock__goldrow [data-icon] svg > circle:first-of-type,
 .ex-unlock__goldrow [data-icon] svg > path { fill: var(--gold-lite); }
 
+/* 抽卡：成品右上角的「?」（機率揭露收在這裡，不搶畫面）與抽到的畫風名 */
+.ex-unlock__odds {
+  position: absolute;
+  top: calc(var(--sp-2) * -1);
+  right: -48px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--yoxi-white) 75%, transparent);
+}
+/* 命中區 40×40，看得到的只有 24 的小圈 */
+.ex-unlock__odds-i {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--yoxi-white) 45%, transparent);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  line-height: 1;
+}
+.ex-unlock__style {
+  margin: calc(var(--sp-3) * -1) 0 var(--sp-4);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  letter-spacing: .1em;
+  opacity: .8;
+}
+/* 畫風示意：正式版會用景點照片＋diffusion 生成，原型先用濾鏡區分四種 */
+[data-style="watercolor"] .ex-fill { filter: saturate(.8) brightness(1.08); }
+[data-style="oil"] .ex-fill        { filter: saturate(1.5) contrast(1.15); }
+[data-style="woodcut"] .ex-fill    { filter: grayscale(.5) contrast(1.6) sepia(.35); }
+[data-style="ink"] .ex-fill        { filter: grayscale(1) contrast(1.3) brightness(1.05); }
+
+/* 機率說明（「?」打開） */
+/* 解鎖頁（chengshi.css 的 .unlock）是 z-index 95，遮罩要壓在它上面 */
+.ex-odds { z-index: 96; }
+.ex-odds__box { max-height: 100%; overflow: auto; }
+.ex-odds__t { font-size: var(--fs-title); font-weight: var(--fw-heavy); margin-bottom: var(--sp-2); }
+.ex-odds__p { font-size: var(--fs-sm); line-height: 1.6; margin-bottom: var(--sp-4); }
+.ex-odds__h { font-size: var(--fs-sm); font-weight: var(--fw-heavy); margin: var(--sp-3) 0 var(--sp-2); }
+.ex-odds__list { list-style: none; margin: 0; padding: 0; }
+.ex-odds__row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--yoxi-navy) 10%, transparent);
+  font-size: var(--fs-sm);
+}
+.ex-odds__row.is-gold { font-weight: var(--fw-heavy); color: var(--gold); }
+.ex-odds__note { font-size: var(--fs-xs); line-height: 1.6; opacity: .7; margin: var(--sp-4) 0; }
+
 /* 幕二的三層筆觸（原型 inline 的 rgba 換成 tokens 混色） */
 .ex-gen__l2 { background: linear-gradient(200deg, color-mix(in srgb, var(--yoxi-white) 28%, transparent), transparent 60%); }
 .ex-gen__l3 { background: radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--yoxi-white) 40%, transparent), transparent 52%); }

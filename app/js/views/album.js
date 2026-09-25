@@ -80,7 +80,10 @@ function badgeOfCard(cardId) {
 
 function limitedCard(cardId) {
   const c = STATE.card(cardId);
-  if (!c || c.by !== 'ride') return false;
+  if (!c) return false;
+  /* 抵達時抽到金框（explore.js 的 DRAW_STYLES；搭車必得、走路極低機率）就是金框 */
+  if ((APP.store.get('cardStyle') || {})[cardId] === 'gold') return true;
+  if (c.by !== 'ride') return false;
   return APP.ride && APP.ride.limitedCard ? APP.ride.limitedCard(cardId) : true;
 }
 

@@ -255,6 +255,68 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
+  t.test('抽卡：機率表加總 100%、走路遞減、搭車必得金框', async function (app) {
+    const E = app.APP.explore;
+    const sum = function (k) { return E.DRAW_STYLES.reduce(function (a, d) { return a + d[k]; }, 0); };
+    t.eq(sum('walk'), 1000, '走路加總 1000‰');
+    t.eq(sum('ride'), 1000, '搭車加總 1000‰');
+    t.eq(E.DRAW_STYLES.length, 5, '每個地方五款');
+    const gold = E.DRAW_STYLES.filter(function (d) { return d.gold; });
+    t.eq(gold.length, 1, '一款金框');
+    t.eq(gold[0].ride, 1000, '搭車必得金框');
+    const plain = E.DRAW_STYLES.filter(function (d) { return !d.gold; });
+    t.eq(plain.length, 4, '四款一般');
+    t.ok(plain.every(function (d, i) { return !i || d.walk < plain[i - 1].walk; }), '一般款越後面越難抽');
+    t.ok(gold[0].walk < plain[plain.length - 1].walk, '走路抽到金框比任何一般款都難');
+    t.eq(E.drawStyle('walk', 0).key, plain[0].key, 'r=0 → 第一款');
+    t.ok(E.drawStyle('walk', 0.9999).gold, 'r→1 → 金框');
+    t.ok(E.drawStyle('ride', 0.3).gold && E.drawStyle('ride', 0).gold, '搭車不論 r 都是金框');
+  });
+
+  t.test('/unlock/glass-kiln：抽到的款式固定（重進不重抽）、? 打開機率、收下記款式', async function (app) {
+    await app.reset({ store: { draws: { 'glass-kiln': 'ink' } } });
+    await app.go('/unlock/glass-kiln');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '用 store.draws 的那一款');
+    t.includes(app.text('[data-draw]'), '水墨', '寫出畫風名');
+    t.ok(!app.$('[data-final-card].postcard--gold'), '水墨不是金框');
+    await app.go('/explore');
+    await app.go('/unlock/glass-kiln');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '重進還是同一款');
+    t.ok(!app.$('.ex-odds'), '機率預設收起來');
+    await app.click('[data-act="open-odds"]');
+    t.ok(app.$('.ex-odds'), '? → 機率說明');
+    const box = app.$('.ex-odds__box').getBoundingClientRect();
+    const top = app.doc.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    t.ok(top && top.closest('.ex-odds'), '機率說明在最上層（沒有被解鎖頁蓋住）');
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '點 ? 不會動到幕');
+    const walk = app.$$('[data-odds="walk"] .ex-odds__row').map(function (r) { return r.textContent; }).join('|');
+    app.APP.explore.DRAW_STYLES.forEach(function (d) {
+      t.includes(walk, d.name + (d.walk / 10) + '%', '走路：' + d.name);
+    });
+    t.includes(app.text('[data-odds="ride"]'), '100%', '搭車：金框 100%');
+    await app.click('[data-act="close-odds"]');
+    t.ok(!app.$('.ex-odds'), '知道了 → 關掉');
+    await app.click('[data-act="collect"]');
+    await app.at('/album');
+    t.eq(app.APP.store.get('cardStyle').p11, 'ink', 'store.cardStyle 記下水墨');
+    t.ok(!(app.APP.store.get('draws') || {})['glass-kiln'], '這次抵達的暫存抽卡清掉');
+    await app.reset();
+  });
+
+  t.test('/unlock/glass-kiln：走路抽到金框也是金框（但不加點）', async function (app) {
+    await app.reset({ store: { draws: { 'glass-kiln': 'gold' } } });
+    const pts0 = app.STATE.points;
+    await app.go('/unlock/glass-kiln');
+    t.ok(app.$('[data-final-card].postcard--gold'), '金框');
+    t.ok(!app.$('[data-points]'), '走路沒有 +50');
+    await app.click('[data-act="collect"]');
+    await app.at('/album');
+    await app.go('/postcard/p11');
+    t.ok(app.$('.postcard--gold'), '明信片頁是金框');
+    t.eq(app.STATE.points, pts0, '點數不變');
+    await app.reset();
+  });
+
   t.test('APP.explore.collect：回傳是否新收、emit state:change', async function (app) {
     await app.reset();
     let fired = 0;

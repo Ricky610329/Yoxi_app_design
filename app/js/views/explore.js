@@ -23,6 +23,8 @@
    /unlock/:id     抵達解鎖三幕（灰點爆開上色 → AI 生成中 → 成品；?ride=1 金框限定版）
      原型：unlock.html。點畫面任意處跳到成品；html[data-still] 直接停在第三幕。
      刻意沒有：分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
+     抽卡：每個地方五款（四種畫風＋金框），抵達時抽一款。搭 yoxi 抵達必得金框；走路抵達照 DRAW_STYLES 的機率。
+     機率依法要揭露，但不擺在畫面上搶戲：收在成品右上角的「?」裡（data-act="open-odds"）。
    /routes         這個月的路線
      原型：routes.html
    /route/:id      路線詳情（站點軌道；斷點處可設為下車點，K4 精神）
@@ -49,6 +51,78 @@ const ARRIVE_STAY_MIN = 1;
 function ridePoints() {
   return (window.MOCK && MOCK.FAR_PLACE && MOCK.FAR_PLACE.ridePoints) || 50;
 }
+/* 抽卡機率表（全 app 唯一來源；畫面上的百分比都從這裡算，不另外手寫）。
+   每個地方五款：四種一般畫風，越後面越難抽；一款金框（yoxi 限定版），搭 yoxi 抵達必得，走路抵達機率極低。
+   權重用千分比，避免浮點誤差；walk 與 ride 各自加總都是 1000。
+   畫風之後會以該地的景點照片為底、用 diffusion 生成；現在的原型先用濾鏡示意（explore.css 的 [data-style]）。 */
+const DRAW_STYLES = [
+  { key: 'watercolor', name: '水彩',     walk: 450, ride: 0 },
+  { key: 'oil',        name: '油畫',     walk: 300, ride: 0 },
+  { key: 'woodcut',    name: '木刻版畫', walk: 165, ride: 0 },
+  { key: 'ink',        name: '水墨',     walk: 80,  ride: 0 },
+  { key: 'gold',       name: 'yoxi 金框', walk: 5,   ride: 1000, gold: true },
+];
+
+/* 依抵達方式與 r ∈ [0, 1) 抽一款（純函式，給測試與機率頁用） */
+function drawStyle(by, r) {
+  const k = by === 'ride' ? 'ride' : 'walk';
+  const total = DRAW_STYLES.reduce(function (a, d) { return a + d[k]; }, 0);
+  let x = Math.min(Math.max(Number(r) || 0, 0), 0.999999) * total;
+  for (let i = 0; i < DRAW_STYLES.length; i++) {
+    x -= DRAW_STYLES[i][k];
+    if (x < 0) return DRAW_STYLES[i];
+  }
+  return DRAW_STYLES[0];
+}
+
+function styleOf(key) {
+  return DRAW_STYLES.filter(function (d) { return d.key === key; })[0] || null;
+}
+
+/* 千分比 → 「45%」「16.5%」 */
+function oddsPct(w) { return (Math.round(w) / 10) + '%'; }
+
+/* 這一次抵達抽到的款式。走路抵達的結果先記在 store.draws（地點 id → key），
+   重整或返回再進來都是同一張，不能靠重開頁面重抽；收下之後清掉，下次抵達重新抽。 */
+function arrivalDraw(p, isRide) {
+  if (isRide) return drawStyle('ride', 0);
+  const draws = APP.store.get('draws') || {};
+  const had = styleOf(draws[p.id]);
+  if (had) return had;
+  const d = drawStyle('walk', Math.random());
+  APP.store.set('draws', Object.assign({}, draws, { [p.id]: d.key }));
+  return d;
+}
+
+/* 收在「?」裡的機率說明 */
+function openOdds() {
+  if (document.querySelector('.ex-odds')) return;
+  const host = document.querySelector('.device') || document.body;
+  const rows = function (k) {
+    return DRAW_STYLES.map(function (d) {
+      return '<li class="ex-odds__row' + (d.gold ? ' is-gold' : '') + '">' +
+        '<span>' + esc(d.name) + '</span><span class="num">' + esc(oddsPct(d[k])) + '</span></li>';
+    }).join('');
+  };
+  const scrim = document.createElement('div');
+  scrim.className = 'scrim ex-odds';
+  scrim.innerHTML =
+    '<div class="modal app-modal ex-odds__box">' +
+      '<h2 class="ex-odds__t">明信片抽取機率</h2>' +
+      '<p class="ex-odds__p">每個地方有 ' + num(DRAW_STYLES.length) + ' 款明信片，抵達時依抵達方式抽出一款。</p>' +
+      '<h3 class="ex-odds__h">走路抵達</h3><ul class="ex-odds__list" data-odds="walk">' + rows('walk') + '</ul>' +
+      '<h3 class="ex-odds__h">搭 yoxi 抵達</h3><ul class="ex-odds__list" data-odds="ride">' + rows('ride') + '</ul>' +
+      '<p class="ex-odds__note">機率固定，不因抵達次數改變。畫風以該地景點照片為底，由 AI 生成。</p>' +
+      '<button class="btn-primary" type="button" data-act="close-odds">知道了</button>' +
+    '</div>';
+  let release = null;
+  const end = function () { scrim.remove(); if (release) release(); };
+  scrim.querySelector('[data-act="close-odds"]').onclick = end;
+  scrim.onclick = function (e) { if (e.target === scrim) end(); };
+  host.appendChild(scrim);
+  release = APP.ui.a11yDialog(scrim.querySelector('.modal'), { label: '明信片抽取機率', onEsc: end });
+}
+
 /* 探索首頁的可按數上限（L1 一屏一事；§6.3 第 4 條） */
 const EXPLORE_TAP_MAX = 12;
 /* 探索地圖的視野寬度（公尺）。新竹市區五個景點擠在 800 公尺內，
@@ -147,6 +221,16 @@ function collect(placeId, opt) {
     date: fmt.todayMMDD(),
   });
   const pid = p ? p.id : placeId;
+  /* 抽到的款式記在 app store（STATE 的卡片結構不動）；這次抵達的暫存抽卡用完就清 */
+  if (isNew && opt.style) {
+    APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: opt.style }));
+  }
+  const draws = APP.store.get('draws');
+  if (draws && (draws[pid] || draws[placeId])) {
+    const rest = Object.assign({}, draws);
+    delete rest[pid]; delete rest[placeId];
+    APP.store.set('draws', rest);
+  }
   const trip = APP.store.get('trip');
   if (trip && (trip.placeId === pid || trip.placeId === placeId)) APP.store.set('trip', null);
   const drop = APP.store.get('dropoff');
@@ -160,6 +244,10 @@ function collect(placeId, opt) {
 
 APP.explore = Object.assign(APP.explore || {}, {
   collect: collect,
+  /* 抽卡：機率表、純抽取函式、機率說明（契約 §7） */
+  DRAW_STYLES: DRAW_STYLES,
+  drawStyle: drawStyle,
+  openOdds: openOdds,
   /* 給別的區塊與測試用的純計算（沒有副作用） */
   gap: gapPick,
   breakpoint: function (routeId) {
@@ -734,9 +822,12 @@ function renderUnlock(params, ctx) {
   }
   const trip = rideTripFor(p, ctx);
   const isRide = !!trip;
-  /* 金框＋50 點只給走不到的地方（ride.js 的 limitedPlace）；近的地方搭車抵達是一般卡 */
-  const gold = isRide && limitedPlace(p);
   const got = collected(p);
+  /* 已收過的地方不重抽：顯示當初收下的那一款 */
+  const draw = got ? (styleOf((APP.store.get('cardStyle') || {})[p.card]) || null) : arrivalDraw(p, isRide);
+  /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
+  const gold = !got && !!draw && !!draw.gold;
+  const bonus = isRide && limitedPlace(p);
   const name = cardName(p);
   const today = fmt.todayMMDD();
   const year = new Date().getFullYear();
@@ -751,10 +842,10 @@ function renderUnlock(params, ctx) {
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看這張明信片</a>' : '') +
         '<a class="btn-link ex-center ex-unlock__link" href="#/explore" data-act="go-explore">回探索</a>' +
       '</div>'
-    : (gold
+    : (isRide
         ? '<div class="ex-unlock__gold" data-gold-note>' +
             '<span class="ex-unlock__goldrow"><span data-icon="badge" class="ex-ic16"></span>司機同行紀念 · 這一段是 yoxi 陪你到的</span>' +
-            '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' +
+            (bonus ? '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' : '') +
           '</div>'
         : '') +
       '<div class="ex-unlock__in">' +
@@ -764,7 +855,7 @@ function renderUnlock(params, ctx) {
         '<button class="btn-primary ex-unlock__btn" type="button" data-act="collect">收進收藏</button>' +
       '</div>';
 
-  return '<div class="unlock ex-unlock" data-unlock' + (gold ? ' data-ride' : '') + '>' +
+  return '<div class="unlock ex-unlock" data-unlock' + (isRide ? ' data-ride' : '') + '>' +
       '<div class="unlock__scene' + (got ? '' : ' is-on') + '" data-scene="1">' +
         '<div class="burst ex-burst">' +
           '<span class="burst__wave"></span><span class="burst__wave"></span>' +
@@ -791,8 +882,10 @@ function renderUnlock(params, ctx) {
       '</div>' +
       '<div class="unlock__scene' + (got ? ' is-on' : '') + '" data-scene="3">' +
         '<div class="ex-unlock__card">' +
-          '<div class="postcard' + (gold && !got ? ' postcard--gold' : '') + '" data-final-card>' +
-            (gold && !got ? '<span class="postcard__ribbon">yoxi 限定版</span>' : '') +
+          '<button class="ex-unlock__odds" type="button" data-act="open-odds" aria-label="抽取機率"><span class="ex-unlock__odds-i">?</span></button>' +
+          '<div class="postcard' + (gold ? ' postcard--gold' : '') + '" data-final-card' +
+              (draw ? ' data-style="' + esc(draw.key) + '"' : '') + '>' +
+            (gold ? '<span class="postcard__ribbon">yoxi 限定版</span>' : '') +
             '<div class="ex-fill" data-art="' + esc(p.art) + '" data-seed="1"></div>' +
             '<span class="ai-mark">AI 生成示意</span>' +
             '<span class="postcard__foot">' +
@@ -801,6 +894,7 @@ function renderUnlock(params, ctx) {
             '</span>' +
           '</div>' +
         '</div>' +
+        (draw ? '<p class="ex-unlock__style" data-draw="' + esc(draw.key) + '">' + esc(draw.name) + '</p>' : '') +
         act3Acts +
       '</div>' +
     '</div>';
@@ -847,6 +941,8 @@ function mountUnlock(root, params, ctx) {
   box.onclick = function () {
     if (box.getAttribute('data-at') !== '3') finish();
   };
+  const odds = box.querySelector('[data-act="open-odds"]');
+  if (odds) odds.onclick = function (e) { if (e) e.stopPropagation(); openOdds(); };
 
   const btn = box.querySelector('[data-act="collect"]');
   let collecting = false;
@@ -869,7 +965,8 @@ function mountUnlock(root, params, ctx) {
         rv[p.card] = trip.via;
         APP.store.set('rideVia', rv);
       }
-      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km });
+      const drawn = ride ? drawStyle('ride', 0) : arrivalDraw(p, false);
+      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km, style: drawn.key });
       APP.ui.toast('收進收藏了');
       APP.nav.go('/album', { dir: 'push' });
     };

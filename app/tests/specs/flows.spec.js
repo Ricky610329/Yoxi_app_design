@@ -710,7 +710,8 @@ T.spec('flows', function (t) {
       { label: '這一趟還沒抵達', store: { trip: { placeId: 'neiwan', phase: 'riding', startedAt: now(), rated: false, km: 28 } } },
     ];
     for (const c of cases) {
-      await app.reset({ store: c.store });
+      /* 走路抽卡有極低機率抽到金框：先把這次抵達的抽卡定成水彩，這條只驗「不是 ride 版」 */
+      await app.reset({ store: Object.assign({ draws: { neiwan: 'watercolor' } }, c.store) });
       const pts0 = app.STATE.points;
       await app.go('/unlock/neiwan?ride=1');
       t.ok(!app.$('[data-final-card].postcard--gold'), c.label + '：沒有金框');
@@ -1112,7 +1113,7 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 6. 評估回報（最後一輪） */
 
-  t.test('評估 1：限定版＋50 點只給走不到的地方 —— 搭車去 moat（1.8 km）是一般卡、不加點', async function (app) {
+  t.test('評估 1：+50 點只給走不到的地方 —— 搭車去 moat（1.8 km）照樣必得金框，但不加點', async function (app) {
     const moat = { placeId: 'moat', phase: 'done', startedAt: now(), rated: true, km: 1.8, via: 'e' };
     await app.reset({ store: { trip: moat } });
     const A = app.APP, F = A.fmt;
@@ -1128,17 +1129,18 @@ T.spec('flows', function (t) {
     t.ok((app.text('[data-act="unlock-ride"]') || '').indexOf('限定') < 0, '/ride 入口不寫限定');
     await app.click('main.view [data-act="unlock-ride"]');
     await app.at('/unlock/moat');
-    t.ok(!app.$('[data-final-card].postcard--gold'), '沒有金框');
-    t.ok(!app.$('[data-gold-note]'), '沒有 +50');
+    t.ok(app.$('[data-final-card].postcard--gold'), '搭 yoxi 抵達必得金框');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'gold', '抽到的是金框');
+    t.ok(!app.$('[data-points]'), '沒有 +50');
     t.includes(app.text('.unlock__sub'), '搭 yoxi 抵達', '文案仍是搭車抵達');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.STATE.card('p19') && app.STATE.card('p19').by, 'ride', "by 'ride'（真的是搭車到的）");
     t.eq(A.ride.pointsRows().filter(function (r) { return r.city; }).length, city0, '城事解鎖回饋列數不變');
     t.eq(A.ride.pointsTotal() - total0, Math.floor(F.fare(km) / 20), '只多了一般的搭車回饋');
-    t.ok(!app.$('[data-card="p19"].postcard--gold'), '書架上不是金框');
     await app.go('/postcard/p19');
-    t.ok(!app.$('.postcard--gold') && !app.$('[data-ribbon]'), '明信片頁不是限定版');
+    t.ok(app.$('.postcard--gold'), '明信片頁是金框（抽到的款式）');
+    t.eq(app.APP.store.get('cardStyle').p19, 'gold', 'store.cardStyle 記下金框');
     await app.go('/points');
     const sum = app.$$('[data-amt]').reduce(function (s, e) { return s + Number(e.getAttribute('data-amt')); }, 0);
     t.eq(Number(app.text('[data-points-total]')), sum, '總數＝明細相加');

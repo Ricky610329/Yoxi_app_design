@@ -296,7 +296,8 @@ T.spec('ride', function (t) {
 需要 core 多給一個 helper 時：先在自己的 view 檔裡以 `APP.<area>.<fn>` 命名空間放（例 `APP.ride.setDropoff()`），
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
-- `APP.explore.collect(placeId, { by, note, km })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）
+- `APP.explore.collect(placeId, { by, note, km, style })`：包 `STATE.collect` ＋ emit ＋ 清 `trip`（explore 提供；ride 的限定版解鎖也用它）；`style` 記進 `store.cardStyle[卡片 id]`，並清掉 `store.draws[地點 id]`
+- 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框；走路抵達的結果先記在 `store.draws[地點 id]`，重進不重抽。機率只放在 `/unlock` 成品右上角的「?」（`data-act="open-odds"`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用）
 
