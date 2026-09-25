@@ -131,7 +131,7 @@
 .ride-call { margin-top: var(--sp-4); }
 .ride-call:not(.is-ready) { background: var(--yoxi-line); color: var(--app-muted); }
 
-/* 變體 F：模式切換在面板頂端，搭車面板固定；探索面板才可上下拉。 */
+/* 變體 F：模式切換在面板頂端。搭車與探索的面板都可上下拉，最低收到只剩拉把。 */
 .ride-mode__pills { margin-bottom: var(--sp-4); }
 .ride-mode__active {
   display: inline-flex; align-items: center; height: 44px; padding: 0 var(--sp-4);
@@ -147,28 +147,24 @@
 .ride-mode__grip { height: 22px; touch-action: none; cursor: grab; }
 .ride-mode__grip .sheet__handle { margin-bottom: 0; }
 .ride-sheet--ride .ride-call { width: 100%; }
-.ride-mode__restore {
-  display: flex; align-items: center; justify-content: space-between;
-  width: 100%; height: 0; min-height: 0; overflow: hidden; opacity: 0;
-  color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-bold);
-  transition: height var(--t-fast) var(--ease-out), opacity var(--t-fast) var(--ease-out);
-}
-.ride-sheet--ride.is-condensed { max-height: var(--ride-closed-height); }
-.ride-sheet--ride.is-condensed .ride-mode__restore { height: 44px; min-height: 44px; opacity: 1; }
 
-/* 探索地圖畫成面板收到只剩拉把時的高度（--ride-map-h，JS 量）、貼齊上緣；
+/* 地圖畫成面板收到只剩拉把時的高度（--ride-map-h，JS 量）、貼齊上緣；
    面板收放只是露出多少，地圖不跟著縮放。署名與定位鈕放在容器上，貼著可見範圍的底邊。 */
-.ride-v2__map { flex: 1 1 auto; overflow: hidden; }
-.ride-v2__map > .app-map { bottom: auto; height: var(--ride-map-h, 100%); }
-.ride-v2__map [data-layer="credit"] { display: none; }
-.ride-v2__credit {
+.ride-map--full { overflow: hidden; }
+.ride-map--full > .app-map { bottom: auto; height: var(--ride-map-h, 100%); }
+.ride-map--full [data-layer="credit"] { display: none; }
+.ride-map__credit {
   position: absolute; right: 6px; bottom: 6px; z-index: 1;
   color: var(--app-muted); font-size: 9px; opacity: .7; pointer-events: none;
 }
-.ride-v2__sheet { --sheet-max: 82%; padding-top: var(--sp-2); }
+/* 只剩拉把：高度 --ride-peek-h（JS 量），拉把下緣露出的那一截模式切換淡掉 */
+.ride-sheet--ride.is-hidden,
 .ride-v2__sheet.is-collapsed.is-hidden { max-height: var(--ride-peek-h); }
-.ride-v2__sheet .ride-mode__pills, .ride-v2__sheet [data-area-intro] { transition: opacity var(--t-fast) var(--ease-out); }
-.ride-v2__sheet.is-hidden .ride-mode__pills, .ride-v2__sheet.is-hidden [data-area-intro] { opacity: 0; }
+.ride-sheet .ride-mode__pills { transition: opacity var(--t-fast) var(--ease-out); }
+.ride-sheet.is-hidden .ride-mode__pills { opacity: 0; }
+
+.ride-v2__map { flex: 1 1 auto; }
+.ride-v2__sheet { --sheet-max: 82%; padding-top: var(--sp-2); }
 .ride-v2__sheet .sheet__grip { height: 22px; touch-action: none; }
 .ride-v2__sheet .sheet__handle { margin-bottom: 0; }
 .ride-v2__eyebrow { color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-bold); }
