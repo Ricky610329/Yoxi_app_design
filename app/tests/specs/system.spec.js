@@ -501,4 +501,72 @@ T.spec('system', function (t) {
     }
     t.noHardcodedHex(r, 'system.css');
   });
+
+  /* ============================================================ 回歸測試（從 flows.spec 搬來）
+     code review 與亂按 QA 找到的 bug，一條 bug 一條 test；只牽涉這個區塊的放這裡，名稱保留審查／QA／評估的編號
+     （對得上 docs/WORKLOG.md 與 flows.spec 裡跨區塊的那幾條）。 */
+  function now() { return new Date().toISOString(); }
+
+  t.test('QA 2：清除我的足跡真的清空；重設 demo 的文案寫清楚是回到初始', async function (app) {
+    await app.reset({ store: { dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: now() }),
+                               trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
+    await app.go('/settings');
+    await app.click('[data-act="more"]');
+    await app.click('[data-act="wipe"]');
+    await app.click('[data-act="confirm-yes"]');
+    const S = app.STATE, A = app.APP;
+    t.eq(S.count(), 0, 'STATE.count() === 0');
+    t.eq(S.points, 0, 'STATE.points === 0');
+    t.eq(S.all.km, 0, 'km 0');
+    t.eq(S.all.lastCard, null, 'lastCard null');
+    t.eq(S.all.today.done, false, 'today 歸零');
+    t.eq(A.store.get('dropoff'), null, 'dropoff 清掉');
+    t.eq(A.store.get('trip'), null, 'trip 清掉');
+    t.includes(app.text('.toast') || '', '足跡已清除', 'toast');
+    const saved = app.storage('state');
+    t.ok(saved && Object.keys(saved.cards).length === 0, '寫進 localStorage');
+    await app.go('/album');
+    t.eq(app.text('[data-stat="places"]'), '0', '收藏頁：去過的地方 0');
+    t.eq(app.text('[data-stat="km"]'), '0', '收藏頁：公里 0');
+    t.eq(app.$$('main.view .postcard--locked').length, app.$$('main.view [data-card]').length, '書架全部是灰的');
+    await app.reload();
+    t.eq(app.STATE.count(), 0, '重載之後還是 0');
+    await app.go('/points');
+    t.eq(app.$$('[data-points-row][data-city="1"]').length, 0, '點數沒有城事解鎖列');
+    /* 重設 demo 的文案 */
+    await app.go('/settings');
+    await app.click('[data-act="more"]');
+    await app.click('main.view [data-act="reset-demo"]');
+    t.includes(app.text('.app-confirm'), '回到 demo 初始狀態', '重設 demo 文案');
+    await app.click('[data-act="confirm-yes"]');
+    await app.at('/ride');
+    t.eq(app.STATE.count(), 8, '重設 demo 回到 8 張');
+  });
+
+  t.test('評估 3：設定頁可以關掉探索地圖上的景點；可按數仍 ≤ 10', async function (app) {
+    await app.reset();
+    await app.go('/ride?mode=explore');
+    t.eq(app.$$('main.view .spot').length, 4, '預設 4 顆');
+    await app.go('/settings');
+    t.ok(t.countTappables(app) <= 10, '設定頁可按數 ' + t.countTappables(app));
+    const sw = app.$('main.view [data-switch="rideSpots"]');
+    t.ok(sw && sw.classList.contains('is-on'), '預設開著');
+    await app.click(sw);
+    t.eq(app.APP.store.get('rideSpots'), false, 'store.rideSpots=false');
+    t.eq(sw.getAttribute('aria-checked'), 'false', '開關外觀');
+    await app.go('/ride?mode=explore');
+    t.eq(app.$$('main.view .spot').length, 0, '關掉之後 0 顆');
+    t.ok(app.$('main.view .map__svg'), '地圖照畫');
+    t.noDeadButtons(app, '/ride（景點關掉）');
+    await app.reload('/ride?mode=explore');
+    t.eq(app.$$('main.view .spot').length, 0, '重載後還是關的');
+    await app.go('/settings');
+    await app.click('main.view [data-switch="rideSpots"]');
+    await app.go('/ride?mode=explore');
+    t.eq(app.$$('main.view .spot').length, 4, '開回來 4 顆');
+    t.eq(app.STATE.all.settings.rideSpots, undefined, '不寫進 STATE.settings');
+  });
+
+  /* 評估 5 改過一次：以前收卡後標題終點延到今天（9月15日 – 9月25日，11 天），但長條圖與步數只有 7 天。
+     現在標題永遠是圖表那 7 天；範圍之後收的卡另寫一行，不算進本週。 */
 });

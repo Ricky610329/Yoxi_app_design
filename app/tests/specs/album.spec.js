@@ -822,4 +822,90 @@ T.spec('album', function (t) {
     await app.go('/lookback');
     t.ok(big(size('main.view .alb-lb__exit')), '先離開 ' + size('main.view .alb-lb__exit'));
   });
+
+  /* ============================================================ 回歸測試（從 flows.spec 搬來）
+     code review 與亂按 QA 找到的 bug，一條 bug 一條 test；只牽涉這個區塊的放這裡，名稱保留審查／QA／評估的編號
+     （對得上 docs/WORKLOG.md 與 flows.spec 裡跨區塊的那幾條）。 */
+  /* 今天（'MM.DD'）落在週回顧的哪一段：now（本週 7 天內）／prev（上週）／after（本週之後）／before */
+  function weekSlot(w, mmdd) {
+    const k = Number(mmdd.slice(0, 2)) * 100 + Number(mmdd.slice(3, 5));
+    const at = function (d) { return w.month * 100 + d; };
+    if (k >= at(w.now.from) && k <= at(w.now.to)) return 'now';
+    if (k > at(w.now.to)) return 'after';
+    if (k >= at(w.prev.from) && k <= at(w.prev.to)) return 'prev';
+    return 'before';
+  }
+
+  t.test('視覺 3：/footprint 覆蓋率用固定範圍算，平移地圖後不變', async function (app) {
+    await app.reset();
+    await app.go('/footprint');
+    const c0 = app.text('[data-coverage]');
+    t.eq(c0, String(app.APP.album.coverage()), '覆蓋率＝固定範圍公式');
+    const map = app.$('main.view .map[data-pan]');
+    const W = app.win;
+    const r = map.getBoundingClientRect();
+    const ev = function (type, x, y) { return new W.PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }); };
+    map.dispatchEvent(ev('pointerdown', r.left + 150, r.top + 300));
+    W.dispatchEvent(ev('pointermove', r.left + 190, r.top + 330));
+    W.dispatchEvent(ev('pointerup', r.left + 190, r.top + 330));
+    const layer = app.$('main.view .map__pan');
+    t.ok(layer && /translate/.test(layer.style.transform), '地圖真的平移了：' + (layer && layer.style.transform));
+    await app.tick(60);
+    t.eq(app.text('[data-coverage]'), c0, '平移後覆蓋率不變');
+    /* 換版面（iframe 變窄）重畫也不變 */
+    const fr = app.win.frameElement;
+    const w0 = fr.style.width;
+    fr.style.width = '340px';
+    await app.go('/album');
+    await app.go('/footprint');
+    t.eq(app.text('[data-coverage]'), c0, '版面寬度改變後覆蓋率不變');
+    fr.style.width = w0;
+  });
+
+  t.test('QA 5：/week 收一張卡之後：只有日期落在本週的才算進本週，公里與步數不減', async function (app) {
+    await app.reset();
+    await app.go('/week');
+    const before = app.APP.album.weekStats();
+    const range0 = app.text('.alb-cover__range');
+    const km0 = app.text('[data-cmp="km"] [data-now]'), st0 = app.text('[data-cmp="steps"] [data-now]');
+    T.helpers.collect(app, 'glass-kiln');
+    await app.go('/album');
+    await app.go('/week');
+    const after = app.APP.album.weekStats();
+    const slot = weekSlot(before, app.APP.fmt.todayMMDD());
+    t.eq(after.now.places, before.now.places + (slot === 'now' ? 1 : 0), '本週地方數（今天在 ' + slot + '）');
+    t.ok(after.now.km >= before.now.km, '公里不減 ' + before.now.km + ' → ' + after.now.km);
+    t.ok(after.now.steps >= before.now.steps, '步數不減');
+    if (slot !== 'prev') {
+      t.eq(JSON.stringify([after.prev.places, after.prev.km, after.prev.steps]), JSON.stringify([before.prev.places, before.prev.km, before.prev.steps]), '上週不變');
+    }
+    t.eq(app.text('.alb-cover__range'), range0, '標題就是圖表那 7 天，收卡不會拉長（見評估 5）');
+    t.eq(app.text('[data-cmp="km"] [data-now]'), km0, '畫面公里不變');
+    t.eq(app.text('[data-cmp="steps"] [data-now]'), st0, '畫面步數不變');
+    t.eq(app.text('[data-week-places]'), String(after.now.places), '畫面地方數＝weekStats');
+    t.eq(!!app.$('.alb-weekcard[data-card="p11"]'), slot === 'now', '今天收的卡只在今天落在本週時列在這一週');
+    if (slot === 'after') t.includes(app.text('[data-week-after]'), '1', '本週之後收的另寫一行，照實說還沒算進這一週');
+  });
+
+  t.test('評估 5：/week 標題永遠是圖表那 7 天，收卡後也不拉長', async function (app) {
+    await app.reset();
+    await app.go('/week');
+    const w0 = app.APP.album.weekStats();
+    const r0 = app.text('.alb-cover__range');
+    const lab = function (d) { return w0.month + '月' + d + '日'; };
+    t.eq(r0, lab(w0.now.from) + ' – ' + lab(w0.now.to), '收卡前：' + r0);
+    t.eq(w0.now.to, 21, '固定範圍終點是 21 日（HEALTH_STEPS 最後一個有步數的日子）');
+    t.eq(w0.now.to - w0.now.from + 1, app.$$('.alb-days__col').length, '標題的天數＝長條圖的天數');
+    T.helpers.collect(app, 'glass-kiln');
+    await app.go('/album');
+    await app.go('/week');
+    t.eq(app.text('.alb-cover__range'), r0, '收卡後標題不變：' + app.text('.alb-cover__range'));
+    const w1 = app.APP.album.weekStats();
+    t.eq(w1.now.from, w0.now.from, '起點不變');
+    t.eq(w1.now.to, w0.now.to, '終點不變');
+    t.eq(w1.now.steps, w0.now.steps, '步數只算有資料的日子（不變）');
+    await app.go('/album');
+    t.ok(app.$('[data-act="go-week"]'), '收藏首頁「回顧」一列有「這一週」入口（週回顧不再是孤兒頁）');
+    await app.reset();
+  });
 });

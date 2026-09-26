@@ -690,4 +690,97 @@ T.spec('app', function (t) {
     t.eq(spotOverlaps(app).hits.length, 0, '沒有重疊');
     m.destroy();
   });
+
+  /* ============================================================ 回歸測試（從 flows.spec 搬來）
+     code review 與亂按 QA 找到的 bug，一條 bug 一條 test；只牽涉這個區塊的放這裡，名稱保留審查／QA／評估的編號
+     （對得上 docs/WORKLOG.md 與 flows.spec 裡跨區塊的那幾條）。 */
+  function now() { return new Date().toISOString(); }
+
+  t.test('審查 4：返回鍵連按兩下只退一格（不會多退、不會退出 app）', async function (app) {
+    await app.reset();
+    await app.go('/explore');
+    await app.go('/place/glass-kiln');
+    const b = app.$('main.view[data-view] a[data-back]');
+    b.click(); b.click();
+    await app.at('/explore');
+    await app.tick(300);
+    t.eq(app.route().path, '/explore', '停在 /explore（不是再退一格的 /ride）');
+    /* 放開之後返回照常可用 */
+    await app.go('/routes');
+    app.APP.nav.back('/ride');
+    await app.at('/explore');
+  });
+
+  t.test('審查 5：確認框同一時間只有一個；連按「取消行程」不會疊兩層', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
+    await app.go('/trip');
+    const c = app.$('[data-act="cancel-trip"]');
+    c.click(); c.click();
+    await app.tick(30);
+    t.eq(app.$$('.app-confirm').length, 1, '只有一個確認框');
+    let second = 'pending';
+    app.APP.ui.confirm({ text: 'x' }).then(function (v) { second = v; });
+    await app.tick(30);
+    t.eq(second, null, '已經開著時，新的 confirm 直接回 null（沒有回答）');
+    t.eq(app.$$('.app-confirm').length, 1, '還是一個');
+    await app.click('.app-confirm [data-act="confirm-yes"]');
+    await app.at('/ride');
+    t.eq(app.APP.store.get('trip'), null, '取消一次');
+    t.eq(app.$$('.app-confirm').length, 0, '確認框收掉');
+  });
+
+  t.test('審查 7：id 是 Object 原型上的名字（constructor、toString）不會被當成今天的地方', async function (app) {
+    await app.reset();
+    ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'valueOf'].forEach(function (id) {
+      t.eq(app.APP.place(id), null, "APP.place('" + id + "') → null");
+    });
+    t.eq(app.APP.place(null), null, 'APP.place(null) → null');
+    t.eq(app.APP.place(undefined), null, 'APP.place(undefined) → null');
+    await app.go('/place/constructor');
+    t.ok(app.$('[data-ex-missing]'), '/place/constructor 顯示找不到');
+    await app.go('/going/toString');
+    t.ok(app.$('[data-ex-missing]'), '/going/toString 顯示找不到');
+    await app.go('/unlock/constructor');
+    t.ok(app.$('[data-ex-missing]') && !app.$('[data-act="collect"]'), '/unlock/constructor 不能收');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+  });
+
+  t.test('QA 3：桌機 1280×720／1366×768 整支手機縮小，tab bar 看得到；手機模式不縮', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    const fr = app.win.frameElement;
+    const w0 = fr.style.width, h0 = fr.style.height;
+    try {
+      for (const sz of [[1280, 720], [1366, 768], [1440, 900]]) {
+        fr.style.width = sz[0] + 'px'; fr.style.height = sz[1] + 'px';
+        await app.waitFor(function () { return app.win.innerHeight === sz[1]; }, 2000, 'iframe 變成 ' + sz.join('×'));
+        /* headless 下畫面外的 iframe 只會派第一次 resize 事件（沒有 rendering step）；
+           真的瀏覽器每次都會派。這裡補派一次，驗的是 app 的 resize 處理（節流後重算）。 */
+        app.win.dispatchEvent(new app.win.Event('resize'));
+        await app.tick(200);
+        const W = app.win;
+        const scale = Number(W.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale'));
+        /* 外框上下留 .stage 的 padding（量出來的，不寫死） */
+        const cs = W.getComputedStyle(app.$('.stage'));
+        const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        t.eq(scale, Math.round(Math.min(1, (sz[1] - pad) / 844) * 1000) / 1000, sz.join('×') + ' 的 --device-scale');
+        t.ok(app.doc.documentElement.scrollHeight <= sz[1] + 1, sz.join('×') + '：整頁不用捲');
+        const tb = app.$('#tabbar').getBoundingClientRect();
+        t.ok(tb.height > 0 && tb.bottom <= W.innerHeight, sz.join('×') + '：tab bar 底 ' + Math.round(tb.bottom) + ' ≤ ' + W.innerHeight);
+        const dv = app.$('.device').getBoundingClientRect();
+        t.ok(dv.top >= 0, sz.join('×') + '：手機頂端 ' + Math.round(dv.top) + ' ≥ 0');
+        const dp = app.$('#demo-panel').getBoundingClientRect();
+        const overlap = !(dp.left >= dv.right || dp.right <= dv.left || dp.top >= dv.bottom || dp.bottom <= dv.top);
+        t.ok(!overlap, sz.join('×') + '：demo 面板不壓在手機上');
+      }
+      fr.style.width = '390px'; fr.style.height = '844px';
+      await app.waitFor(function () { return app.win.innerWidth === 390; }, 2000, '回到手機寬');
+      app.win.dispatchEvent(new app.win.Event('resize'));
+      await app.tick(200);
+      t.eq(app.win.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale').trim(), '1', '手機模式 --device-scale 1');
+      t.eq(app.win.getComputedStyle(app.$('.device')).transform, 'none', '手機模式不縮放');
+    } finally {
+      fr.style.width = w0; fr.style.height = h0;
+    }
+  });
 });

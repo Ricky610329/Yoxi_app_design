@@ -963,4 +963,117 @@ T.spec('ride', function (t) {
     need('.ride-sheet [data-act="toggle-sheet"]', '拉把');
     t.eq(sizes.length, 0, '小於 44：' + sizes.join('、'));
   });
+
+  /* ============================================================ 回歸測試（從 flows.spec 搬來）
+     code review 與亂按 QA 找到的 bug，一條 bug 一條 test；只牽涉這個區塊的放這裡，名稱保留審查／QA／評估的編號
+     （對得上 docs/WORKLOG.md 與 flows.spec 裡跨區塊的那幾條）。 */
+  function now() { return new Date().toISOString(); }
+
+  t.test('審查 1：trip 的 phase 由 startedAt 推導（注入時間，不靠 setTimeout 的時序）', async function (app) {
+    await app.reset();
+    const R = app.APP.ride;
+    const t0 = Date.parse('2026-09-21T13:18:00.000Z');
+    const trip = T.fixtures.trip({ placeId: 'lake', phase: 'matching', startedAt: new Date(t0).toISOString(), km: 6.4 });
+    /* 純函式的各種情況在 tests/unit/views.test.mjs（node）；這裡只看瀏覽器裡同一個函式 */
+    t.eq(R.trip.phase(trip, t0), 'matching', '剛叫車：配對中');
+    t.eq(R.trip.phase(trip, t0 + R.MATCH_MS), 'riding', 'MATCH_MS 之後：行程中');
+
+    /* 非 still：配對中離開 /trip（計時器被清掉）很久之後再回來 → 一進來就是行程中，不必再等 */
+    const old = Object.assign({}, trip, { startedAt: new Date(Date.now() - 60000).toISOString() });
+    await app.reset({ still: false, store: { trip: old }, hash: '/trip' });
+    await app.at('/trip');
+    t.eq(app.APP.store.get('trip').phase, 'riding', '重進 /trip：store 馬上寫成 riding');
+    t.ok(!app.$('[data-phase="riding"]').hidden, '重進 /trip：行程中區塊直接顯示');
+    t.ok(app.$('[data-phase="matching"]').hidden, '重進 /trip：配對中區塊藏起來');
+    t.includes(app.doc.title, '行程中', '標題也是行程中');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    await app.reset();
+  });
+
+  t.test('審查 2：/trip/done 在「有行程、還沒抵達」時給回到行程的路；舊資料的壞日期不出現 NaN', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
+    await app.go('/trip/done');
+    t.includes(app.text('main.view[data-view]'), '還在前往', '不是「目前沒有行程」');
+    const back = app.$('main.view [data-act="go-trip"]');
+    t.eq(back && back.getAttribute('href'), '#/trip', '回到行程 → #/trip');
+    t.noDeadButtons(app, '/trip/done（riding）');
+    t.noBannedWords(app, { msg: '/trip/done（riding）' });
+    await app.click('main.view [data-act="go-trip"]');
+    await app.at('/trip');
+
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: 'not-a-date', rated: true, km: undefined }) } });
+    await app.go('/trip/done');
+    t.ok(!/NaN|undefined/.test(app.text('main.view[data-view]')), '沒有 NaN／undefined：' + app.text('.ride-done__meta'));
+    t.eq(app.text('.ride-done__sum [data-fare]'), String(app.APP.fmt.fare(app.APP.fmt.km(app.APP.place('lake').dist))), '沒有 trip.km 時車資用 fmt.km(dist)');
+  });
+
+  t.test('QA 4a：行程進行中 setDropoff 一律擋下（K1、E、路線、搜尋）', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
+                               dropoff: T.fixtures.dropoff({ id: 'lake', name: '青草湖', km: 6.4, setAt: now(), via: 'e' }) } });
+    const A = app.APP;
+    t.eq(A.ride.setDropoff('neiwan', 'k1'), false, 'setDropoff 回 false');
+    t.includes(app.text('.toast') || '', '行程進行中，先抵達或取消行程', 'toast');
+    t.eq(A.store.get('dropoff').id, 'lake', 'dropoff 沒被改');
+    await app.go('/place/neiwan');
+    await app.click('[data-place-foot] [data-act="set-dropoff"]');
+    await app.tick(60);
+    t.eq(app.route().path, '/place/neiwan', 'K1：不導走');
+    await app.go('/route/rail');
+    await app.click('[data-breakpoint] [data-act="set-dropoff"]');
+    await app.tick(60);
+    t.eq(app.route().path, '/route/rail', '路線斷點：不導走');
+    await app.go('/dropoff');
+    await app.click('[data-act="choose-dropoff"]');
+    await app.tick(60);
+    t.eq(app.route().path, '/dropoff', '搜尋清單：不導走');
+    await app.go('/ride?mode=explore');
+    await app.click('.spot[data-spot="moat"]');
+    await app.click('[data-area-intro] [data-act="use-yoxi"]');
+    await app.tick(60);
+    t.eq(A.store.get('dropoff').id, 'lake', '四個入口都沒改到 dropoff');
+    /* 抵達之後就可以再設 */
+    A.store.set('trip', Object.assign({}, A.store.get('trip'), { phase: 'done' }));
+    t.eq(A.ride.setDropoff('moat', 'e'), true, '抵達後可以設');
+  });
+
+  t.test('QA 4c：行程進行中 /ride 的下車點卡是這一趟的目的地，不是 store.dropoff', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
+                               dropoff: T.fixtures.dropoff({ id: 'moat', name: '護城河', km: 1.8, setAt: now(), via: 'e' }) } });
+    const A = app.APP, F = A.fmt;
+    await app.go('/ride');
+    t.eq(app.text('[data-drop-name]'), A.place('lake').name, '下車點＝行程目的地');
+    t.eq(app.text('[data-fare]'), String(F.fare(6.4)), '車資用 trip.km');
+    t.ok(app.$('.ride-drop a[href="#/trip"]'), '點下車點卡回行程');
+    t.ok(!app.$('[data-act="clear-dropoff"]'), '行程中沒有「清除」');
+    t.includes(app.text('[data-act="call-ride"]'), '回到行程', '叫車鈕是回到行程');
+    t.noDeadButtons(app, '/ride（行程中）');
+  });
+
+  /* 今天（'MM.DD'）落在週回顧的哪一段：now（本週 7 天內）／prev（上週）／after（本週之後）／before */
+
+  t.test('評估 2：轉換歸因 —— trip 帶 dropoff.via，行程紀錄顯示是從哪裡叫的', async function (app) {
+    await app.reset();
+    const A = app.APP;
+    await app.go('/place/neiwan');
+    await app.click('[data-place-foot] [data-act="set-dropoff"]');
+    await app.at('/ride');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    t.eq(A.store.get('trip').via, 'k1', 'trip.via＝dropoff.via');
+    await app.click('main.view [data-act="arrive"]');
+    await app.at('/trip/done');
+    await app.click('[data-act="rate"][data-star="5"]');
+    await app.click('.banner--gold');
+    await app.at('/unlock/neiwan');
+    await app.click('[data-act="collect"]');
+    await app.at('/album');
+    t.eq((A.store.get('rideVia') || {}).p9, 'k1', 'store.rideVia.p9＝k1');
+    await app.go('/trips');
+    const row = app.$('[data-trip-row][href="#/postcard/p9"]');
+    t.ok(row && row.querySelector('[data-via="k1"]'), '/trips 的內灣那一列有歸因');
+    t.includes(row && row.textContent, '從地方詳情', '小標文字');
+    t.ok(app.$$('[data-trip-row] [data-via]').length === 1, '沒有歸因資料的舊卡不硬寫');
+    t.noDeadButtons(app, '/trips');
+    await app.reset();
+  }, { timeout: 15000 });
 });
