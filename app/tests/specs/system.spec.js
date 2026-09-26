@@ -186,7 +186,7 @@ T.spec('system', function (t) {
     await app.reset();
     app.STATE.collect('glass-kiln', { date: app.APP.fmt.todayMMDD() });
     app.STATE.setSetting('pushAm', false);
-    app.APP.store.set('dropoff', { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' });
+    app.APP.store.set('dropoff', T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }));
     t.eq(app.STATE.count(), 9, '先收一張');
     await app.go('/settings');
     await app.click('[data-act="more"]');
@@ -211,7 +211,7 @@ T.spec('system', function (t) {
   });
 
   t.test('清除我的足跡：確認後真的清空（明信片 0、點數 0、下車點與行程一起清）', async function (app) {
-    await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' } } });
+    await app.reset({ store: { dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }) } });
     app.STATE.collect('glass-kiln', {});
     await app.go('/settings');
     await app.click('[data-act="more"]');       /* 清除足跡收在展開區（設定頁可按數 ≤ 10） */
@@ -276,7 +276,7 @@ T.spec('system', function (t) {
     t.ok(app.$('[data-final-card].postcard--gold'), '必得金框');
 
     /* 行程進行中：地點是行程的目的地，走路抵達不行（人在車上） */
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: new Date().toISOString(), rated: false, km: 6.4 } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: new Date().toISOString(), km: 6.4 }) } });
     await app.go('/explore');
     t.eq(app.$('#demo-panel [data-demo-place]').value, 'lake', '行程中：地點是行程的目的地');
     await app.click('#demo-panel [data-act="arrive-walk"]');
@@ -390,8 +390,8 @@ T.spec('system', function (t) {
   t.test('清除我的足跡：app store 的足跡一起清（偏好留著），確認框標成危險動作', async function (app) {
     const now = new Date().toISOString();
     await app.reset({ store: {
-      dropoff: { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' },
-      trip: { placeId: 'lake', phase: 'done', startedAt: now, rated: true, km: 6.4 },
+      dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }),
+      trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: now, rated: true, km: 6.4 }),
       arrivedDemo: 'moat',
       rideVia: { p9: 'k1' }, cardStyle: { p1: 'gold' }, draws: { moat: 'ink' },
       pushes: [{ when: 'am', at: now }],

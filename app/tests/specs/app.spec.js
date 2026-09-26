@@ -6,50 +6,14 @@
    ========================================================================== */
 T.spec('app', function (t) {
 
-  /* 路由表（§8）。flow：有狀態前提的流程頁，允許被導走（例：沒有行程時 /trip 可能回 /ride）。 */
-  function routes(app) {
-    const M = app.MOCK || {};
-    const rid = (M.ROUTES && M.ROUTES[0] && M.ROUTES[0].id) || 'rail';
-    return [
-      { path: '/', expect: '/ride' },
-      { path: '/welcome', flow: true },
-      { path: '/ride' },
-      { path: '/dropoff' },
-      { path: '/pickup' },
-      { path: '/trip', flow: true },
-      { path: '/trip/done', flow: true },
-      { path: '/drawer' },
-      { path: '/points' },
-      { path: '/notify' },
-      { path: '/trips' },
-      { path: '/explore' },
-      { path: '/explore/map' },
-      { path: '/place/glass-kiln' },
-      { path: '/place/neiwan' },
-      { path: '/going/glass-kiln', flow: true },
-      { path: '/unlock/glass-kiln', flow: true },
-      { path: '/unlock/neiwan?ride=1', flow: true },
-      { path: '/routes' },
-      { path: '/route/' + rid },
-      { path: '/album' },
-      { path: '/badges' },
-      { path: '/postcards' },
-      { path: '/postcard/p1' },
-      { path: '/badge/b1' },
-      { path: '/footprint' },
-      { path: '/lookback' },
-      { path: '/week' },
-      { path: '/elder' },
-      { path: '/settings' },
-      { path: '/no-such-page', notFound: true },
-    ];
-  }
-  /* 路由表的 path 清單要在登記時就知道（一條一個 test），MOCK 還沒載，路線 id 在跑的時候再換 */
-  const TABLE = routes({ MOCK: null });
+  /* 路由表（§8）：harness 的 T.ROUTES（每條 route 一個範例網址）＋一條 404。
+     flow：有狀態前提的流程頁，允許被導走（例：沒有行程時 /trip 可能回 /ride）。 */
+  const TABLE = T.routes().concat([{ path: '/no-such-page', notFound: true }]);
+  function routes() { return TABLE; }
 
   TABLE.forEach(function (r, i) {
     t.test('route ' + (r.path.indexOf('/route/') === 0 ? '/route/:ROUTES[0]' : r.path), async function (app) {
-      const cur = routes(app)[i];
+      const cur = routes()[i];
       /* 每條從叫車首頁出發，避免上一條留下的覆蓋層影響 */
       if (app.route().path !== '/ride') await app.go('/ride');
       const landed = await app.go(cur.path, { expect: cur.expect, redirectOk: !!cur.flow || !!cur.notFound });
@@ -71,7 +35,7 @@ T.spec('app', function (t) {
   });
 
   t.test('沒有任何 placeholder view', async function (app) {
-    const list = routes(app);
+    const list = routes();
     const left = [];
     for (let i = 0; i < list.length; i++) {
       await app.go(list[i].path, { expect: list[i].expect, redirectOk: true });
@@ -80,16 +44,29 @@ T.spec('app', function (t) {
     t.eq(left.length, 0, '還是 placeholder 的 route：' + left.join('、'));
   }, 30000);
 
-  /* §6.3-4：/explore 與 /album 兩個索引頁 ≤ 12，其餘 ≤ 10 */
-  const TAP_MAX = { '/explore': 12, '/album': 12 };
+  /* T.ROUTES 是各 spec 共用的路由表：每一條註冊的 route 都要有範例網址，
+     不然新加的 route 在 app／flows／各區塊的 render 掃描裡全部缺席 */
+  t.test('T.ROUTES 對得上 APP.routes()：每條註冊的 route 都有範例網址', async function (app) {
+    const A = app.APP;
+    const covered = {};
+    T.ROUTES.forEach(function (r) {
+      const m = A.resolve(r.expect || r.path);
+      t.ok(m.name !== '_404' && m.name !== '_placeholder', r.path + ' 是註冊的 route（' + m.name + '）');
+      covered[m.pattern] = true;
+    });
+    const left = A.routes().filter(function (r) { return !covered[r.pattern]; }).map(function (r) { return r.pattern; });
+    t.eq(left.length, 0, '沒有範例網址的 route：' + left.join('、'));
+  });
+
+  /* §6.3-4：/explore 與 /album 兩個索引頁 ≤ 12，其餘 ≤ 10（T.tapMax） */
   t.test('每個 route 可按數 ≤ 10（索引頁 ≤ 12；景點與 tab bar 不算）', async function (app) {
-    const list = routes(app);
+    const list = routes();
     const over = [];
     for (let i = 0; i < list.length; i++) {
       const landed = await app.go(list[i].path, { expect: list[i].expect, redirectOk: true });
       await app.tick(40);
       const n = t.countTappables(app);
-      const max = TAP_MAX[landed] || 10;
+      const max = T.tapMax(landed);
       if (n > max) over.push(landed + '=' + n + '（上限 ' + max + '）');
     }
     t.eq(over.length, 0, '超過 10：' + over.join('、'));
@@ -197,7 +174,7 @@ T.spec('app', function (t) {
   t.test('store 與 STATE 互不覆蓋', async function (app) {
     await app.reset();
     const A = app.APP;
-    A.store.set('dropoff', { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' });
+    A.store.set('dropoff', T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }));
     app.STATE.collect('glass-kiln', { by: 'walk' });
     const st = app.storage('state');
     const so = app.storage('store');

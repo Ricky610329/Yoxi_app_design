@@ -4,23 +4,10 @@
    ========================================================================== */
 T.spec('explore', function (t) {
 
-  const ROUTES = [
-    { path: '/explore', max: 12 },
-    { path: '/explore/map', max: 10 },
-    { path: '/place/glass-kiln', max: 10 },
-    { path: '/place/neiwan', max: 10 },
-    { path: '/place/moat', max: 10 },
-    { path: '/place/p13', max: 10 },
-    { path: '/place/nope', max: 10 },
-    { path: '/going/glass-kiln', max: 10 },
-    { path: '/unlock/glass-kiln', max: 10 },
-    { path: '/unlock/neiwan?ride=1', max: 10 },
-    { path: '/routes', max: 10 },
-    { path: '/route/rail', max: 10 },
-    { path: '/route/glass', max: 10 },
-    { path: '/route/water', max: 10 },
-    { path: '/route/nope', max: 10 },
-  ];
+  /* 共用路由表的 explore 那幾條，加上同一個地方的第二張卡、只在路線上的卡、找不到的 id、另外兩條路線 */
+  const ROUTES = T.routes({ area: 'explore', extra: ['/place/moat', '/place/p13', '/place/nope',
+                                                     '/route/glass', '/route/water', '/route/nope'] })
+    .map(function (r) { return { path: r.path, max: T.tapMax(r.path) }; });
 
   /* 1. 每條 route 都能 render、沒有死按鈕、沒有禁用詞、可按數在上限內 */
   ROUTES.forEach(function (r) {
@@ -276,8 +263,8 @@ T.spec('explore', function (t) {
   });
 
   t.test('/unlock/neiwan?ride=1：金框、by ride、points +50、trip 清掉', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'neiwan', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 },
-                               dropoff: { id: 'neiwan', name: '內灣老街', km: 28, setAt: new Date().toISOString(), via: 'k1' } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ phase: 'done', startedAt: new Date().toISOString(), rated: true }),
+                               dropoff: T.fixtures.dropoff({ setAt: new Date().toISOString() }) } });
     const pts0 = app.STATE.points;
     const km0 = app.STATE.all.km;
     await app.go('/unlock/neiwan?ride=1');
@@ -298,7 +285,7 @@ T.spec('explore', function (t) {
 
   /* 審查 1：已抵達（phase done）的那一趟還沒收，不論從哪個入口進 /unlock 都是搭車抵達；走路收下不清 trip */
   t.test('搭車抵達還沒收：沒帶 ?ride=1 也是金框、by ride、+點數，trip 用掉', async function (app) {
-    const trip = { placeId: 'neiwan', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 };
+    const trip = T.fixtures.trip({ phase: 'done', startedAt: new Date().toISOString(), rated: true });
     await app.reset({ store: { trip: trip } });
     const A = app.APP;
     const bonus = (A.ride && A.ride.RIDE_BONUS) || 50;
@@ -320,7 +307,7 @@ T.spec('explore', function (t) {
   });
 
   t.test('搭車抵達還沒收：/going 不再帶你走一趟；走路收下（APP.explore.collect by walk）不清掉 trip', async function (app) {
-    const trip = { placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 };
+    const trip = T.fixtures.trip({ placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 });
     await app.reset({ store: { trip: trip } });
     await app.go('/going/glass-kiln');
     t.ok(app.$('[data-going-rode]'), '已經搭 yoxi 到了的卡');
@@ -342,23 +329,7 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  t.test('抽卡：機率表加總 100%、走路遞減、搭車必得金框', async function (app) {
-    const E = app.APP.explore;
-    const sum = function (k) { return E.DRAW_STYLES.reduce(function (a, d) { return a + d[k]; }, 0); };
-    t.eq(sum('walk'), 1000, '走路加總 1000‰');
-    t.eq(sum('ride'), 1000, '搭車加總 1000‰');
-    t.eq(E.DRAW_STYLES.length, 5, '每個地方五款');
-    const gold = E.DRAW_STYLES.filter(function (d) { return d.gold; });
-    t.eq(gold.length, 1, '一款金框');
-    t.eq(gold[0].ride, 1000, '搭車必得金框');
-    const plain = E.DRAW_STYLES.filter(function (d) { return !d.gold; });
-    t.eq(plain.length, 4, '四款一般');
-    t.ok(plain.every(function (d, i) { return !i || d.walk < plain[i - 1].walk; }), '一般款越後面越難抽');
-    t.ok(gold[0].walk < plain[plain.length - 1].walk, '走路抽到金框比任何一般款都難');
-    t.eq(E.drawStyle('walk', 0).key, plain[0].key, 'r=0 → 第一款');
-    t.ok(E.drawStyle('walk', 0.9999).gold, 'r→1 → 金框');
-    t.ok(E.drawStyle('ride', 0.3).gold && E.drawStyle('ride', 0).gold, '搭車不論 r 都是金框');
-  });
+  /* 機率表本身（加總、遞減、搭車必得金框、區間邊界）是純函式：在 tests/unit/views.test.mjs */
 
   t.test('/unlock/glass-kiln：抽到的款式固定（重進不重抽）、? 打開機率、收下記款式', async function (app) {
     await app.reset({ store: { draws: { 'glass-kiln': 'ink' } } });
@@ -436,17 +407,8 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  /* 非 still：抵達亮燈 → 收集面板 → 抽卡 → 結果。五款都跑一次，確認每款的收尾狀態 */
-  async function drawThrough(app) {
-    await app.click('[data-act="open-spot"]');
-    await app.click('[data-act="draw"]');
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
-    for (let i = 0; i < 16 && app.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
-      await app.click('[data-unlock]');
-      await app.tick(300);
-    }
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
-  }
+  /* 非 still：抵達亮燈 → 收集面板 → 抽卡 → 結果（T.helpers.drawThrough）。五款都跑一次，確認每款的收尾狀態 */
+  const drawThrough = T.helpers.drawThrough;
 
   t.test('/unlock 非 still：亮起來 → 點它出面板（5 款＋?）→ 抽卡 → 結果；五款各自收尾', async function (app) {
     const cases = [
@@ -458,7 +420,7 @@ T.spec('explore', function (t) {
     ];
     for (const c of cases) {
       const store = c.ride
-        ? { trip: { placeId: c.place, phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 } }
+        ? { trip: T.fixtures.trip({ placeId: c.place, phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 }) }
         : { draws: { [c.place]: c.key } };
       await app.reset({ still: false, store: store });
       await app.go('/unlock/' + c.place + (c.ride ? '?ride=1' : ''));

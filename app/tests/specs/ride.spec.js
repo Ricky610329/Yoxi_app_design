@@ -5,10 +5,10 @@
    ========================================================================== */
 T.spec('ride', function (t) {
 
-  const ROUTES = ['/ride', '/dropoff', '/pickup', '/trip', '/trip/done', '/drawer', '/points', '/notify', '/trips'];
+  const ROUTES = T.routes({ area: 'ride' }).map(function (r) { return r.path; });
 
   function neiwanTrip(phase, extra) {
-    return Object.assign({ placeId: 'neiwan', phase: phase, startedAt: '2026-09-21T13:18:00.000Z', rated: false, km: 28 }, extra || {});
+    return Object.assign(T.fixtures.trip({ phase: phase }), extra || {});
   }
 
   function checkPage(app, path) {
@@ -18,7 +18,7 @@ T.spec('ride', function (t) {
     t.noDeadButtons(app, path);
     t.noBannedWords(app, { msg: path });
     const n = t.countTappables(app);
-    t.ok(n <= 10, path + ' 可按數 ' + n + ' ≤ 10');
+    t.ok(n <= T.tapMax(path), path + ' 可按數 ' + n + ' ≤ ' + T.tapMax(path));
     t.eq(app.errors.length, 0, path + ' 錯誤：' + app.errors.join('；'));
   }
 
@@ -45,7 +45,7 @@ T.spec('ride', function (t) {
   });
 
   t.test('render /ride（下車點已填，仍是搭車模式）', async function (app) {
-    await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣老街', km: 28, setAt: '2026-09-21T00:00:00Z', via: 'k1' } } });
+    await app.reset({ store: { dropoff: T.fixtures.dropoff({ setAt: '2026-09-21T00:00:00Z' }) } });
     await app.go('/ride');
     await app.tick(60);
     checkPage(app, '/ride 已填');
@@ -55,16 +55,10 @@ T.spec('ride', function (t) {
   });
 
   t.test('搭車面板跟探索一樣上下拉：收到只剩拉把看整張地圖，拉回叫車欄位', async function (app) {
-    await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣老街', km: 28, setAt: '2026-09-21T00:00:00Z', via: 'k1' } } });
+    await app.reset({ store: { dropoff: T.fixtures.dropoff({ setAt: '2026-09-21T00:00:00Z' }) } });
     await app.go('/ride');
-    const sheet = app.$('.ride-sheet'), grip = app.$('.ride-mode__grip'), W = app.win;
-    function drag(dy, id, hold) {
-      const b = grip.getBoundingClientRect();
-      grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: b.top + 10, pointerId: id }));
-      W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id }));
-      if (hold) return function () { W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id })); };
-      W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id }));
-    }
+    const sheet = app.$('.ride-sheet'), grip = app.$('.ride-mode__grip');
+    function drag(dy, id, hold) { return T.helpers.drag(app, grip, dy, { id: id, hold: hold }); }
     t.eq(app.$$('[data-act="restore-ride"]').length, 0, '沒有「展開搭車」按鈕');
     const openH = sheet.offsetHeight;
     const pinTop = function () { return app.$('[data-pin="pickup"]').getBoundingClientRect().top; };
@@ -172,20 +166,15 @@ T.spec('ride', function (t) {
   t.test('探索預設上拉看最近地區卡片，選點後更新卡片堆', async function (app) {
     await app.reset();
     await app.go('/ride?mode=explore');
-    const grip = app.$('.ride-sheet .sheet__grip'), W = app.win, box = grip.getBoundingClientRect();
-    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: box.top + 10, pointerId: 1 }));
-    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
-    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: box.top - 90, pointerId: 1 }));
+    const grip = app.$('.ride-sheet .sheet__grip');
+    T.helpers.drag(app, grip, -100, { id: 1 });
     t.ok(!app.$('.ride-sheet').classList.contains('is-collapsed'), '向上拉後面板展開');
     const intro = app.$('[data-area-intro]'), cards = app.$('[data-area-expanded]');
     t.ok(intro.offsetHeight > 0 && intro.getBoundingClientRect().bottom <= cards.getBoundingClientRect().top, '展開時保留地點資訊，卡片接在下方');
     t.ok(intro.querySelector('[data-act="use-yoxi"]') && intro.querySelector('[data-act="expand-cards"]'), '展開時兩個動作仍在');
     t.eq(app.$$('[data-area-expanded] [data-act="open-card"]').length, 2, '預設最近地區的兩張卡');
     t.eq(app.$$('[data-act="all-areas"], [data-act="select-area"]').length, 0, '展開後沒有多餘的地區清單');
-    const firstDown = grip.getBoundingClientRect();
-    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: firstDown.top + 10, pointerId: 2 }));
-    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: firstDown.top + 100, pointerId: 2 }));
-    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: firstDown.top + 100, pointerId: 2 }));
+    T.helpers.drag(app, grip, 90, { id: 2 });
     await app.click('.spot[data-spot="market"]');
     t.eq(app.route().query.get('area'), 'market', '地圖選定東門');
     await app.click('[data-act="expand-cards"]');
@@ -200,10 +189,7 @@ T.spec('ride', function (t) {
     t.noDeadButtons(app, '懸浮卡片');
     await app.click('[data-act="close-card"]');
     t.ok(app.$('[data-card-float]').hidden, '可關閉懸浮卡片');
-    const downBox = grip.getBoundingClientRect();
-    grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: downBox.top + 10, pointerId: 3 }));
-    W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: downBox.top + 100, pointerId: 3 }));
-    W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: downBox.top + 100, pointerId: 3 }));
+    T.helpers.drag(app, grip, 90, { id: 3 });
     t.ok(app.$('.ride-sheet').classList.contains('is-collapsed'), '向下拉收合探索面板');
     t.eq(app.route().query.get('mode'), 'explore', '收合後仍在探索');
     await app.reload('/ride?mode=explore&area=market');
@@ -215,13 +201,8 @@ T.spec('ride', function (t) {
   t.test('探索面板往下收到只剩拉把看整張地圖，點景點叫回來', async function (app) {
     await app.reset();
     await app.go('/ride?mode=explore&area=glass-kiln');
-    const W = app.win, sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet .sheet__grip');
-    function drag(dy, id) {
-      const b = grip.getBoundingClientRect();
-      grip.dispatchEvent(new W.PointerEvent('pointerdown', { bubbles: true, clientY: b.top + 10, pointerId: id }));
-      W.dispatchEvent(new W.PointerEvent('pointermove', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id }));
-      W.dispatchEvent(new W.PointerEvent('pointerup', { bubbles: true, clientY: b.top + 10 + dy, pointerId: id }));
-    }
+    const sheet = app.$('.ride-sheet'), grip = app.$('.ride-sheet .sheet__grip');
+    function drag(dy, id) { T.helpers.drag(app, grip, dy, { id: id }); }
     const view = app.view().getBoundingClientRect();
     const spotTop = function () { return app.$('.spot[data-spot="glass-kiln"]').getBoundingClientRect().top; };
     const top0 = spotTop(), collapsedH = sheet.offsetHeight;
@@ -514,23 +495,12 @@ T.spec('ride', function (t) {
   /* ================================================================ 6. 回歸：review 找到的 bug */
 
   const T0 = '2026-09-21T13:18:00.000Z';
-  function hist(app) { const s = app.win.history.state; return s && s.i; }
+  const hist = T.helpers.histI;
   /* 在拉把上拖 dy（正＝往下）。opt：id、init（PointerEvent 其他欄位）、hold（回傳放手函式） */
-  function dragOn(app, grip, dy, opt) {
-    opt = opt || {};
-    const W = app.win, b = grip.getBoundingClientRect(), y = b.top + 10;
-    const ev = function (type, yy) {
-      return new W.PointerEvent(type, Object.assign({ bubbles: true, pointerId: opt.id || 1, clientY: yy }, opt.init || {}));
-    };
-    grip.dispatchEvent(ev('pointerdown', y));
-    W.dispatchEvent(ev('pointermove', y + dy));
-    const up = function () { W.dispatchEvent(ev('pointerup', y + dy)); };
-    if (opt.hold) return up;
-    up();
-  }
+  const dragOn = T.helpers.drag;
 
   t.test('明信片 id 用 APP.place().card：收過 p2 再搭車到東門市場，不會一直「還沒收」', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'market', phase: 'done', startedAt: T0, rated: true, stars: 5, km: 1.4 } }, hash: '/trip/done' });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'market', phase: 'done', rated: true, stars: 5, km: 1.4 }) }, hash: '/trip/done' });
     const A = app.APP;
     t.eq(A.place('market').card, 'p2', "APP.place('market').card＝p2");
     t.ok(app.STATE.has('p2'), 'demo 已經收過 p2');
@@ -548,8 +518,8 @@ T.spec('ride', function (t) {
   });
 
   t.test('認不得的行程／下車點不算數：/ride 不顯示「回到行程」、清掉、setDropoff 不被擋、/trip 顯示沒有行程', async function (app) {
-    const broken = { placeId: 'no-such-place', phase: 'riding', startedAt: T0, rated: false, km: 1 };
-    await app.reset({ store: { trip: broken, dropoff: { id: 'nope', name: '不存在', km: 1, setAt: T0, via: 'e' } }, hash: '/ride' });
+    const broken = T.fixtures.trip({ placeId: 'no-such-place', km: 1 });
+    await app.reset({ store: { trip: broken, dropoff: T.fixtures.dropoff({ id: 'nope', name: '不存在', km: 1, via: 'e' }) }, hash: '/ride' });
     const A = app.APP;
     t.ok(!app.$('[data-act="call-ride"]'), '沒有「回到行程」鈕');
     t.ok(app.$('[data-act="pick-dropoff"] .route-input__value--ph'), '下車點欄位是空的');
@@ -586,8 +556,8 @@ T.spec('ride', function (t) {
   });
 
   t.test('叫車前的確認框開著時離開了 /ride：再按「直接叫車」不會覆蓋待解鎖的行程', async function (app) {
-    const done = { placeId: 'neiwan', phase: 'done', startedAt: T0, rated: true, km: 28 };
-    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: T0, via: 'e' };
+    const done = T.fixtures.trip({ phase: 'done', rated: true });
+    const drop = T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' });
     await app.reset({ store: { trip: done, dropoff: drop } });
     const A = app.APP;
     await app.go('/ride');
@@ -603,8 +573,8 @@ T.spec('ride', function (t) {
   });
 
   t.test('叫車前的確認框被關掉（Esc、點遮罩）不算「直接叫車」；真的按了才叫', async function (app) {
-    const done = { placeId: 'neiwan', phase: 'done', startedAt: T0, rated: true, km: 28 };
-    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: T0, via: 'e' };
+    const done = T.fixtures.trip({ phase: 'done', rated: true });
+    const drop = T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' });
     await app.reset({ store: { trip: done, dropoff: drop } });
     const A = app.APP, W = app.win;
     await app.go('/ride');
@@ -890,7 +860,7 @@ T.spec('ride', function (t) {
       return p;
     };
     try {
-      A.store.set('dropoff', { id: 'moat', name: '護城河的舊碼頭階梯', km: null, setAt: T0, via: 'e' });
+      A.store.set('dropoff', T.fixtures.dropoff({ id: 'moat', name: '護城河的舊碼頭階梯', km: null, via: 'e' }));
       await app.go('/ride');
       t.includes(app.text('.ride-drop__meta'), '距離待確認', '/ride 下車點寫距離待確認');
       t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-min]'), '/ride 沒有車資與分鐘');
@@ -903,11 +873,11 @@ T.spec('ride', function (t) {
       A.ride.setDropoff('moat', 'e');
       await app.at('/ride');
       t.eq(A.store.get('dropoff').km, null, 'dropoff.km＝null（不是 0）');
-      A.store.set('trip', { placeId: 'moat', phase: 'riding', startedAt: T0, rated: false, km: null });
+      A.store.set('trip', T.fixtures.trip({ placeId: 'moat', km: null }));
       await app.go('/trip');
       t.includes(app.text('[data-phase="riding"]'), '距離待確認', '/trip 寫距離待確認');
       t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-min]'), '/trip 沒有車資與分鐘');
-      A.store.set('trip', { placeId: 'moat', phase: 'done', startedAt: T0, rated: true, km: null });
+      A.store.set('trip', T.fixtures.trip({ placeId: 'moat', phase: 'done', rated: true, km: null }));
       await app.go('/trip/done');
       t.includes(app.text('.ride-done__meta'), '距離待確認', '/trip/done 寫距離待確認');
       t.ok(!app.$('main.view [data-fare]'), '/trip/done 沒有車資');
@@ -918,7 +888,7 @@ T.spec('ride', function (t) {
   });
 
   t.test('非 still：配對中 → 時間到自己切到行程中', async function (app) {
-    await app.reset({ still: false, store: { dropoff: { id: 'neiwan', name: '內灣老街', km: 28, setAt: T0, via: 'k1' } } });
+    await app.reset({ still: false, store: { dropoff: T.fixtures.dropoff() } });
     const A = app.APP;
     t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
     await app.go('/ride');
@@ -950,8 +920,8 @@ T.spec('ride', function (t) {
   });
 
   t.test('/ride 可按數 ≤ 10：拉把也算，下車點＋待收明信片最擠的那一刻也不超過', async function (app) {
-    const done = { placeId: 'neiwan', phase: 'done', startedAt: T0, rated: true, km: 28 };
-    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: T0, via: 'e' };
+    const done = T.fixtures.trip({ phase: 'done', rated: true });
+    const drop = T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' });
     const cases = [
       ['空的', {}],
       ['下車點', { dropoff: drop }],

@@ -69,7 +69,7 @@ app/
   tests/runner.html         瀏覽器端測試跑者（iframe 載入 index.html）
   tests/harness.js          瀏覽器端測試 API（T／app）
   tests/specs/*.spec.js     各區塊的瀏覽器測試
-  tests/unit/*.test.mjs     node 單元測試（router、fmt、store、place；helpers 的 loadApp({realMock:true}) 載真的 mock.js）
+  tests/unit/*.test.mjs     node 單元測試（router、fmt、store、place、views；helpers 的 loadApp({ views, now }) 載真的 mock／state 與 views 檔）
 ```
 
 **不動 `prototype/`。** 全部只讀。需要共用的東西從 `../prototype/...` 載入；
@@ -300,9 +300,16 @@ T.spec('ride', function (t) {
   });
 });
 ```
-`app` = `{ win, doc, APP, STATE, MOCK, $(sel), $$(sel), text(sel), go(path, {expect, redirectOk, ms}), at(path, ms), click(sel|el), waitFor(fn, ms, label), tick(ms), reset({onboarded, store, hash}), route() }`，
+`app` = `{ win, doc, APP, STATE, MOCK, $(sel), $$(sel), text(sel), go(path, {expect, redirectOk, ms}), at(path, ms), click(sel|el), waitFor(fn, ms, label), tick(ms), reset({onboarded, store, hash, still, cards}), route() }`，
 延伸：`view()`（目前的 `main.view[data-view]`）、`errors`（iframe 的 onerror／unhandledrejection＋`#app-errors`，每次 go 清空）、`readyMs`、`reload(hash)`（不清狀態重載）、`storage('state'|'store')`（讀 localStorage JSON）。
 `t` = `{ test(name, fn, {timeout}), ok, eq, includes, fail, noDeadButtons(app), noBannedWords(app, {allow}), noHardcodedHex(cssText, name), countTappables(app) }`。
+各 spec 共用、只寫一份的（`T.*`）：
+- `T.ROUTES`：§8 每條 route 一個範例網址（`{ path, area, flow?, expect? }`）；`T.routes({ area, extra, skip, root })` 從它挑。app.spec 拿它跟 `APP.routes()` 對帳，新增 route 沒放範例就 FAIL。
+- `T.tapMax(path)`：可按數上限（§6.3-4）。
+- `T.fixtures.trip(o)`／`T.fixtures.dropoff(o)`：store 的行程與下車點初值（§3.3 的形狀只在這裡）；`app.reset({ cards: [{ id, date, by, note, km }] })` 在 demo 的 8 張之外多收幾張（收完重載，跟真的收過一樣）。
+- `T.helpers`：`clickBack`、`histI`、`drag(app, grip, dy, {id, init, hold})`、`drawThrough`（非 still 的抽卡）。
+node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …] | 'all', now, storage })` 照 index.html 的順序載真的 views（只跑到註冊與匯出，不 render），`now` 固定時間。
+純計算（公式、排序、機率、日期範圍）寫成 node 測試（`tests/unit/views.test.mjs`），瀏覽器 spec 只驗畫面與流程。
 - 斷言是軟的：失敗記下來繼續跑，任何一條失敗該 test 就 FAIL；例外與逾時（預設 8 s）也是 FAIL，附 stack 前兩行。
 - `app.click` 派一個真的 click 事件（`el.click()`），`element.onclick`、href 導覽、router 的 `a[data-back]` 都照真實順序發生。
 - 每個 spec 開跑前 harness 自動 `reset()` 一次；spec 內各 test 要不要 reset 自己決定。

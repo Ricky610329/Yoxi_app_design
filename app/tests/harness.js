@@ -331,7 +331,9 @@
     },
 
     /* 清兩把 localStorage、預設略過 onboarding、重載、等 app-ready。
-       opt.onboarded=false 可測 welcome；opt.store 會合併進 app store 的初值。 */
+       opt.onboarded=false 可測 welcome；opt.store 會合併進 app store 的初值。
+       opt.cards：[{ id, date, by, note, km }]，在 demo 的 8 張之外照順序多收這幾張（id 可以是地點或明信片，
+       date 預設今天、by 預設 walk），收完再重載一次：app 是從存好的狀態開起來的，跟真的收過一樣。 */
     reset: function (opt) {
       opt = opt || {};
       stillMode = opt.still !== false;
@@ -342,6 +344,14 @@
           const s = Object.assign({ onboarded: opt.onboarded !== false }, opt.store || {});
           localStorage.setItem(KEYS.store, JSON.stringify(s));
         } catch (e) { /* 私密視窗 */ }
+        return load(opt.hash);
+      }).then(function () {
+        if (!opt.cards || !opt.cards.length) return;
+        const w = win();
+        opt.cards.forEach(function (c) {
+          const ok = w.STATE.collect(c.id, { date: c.date || w.APP.fmt.todayMMDD(), by: c.by || 'walk', note: c.note || '', km: c.km });
+          if (!ok) throw new Error('reset({cards})：' + c.id + ' 收不下來（不認得或已經收過）');
+        });
         return load(opt.hash);
       });
     },
@@ -644,6 +654,114 @@
     }
   }
 
+  /* ------------------------------------------------------------ 共用的路由表、測試資料、小工具（§6.2）
+     以前每支 spec 各寫一份路由清單、一份 TAP_MAX、一份拖曳／返回／抽卡的小函式，
+     新增一條 route 要改六個地方，忘了一個就少測一塊。現在只有這裡一份。 */
+
+  /* §8 每條 route 一個範例網址（順序＝§8）。area＝「誰做」；flow＝有狀態前提、沒有狀態時會被導走的流程頁。
+     app.spec 會拿它跟 APP.routes() 對帳：新增 route 沒在這裡放範例就 FAIL。 */
+  const ROUTES = [
+    { path: '/', expect: '/ride', area: 'core' },
+    { path: '/welcome', area: 'system', flow: true },
+    { path: '/ride', area: 'ride' },
+    { path: '/dropoff', area: 'ride' },
+    { path: '/pickup', area: 'ride' },
+    { path: '/trip', area: 'ride', flow: true },
+    { path: '/trip/done', area: 'ride', flow: true },
+    { path: '/drawer', area: 'ride' },
+    { path: '/points', area: 'ride' },
+    { path: '/notify', area: 'ride' },
+    { path: '/trips', area: 'ride' },
+    { path: '/explore', area: 'explore' },
+    { path: '/explore/map', area: 'explore' },
+    { path: '/place/glass-kiln', area: 'explore' },
+    { path: '/place/neiwan', area: 'explore' },
+    { path: '/going/glass-kiln', area: 'explore', flow: true },
+    { path: '/unlock/glass-kiln', area: 'explore', flow: true },
+    { path: '/unlock/neiwan?ride=1', area: 'explore', flow: true },
+    { path: '/routes', area: 'explore' },
+    { path: '/route/rail', area: 'explore' },
+    { path: '/album', area: 'album' },
+    { path: '/badges', area: 'album' },
+    { path: '/postcards', area: 'album' },
+    { path: '/postcard/p1', area: 'album' },
+    { path: '/badge/b1', area: 'album' },
+    { path: '/footprint', area: 'album' },
+    { path: '/lookback', area: 'album' },
+    { path: '/week', area: 'album' },
+    { path: '/elder', area: 'album' },
+    { path: '/settings', area: 'system' },
+  ];
+
+  /* T.routes(opt) → 範例網址（每次回新的物件）
+     opt.area   'ride' 或 ['ride', 'album']：只要這幾區的
+     opt.root   false：不要 '/'（它會被導到 /ride）
+     opt.skip   ['/trip', …]：拿掉這幾條
+     opt.extra  ['/place/p13', …]：這支 spec 另外要測的網址，接在後面（重複的不加） */
+  function routes(opt) {
+    opt = opt || {};
+    const areas = opt.area == null ? null : [].concat(opt.area);
+    const skip = opt.skip || [];
+    const out = ROUTES.filter(function (r) {
+      if (areas && areas.indexOf(r.area) < 0) return false;
+      if (opt.root === false && r.path === '/') return false;
+      return skip.indexOf(r.path) < 0;
+    }).map(function (r) { return Object.assign({}, r); });
+    (opt.extra || []).forEach(function (x) {
+      const r = typeof x === 'string' ? { path: x } : Object.assign({}, x);
+      if (!out.some(function (o) { return o.path === r.path; })) out.push(r);
+    });
+    return out;
+  }
+
+  /* §6.3-4 可按數上限：/explore 與 /album 兩個索引頁 12，其餘 10（query 不算：/album?tab=… 也是 12） */
+  const TAP_MAX = { '/explore': 12, '/album': 12 };
+  function tapMax(path) { return TAP_MAX[stripQuery(path)] || 10; }
+
+  /* store 的初值：行程與下車點的形狀在契約 §3.3，只在這裡寫一次；要別的地方、別的階段用 overrides */
+  const FIX_T0 = '2026-09-21T13:18:00.000Z';
+  const fixtures = {
+    T0: FIX_T0,
+    trip: function (o) {
+      return Object.assign({ placeId: 'neiwan', phase: 'riding', startedAt: FIX_T0, rated: false, km: 28 }, o || {});
+    },
+    dropoff: function (o) {
+      return Object.assign({ id: 'neiwan', name: '內灣老街', km: 28, setAt: FIX_T0, via: 'k1' }, o || {});
+    },
+  };
+
+  const helpers = {
+    /* 目前畫面裡看得到的返回鍵（<a data-back>） */
+    clickBack: function (appObj) { return appObj.click('main.view[data-view] a[data-back]'); },
+    /* router 蓋在 history.state 上的序號 */
+    histI: function (appObj) { const s = appObj.win.history.state; return s && s.i; },
+    /* 在拉把上拖 dy（正＝往下）：pointerdown 在拉把上、move／up 在 window 上（跟手指一樣）。
+       opt：id（pointerId，預設 1）、init（PointerEvent 其他欄位）、hold（不放手，回傳放手函式） */
+    drag: function (appObj, grip, dy, opt) {
+      opt = opt || {};
+      const W = appObj.win, b = grip.getBoundingClientRect(), y = b.top + 10;
+      const ev = function (type, yy) {
+        return new W.PointerEvent(type, Object.assign({ bubbles: true, pointerId: opt.id || 1, clientY: yy }, opt.init || {}));
+      };
+      grip.dispatchEvent(ev('pointerdown', y));
+      W.dispatchEvent(ev('pointermove', y + dy));
+      const up = function () { W.dispatchEvent(ev('pointerup', y + dy)); };
+      if (opt.hold) return up;
+      up();
+    },
+    /* 非 still 的抵達：點發光的地方 → 收集明信片 → 一路點畫面（蓄力快轉 → 翻開 → 看結果），停在 data-at=3 */
+    drawThrough: async function (appObj) {
+      await appObj.click('[data-act="open-spot"]');
+      await appObj.click('[data-act="draw"]');
+      await appObj.waitFor(function () { return appObj.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
+      for (let i = 0; i < 16 && appObj.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
+        await appObj.click('[data-unlock]');
+        await appObj.tick(300);
+      }
+      await appObj.waitFor(function () { return appObj.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
+    },
+  };
+
   window.T = {
     spec: spec,
     run: run,
@@ -653,6 +771,12 @@
     BANNED: BANNED,
     WORD_OK: WORD_OK,
     KEYS: KEYS,
+    ROUTES: ROUTES,
+    routes: routes,
+    TAP_MAX: TAP_MAX,
+    tapMax: tapMax,
+    fixtures: fixtures,
+    helpers: helpers,
     _specs: specs,
   };
 })();

@@ -5,12 +5,12 @@
    ========================================================================== */
 T.spec('album', function (t) {
 
-  const ROUTES = ['/album', '/badges', '/postcards',
-                  '/postcard/p1', '/postcard/p4', '/postcard/p11', '/postcard/nope',
-                  '/badge/b1', '/badge/b4', '/badge/nope',
-                  '/footprint', '/lookback', '/week', '/elder', '/elder?card=p1'];
-  const back = function (app) { return app.click('main.view[data-view] a[data-back]'); };
-  const histI = function (app) { const s = app.win.history.state; return s && s.i; };
+  /* 共用路由表的 album 那幾條，加上搭車卡、金框卡、找不到的 id、長輩圖帶卡 */
+  const ROUTES = T.routes({ area: 'album', extra: ['/postcard/p4', '/postcard/p11', '/postcard/nope',
+                                                   '/badge/b4', '/badge/nope', '/elder?card=p1'] })
+    .map(function (r) { return r.path; });
+  const back = T.helpers.clickBack;
+  const histI = T.helpers.histI;
 
   /* 1. 每條 route 都能 render、沒有死按鈕、沒有禁用詞、可按數在上限內 */
   t.test('每條 album route 都能 render（無死按鈕／禁用詞、可按數在上限內）', async function (app) {
@@ -24,7 +24,7 @@ T.spec('album', function (t) {
       t.noDeadButtons(app, path);
       t.noBannedWords(app, { msg: path });
       const n = t.countTappables(app);
-      const max = /^\/album/.test(path) ? 12 : 10;
+      const max = T.tapMax(path);
       t.ok(n <= max, path + '：可按數 ' + n + ' ≤ ' + max);
     }
   }, { timeout: 30000 });
@@ -99,10 +99,8 @@ T.spec('album', function (t) {
 
   /* 4. p19–p22 收了之後要打得開：/postcards 收下的每一格連到詳情，整片網格算一個可按的東西 */
   t.test('/postcards 收下的格子連到明信片詳情（p19 也打得開）；網格是 data-gallery、可按數仍 ≤ 10', async function (app) {
-    await app.reset();
+    await app.reset({ cards: [{ id: 'moat' }] });              /* p19：不屬於任何獎章 */
     const S = app.STATE, A = app.APP;
-    S.collect('moat', { date: A.fmt.todayMMDD() });           /* p19：不屬於任何獎章 */
-    A.emit('state:change');
     await app.go('/postcards');
     const got = app.$$('[data-group="got"] [data-card]');
     t.eq(got.length, S.count(), '收下的每一張都在');
@@ -623,11 +621,8 @@ T.spec('album', function (t) {
   /* 11. 同一天收的卡 */
   t.test('同一天收的卡：最後收的（lastCard）排最前面，主卡疊卡與長輩圖預設都跟著', async function (app) {
     for (const order of [['glass-kiln', 'neiwan', 'p9'], ['neiwan', 'glass-kiln', 'p11']]) {
-      await app.reset();
-      const S = app.STATE, A = app.APP, today = A.fmt.todayMMDD();
-      S.collect(order[0], { date: today });
-      S.collect(order[1], { date: today });
-      A.emit('state:change');
+      await app.reset({ cards: [{ id: order[0] }, { id: order[1] }] });   /* 同一天（今天）連收兩張 */
+      const S = app.STATE, A = app.APP;
       t.eq(S.all.lastCard, order[2], 'lastCard 是 ' + order[2]);
       t.eq(A.album.recentCards(3)[0].id, order[2], 'recentCards 第一張是 ' + order[2]);
       await app.go('/album');
@@ -639,10 +634,8 @@ T.spec('album', function (t) {
 
   /* 6. 限定版只看 ride.js */
   t.test('搭 yoxi 去走得到的玻璃窯（900 m）：金框，但角標寫「yoxi 金框」不是「yoxi 限定版」', async function (app) {
-    await app.reset();
+    await app.reset({ cards: [{ id: 'glass-kiln', by: 'ride', km: 1 }] });
     const A = app.APP;
-    app.STATE.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
-    A.emit('state:change');
     t.eq(A.ride.limitedCard('p11'), false, 'ride.js：p11 不是限定版（走得到、沒有 +50）');
     await app.go('/postcard/p11');
     const card = app.$('[data-flip]');
