@@ -345,87 +345,19 @@ function notFound(o) {
 /* ---------------------------------------------------------------- 子頁的返回鍵
    收藏的子頁有兩種來法：
    1. 從上一層點進來（/album → /badges → /badge/b3、/trips → /postcard/p8、分享 → /elder）：返回＝照歷史退一格。
-   2. 切到叫車再點「收藏」停回這一頁（這一筆的上一筆是叫車）、重新整理、直接開網址、從流程頁（/unlock…）過來：
-      照歷史退一格會跑錯頁（退回叫車、退回抽卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）。
-   做法：每一筆歷史（history.state.i）停的是哪一頁記在 sessionStorage（路由每換一頁就記，見下面的 route:change）。
-   按返回時看「退一格會落在哪一頁」：是一般的頁（有 tab 的 view、不是自己）→ APP.nav.back()；不然 → 上一層。
-   有兩種「上一筆不是來處」的要另外標 up：切 tab 停回來的（上一筆可能是 /trips —— 本來就會連到明信片的頁 ——
-   但使用者不是從那裡點進來的），以及返回時 replace 出來的上一層（上一筆是叫車，那一層的返回也要再往上走）。
-   之前只看 ctx.from：從更深的一頁返回時 ctx.from 是那一頁，會被當成「不是從上一層來」而多疊一筆 /album。 */
+   2. 切到叫車再點「收藏」停回這一頁、重新整理、直接開網址、從流程頁（/unlock…）過來：照歷史退一格會跑錯頁
+      （退回叫車、退回抽卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）；換上來的那一層再按返回也往上走。
+   這個判斷是 router 的 APP.nav.up（它在 history.state 記了每一筆從哪裡來、怎麼來的）；這裡只標返回鍵：
+   data-back＝上一層、data-up＝用 nav.up 的預設規則（上一筆是有底欄的一般頁、而且不是這一頁才退）。 */
 const PARENT = { postcards: '/album', badges: '/album', postcard: '/postcards', badge: '/badges',
                  week: '/album', elder: '/week', footprint: '/album' };
-const NAV_KEY = 'yoxi-album-nav';
 
-function histI() {
-  try { const st = history.state; return st && typeof st.i === 'number' ? st.i : null; }
-  catch (e) { return null; }
-}
-function navLoad() {
-  try { const o = JSON.parse(sessionStorage.getItem(NAV_KEY)); if (o && typeof o === 'object') return o; }
-  catch (e) { /* 私密視窗、被擋 */ }
-  return {};
-}
-function navSave(H) {
-  try { sessionStorage.setItem(NAV_KEY, JSON.stringify(H)); } catch (e) { /* ignore */ }
-}
-/* 新開的一頁（history.state 還沒有序號：不是重新整理、也不是上一頁／下一頁回來的）：上一次留下的紀錄對不上現在的歷史，清掉 */
-try { if (!history.state || typeof history.state.i !== 'number') sessionStorage.removeItem(NAV_KEY); }
-catch (e) { /* ignore */ }
-function pathOnly(p) { return String(p || '').split('?')[0]; }
-function tabOfPath(p) {
-  if (!p) return null;
-  const r = APP.resolve(pathOnly(p));
-  const def = APP.views && APP.views[r.name];
-  return def && r.name !== '_404' && r.name !== '_placeholder' ? (def.tab || null) : null;
-}
-
-/* 收藏 tab 上一次停的頁（切 tab 回來會回到這一頁）：每換一頁之後記一次，所以子頁 mount 時它還是「進來之前」的值。
-   一開始用 store 裡存的（重新整理之後切 tab 回來也認得）。 */
-let albumTabBefore = pathOnly(((APP.store && APP.store.get('tabPaths')) || {}).album) || '/album';
-
-APP.on('route:change', function (cur) {
-  if (!cur) return;
-  const i = histI();
-  /* 路由的 route:change 可能晚到（轉場中又點了別的，網址已經換了）：那時的序號不是這一頁的，不記 */
-  const hashPath = pathOnly(String(location.hash).replace(/^#/, '')).replace(/(.)\/+$/, '$1') || '/';
-  if (i != null && hashPath === cur.path) {
-    const H = navLoad();
-    const rec = H[i];
-    if (!rec || rec.p !== cur.path) { H[i] = { p: cur.path }; navSave(H); }
-  }
-  const tp = APP.store.get('tabPaths') || {};
-  albumTabBefore = pathOnly(tp.album) || '/album';
-});
-
-/* 每個子頁的 mount 都呼叫：記下這一筆歷史、把返回鍵（第一個 a[data-back]）換成上面的規則 */
+/* 每個子頁的 mount 都呼叫：把返回鍵（第一個 a[data-back]）指向上一層，交給 router 的 nav.up */
 function subMount(root, ctx, name) {
-  const here = ctx.path;
-  const parent = PARENT[name] || '/album';
-  const i = histI();
-  if (i != null) {
-    const H = navLoad();
-    const rec = H[i];
-    const from = ctx.from ? pathOnly(ctx.from) : null;
-    let up;
-    if (rec && rec.p === here && rec.pend) up = true;          /* 自己的返回 replace 出來的這一層 */
-    else if (rec && rec.p === here && from && H[i + 1] && H[i + 1].p === from) up = !!rec.up;   /* 從更深的一頁退回來：沿用 */
-    else up = !!(from && tabOfPath(from) !== 'album' && albumTabBefore === here);           /* 新的一筆：是不是切 tab 停回來的 */
-    H[i] = up ? { p: here, up: 1 } : { p: here };
-    navSave(H);
-  }
   const a = root.querySelector('a[data-back]');
   if (!a) return;
-  a.setAttribute('data-back', parent);
-  a.onclick = function (e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    const n = histI();
-    const H = navLoad();
-    const rec = n != null ? H[n] : null;
-    const prev = n ? H[n - 1] : null;
-    if (prev && !(rec && rec.up) && pathOnly(prev.p) !== here && tabOfPath(prev.p)) { APP.nav.back(parent); return; }
-    if (n != null) { H[n] = { p: parent, up: 1, pend: 1 }; navSave(H); }
-    APP.nav.go(parent, { replace: true, dir: 'back' });
-  };
+  a.setAttribute('data-back', PARENT[name] || '/album');
+  a.setAttribute('data-up', '');
 }
 
 /* 雙主頁第一版：明信片主卡（點進去看全部）、統計、回顧一列、獎章精選卡。 */

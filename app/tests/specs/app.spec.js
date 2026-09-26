@@ -149,6 +149,57 @@ T.spec('app', function (t) {
     await app.at('/explore');
   });
 
+  t.test('nav.prev／nav.up：history.state 記著每一筆從哪裡來、怎麼來的', async function (app) {
+    await app.reset();
+    let N = app.APP.nav;
+    await app.go('/album');
+    await app.go('/postcards');
+    const prev = N.prev();
+    t.eq(prev && prev.path, '/album', 'prev：上一筆是 /album');
+    t.eq(prev && prev.tab, 'album', 'prev.tab：那一頁的底欄');
+    t.eq(app.win.history.state.via, 'push', 'nav.go 疊上來的是 push');
+    t.eq(N.upAction(), 'back', '從上一層點進來：退一格');
+    t.eq(N.upAction({ backIf: function (p) { return p.path === '/ride'; } }), 'replace', 'backIf 不要：就地換');
+    /* 真的重新整理（app.reload() 是換一份新文件、歷史從頭來；這裡要的是瀏覽器的重新整理）：來處還在 history.state 裡 */
+    const d0 = app.doc;
+    app.win.location.reload();
+    await app.waitFor(function () {
+      const d = app.doc;
+      return d && d !== d0 && d.documentElement.getAttribute('data-view-ready') === '1';
+    }, 4000, '重新整理完成');
+    N = app.APP.nav;                          /* 重新整理之後是新的一份 APP */
+    t.eq(N.prev() && N.prev().path, '/album', '重新整理之後 prev 還在');
+    t.eq(N.upAction(), 'back', '重新整理之後照樣退一格');
+    /* 流程頁（沒有底欄）來的：不退回去 */
+    await app.go('/unlock/glass-kiln');
+    await app.go('/postcard/p1');
+    t.eq(N.prev() && N.prev().tab, null, '/unlock 沒有底欄');
+    t.eq(N.upAction(), 'replace', '從流程頁來：換成上一層');
+    t.eq(N.up('/postcards'), 'replace', 'nav.up 回報它怎麼走');
+    await app.at('/postcards');
+    t.eq(app.win.history.state.via, 'up', '換上來的那一層記成 up');
+    t.eq(N.upAction(), 'replace', '換上來的那一層再往上也是換（它的上一筆不是來處）');
+    /* 切底欄停回來：上一筆是別的 tab，不是來處 */
+    await app.click('#tabbar [data-tab-id="ride"]');
+    await app.at('/ride');
+    await app.click('#tabbar [data-tab-id="album"]');
+    await app.at('/postcards');
+    t.eq(app.win.history.state.via, 'tab', '切底欄疊上來的是 tab');
+    t.eq(N.upAction(), 'replace', '切底欄停回來：換成上一層');
+    /* 點連結（<a href="#/…">）疊上來的 */
+    await app.go('/album');
+    await app.click('main.view [data-act="go-badges"]');
+    await app.at('/badges');
+    t.eq(app.win.history.state.via, 'link', '點連結疊上來的是 link');
+    t.eq(N.prev() && N.prev().path, '/album', 'link 的來處也記著');
+    /* 深連結：沒有上一筆 */
+    await app.reset({ hash: '/postcard/p1' });
+    await app.at('/postcard/p1');
+    N = app.APP.nav;
+    t.eq(N.prev(), null, '深連結沒有上一筆');
+    t.eq(N.upAction(), 'replace', '深連結：換成上一層');
+  });
+
   t.test('404：未知 path 有畫面且能回叫車', async function (app) {
     await app.go('/definitely/not/here', { redirectOk: true });
     t.ok(app.view(), '有 main.view');

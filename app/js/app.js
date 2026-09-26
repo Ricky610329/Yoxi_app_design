@@ -535,9 +535,12 @@ function durationMs() {
   return 240;
 }
 
-function stamp(i, replaceUrl) {
+/* history.state 是這一筆歷史的來歷：{ yoxiApp, i（序號）, prev（上一筆的網址）, via }。
+   via＝這一筆怎麼來的：push（nav.go）、link（點 <a href="#/…">）、tab（切底欄）、up（nav.up 換上來的上一層）。
+   換掉這一筆（replace）不動 prev 與 via：上一筆還是同一筆。 */
+function stamp(i, replaceUrl, extra) {
   try {
-    const st = Object.assign({}, history.state || {}, { yoxiApp: 1, i: i });
+    const st = Object.assign({}, history.state || {}, { yoxiApp: 1, i: i }, extra || {});
     if (replaceUrl != null) history.replaceState(st, '', replaceUrl);
     else history.replaceState(st, '');
   } catch (e) { /* ignore */ }
@@ -559,11 +562,12 @@ const nav = {
     const replace = !!opt.replace || sameHash(url, location.hash);
     try {
       if (replace) {
-        history.replaceState({ yoxiApp: 1, i: curIdx }, '', url);
+        history.replaceState(Object.assign({}, history.state || {}, { yoxiApp: 1, i: curIdx }, opt.via ? { via: opt.via } : {}), '', url);
         if (!opt.dir) dir = 'none';
       } else {
+        const prev = location.hash;
         curIdx += 1;
-        history.pushState({ yoxiApp: 1, i: curIdx }, '', url);
+        history.pushState({ yoxiApp: 1, i: curIdx, prev: prev, via: opt.via || (dir === 'tab' ? 'tab' : 'push') }, '', url);
       }
     } catch (e) {
       /* 萬一 pushState 被擋（某些 file:// 環境）：退回改 hash，讓 hashchange 接手 */
@@ -584,6 +588,37 @@ const nav = {
       return;
     }
     nav.go(fallback || '/ride', { replace: true, dir: 'back' });
+  },
+  /* 上一筆歷史（這一筆是從哪一頁來的）：{ hash, path, pattern, name, tab }，沒有（第一筆、深連結）就 null。
+     tab 是那一頁的底欄（找不到頁、尚未建檔是 null） */
+  prev: function () {
+    const st = history.state;
+    if (!(curIdx > 0) || !st || typeof st.prev !== 'string') return null;
+    const p = parse(st.prev);
+    const r = resolve(p.path);
+    const real = r.name !== '_404' && r.name !== '_placeholder';
+    return { hash: st.prev, path: p.path, pattern: r.pattern, name: r.name, tab: real && r.def ? (r.def.tab || null) : null };
+  },
+  /* 回到邏輯上的上一層（子頁、下車點頁的返回）：上一筆就是來處、而且 backIf(上一筆) 說好 → 照歷史退一格
+     （歷史裡不會疊兩層、返回鍵不會回到剛離開的頁）；不然 → 就地換成 parent（不多一筆歷史）。
+     「上一筆不是來處」：深連結與重新整理後的第一筆、切底欄停回來的（via tab）、nav.up 換上來的（via up，
+     它的上一筆是更早的來處）、上一筆跟這一頁同一個網址。
+     backIf 預設：上一筆是有底欄的一般頁、而且不是這一頁（流程頁、找不到頁不退回去）。opt.dir：換上去時的轉場（預設 back） */
+  up: function (parent, opt) {
+    opt = opt || {};
+    if (nav.upAction(opt) === 'back') { nav.back(parent); return 'back'; }
+    nav.go(parent, { replace: true, dir: opt.dir || 'back', via: 'up' });
+    return 'replace';
+  },
+  /* nav.up 會怎麼走（'back' | 'replace'），不導覽：給測試與想先知道的人 */
+  upAction: function (opt) {
+    opt = opt || {};
+    const st = history.state;
+    if (!st || st.via === 'tab' || st.via === 'up') return 'replace';
+    const prev = nav.prev();
+    if (!prev || sameHash(prev.hash, location.hash)) return 'replace';
+    const ok = opt.backIf ? !!opt.backIf(prev) : (!!prev.tab && prev.path !== parse(location.hash).path);
+    return ok ? 'back' : 'replace';
   },
   tab: function (id) {
     id = tabGroup(id);
@@ -644,9 +679,9 @@ function onHashChange() {
     if (!dir) dir = st.i < curIdx ? 'back' : (st.i > curIdx ? 'push' : 'none');
     curIdx = st.i;
   } else {
-    /* 點 <a href="#/…"> 產生的新紀錄：蓋上序號 */
+    /* 點 <a href="#/…"> 產生的新紀錄：蓋上序號與來處（上一筆畫的是 routedHash） */
     curIdx += 1;
-    stamp(curIdx);
+    stamp(curIdx, null, { prev: routedHash, via: 'link' });
     if (!dir) dir = 'push';
   }
   route(dir);
@@ -1335,12 +1370,15 @@ function start() {
   W.addEventListener('error', function (e) { reportError(e.error || e.message, 'window.onerror'); });
   W.addEventListener('unhandledrejection', function (e) { reportError(e.reason, 'unhandledrejection'); });
 
-  /* 返回鍵：<a href="#" data-back="/explore"> */
+  /* 返回鍵：<a href="#" data-back="/explore">＝照歷史退一格（沒有就去 fallback）；
+     再加 data-up＝回邏輯上的上一層（nav.up，預設規則：上一筆是有底欄的一般頁才退，不然就地換成它） */
   document.addEventListener('click', function (e) {
     const a = e.target.closest && e.target.closest('a[data-back]');
     if (!a) return;
     e.preventDefault();
-    nav.back(a.getAttribute('data-back') || '/ride');
+    const to = a.getAttribute('data-back') || '/ride';
+    if (a.hasAttribute('data-up')) nav.up(to);
+    else nav.back(to);
   });
 
   W.addEventListener('popstate', onPopState);

@@ -258,38 +258,15 @@ function limitedCard(cardId) {
 }
 const VIA_LABEL = { k1: '從地方詳情', e: '從叫車地圖', route: '從路線', search: '搜尋' };
 
-/* ---------------------------------------------------------------- 歷史紀錄
+/* ---------------------------------------------------------------- 回到 /ride
    「回到 /ride」有兩種：上一格就是 /ride → 退回去（歷史裡不會疊兩個 /ride、返回鍵不會回到剛離開的頁）；
-   不是（深連結、重整過、從別的 tab 進來）→ 就地換成 /ride。
-   router 沒有「上一格是哪一頁」的 API，這裡用 route:change 記下每一格（history.state.i）停的網址。
-   route:change 在轉場結束才發；下一次導覽搶先收尾時，發出來的是上一頁、history 卻已經是新的一格，
-   所以只在 path 對得上網址時才記。/ride 自己在 mount 與換地區時也記（rideHere）。
-   上一格的網址跟現在一模一樣時不退（兩格同一個 hash，history.back() 不會發 hashchange，router 不會重畫）。 */
-const histAt = {};
-function histIdx() {
-  const s = history.state;
-  return s && typeof s.i === 'number' ? s.i : null;
-}
-function pathOf(hash) {
-  try { return APP.parse(hash).path; } catch (e) { return null; }
-}
-APP.on('route:change', function (cur) {
-  const i = histIdx();
-  if (i != null && cur && cur.path && cur.path === pathOf(location.hash)) histAt[i] = location.hash;
-});
-function rideHere() {
-  const i = histIdx();
-  if (i != null) histAt[i] = location.hash;
-}
-function prevIsRide() {
-  const i = histIdx();
-  const prev = i != null && i > 0 ? histAt[i - 1] : null;
-  return !!prev && pathOf(prev) === '/ride' && prev !== location.hash;
-}
+   不是（深連結、重整後的第一筆、切底欄停回來的、從別的頁進來）→ 就地換成 /ride。
+   「上一格是哪一頁」由 router 記在 history.state（APP.nav.up／nav.prev），這裡只給判斷：上一格是 /ride。
+   帶 query（例：「在地圖上挑」換成探索模式）一律就地換，選好之後還能退回原本那一格 /ride。 */
+function fromRide(prev) { return prev.path === '/ride'; }
 function backToRide(query) {
-  const target = '/ride' + (query ? '?' + query : '');
-  if (prevIsRide() && !query) APP.nav.back('/ride');
-  else APP.nav.go(target, { replace: true, dir: 'back' });
+  if (query) APP.nav.go('/ride?' + query, { replace: true, dir: 'back' });
+  else APP.nav.up('/ride', { backIf: fromRide });
 }
 
 /* ---------------------------------------------------------------- 跨區塊 API */
@@ -319,8 +296,7 @@ function setDropoff(placeId, via) {
   const cur = APP.nav.current();
   if (cur && cur.path === '/ride') {
     /* 探索模式（例：從 /dropoff「在地圖上挑」進來）：上一格也是 /ride 就退回去，不疊兩個 /ride */
-    if (prevIsRide()) APP.nav.back('/ride');
-    else APP.nav.go('/ride', { replace: true, dir: 'none' });
+    APP.nav.up('/ride', { backIf: fromRide, dir: 'none' });
   } else APP.nav.go('/ride');
   return true;
 }
@@ -638,7 +614,6 @@ function rideRender() {
 
 function rideMount(root) {
   const tb = document.getElementById('tabbar');
-  rideHere();
   /* 壞掉的行程／下車點（id 不認得）清掉；render 已經把它們當成沒有 */
   dropBroken();
   /* 評分完直接回首頁的人：限定明信片還沒收 → trip 留著（render 畫了金色入口）；
@@ -784,7 +759,6 @@ function rideV2Render(params, ctx) {
     '</section>';
 }
 function rideV2Mount(root, params, ctx) {
-  rideHere();
   const sheet = root.querySelector('.ride-sheet');
   const grip = sheet.querySelector('.sheet__grip');
   const host = root.querySelector('[data-ride-map]');
@@ -793,7 +767,6 @@ function rideV2Mount(root, params, ctx) {
   const tabbar = document.getElementById('tabbar');
   let selected = cardArea(ctx.query.get('area')) || nearestCardArea();
   if (!cardArea(ctx.query.get('area'))) APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
-  rideHere();
   function markSelected(map) {
     map.spotsEl.querySelectorAll('.spot').forEach(function (el) {
       el.classList.toggle('is-selected', !!selected && el.getAttribute('data-spot') === selected.id);
@@ -831,7 +804,6 @@ function rideV2Mount(root, params, ctx) {
   function selectArea(id, fromMap) {
     selected = cardArea(id) || nearestCardArea();
     APP.nav.replaceQuery('mode=explore&area=' + encodeURIComponent(selected.id));
-    rideHere();
     paint();
     if (fromMap) setSheet('collapsed');    /* 收到只剩拉把時，點景點把面板叫回來 */
   }

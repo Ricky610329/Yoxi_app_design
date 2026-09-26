@@ -126,8 +126,18 @@ APP.nav.current();                          // { path:'/place/glass-kiln', patte
 APP.nav.go('/trip', { dir:'back' });        // dir 可覆寫轉場：'push'|'back'|'tab'|'none'
 ```
 前進／返回靠 `history.state.i`（app 自己蓋的序號）判斷；`nav.back` 在序號 > 0 時才 `history.back()`，否則 replace 到 fallback。
+每一筆歷史的 `history.state` 還記著它的來歷：`prev`（上一筆的網址）、`via`（`push`＝nav.go、`link`＝點 `<a href="#/…">`、`tab`＝切底欄、`up`＝nav.up 換上來的上一層）；
+replace 這一筆不動 prev 與 via。重新整理之後照樣在（history.state 會留著）。
+```js
+APP.nav.prev()                                  // 上一筆：{ hash, path, pattern, name, tab }，沒有（第一筆、深連結）就 null
+APP.nav.up('/postcards')                        // 回邏輯上的上一層：上一筆就是來處而且 backIf 說好 → history.back()；不然就地換成 parent（via up）
+APP.nav.up('/ride', { backIf: p => p.path === '/ride', dir: 'none' })   // backIf 預設：上一筆是有底欄的一般頁、而且不是這一頁
+APP.nav.upAction(opt)                           // nav.up 會怎麼走（'back'|'replace'），不導覽
+```
+「上一筆不是來處」的一律就地換：沒有上一筆（深連結、第一筆）、這一筆是切底欄停回來的（via tab）、是 nav.up 換上來的（via up）、上一筆跟這一頁同一個網址。
 `nav.tab(id)`：已經在該 tab 時回到該 tab 的根，否則回到 `tabPaths[id]`。除錯用：`APP.resolve(path)`、`APP.routes()`、`APP.PLANNED`。
-連結寫 `<a href="#/place/glass-kiln">` 就會走 router；返回鍵寫 `<a href="#" data-back="/explore">`（router 攔 data-back）。
+連結寫 `<a href="#/place/glass-kiln">` 就會走 router；返回鍵寫 `<a href="#" data-back="/explore">`（router 攔 data-back，照歷史退一格）；
+子頁的返回鍵再加 `data-up`（`<a href="#" data-back="/postcards" data-up>`）＝ `APP.nav.up('/postcards')`，用預設規則回上一層。
 tab 切換：`APP.nav.tab('album')` 記住各 tab 最後停的 path（切回來還在同一頁）。
 頁內狀態（例：收藏的 pill）要寫回網址時用 `APP.nav.replaceQuery('tab=journal')`：只換目前這頁的 query，不重畫、不新增歷史，同步 `current()` 與 `tabPaths`（切 tab 再回來停在同一段）。不要自己呼叫 `history.replaceState`，router 看不到。
 mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initSheet／initPan`）由 router 記下，離開該頁時自動移除。
@@ -406,8 +416,8 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/*` | 404：一句話＋回叫車 | null | 新 | core |
 
 **返回規則**（2026-09-25）：
-- 叫車：`/dropoff` 選好、`/pickup` 選好、取消行程、`/trip/done`「回首頁」都是「上一格是 `/ride` 就退回，不是就就地換成 `/ride`」；「在地圖上挑」把 `/dropoff` 那一格換成探索模式，選好後退回原本那一格 `/ride`。
-- 收藏子頁：每筆歷史停在哪一頁記在 sessionStorage 的 `yoxi-album-nav`。按返回時，退一格會落在有 tab 的一般頁（而且不是自己）就 `nav.back()`；切 tab 停回來、直接開網址、從流程頁（例 `/unlock`）進來的，改成 `go(上一層, {replace})`。上一層：`/postcards`、`/badges`、`/week`、`/footprint` → `/album`；`/badge/:id` → `/badges`；`/postcard/:id` → `/postcards`；`/elder` → `/week`。
+- 叫車：`/dropoff` 選好、`/pickup` 選好、取消行程、`/trip/done`「回首頁」都是「上一格是 `/ride` 就退回，不是就就地換成 `/ride`」（`APP.nav.up('/ride', { backIf: 上一格是 /ride })`）；「在地圖上挑」把 `/dropoff` 那一格換成探索模式，選好後退回原本那一格 `/ride`。
+- 收藏子頁：返回鍵是 `data-back="上一層" data-up`（album.js 的 `subMount` 標），交給 `APP.nav.up` 的預設規則：退一格會落在有 tab 的一般頁（而且不是自己）就 `history.back()`；切 tab 停回來、直接開網址、重新整理後的第一筆、從流程頁（例 `/unlock`）進來的，改成就地換成上一層（換上來的那一層再按返回也往上走）。上一層：`/postcards`、`/badges`、`/week`、`/footprint` → `/album`；`/badge/:id` → `/badges`；`/postcard/:id` → `/postcards`；`/elder` → `/week`。
 - 探索舊路由的保底去處（找不到頁、先不去了、已收過的「回探索」、`/routes` 的關閉）是 `/ride?mode=explore(&area=<id>)`，不是舊的 `/explore`。
 
 ## 9. 桌機／手機
