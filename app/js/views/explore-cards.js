@@ -126,7 +126,10 @@ function cardStyleOf(cardId) {
 }
 
 /* 別的畫面（收藏、叫車首頁的卡片）要顯示「收下的那一張」：元素帶 data-card-art="<明信片 id>"，
-   這裡把那一款的成品疊在插圖上面；圖載不到就拿掉，插圖照舊。還沒收的不疊（維持灰階插圖）。
+   這裡把那一款疊在插圖上面，跟 /unlock 的卡面同一個順序：
+     生成好的成品（POSTCARD_GEN 裡的）→ 沒有成品、或成品載不到：底圖照片＋那一款的 SVG 濾鏡 → 都沒有才是插圖。
+   以前沒有第二步：p12–p22 還沒生成成品，抽卡時看到的是實景照片做的卡面，收下之後收藏裡卻變回插圖。
+   還沒收的不疊（維持灰階插圖，「到了就會上色」）。
    金框那一款在哪裡顯示都有金框和金粉（explore-gold.js）：畫面自己標了 data-gold-aura（框畫在外層）就照它的，
    沒標的這裡補上 data-gold-aura＋.card-gold（通用的框，explore.css） */
 function paintCardArt(root) {
@@ -141,18 +144,60 @@ function paintCardArt(root) {
       el.setAttribute('data-gold-aura', '');
     }
     const src = postcardSrc(id, d && d.key);
-    if (!src) return;
+    const ph = cardPhoto(id);
+    const photo = ph && window.PHOTOS ? window.PHOTOS.base + ph.file : '';
+    if (!src && !photo) return;
     const img = document.createElement('img');
     img.className = 'card-gen';
     img.alt = '';
     img.decoding = 'async';
     img.setAttribute('data-style', d.key);
-    img.onerror = function () { img.remove(); };
-    img.src = src;
+    /* 照片卡面：底下的插圖藏起來、墊紙色（濾鏡的邊是柔的，水彩還會留白邊，插圖會從邊上透出來） */
+    const usePhoto = function () {
+      img.onerror = function () { unfitPhoto(img); el.classList.remove('card-photo-host'); img.remove(); };
+      img.classList.add('card-gen--photo');
+      el.classList.add('card-photo-host');
+      if (APP.fx && APP.fx.filters) APP.fx.filters();
+      img.src = photo;
+      fitPhoto(el, img);
+    };
+    if (src) {
+      img.onerror = function () { if (photo) usePhoto(); else img.remove(); };
+      img.src = src;
+    } else {
+      usePhoto();
+    }
     /* 放在插圖（第一個子元素）後面、「新」之類的角標前面 */
     const art = el.querySelector(':scope > .postcard__art');
     el.insertBefore(img, art ? art.nextSibling : el.firstChild);
   });
+}
+
+/* 照片＋濾鏡的卡面：濾鏡的參數是 px（水彩的白邊、油畫的筆觸），照 /unlock 卡面的寬（220 px）調的。
+   直接套在 40 px 的獎章縮圖上會糊成一團、套在 290 px 的明信片詳情上又太淡，
+   所以照片一律先排成 PHOTO_W 寬（高照容器的比例）、套濾鏡，再整張縮放到容器大小：哪裡看起來都跟抽到時一樣。
+   容器大小變了（還沒顯示、面板展開、視窗改大小）由 ResizeObserver 重算。 */
+const PHOTO_W = 220;
+const photoFit = window.ResizeObserver ? new ResizeObserver(function (entries) {
+  entries.forEach(function (e) {
+    /* 換頁拆掉的卡（ResizeObserver 在元素離開文件時也會通知）：不再追，免得每重畫一次就多留一批 */
+    if (!e.target.isConnected) { photoFit.unobserve(e.target); return; }
+    const img = e.target.querySelector(':scope > img.card-gen--photo');
+    if (img) fitPhoto(e.target, img);
+  });
+}) : null;
+function fitPhoto(el, img) {
+  const w = el.clientWidth, h = el.clientHeight;
+  if (photoFit && !img._fit) { img._fit = el; photoFit.observe(el); }
+  if (!w || !h) return;
+  img.style.width = PHOTO_W + 'px';
+  img.style.height = (PHOTO_W * h / w).toFixed(1) + 'px';
+  /* 多放大 1 px：縮放的小數會在右邊、下面留一條縫 */
+  img.style.transform = 'scale(' + ((w + 1) / PHOTO_W).toFixed(4) + ')';
+}
+function unfitPhoto(img) {
+  if (photoFit && img._fit) photoFit.unobserve(img._fit);
+  img._fit = null;
 }
 (function watchCardArt() {
   const view = document.getElementById('view');

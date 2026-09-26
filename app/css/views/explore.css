@@ -806,6 +806,20 @@
   object-fit: cover;
   pointer-events: none;
 }
+/* 還沒生成成品的：底圖照片＋那一款的濾鏡（跟 /unlock 的卡面一樣）。
+   大小由 paintCardArt 設成 220 px 寬再縮放到容器（濾鏡參數是 px，照抽卡時的卡面大小調的），所以從左上角縮 */
+.card-gen--photo {
+  inset: 0 auto auto 0;
+  max-width: none;
+  transform-origin: 0 0;
+}
+.card-gen--photo[data-style="watercolor"] { filter: url(#exf-watercolor); }
+.card-gen--photo[data-style="oil"] { filter: url(#exf-oil); }
+.card-gen--photo[data-style="woodcut"] { filter: url(#exf-woodcut); }
+.card-gen--photo[data-style="ink"] { filter: url(#exf-ink); }
+.card-gen--photo[data-style="gold"] { filter: url(#exf-gold); }
+.card-photo-host { background: var(--yoxi-paper); }
+.card-photo-host > .postcard__art { visibility: hidden; }
 .ex-face__paper {
   position: absolute;
   inset: 0;

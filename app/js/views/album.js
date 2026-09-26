@@ -252,6 +252,15 @@ const AGAIN = {
   p11: '窯的後面有一道更矮的舊牆，是更早一代的窯留下來的。兩道牆之間差了二十年。',
   p9:  '戲院後面那條沒招牌的巷子走到底，有一戶人家的門牌還是日文的。',
 };
+/* 明信片底圖照片的出處（作者、授權、來源連結）。明信片的卡面不論是生成的成品、還是照片＋濾鏡，
+   都是從這張照片來的（CC 授權要署名），跟 /unlock 結果頁的那一行同一個來源（APP.explore.cardPhoto） */
+function photoCreditHTML(cardId) {
+  const ph = APP.explore && APP.explore.cardPhoto ? APP.explore.cardPhoto(cardId) : null;
+  if (!ph) return '';
+  return '<p class="alb-credit" data-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') +
+    (ph.source ? ' <a class="alb-credit__a" href="' + esc(ph.source) + '" target="_blank" rel="noopener" data-act="open-credit">出處</a>' : '') + '</p>';
+}
+
 function storyOf(cardId) {
   if (STORY[cardId]) return STORY[cardId];
   const pid = placeOfCard(cardId);
@@ -620,7 +629,8 @@ APP.view('postcards', {
       (todo.length
         ? '<section class="alb-v2__cards" data-group="todo"><h2>還沒去的 ' + todo.length + ' 張</h2>' + grid(todo, false) + '</section>'
         : '') +
-      '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，不是實景照片。沒有期限，也不用照順序。</p>' +
+      '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，底圖是當地的實景照片（還沒生成好的先用濾鏡處理），' +
+        '照片出處寫在每張明信片裡。沒有期限，也不用照順序。</p>' +
     '</div></div>';
   },
   mount: function (root, params, ctx) {
@@ -741,6 +751,7 @@ APP.view('postcard', {
             '</span>' +
           '</button>' +
           '<p class="alb-hint">點一下翻到背面</p>' +
+          photoCreditHTML(P.id) +
         '</div>' +
         '<div class="alb-pad">' +
           '<h1 class="alb-h1">' + esc(P.name) + '</h1>' +
@@ -1215,11 +1226,11 @@ APP.view('week', {
     const shown = N.cards.slice(-6);
     return header({ title: '這一週', back: '/album', action: shareBtn() }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
-        '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>' +
+        '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖；明信片的底圖是實景照片，出處寫在每張明信片裡。</p>' +
         '<div class="alb-pad"><div class="card alb-cover">' +
           (shown.length
             ? '<div class="alb-cover__grid">' + shown.slice(-3).map(function (p) {
-                return '<span class="alb-cover__cell" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide></span>';
+                return '<span class="alb-cover__cell" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide data-card-art="' + esc(p.id) + '"></span>';
               }).join('') + '</div>'
             : '') +
           '<div class="alb-cover__txt">' +
@@ -1256,7 +1267,7 @@ APP.view('week', {
             '<div class="hscroll alb-weekcards">' + shown.map(function (p) {
               const gold = goldCard(p.id);
               return '<a class="alb-weekcard" href="#/postcard/' + esc(p.id) + '" data-card="' + esc(p.id) + '">' +
-                '<span class="alb-weekcard__pic' + (gold ? ' card-gold' : '') + '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide' +
+                '<span class="alb-weekcard__pic' + (gold ? ' card-gold' : '') + '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide data-card-art="' + esc(p.id) + '"' +
                   (gold ? ' data-gold-aura' : '') + '></span>' +
                 '<span class="alb-weekcard__t">' + esc(p.name) + '</span></a>';
             }).join('') + '</div></div>'

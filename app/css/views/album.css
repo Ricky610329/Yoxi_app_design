@@ -246,6 +246,9 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-big__note { font-weight: var(--fw-heavy); font-size: var(--fs-cap) !important; }
 
 .alb-hint { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-cap); color: var(--app-muted); }
+/* 明信片底圖照片的出處：一行小字，連結的命中區 44×44，不撐高這一行 */
+.alb-credit { margin-top: var(--sp-1); text-align: center; font-size: var(--fs-xs); color: var(--app-muted); }
+.alb-credit__a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -14px 0; padding: 0 var(--sp-1); color: var(--yoxi-navy); text-decoration: underline; }
 .alb-fact { padding: var(--sp-3) var(--sp-4); }
 .alb-fact .tile-icon [data-icon] { width: 22px; height: 22px; display: block; }
 .alb-fact .row-nav__sub { margin-top: 0; }

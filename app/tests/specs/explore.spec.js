@@ -705,10 +705,15 @@ T.spec('explore', function (t) {
       const gen = el.querySelector(':scope > img.card-gen');
       const d = got[id] ? app.APP.explore.cardStyleOf(id) : null;
       const src = d ? app.APP.explore.postcardSrc(id, d.key) : '';
+      const ph = d ? app.APP.explore.cardPhoto(id) : null;
       if (src) {
         t.ok(gen && gen.getAttribute('src') === src, id + ' 疊上 ' + d.key);
+      } else if (ph) {
+        /* 還沒生成成品：跟 /unlock 的卡面一樣，底圖照片＋那一款的濾鏡（以前不疊，收藏裡變回插圖） */
+        t.ok(gen && gen.classList.contains('card-gen--photo') && gen.getAttribute('src').endsWith(ph.file) &&
+          gen.getAttribute('data-style') === d.key, id + ' 還沒生成成品：照片＋' + d.key + ' 濾鏡');
       } else {
-        t.ok(!gen, id + (got[id] ? ' 還沒生成成品：不疊' : ' 還沒收：不疊'));
+        t.ok(!gen, id + ' 還沒收：不疊');
       }
     });
     await app.go('/ride?mode=explore');
