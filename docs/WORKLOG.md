@@ -133,3 +133,12 @@
 
 驗收：`python app/tests/run.py` node 47/47、瀏覽器 272/272（改前 34／201）；check-sw 60 筆 PASS。截圖沒有重拍（shoot-app 在 Mac 會卡住）。
 
+## 2026-09-26 收藏疊卡順序、金框卡的金粉（分支 `feat/gold-card-aura`）
+
+使用者要收藏首頁的三張是最新收下的、金卡在哪裡都有金粒子特效（隨畫面移動有物理性質）。細節見 `docs/HANDOFF.md` §15 與 `app/ARCHITECTURE.md` §7。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `f3d7f0b` | `recentCards` 照收下的先後（`STATE.all.cards` 鍵順序），同一天連收、跨年都對；新增 `explore-gold.js`：`data-gold-aura` 的元素邊緣散金粉，被跟著卡片走的空氣帶著、有慣性；收藏、叫車面板、浮起來的小卡、`/unlock` 翻開後都標；VERSION v17 |
+
+驗收：`python app/tests/run.py` node 47/47、瀏覽器 277/277；Playwright 看過捲動、換頁、翻面、蓋住、still。

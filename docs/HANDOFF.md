@@ -235,3 +235,13 @@ python app/tests/run.py                           # web app：node 單元＋head
 
 還沒做的：`app/tests/fixtures/`（selftest）沒有補浮層掃描與 `hit` 的案例；`MM.DD` 沒有年份，週回顧跨年會算錯（STATE 的格式歸 prototype，寫在 album.js 註解）；REVEAL（五款抽卡特效）刻意沒有改成資料表。
 
+
+## 15. 2026-09-26 收藏疊卡順序、金框卡的金粉（分支 `feat/gold-card-aura`）
+
+使用者要：收藏首頁的三張明信片是「最新獲得的三張」；金卡不管在哪裡顯示都有特效，金粒子從框邊緣散出，隨畫面移動有物理性質、跟著往上或往下飄。
+
+- **疊卡順序**：`APP.album.recentCards` 改看 `STATE.all.cards` 的鍵順序（`STATE.collect` 每收一張就加在最後）。以前比 `MM.DD`、同一天只把 `lastCard` 提前，同一天連收三張時第二、三張會顛倒，跨年後新卡還會排到 demo 的舊卡後面。疊卡、`/postcards`、長輩圖預設、城市顏色都用它。
+- **金粉**：新增 `app/js/views/explore-gold.js`（`APP.fx.gold`）。在「畫金框的那個元素」加 `data-gold-aura` 就會從它的邊緣散金粉；`[data-card-art]` 的金框卡沒人標時 `paintCardArt` 自動補 `.card-gold`＋`data-gold-aura`。整台手機一張 canvas（`.device` 上、z-index 97、不吃點擊）；被蓋住的邊不冒（`elementFromPoint`）、裁在捲動範圍裡；金粉被「跟著卡片走的空氣」帶著，有阻力與慣性。減少動態效果時不建 canvas、框照舊；看不到金框卡時不跑 rAF。契約寫在 `app/ARCHITECTURE.md` §7。
+- **標了哪些地方**：收藏首頁疊卡（新增金邊）、`/postcards`、明信片詳情、獎章組成卡、每日回顧「今天多了一張」、週回顧、叫車探索面板的卡、浮起來看的小卡（正反面金框）、`/unlock` 翻開之後（翻開前不標，不洩底）。長輩圖挑的是插圖不是明信片，沒有標。
+
+驗證：`python app/tests/run.py` node 47/47、瀏覽器 277/277（新增 5 條）；Playwright 實機看過手機與桌機縮放外框、捲動中、換頁中、翻面、分享面板蓋住、`?still=1`。`check-sw.py` 的清單本身對，只被工作目錄裡兩個沒進版控的 `* 2.js` 複本（Finder 產生，跟 HEAD 一模一樣）判 FAIL；`verify-quiet.py` 在這台 Mac 仍然找不到 Chrome、只跑得了 ②（PASS）。沒有改 `prototype/`、`pitch/`、`site/`。
