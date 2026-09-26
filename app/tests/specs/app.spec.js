@@ -162,8 +162,7 @@ T.spec('app', function (t) {
     t.ok(!S.has(card), '初始沒有 ' + card);
     const n0 = S.count();
     const A = app.APP;
-    if (A.explore && typeof A.explore.collect === 'function') A.explore.collect('glass-kiln', { by: 'walk', km: 1 });
-    else { S.collect('glass-kiln', { by: 'walk', date: A.fmt.todayMMDD() }); A.emit && A.emit('state:change'); }
+    T.helpers.collect(app, 'glass-kiln');
     t.eq(S.count(), n0 + 1, 'count +1');
     await app.reload();
     t.ok(app.STATE.has(card), 'reload 之後 ' + card + ' 還在');

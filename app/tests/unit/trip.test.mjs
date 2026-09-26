@@ -124,16 +124,73 @@ test('consume：用掉這一趟、記下 rideVia、回傳 { via, km }；別的�
   assert.equal(lakeCard in APP.store.get('rideVia'), false, '沒有歸因就不寫');
 });
 
-test('collect：搭車收下才用掉行程；走路收同一個地方不碰（還沒領的限定版不會消失）', () => {
-  const { APP } = load();
+test('collect：有搭 yoxi 抵達這裡的那一趟才算搭車並用掉它；走路收別的地方不碰（還沒領的限定版不會消失）', () => {
+  const { APP, STATE } = load();
   const T = APP.ride.trip;
   T.start('neiwan', 'k1');
   T.arrive();
-  APP.explore.collect('neiwan', { by: 'walk', note: '', km: 0, style: 'ink' });
-  assert.ok(T.arrivedAt('neiwan'), '走路收下：行程還在');
-  APP.explore.collect('neiwan', { by: 'ride', note: '', km: 28, style: 'gold' });
+  APP.store.set('draws', { moat: 'ink' });
+  const km0 = STATE.all.km;
+  assert.equal(APP.explore.collect('moat', { note: '走過去的' }), true);
+  const walked = STATE.card(APP.place('moat').card);
+  assert.equal(walked.by, 'walk', '沒有抵達這裡的那一趟 → 走路');
+  assert.equal(walked.note, '走過去的');
+  assert.equal(STATE.all.km - km0, Math.round(APP.fmt.km(APP.place('moat').dist)), '走路的公里是地方的距離（STATE 累加到總里程）');
+  assert.equal(APP.store.get('cardStyle')[APP.place('moat').card], 'ink', '走路收的是這次抵達抽到的那一款');
+  assert.equal('moat' in APP.store.get('draws'), false, '抽卡暫存用完就清');
+  assert.ok(T.arrivedAt('neiwan'), '走路收別的地方：行程還在');
+  const km1 = STATE.all.km;
+  APP.explore.collect('neiwan');
+  const card = APP.place('neiwan').card;
+  const rode = STATE.card(card);
+  assert.equal(rode.by, 'ride', '有抵達的那一趟 → 搭車');
+  assert.equal(STATE.all.km - km1, Math.round(APP.fmt.km(APP.place('neiwan').dist)), '公里是這一趟的');
+  assert.equal(APP.store.get('cardStyle')[card], 'gold', '搭 yoxi 抵達必得金框');
   assert.equal(raw(APP), null, '搭車收下：用掉');
-  assert.equal(APP.store.get('rideVia')[APP.place('neiwan').card], 'k1');
+  assert.equal(APP.store.get('rideVia')[card], 'k1', '歸因記在 rideVia');
+});
+
+test('collect：走路還沒抽就在收下時抽一次（跟 /unlock 一樣），抽到的記進 cardStyle', () => {
+  const { APP, ctx } = load();
+  ctx.Math = Object.assign(Object.create(Math), { random: () => 0 });   /* 只換這個 vm 的亂數：機率表第一款 */
+  APP.explore.collect('glass-kiln');
+  const card = APP.place('glass-kiln').card;
+  assert.equal(APP.store.get('cardStyle')[card], APP.explore.DRAW_STYLES[0].key);
+  assert.equal(APP.explore.collect('glass-kiln'), false, '收過了：不是新收');
+  assert.equal(APP.store.get('cardStyle')[card], APP.explore.DRAW_STYLES[0].key, '收過了不改款式');
+});
+
+test('cardOrigin：搭車或走路、哪一款、金框、限定版、歸因只有這一個答案', () => {
+  const { APP, STATE } = load();
+  const O = APP.explore.cardOrigin, T = APP.ride.trip;
+  assert.equal(O('p11'), null, '還沒收');
+  /* demo 一開始就有的：p4 搭車（南寮漁港 8.2 km）、p1 走路 */
+  const p4 = O('p4');
+  assert.equal(p4.by, 'ride');
+  assert.equal(p4.style.key, 'gold', '沒有款式紀錄的搭車卡是金框');
+  assert.equal(p4.gold, true);
+  assert.equal(p4.limited, APP.ride.limitedCard('p4'), '限定版＝ride.js 的判斷');
+  const p1 = O('p1');
+  assert.equal(p1.by, 'walk');
+  assert.equal(p1.gold, !!p1.style.gold);
+  assert.equal(p1.limited, false);
+  assert.equal(p1.date, STATE.card('p1').date);
+  /* 搭車去走得到的地方：金框、不是限定版 */
+  T.arriveAt('glass-kiln');
+  APP.explore.collect('glass-kiln');
+  const near = O('p11');
+  assert.deepEqual([near.by, near.style.key, near.gold, near.limited], ['ride', 'gold', true, false]);
+  /* 搭車去走不到的地方：限定版，歸因跟著 */
+  T.start('neiwan', 'route');
+  T.arrive();
+  APP.explore.collect('neiwan');
+  const far = O('p9');
+  assert.deepEqual([far.by, far.gold, far.limited, far.via], ['ride', true, true, 'route']);
+  /* 走路抽到金框：金框、不是限定版 */
+  APP.store.set('draws', { moat: 'gold' });
+  APP.explore.collect('moat');
+  const lucky = O('p19');
+  assert.deepEqual([lucky.by, lucky.gold, lucky.limited, lucky.via], ['walk', true, false, null]);
 });
 
 test('arriveAt（demo 搭 yoxi 抵達）：距離不明是 null 不是 0；同一個目的地保留叫車時間、公里、歸因、評分', () => {

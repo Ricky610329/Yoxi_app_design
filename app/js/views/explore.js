@@ -491,7 +491,8 @@ function renderPlace(params) {
     foot =
       '<button class="btn-primary ex-ride" type="button" data-act="set-dropoff">' +
         '<span class="ex-ride__t">用 yoxi 前往 · 約 $' + num(r.fare) + ' · ' + num(r.min) + ' 分</span>' +
-        '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' +
+        /* 限定版（+點數）只給走不到的地方：判斷在 ride.js 的 limitedPlace，不在這裡用距離另算一次 */
+        (APP.ride.limitedPlace(p) ? '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' : '') +
       '</button>' +
       (R ? '<a class="btn-ghost" href="#/route/' + esc(R.id) + '" data-act="open-route">先看看路線</a>'
          : '<a class="btn-ghost" href="#/routes" data-act="open-route">看這個月的路線</a>') +
@@ -540,7 +541,7 @@ function renderPlace(params) {
 
 /* 已收藏那一行：日期 · 走路／搭車 */
 function gotLine(p) {
-  const c = p.card ? S().card(p.card) : null;
+  const c = p.card ? APP.explore.cardOrigin(p.card) : null;
   const bits = ['已收藏'];
   if (c && c.date) bits.push(esc(c.date));
   if (c) bits.push(c.by === 'ride' ? '搭車抵達' : '走路抵達');

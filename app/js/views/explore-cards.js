@@ -6,15 +6,16 @@
    回答什麼：一張明信片是哪一款、長什麼樣、怎麼收下。收藏（album）、叫車首頁（ride）、
              探索的各畫面、/unlock 都讀這裡，所以獨立成一支，不跟著任何一個畫面走。
    提供（APP.explore，對外 API，契約 §7）：
-     collect(placeId, { by, note, km, style })   收下一張明信片（ride 的限定版解鎖也用）
+     collect(placeId, { note })                  收下一張明信片：搭車或走路、哪一款、幾公里都由這裡自己判斷
+     cardOrigin(cardId)                          收下的那一張是怎麼來的：{ by, style, gold, limited, via, date, note, km }
      DRAW_STYLES／drawStyle(by, r)               抽卡機率表（全 app 唯一來源）與純抽取函式
      openOdds()                                  機率說明（掛在 .device，帶 data-overlay＋_dismiss）
      cardStyleOf(cardId)／postcardSrc(cardId, key)／cardPhoto(cardId)／paintCardArt(root)
                                                  生成好的明信片；#view 裡的 [data-card-art] 自動疊上成品
    是不是搭車抵達一律問 ride 的行程 module：APP.ride.trip.arrivedAt(地點 id)；搭車收下由 collect 呼叫
-   APP.ride.trip.consume 用掉那一趟（連同 rideVia 歸因）。
+   APP.ride.trip.consume 用掉那一趟（連同 rideVia 歸因）。「是不是金框、是不是限定版」一律問 cardOrigin。
    內部零件 APP.explore._（不可列舉；只給 explore.js 與 explore-unlock.js 共用，別的區塊不要依賴）：
-     這次抵達的款式（storedDraw 只讀／rollDraw 抽並記下）、
+     這一次抵達（arrivalAt：搭車還是走路、幾公里、這次的款式）、這次抵達的款式（storedDraw 只讀／rollDraw 抽並記下）、
      關掉機率說明（closeOdds）、點數（ridePoints）與幾個小工具；explore.js 再掛上頁面零件
      （exploreHome、notFound、backFabBar、distHTML）。
    刻意沒有：畫面（/unlock 在 explore-unlock.js）、特效（explore-fx.js 的 APP.fx）。
@@ -84,6 +85,17 @@ function oddsPct(w) { return (Math.round(w) / 10) + '%'; }
 function storedDraw(p, isRide) {
   if (isRide) return drawStyle('ride', 0);
   return styleOf((APP.store.get('draws') || {})[p.id]);
+}
+/* 這一次抵達（只讀）：搭 yoxi 抵達這裡的那一趟（行程 module 說了算）、搭車還是走路、幾公里、這次的款式
+   （走路還沒抽是 null）。/unlock 的畫面與 collect 都用這一個答案。 */
+function arrivalAt(p) {
+  const trip = p ? APP.ride.trip.arrivedAt(p.id) : null;
+  return {
+    trip: trip,
+    by: trip ? 'ride' : 'walk',
+    km: trip && trip.km != null ? trip.km : fmt.km(p && p.dist),
+    draw: p ? storedDraw(p, !!trip) : null,
+  };
 }
 /* 走路抵達抽一款，結果記在 store.draws（地點 id → key）。只在 mount 與收下時呼叫（契約 §3.1：render 不寫 store）。
    重整或返回再進來都是同一張，不能靠重開頁面重抽；收下之後清掉，下次抵達重新抽。 */
@@ -259,24 +271,30 @@ function closeOdds() {
 /* ---------------------------------------------------------------- APP.explore */
 
 /**
- * 收下一張明信片（契約 §7）。
- * placeId 可以是地點 id 或明信片 id；回傳是否為新收。
+ * 收下一張明信片（契約 §7）。placeId 可以是地點 id 或明信片 id；回傳是否為新收。
+ * 呼叫的人只給那一句話（note），其餘都在這裡判斷，跟 /unlock 畫面上看到的是同一個答案：
+ *   - 搭車還是走路：行程 module 說這一趟搭 yoxi 抵達這裡（APP.ride.trip.arrivedAt）就是搭車，否則走路；
+ *   - 哪一款：搭車必得金框；走路是這次抵達抽到的那一款（store.draws，還沒抽就在這裡抽）；
+ *   - 幾公里：搭車用這一趟的公里數，走路用地方的距離（距離不明是 0，跟以前一樣）。
+ * 搭車收下才用掉這一趟（行程 module 順便記下 rideVia 歸因）；走路收別的地方不碰行程——還沒領的限定版
+ * （金框＋點數）不會跟著消失。同一個地方有搭車抵達的那一趟時一律算搭車（/unlock 也是這樣畫的）。
  */
 function collect(placeId, opt) {
   opt = opt || {};
-  const by = opt.by || 'walk';
   const p = APP.place(placeId);
+  const pid = p ? p.id : placeId;
   const target = (p && p.card) || placeId;
+  const a = arrivalAt(p);
+  const drawn = a.trip ? a.draw : (p ? rollDraw(p) : null);
   const isNew = S().collect(target, {
-    by: by,
+    by: a.by,
     note: opt.note || '',
-    km: opt.km,
+    km: a.km,
     date: fmt.todayMMDD(),
   });
-  const pid = p ? p.id : placeId;
   /* 抽到的款式記在 app store（STATE 的卡片結構不動）；這次抵達的暫存抽卡用完就清 */
-  if (isNew && opt.style) {
-    APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: opt.style }));
+  if (isNew && drawn) {
+    APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: drawn.key }));
   }
   const draws = APP.store.get('draws');
   if (draws && (draws[pid] || draws[placeId])) {
@@ -284,9 +302,7 @@ function collect(placeId, opt) {
     delete rest[pid]; delete rest[placeId];
     APP.store.set('draws', rest);
   }
-  /* 搭車收下才算用掉這一趟（行程 module 順便記下 rideVia 歸因）。走路收同一個地方不碰行程：
-     不然還沒領的限定版（金框＋點數）會跟著永遠消失 */
-  if (by === 'ride') APP.ride.trip.consume(placeId);
+  if (a.trip) APP.ride.trip.consume(placeId);
   const drop = APP.store.get('dropoff');
   if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
   /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
@@ -296,8 +312,31 @@ function collect(placeId, opt) {
   return isNew;
 }
 
+/**
+ * 收下的那一張是怎麼來的（還沒收是 null）。收藏、叫車的浮起來小卡、探索的「已收藏」一行都讀這個，
+ * 不各自去翻 STATE 的 by、store.cardStyle、store.rideVia：
+ *   { id, date, note, km, by:'walk'|'ride', style（DRAW_STYLES 的一款）, via（搭車的轉換歸因或 null）,
+ *     limited（yoxi 限定版：ride.js 的判斷，搭 yoxi 去走不到的地方、+50 點）,
+ *     gold（畫金框：抽到金框那一款，或是限定版——限定版一定是金框，金框不一定是限定版） }
+ */
+function cardOrigin(cardId) {
+  const c = S() && S().card(cardId);
+  if (!c) return null;
+  const style = cardStyleOf(cardId);
+  const limited = !!(APP.ride && APP.ride.limitedCard && APP.ride.limitedCard(cardId));
+  return {
+    id: cardId, date: c.date, note: c.note, km: c.km,
+    by: c.by === 'ride' ? 'ride' : 'walk',
+    style: style,
+    gold: limited || !!(style && style.gold),
+    limited: limited,
+    via: (APP.store.get('rideVia') || {})[cardId] || null,
+  };
+}
+
 APP.explore = Object.assign(APP.explore || {}, {
   collect: collect,
+  cardOrigin: cardOrigin,
   /* 抽卡：機率表、純抽取函式、機率說明（契約 §7） */
   DRAW_STYLES: DRAW_STYLES,
   drawStyle: drawStyle,
@@ -315,7 +354,7 @@ Object.defineProperty(APP.explore, '_', {
   value: {
     M: M, S: S, collected: collected, num: num,
     ridePoints: ridePoints,
-    styleOf: styleOf, oddsPct: oddsPct, storedDraw: storedDraw, rollDraw: rollDraw,
+    styleOf: styleOf, oddsPct: oddsPct, storedDraw: storedDraw, rollDraw: rollDraw, arrivalAt: arrivalAt,
     closeOdds: closeOdds,
   },
 });

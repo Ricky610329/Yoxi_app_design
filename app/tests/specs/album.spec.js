@@ -691,7 +691,7 @@ T.spec('album', function (t) {
   t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋抽到的畫風，詳情寫照片出處', async function (app) {
     await app.reset();
     const A = app.APP;
-    A.explore.collect('hill', { by: 'walk', style: 'oil', km: 1 });
+    T.helpers.collect(app, 'hill', { style: 'oil' });
     const ph = A.explore.cardPhoto('p21');
     t.eq(A.explore.postcardSrc('p21', 'oil'), '', '前提：p21 沒有生成成品');
     t.ok(ph && ph.file === 'p21-1.jpg', '前提：p21 有自己的實景照片');

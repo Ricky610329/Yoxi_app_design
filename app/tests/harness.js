@@ -749,6 +749,18 @@
       if (opt.hold) return up;
       up();
     },
+    /* 收下一張明信片，走跟 /unlock 一樣的路（APP.explore.collect 自己判斷搭車或走路、哪一款、幾公里）：
+       by:'ride' 先讓行程 module 記一趟搭 yoxi 抵達這裡（APP.ride.trip.arriveAt，會取代原本的行程）；
+       走路先把這次抵達抽到的款式寫進 store.draws（opt.style，預設水彩：不然隨機抽到金框，測試會忽紅忽綠）。
+       回傳是否新收 */
+    collect: function (appObj, placeId, opt) {
+      opt = opt || {};
+      const A = appObj.APP;
+      const p = A.place(placeId);
+      if (opt.by === 'ride') A.ride.trip.arriveAt(placeId);
+      else if (p) A.store.set('draws', Object.assign({}, A.store.get('draws') || {}, { [p.id]: opt.style || 'watercolor' }));
+      return A.explore.collect(placeId, { note: opt.note });
+    },
     /* 非 still 的抵達：點發光的地方 → 收集明信片 → 一路點畫面（蓄力快轉 → 翻開 → 看結果），停在 data-at=3 */
     drawThrough: async function (appObj) {
       await appObj.click('[data-act="open-spot"]');

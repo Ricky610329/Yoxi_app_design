@@ -23,7 +23,8 @@ test('點數：總數＝明細相加；城事列＝RIDE_BONUS＝MOCK.FAR_PLACE.r
   const city = rows.filter((r) => r.city);
   assert.ok(city.every((r) => r.amt === R.RIDE_BONUS && r.place), '城事列都是 RIDE_BONUS、帶地名');
   const t0 = R.pointsTotal();
-  APP.explore.collect('neiwan', { by: 'ride', km: 28 });
+  R.trip.arriveAt('neiwan');                     /* 搭 yoxi 抵達內灣，再收下：collect 自己判斷是搭車 */
+  APP.explore.collect('neiwan');
   assert.equal(R.pointsTotal() - t0, R.RIDE_BONUS + Math.floor(F.fare(28) / 20), '搭車到內灣：+RIDE_BONUS＋搭車回饋（每 20 元 1 點）');
   assert.equal(R.pointsTotal(), R.pointsRows().reduce((a, r) => a + r.amt, 0), '收卡後總數仍＝明細相加');
 });
@@ -132,7 +133,8 @@ for (const c of SLOTS) {
     let sum = 0;
     for (let d = before.now.from; d <= before.now.to; d++) sum += month[d - 1] || 0;
     assert.equal(before.now.steps, sum, '本週步數＝HEALTH_STEPS 相加');
-    APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    APP.store.set('draws', { 'glass-kiln': 'watercolor' });
+    APP.explore.collect('glass-kiln');
     const after = W();
     assert.equal(after.now.places, before.now.places + (c.slot === 'now' ? 1 : 0), '本週地方數');
     assert.equal(after.prev.places, before.prev.places + (c.slot === 'prev' ? 1 : 0), '上週地方數');

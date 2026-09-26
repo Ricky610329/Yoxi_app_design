@@ -87,22 +87,12 @@ function badgeOfCard(cardId) {
   return (M().BADGES || []).filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0] || null;
 }
 
-/* 金框：收下的是金框那一款（explore.js 的 cardStyleOf：抽到的，或 demo 一開始就有的搭車卡）。
-   契約：「金框的明信片在收藏裡也是金框」。explore.js 沒載到時退回 store.cardStyle。 */
-function goldCard(cardId) {
-  if (!STATE.card(cardId)) return false;
-  if (APP.explore && APP.explore.cardStyleOf) {
-    const d = APP.explore.cardStyleOf(cardId);
-    return !!(d && d.gold);
-  }
-  return (APP.store.get('cardStyle') || {})[cardId] === 'gold';
-}
-/* yoxi 限定版（金框＋和泰 Points +50）：只看 ride.js 的判斷（搭 yoxi 去走不到的地方）。
-   搭車收的卡一定是金框，所以不能拿「金框」回推「限定版」—— 搭車去 900 m 外的玻璃窯是金框、不是限定版。 */
-function limitedCard(cardId) {
-  if (!STATE.card(cardId)) return false;
-  return !!(APP.ride && APP.ride.limitedCard && APP.ride.limitedCard(cardId));
-}
+/* 收下的那一張是怎麼來的：一律問 explore-cards.js 的 cardOrigin（契約 §7），這裡不另外判斷。
+   金框＝抽到金框那一款（或 demo 一開始就有的搭車卡），契約：「金框的明信片在收藏裡也是金框」。
+   yoxi 限定版（金框＋和泰 Points +50）＝ride.js 的判斷（搭 yoxi 去走不到的地方）。限定版一定是金框，
+   金框不一定是限定版——搭車去 900 m 外的玻璃窯是金框、不是限定版，所以不能拿「金框」回推「限定版」。 */
+function goldCard(cardId) { const o = APP.explore.cardOrigin(cardId); return !!(o && o.gold); }
+function limitedCard(cardId) { const o = APP.explore.cardOrigin(cardId); return !!(o && o.limited); }
 
 function badgeProg(r) { return '收集 ' + r.done + '/' + r.total; }
 
@@ -703,12 +693,12 @@ APP.view('postcard', {
         '</div>';
     }
 
-    const ride = got.by === 'ride';
-    /* 金框＝收下的是金框那一款；限定版＝ride.js 的判斷（搭 yoxi 去走不到的地方，+50 點）。
-       限定版一定是金框（搭 yoxi 抵達必得金框），金框不一定是限定版（走路抽到的、搭車去走得到的地方）。
+    /* 搭車還是走路、金框、限定版都問 cardOrigin（限定版一定是金框，金框不一定是限定版）。
        框用 ::after 畫在插圖上面（album.css 的 .alb-big__card.postcard--gold）：chengshi.css 的 inset 陰影會被滿版插圖蓋住。 */
-    const limited = limitedCard(P.id);
-    const gold = limited || goldCard(P.id);
+    const origin = APP.explore.cardOrigin(P.id);
+    const ride = origin.by === 'ride';
+    const limited = origin.limited;
+    const gold = origin.gold;
     const pid = APP.footprintPlace(P.id);
     const pl = pid ? APP.place(pid) : APP.place(P.id);
     const dist = pl && pl.dist != null ? pl.dist : null;

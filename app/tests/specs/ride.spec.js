@@ -259,7 +259,7 @@ T.spec('ride', function (t) {
 
   t.test('金框的卡在探索面板與浮起來看都是金框、有金粉；還沒收的沒有', async function (app) {
     await app.reset();
-    app.APP.explore.collect('glass-kiln', { by: 'ride', style: 'gold', km: 1 });
+    T.helpers.collect(app, 'glass-kiln', { by: 'ride' });            /* 搭 yoxi 抵達必得金框 */
     await app.go('/ride?mode=explore&area=glass-kiln');
     await app.click('[data-act="expand-cards"]');
     const art = function () { return app.$('[data-area-expanded] [data-card="p11"] .ride-v2__card-art'); };

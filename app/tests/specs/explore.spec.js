@@ -83,7 +83,7 @@ T.spec('explore', function (t) {
 
   t.test('/explore：今天的地方收過之後是彩色＋已收藏', async function (app) {
     await app.reset();
-    app.APP.explore.collect(app.MOCK.TODAY.id, { by: 'walk', km: 1 });
+    T.helpers.collect(app, app.MOCK.TODAY.id);
     await app.go('/explore');
     t.ok(app.$('.ex-today.is-got'), '彩色');
     t.includes(app.text('.ex-today'), '已收藏', '已收藏角標');
@@ -152,7 +152,7 @@ T.spec('explore', function (t) {
     await app.go('/unlock/nope');
     t.ok(app.$('main.view a[href="#/ride?mode=explore"]'), '/unlock 找不到 → 回探索');
     /* 已收過的地方：結果頁的「回探索」 */
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    T.helpers.collect(app, 'glass-kiln');
     await app.go('/unlock/glass-kiln');
     const back = app.$('[data-act="go-explore"]');
     t.eq(back && back.getAttribute('href'), '#/ride?mode=explore&area=glass-kiln', '已收過 → 回探索帶 area');
@@ -254,7 +254,7 @@ T.spec('explore', function (t) {
   t.test('/unlock/glass-kiln：已收過 → 已在收藏裡＋看明信片', async function (app) {
     /* 自己準備狀態（單獨跑這一條也對）：先收下 p11 */
     await app.reset();
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    T.helpers.collect(app, 'glass-kiln');
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-scene="3"].is-on'), '第三幕');
     t.includes(app.text('main.view[data-view]'), '已在收藏裡', '已在收藏裡');
@@ -306,7 +306,7 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  t.test('搭車抵達還沒收：/going 不再帶你走一趟；走路收下（APP.explore.collect by walk）不清掉 trip', async function (app) {
+  t.test('搭車抵達還沒收：/going 不再帶你走一趟；走路收別的地方不清掉 trip、收這裡才算搭車', async function (app) {
     const trip = T.fixtures.trip({ placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 });
     await app.reset({ store: { trip: trip } });
     await app.go('/going/glass-kiln');
@@ -320,12 +320,13 @@ T.spec('explore', function (t) {
     await app.go('/going/moat');
     t.ok(app.$('[data-act="arrive"]'), '別的地方照常走路前往');
     t.ok(!app.$('[data-going-rode], [data-going-trip]'), '沒有擋住的卡');
-    /* 走路收下同一個地方：trip 留著（它只在搭車收下時用掉） */
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
-    t.ok(app.APP.store.get('trip') && app.APP.store.get('trip').placeId === 'glass-kiln', 'by walk 不清 trip');
-    app.APP.store.set('trip', trip);
-    app.APP.explore.collect('glass-kiln', { by: 'ride', km: 1 });
-    t.eq(app.APP.store.get('trip'), null, 'by ride 才清 trip');
+    /* 走路收下別的地方：trip 留著（它只在搭車收下時用掉，還沒領的限定版不會消失） */
+    T.helpers.collect(app, 'moat');
+    t.ok(app.APP.store.get('trip') && app.APP.store.get('trip').placeId === 'glass-kiln', '走路收別的地方不清 trip');
+    /* 同一個地方有搭 yoxi 抵達的那一趟：collect 自己判斷是搭車，收下就用掉 */
+    t.eq(app.APP.explore.collect('glass-kiln'), true, '收下 glass-kiln');
+    t.eq(app.STATE.card('p11').by, 'ride', '有抵達的那一趟 → 算搭車');
+    t.eq(app.APP.store.get('trip'), null, '搭車收下才清 trip');
     await app.reset();
   });
 
@@ -693,8 +694,8 @@ T.spec('explore', function (t) {
     await app.reset();
     let fired = 0;
     const off = app.APP.on('state:change', function () { fired++; });
-    t.eq(app.APP.explore.collect('moat', { by: 'walk', km: 1.8 }), true, '第一次 true');
-    t.eq(app.APP.explore.collect('moat', { by: 'walk', km: 1.8 }), false, '第二次 false');
+    t.eq(T.helpers.collect(app, 'moat'), true, '第一次 true');
+    t.eq(T.helpers.collect(app, 'moat'), false, '第二次 false');
     t.ok(app.STATE.has('p19'), 'moat → p19');
     t.ok(fired >= 1, 'state:change');
     off();

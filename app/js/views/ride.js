@@ -903,7 +903,8 @@ function rideV2Mount(root, params, ctx) {
     floatCard.setAttribute('aria-label', '翻到卡片背面');
     /* 金框的卡浮起來看也是金框、有金粉（explore-gold.js）：框畫在整張卡上，所以標在這裡，
        paintCardArt 看到外層標了就不再替裡面的插圖補一個 */
-    const gold = S().has(id) && !!(APP.explore && APP.explore.cardStyleOf && (APP.explore.cardStyleOf(id) || {}).gold);
+    const origin = APP.explore.cardOrigin(id);
+    const gold = !!(origin && origin.gold);
     floatCard.classList.toggle('is-gold', gold);
     floatCard.toggleAttribute('data-gold-aura', gold);
     floating.querySelector('[data-card-front]').innerHTML =

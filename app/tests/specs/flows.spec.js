@@ -651,14 +651,15 @@ T.spec('flows', function (t) {
   }, { timeout: 30000 });
 
   t.test('全站掃描：收了 3 張、有下車點、有行程', async function (app) {
-    await app.reset({ store: {
-      dropoff: T.fixtures.dropoff({ id: 'brick', name: '新竹州廳', km: 2.4, setAt: now() }),
-      trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
-    } });
+    /* 搭車收的那張直接種進 STATE（走 APP.explore.collect 要先有一趟抵達內灣的行程，會取代下面這趟進行中的） */
+    await app.reset({
+      cards: [{ id: 'p11', by: 'walk', note: '第一張' }, { id: 'p19', by: 'walk' }, { id: 'p9', by: 'ride', km: 28 }],
+      store: {
+        dropoff: T.fixtures.dropoff({ id: 'brick', name: '新竹州廳', km: 2.4, setAt: now() }),
+        trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
+      },
+    });
     const A = app.APP;
-    A.explore.collect('glass-kiln', { by: 'walk', note: '第一張' });
-    A.explore.collect('moat', { by: 'walk' });
-    A.explore.collect('neiwan', { by: 'ride', km: 28 });
     t.eq(app.STATE.count(), 11, '收了 3 張');
     t.ok(A.store.get('dropoff') && A.store.get('trip'), '下車點與行程都在');
     await sweep(app, '有狀態 ');
@@ -1013,7 +1014,7 @@ T.spec('flows', function (t) {
     const before = app.APP.album.weekStats();
     const range0 = app.text('.alb-cover__range');
     const km0 = app.text('[data-cmp="km"] [data-now]'), st0 = app.text('[data-cmp="steps"] [data-now]');
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    T.helpers.collect(app, 'glass-kiln');
     await app.go('/album');
     await app.go('/week');
     const after = app.APP.album.weekStats();
@@ -1234,7 +1235,7 @@ T.spec('flows', function (t) {
     t.eq(r0, lab(w0.now.from) + ' – ' + lab(w0.now.to), '收卡前：' + r0);
     t.eq(w0.now.to, 21, '固定範圍終點是 21 日（HEALTH_STEPS 最後一個有步數的日子）');
     t.eq(w0.now.to - w0.now.from + 1, app.$$('.alb-days__col').length, '標題的天數＝長條圖的天數');
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
+    T.helpers.collect(app, 'glass-kiln');
     await app.go('/album');
     await app.go('/week');
     t.eq(app.text('.alb-cover__range'), r0, '收卡後標題不變：' + app.text('.alb-cover__range'));

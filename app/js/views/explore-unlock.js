@@ -36,7 +36,6 @@ const esc = APP.esc;
 const fmt = APP.fmt;
 const E = APP.explore;
 const DRAW_STYLES = E.DRAW_STYLES;
-const drawStyle = E.drawStyle;
 const cardStyleOf = E.cardStyleOf;
 const postcardSrc = E.postcardSrc;
 const cardPhoto = E.cardPhoto;
@@ -44,7 +43,7 @@ const openOdds = E.openOdds;
 const collect = E.collect;
 const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
-const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw;
+const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw, arrivalAt = K.arrivalAt;
 const closeOdds = K.closeOdds;
 const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar, distHTML = K.distHTML;
 
@@ -59,9 +58,7 @@ function cardName(p) {
 }
 
 /* 點數只給走不到的地方：判斷在 ride.js（APP.ride.limitedPlace），這裡不另寫一份 */
-function limitedPlace(p) {
-  return !!(APP.ride && APP.ride.limitedPlace && APP.ride.limitedPlace(p));
-}
+const limitedPlace = APP.ride.limitedPlace;
 
 /* 稀有度 1–5 就是 DRAW_STYLES 的順序（越後面越難抽）。特效照稀有度分級給，常見的輕、稀有的重：
    | 稀有度 | 款式     | 蓄力        | 翻開之後                                                        |
@@ -130,18 +127,19 @@ function renderUnlock(params) {
   if (!p) {
     return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  const trip = APP.ride.trip.arrivedAt(p.id);
-  const isRide = !!trip;
+  /* 搭車還是走路、幾公里、這次的款式：跟收下時（APP.explore.collect）同一個答案 */
+  const arr = arrivalAt(p);
+  const isRide = !!arr.trip;
   const got = collected(p);
   /* 已收過的地方不重抽：顯示當初收下的那一款。走路抵達還沒抽的是 null（卡背；mount 抽完重畫） */
-  const draw = got ? cardStyleOf(p.card) : storedDraw(p, isRide);
+  const draw = got ? cardStyleOf(p.card) : arr.draw;
   /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
   const gold = !got && !!draw && !!draw.gold;
   const bonus = isRide && limitedPlace(p);
   const name = cardName(p);
   const today = fmt.todayMMDD();
   const year = new Date().getFullYear();
-  const km = isRide && trip.km != null ? trip.km : fmt.km(p.dist);
+  const km = arr.km;
   const arriveBy = isRide
     ? '搭 yoxi 抵達 · ' + num(km) + ' 公里'
     : (p.dist != null ? '走了 ' + distHTML(p.dist) + ' 抵達' : '走路抵達');
@@ -770,13 +768,9 @@ function mountUnlock(root, params) {
       collecting = true;
       btn.disabled = true;
       const note = noteInput ? String(noteInput.value || '').trim().slice(0, NOTE_MAX) : '';
-      /* 收的當下再判一次（畫面開著的時候行程可能被取消或換掉了） */
-      const trip = APP.ride.trip.arrivedAt(p.id);
-      const ride = isRide && !!trip;
-      const km = ride && trip.km != null ? trip.km : fmt.km(p.dist);
-      /* 搭車收下：collect 會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
-      const drawn = ride ? drawStyle('ride', 0) : rollDraw(p);
-      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km, style: drawn.key });
+      /* 搭車還是走路、哪一款、幾公里由 collect 在收的當下判斷（畫面開著的時候行程可能被取消或換掉了）；
+         搭車收下會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
+      collect(p.id, { note: note });
       APP.ui.toast('收進收藏了');
       APP.nav.go('/album', { dir: 'push' });
     };
