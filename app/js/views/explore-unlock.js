@@ -37,7 +37,7 @@ const fmt = APP.fmt;
 const E = APP.explore;
 const DRAW_STYLES = E.DRAW_STYLES;
 const cardStyleOf = E.cardStyleOf;
-const postcardSrc = E.postcardSrc;
+const cardFace = E.cardFace;
 const cardPhoto = E.cardPhoto;
 const openOdds = E.openOdds;
 const collect = E.collect;
@@ -83,17 +83,13 @@ function auraColor(i) {
 }
 const CHARGE_CAPS = ['正在畫下今天的這裡', '讀取今天的天氣與光線', '鎖定畫風', '收筆'];
 
-/* 卡面：有實景照片就用照片（PHOTOS，授權一定要露出），沒有就用插圖；畫風是 explore-fx.js 的 SVG 濾鏡 */
-function photoOf(p) {
-  if (!p) return null;
-  const P = window.PHOTOS;
-  return cardPhoto(p.card) || (P && P.get ? P.get(p.id, 0) : null);
-}
+/* 卡面：疊法跟收藏裡的卡一樣（explore-face.js 的 cardFace）——生成好的成品 → 實景照片（PHOTOS，授權一定要露出）
+   ＋畫風的 SVG 濾鏡（explore-fx.js）→ 插圖 */
 function faceHTML(p, d) {
   const key = d ? d.key : '';
-  const ph = photoOf(p);
-  const photo = ph ? window.PHOTOS.base + ph.file : '';
-  const gen = postcardSrc(p.card, key);
+  const face = cardFace(p.card, key);
+  const photo = face.photo;
+  const gen = face.gen;
   /* 生成好的成品優先；載不到（data-fallback）就退回「照片＋SVG 濾鏡」的示意，再沒有就是插圖 */
   const base = gen
     ? '<img class="ex-face__img" src="' + esc(gen) + '" alt="" draggable="false"' +
@@ -109,7 +105,7 @@ function faceHTML(p, d) {
     '</div>';
 }
 function creditHTML(p) {
-  const ph = photoOf(p);
+  const ph = cardPhoto(p.card);
   if (!ph) return '';
   return '<p class="ex-credit" data-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') +
     ' <a class="ex-credit__a" href="' + esc(ph.source) + '" target="_blank" rel="noopener" data-act="open-credit">出處</a></p>';

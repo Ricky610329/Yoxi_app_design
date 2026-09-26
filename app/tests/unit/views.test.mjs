@@ -205,3 +205,21 @@ test('APP.state：寫 STATE 一定跟著 state:change；batch 裡的寫入寫完
   assert.equal(STATE.all.settings.layer, false, 'STATE.settings 的開關是偏好，留著');
   off();
 });
+
+test('cardFace：卡面的疊法只有一個——成品 → 底圖照片＋濾鏡 → 插圖；出處跟著同一張照片', () => {
+  const { APP } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards', 'explore-face'] });
+  const E = APP.explore;
+  const p1 = E.cardFace('p1', 'oil');
+  assert.equal(p1.gen, 'assets/postcards/p1-oil.jpg', 'p1 有生成好的成品');
+  assert.ok(p1.photo, '成品載不到時退回的底圖照片也在');
+  assert.equal(p1.credit, E.cardPhoto('p1'), '出處＝cardPhoto');
+  const p21 = E.cardFace('p21', 'oil');
+  assert.equal(p21.gen, '', 'p21 沒有生成成品');
+  assert.ok(p21.photo.endsWith('p21-1.jpg'), 'p21 用自己的實景照片');
+  assert.equal(E.cardFace('p1', 'nope').gen, '', '不認得的款式沒有成品');
+  assert.deepEqual([E.cardFace('nope', 'oil').gen, E.cardFace('nope', 'oil').photo, E.cardFace('nope', 'oil').credit], ['', '', null], '都沒有：插圖');
+  /* 每一張明信片都有底圖照片（明信片自己的 → 對照表的地點 → 所在地點的），/unlock 與收藏看到的是同一張 */
+  const all = APP.places().map((p) => p.card).filter(Boolean);
+  assert.ok(all.length > 0);
+  for (const c of all) assert.ok(E.cardPhoto(c), c + ' 有底圖照片');
+});

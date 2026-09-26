@@ -37,7 +37,7 @@ const repo = (rel) => fileURLToPath(new URL('../../../' + rel, import.meta.url))
 /* views 的載入順序＝index.html（名字就是 app/js/views/<名字>.js）。
    node 只載得動沒有 DOM 的原型檔：icons／shell／interact／hsmap 不載（SHELL、INTERACT、HSMAP 是空物件），
    views 只跑到「註冊畫面＋匯出 APP.<區塊>」為止，render／mount 不在這裡測。 */
-export const VIEW_ORDER = ['system', 'ride', 'explore-fx', 'explore-cards', 'explore-gold', 'explore', 'explore-unlock', 'album'];
+export const VIEW_ORDER = ['system', 'ride', 'explore-fx', 'explore-cards', 'explore-face', 'explore-gold', 'explore', 'explore-unlock', 'album'];
 
 /* 固定時間的 Date：new Date()／Date.now() 都是 at，其餘（帶參數的 new Date、Date.parse）照舊 */
 export function fixedDate(at) {
@@ -55,7 +55,7 @@ export function fixedDate(at) {
   return D;
 }
 
-/* 載入時要摸一下 document 的檔（photos.js 讀 currentScript、explore-cards.js 找 #view 掛監看）：
+/* 載入時要摸一下 document 的檔（photos.js 讀 currentScript、explore-face.js 找 .device 掛監看）：
    只在載入那一刻給一個什麼都找不到的 document，載完就拿掉，app.js 的「document 不存在就不 start()」照舊成立 */
 const LOAD_DOC = { currentScript: null, getElementById: () => null, querySelector: () => null };
 
@@ -112,6 +112,6 @@ export function loadApp({ storage = memoryStorage(), noStorage = false, realMock
   }
   vm.runInContext(readFileSync(APP_JS, 'utf8'), ctx, { filename: 'app.js' });
   if (!ctx.APP) throw new Error('app.js 載入後沒有 window.APP');
-  VIEW_ORDER.filter((v) => list.indexOf(v) >= 0).forEach((v) => run('app/js/views/' + v + '.js', v + '.js', v === 'explore-cards'));
+  VIEW_ORDER.filter((v) => list.indexOf(v) >= 0).forEach((v) => run('app/js/views/' + v + '.js', v + '.js', v === 'explore-face'));
   return { APP: ctx.APP, ctx, storage, STATE: ctx.STATE, MOCK: ctx.MOCK };
 }

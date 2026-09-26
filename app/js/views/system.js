@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v17';
+const VERSION = 'chengshi-app-v18';
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */

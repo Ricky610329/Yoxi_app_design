@@ -55,13 +55,14 @@ app/
   js/views/system.js        設定、onboarding、推播浮層、demo 工具、分享
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
   js/views/explore-fx.js    explore 的特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）；在 explore-cards.js 之前載入
-  js/views/explore-cards.js 明信片與抽卡的共用 API（DRAW_STYLES、drawStyle、cardStyleOf、postcardSrc、POSTCARD_GEN、paintCardArt、openOdds、collect）
+  js/views/explore-cards.js 明信片怎麼拿到的（DRAW_STYLES、drawStyle、openOdds、cardStyleOf、collect、cardOrigin）
+  js/views/explore-face.js  明信片長什麼樣（cardFace、postcardSrc、POSTCARD_GEN、cardPhoto、paintCardArt；監看 .device 自動疊上收下的那一款）
   js/views/explore-gold.js  金框明信片的金粉（APP.fx.gold）：畫面上標了 data-gold-aura 的金框卡，邊緣一直散出金粉，捲動、拖面板、換頁時帶著慣性跟著飄
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、路線列表／詳情
   js/views/explore-unlock.js 抵達與抽卡（/unlock）
   js/views/album.js         收藏（摘要式＋X4 六角章）、明信片子頁、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
-  assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore-cards.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，由 sw 在執行期 cache-first 存（看過一次離線也有），載不到時卡面退回照片＋SVG 濾鏡
+  assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore-face.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，由 sw 在執行期 cache-first 存（看過一次離線也有），載不到時卡面退回照片＋SVG 濾鏡
   tools/serve.py            本機靜態伺服器（測 PWA 用）
   tools/make-icons.py       產生 PWA 圖示
   tools/gen-postcards.py    生成明信片成品：實景照片 → Stable Diffusion img2img＋ControlNet（本機跑，環境見檔頭）
@@ -83,7 +84,7 @@ css: ../prototype/css/tokens.css → base.css → components.css → chengshi.cs
 js:  ../prototype/js/icons.js → mock.js → state.js → shell.js → interact.js
      → ../prototype/assets/map/hs-core.js → hs-wide.js → hs-places.js → ../prototype/js/hsmap.js
      → ../prototype/assets/photos/credits.js → ../prototype/js/photos.js
-     → js/app.js → js/views/system.js → ride.js → explore-fx.js → explore-cards.js → explore-gold.js → explore.js → explore-unlock.js → album.js
+     → js/app.js → js/views/system.js → ride.js → explore-fx.js → explore-cards.js → explore-face.js → explore-gold.js → explore.js → explore-unlock.js → album.js
 ```
 傳統 `<script>`，不用 ES module（file:// 會被 CORS 擋）。`APP.start()` 在 DOMContentLoaded 之後才跑，
 所以四支 views 在它之前都已註冊完。`concept.css` 不載；`hsmap` 需要的規則（`.hsmap-*`、署名）由 `app.css` 自備。
@@ -374,7 +375,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 - `APP.ride.RIDE_BONUS`（ride 提供）：搭車抵達走不到的地方的加點，＝`MOCK.FAR_PLACE.ridePoints`（資料缺了才用 50）；全 app 唯一來源，explore 的「+50 點」也讀它。`APP.ride.pointsRows()` 每一列多一個 `place` 欄位
 - 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框：是不是搭車只問 `APP.ride.trip.arrivedAt(地點 id)`（這個地方、phase done），`?ride=1` 只是入口的記號；走路抵達在 mount 抽一次、記在 `store.draws[地點 id]`（render 只讀，還沒抽就畫卡背），重進不重抽。機率只放在 `/unlock` 收集面板與成品右上角的「?」（`data-act="open-odds"`）；面板與結果都不寫機率、不寫「必得」。`openOdds()` 掛在 `.device`，帶 `data-overlay`＋`_dismiss`。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
-- 生成的明信片（explore 提供）：`APP.explore.postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片；`cardStyleOf(cardId)` 收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡以明信片 id 為種子照機率表抽一次）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore.js 監看 `#view` 自動疊上 `<img class="card-gen">`，順序跟 `/unlock` 卡面一樣：生成的成品 → 沒有成品或載不到：底圖照片＋那一款的 SVG 濾鏡（`.card-gen--photo`，先排成 220 px 寬套濾鏡再縮放到容器，容器加 `.card-photo-host` 藏起底下的插圖）→ 都沒有才留插圖（還沒收的不疊）。收藏裡顯示明信片的地方都要帶 `data-card-art`（含週回顧的卡與封面）；明信片詳情寫底圖照片的出處（`data-credit`，作者、授權、連結）
+- 明信片的卡面（explore 提供，`explore-face.js`）：`APP.explore.cardFace(cardId, key)` → `{ gen, photo, credit }`——疊法只有這一個，`/unlock` 的卡面與收藏的卡都照它；`postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片（明信片自己的 → 對照表的地點 → 這張卡所在地點的；出處也從它來）；`cardStyleOf(cardId)`（explore-cards.js）收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡以明信片 id 為種子照機率表抽一次）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore-face.js 監看整台 `.device`（`#view` 與掛在上面的浮層、懸浮小卡）自動疊上 `<img class="card-gen">`，畫面不用自己呼叫，順序跟 `/unlock` 卡面一樣：生成的成品 → 沒有成品或載不到：底圖照片＋那一款的 SVG 濾鏡（`.card-gen--photo`，先排成 220 px 寬套濾鏡再縮放到容器，容器加 `.card-photo-host` 藏起底下的插圖）→ 都沒有才留插圖（還沒收的不疊）。收藏裡顯示明信片的地方都要帶 `data-card-art`（含週回顧的卡與封面）；明信片詳情寫底圖照片的出處（`data-credit`，作者、授權、連結）
 - 金框卡在哪裡顯示都有金框和金粉（explore 提供，`explore-gold.js`）：在「畫金框的那個元素」加 `data-gold-aura`，金粉就從它的邊緣冒出來（照元素的旋轉角度）。`[data-card-art]` 的金框卡沒人標的話，`paintCardArt` 自己補 `data-gold-aura`＋`.card-gold`（通用的框，explore.css）；框畫在外層的（明信片詳情整張卡、叫車的浮起來小卡）由畫面自己標在外層，`paintCardArt` 看到祖先標了就不再補。`/unlock` 翻開之後（`finish()`）才標，翻開前不洩底。整台手機一張 `canvas.gold-aura`（掛 `.device`、z-index 97、`pointer-events:none`、`aria-hidden`）；金粉裁在卡片的捲動範圍裡，被別的東西蓋住的邊不冒（`elementFromPoint`）；卡片移動時金粉被「跟著卡片走的空氣」帶著、有慣性（`APP.fx.gold.step` 是純函式）。樣子：細金粉、會翻會閃的金箔、細長四芒閃光、暗底的散景；相對空氣動得快的金粉拉出變淡的尾巴；每張卡每 4.8 秒有一道斜光掃過框、從亮的地方多灑一把（每張卡錯開）。`APP.reduceMotion()` 時不建 canvas（框照舊）；看不到金框卡時不跑 rAF。測試用：`APP.fx.gold.tracked()`、`particles()`
 - `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `arrivedDemo` ＋ `/unlock/:id`（行程進行中不行）；搭 yoxi → `APP.ride.trip.arriveAt(placeId)`（這一趟在這裡結束、取代原本的行程；距離不明的 km 是 null，跟一般叫車一樣）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））

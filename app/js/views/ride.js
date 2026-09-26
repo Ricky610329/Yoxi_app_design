@@ -886,9 +886,7 @@ function rideV2Mount(root, params, ctx) {
     floating.querySelector('[data-card-back]').innerHTML =
       '<span class="ride-card-float__back-mark">yoxi 城事</span><strong>' + esc(c.name) + '</strong>' +
       '<span>' + (S().has(id) ? '已收藏' : '抵達後可以收下') + '</span>';
-    SHELL.injectArt(floating);
-    /* 生成的明信片成品：explore 只監看 #view，這張在 .device 上，自己叫一次 */
-    if (APP.explore && typeof APP.explore.paintCardArt === 'function') APP.explore.paintCardArt(floating);
+    SHELL.injectArt(floating);             /* 收下的那一款由 explore-face.js 自己疊上（它監看整台 .device） */
     floating.hidden = false;
     /* 先交給 a11yDialog（它記下現在的焦點＝點開的卡），再把背後變 inert（inert 會把焦點踢掉） */
     release = APP.ui.a11yDialog(floating, { label: c.name, onEsc: closeCard, focus: floatCard });

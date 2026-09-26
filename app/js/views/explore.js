@@ -2,10 +2,12 @@
    yoxi 城事 web app — explore 區塊（探索分頁）
    契約：app/ARCHITECTURE.md §3、§4、§5、§7、§8。只用 APP.view() 註冊，不改 app.js。
 
-   explore 區塊分四支（依載入順序）：
+   explore 區塊分六支（依載入順序）：
      explore-fx.js      特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）
-     explore-cards.js   明信片與抽卡的共用零件：APP.explore.collect／DRAW_STYLES／drawStyle／openOdds／
-                        cardStyleOf／postcardSrc／cardPhoto／paintCardArt（album、ride 也用）
+     explore-cards.js   明信片怎麼拿到的：APP.explore.collect／cardOrigin／DRAW_STYLES／drawStyle／openOdds／
+                        cardStyleOf（album、ride 也用）
+     explore-face.js    明信片長什麼樣：APP.explore.cardFace／postcardSrc／cardPhoto／paintCardArt
+     explore-gold.js    金框卡的金粉 APP.fx.gold（data-gold-aura）
      explore.js         這支：六個畫面＋APP.explore.gap／breakpoint
      explore-unlock.js  /unlock/:id 抵達 → 收集 → 抽卡
 
