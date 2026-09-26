@@ -242,6 +242,7 @@ python app/tests/run.py                           # web app：node 單元＋head
 
 - **疊卡順序**：`APP.album.recentCards` 改看 `STATE.all.cards` 的鍵順序（`STATE.collect` 每收一張就加在最後）。以前比 `MM.DD`、同一天只把 `lastCard` 提前，同一天連收三張時第二、三張會顛倒，跨年後新卡還會排到 demo 的舊卡後面。疊卡、`/postcards`、長輩圖預設、城市顏色都用它。
 - **金粉**：新增 `app/js/views/explore-gold.js`（`APP.fx.gold`）。在「畫金框的那個元素」加 `data-gold-aura` 就會從它的邊緣散金粉；`[data-card-art]` 的金框卡沒人標時 `paintCardArt` 自動補 `.card-gold`＋`data-gold-aura`。整台手機一張 canvas（`.device` 上、z-index 97、不吃點擊）；被蓋住的邊不冒（`elementFromPoint`）、裁在捲動範圍裡；金粉被「跟著卡片走的空氣」帶著，有阻力與慣性。減少動態效果時不建 canvas、框照舊；看不到金框卡時不跑 rAF。契約寫在 `app/ARCHITECTURE.md` §7。
+- **質感（使用者第二輪：「物理不錯、質感差」）**：物理不動，只改畫法。原本每顆都是一樣的圓金珠、暗底是一團團模糊的光。改成四種：細金粉（大多數、很小很銳利）、扁的金箔（翻到正面那一下閃）、細長的四芒閃光、暗底才有的淡散景；每顆有遠近（大小、亮度、阻力不同，捲動時分得出前後層）；相對空氣動得快的才拉出往後變淡的短尾巴（跟著內容走的不糊）；沿著圓角的邊冒；每張卡每 4.8 秒一道斜光掃過框、從亮的地方多灑一把。亮底的金箔正面用亮金不用香檳色（白底上會變成空心的圈）。390×844、3 倍像素在詳情、`/postcards`、收藏首頁都是穩定 60 fps。
 - **標了哪些地方**：收藏首頁疊卡（新增金邊）、`/postcards`、明信片詳情、獎章組成卡、每日回顧「今天多了一張」、週回顧、叫車探索面板的卡、浮起來看的小卡（正反面金框）、`/unlock` 翻開之後（翻開前不標，不洩底）。長輩圖挑的是插圖不是明信片，沒有標。
 
 驗證：`python app/tests/run.py` node 47/47、瀏覽器 277/277（新增 5 條）；Playwright 實機看過手機與桌機縮放外框、捲動中、換頁中、翻面、分享面板蓋住、`?still=1`。`check-sw.py` 的清單本身對，只被工作目錄裡兩個沒進版控的 `* 2.js` 複本（Finder 產生，跟 HEAD 一模一樣）判 FAIL；`verify-quiet.py` 在這台 Mac 仍然找不到 Chrome、只跑得了 ②（PASS）。沒有改 `prototype/`、`pitch/`、`site/`。
