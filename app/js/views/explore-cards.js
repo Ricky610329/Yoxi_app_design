@@ -11,8 +11,10 @@
      openOdds()                                  機率說明（掛在 .device，帶 data-overlay＋_dismiss）
      cardStyleOf(cardId)／postcardSrc(cardId, key)／cardPhoto(cardId)／paintCardArt(root)
                                                  生成好的明信片；#view 裡的 [data-card-art] 自動疊上成品
+   是不是搭車抵達一律問 ride 的行程 module：APP.ride.trip.arrivedAt(地點 id)；搭車收下由 collect 呼叫
+   APP.ride.trip.consume 用掉那一趟（連同 rideVia 歸因）。
    內部零件 APP.explore._（不可列舉；只給 explore.js 與 explore-unlock.js 共用，別的區塊不要依賴）：
-     是不是搭車抵達（rideTripFor）、這次抵達的款式（storedDraw 只讀／rollDraw 抽並記下）、
+     這次抵達的款式（storedDraw 只讀／rollDraw 抽並記下）、
      關掉機率說明（closeOdds）、點數（ridePoints）與幾個小工具；explore.js 再掛上頁面零件
      （exploreHome、notFound、backFabBar、distHTML）。
    刻意沒有：畫面（/unlock 在 explore-unlock.js）、特效（explore-fx.js 的 APP.fx）。
@@ -254,19 +256,6 @@ function closeOdds() {
   oddsOpen = null;
 }
 
-/* 搭 yoxi 抵達（必得金框；走不到的地方再加點數）只看「真的搭車抵達這裡」的那一趟：
-   store.trip 是這個地方、而且已抵達（phase done）。跟 /ride 的金色入口、/trip/done 的金色橫幅同一個判斷
-   （ride.js 的 pendingUnlock 也要 phase done）。網址上的 ?ride=1 只是入口的記號，不參與判斷：
-   - 沒有這一趟：手打 ?ride=1 也拿不到金框和點數；
-   - 有這一趟：不論從哪裡進來（demo 的走路抵達、/going 的模擬抵達、少了 ?ride=1 的連結）都是搭車抵達，
-     不然走路收下會把還沒領的限定版一起清掉。 */
-function rideTripFor(p) {
-  if (!p) return null;
-  const trip = APP.store.get('trip');
-  if (!trip || trip.phase !== 'done') return null;
-  return trip.placeId === p.id ? trip : null;
-}
-
 /* ---------------------------------------------------------------- APP.explore */
 
 /**
@@ -295,9 +284,9 @@ function collect(placeId, opt) {
     delete rest[pid]; delete rest[placeId];
     APP.store.set('draws', rest);
   }
-  /* 搭車收下才算用掉這一趟。走路收同一個地方不碰 trip：不然還沒領的限定版（金框＋點數）會跟著永遠消失 */
-  const trip = APP.store.get('trip');
-  if (by === 'ride' && trip && (trip.placeId === pid || trip.placeId === placeId)) APP.store.set('trip', null);
+  /* 搭車收下才算用掉這一趟（行程 module 順便記下 rideVia 歸因）。走路收同一個地方不碰行程：
+     不然還沒領的限定版（金框＋點數）會跟著永遠消失 */
+  if (by === 'ride') APP.ride.trip.consume(placeId);
   const drop = APP.store.get('dropoff');
   if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
   /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
@@ -328,7 +317,6 @@ Object.defineProperty(APP.explore, '_', {
     ridePoints: ridePoints,
     styleOf: styleOf, oddsPct: oddsPct, storedDraw: storedDraw, rollDraw: rollDraw,
     closeOdds: closeOdds,
-    rideTripFor: rideTripFor,
   },
 });
 

@@ -52,7 +52,6 @@ const esc = APP.esc;
 const fmt = APP.fmt;
 const M = K.M, S = K.S, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
-const rideTripFor = K.rideTripFor;
 
 /* 抵達驗證的兩個數字：契約 §5 的文案規定（80 公尺內停 1 分鐘），全頁只寫在這裡 */
 const ARRIVE_RADIUS_M = 80;
@@ -566,11 +565,7 @@ function mountPlace(root, params) {
 /* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義。
    已抵達（phase done）的那一趟不算「進行中」：人已經下車了，可以走去別的地方；
    但如果它就是這個地方、明信片還沒收（rodeHere），就不必再走一趟，直接去收那一張。 */
-function activeTrip() {
-  const t = APP.store.get('trip');
-  return t && t.phase !== 'done' ? t : null;
-}
-function rodeHere(p) { return !!rideTripFor(p) && !collected(p); }
+function rodeHere(p) { return !!APP.ride.trip.arrivedAt(p.id) && !collected(p); }
 
 function renderGoing(params) {
   const p = APP.place(params.id);
@@ -586,7 +581,7 @@ function renderGoing(params) {
         '<a class="btn-primary" href="#/unlock/' + encodeURIComponent(p.id) + '?ride=1" data-act="unlock-ride">收下這張明信片</a>' +
       '</div></div>';
   }
-  const trip = activeTrip();
+  const trip = APP.ride.trip.active();
   if (trip) {
     const dest = APP.place(trip.placeId);
     return backFabBar(exploreHome(p.id)) +
@@ -627,7 +622,7 @@ function renderGoing(params) {
 
 function mountGoing(root, params) {
   const p = APP.place(params.id);
-  if (!p || rodeHere(p) || activeTrip()) { APP.ui.setStatus('dark'); return; }
+  if (!p || rodeHere(p) || APP.ride.trip.active()) { APP.ui.setStatus('dark'); return; }
   const host = root.querySelector('[data-going-map]');
   let m = null;
   const geo = window.HSINCHU_PLACES && HSINCHU_PLACES[p.id];

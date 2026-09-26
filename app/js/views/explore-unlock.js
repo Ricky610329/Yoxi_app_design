@@ -5,7 +5,7 @@
 
    回答什麼：到了。這個地方的明信片是哪一款？收下它。
    原型：unlock.html（三幕解鎖的前身）。
-   搭 yoxi 抵達必得金框。是不是搭車看 store.trip（這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
+   搭 yoxi 抵達必得金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板。
      抽卡（data-at=2）：卡背升起 → 蓄力（拍數＝稀有度）→ 點一下翻開 → 依款式給特效（金框最重）。
@@ -46,7 +46,6 @@ const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
 const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw;
 const closeOdds = K.closeOdds;
-const rideTripFor = K.rideTripFor;
 const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar, distHTML = K.distHTML;
 
 /* 收下時寫的一句話最多幾個字：輸入框的 maxlength、提示文字、收下時的截斷都讀這一個 */
@@ -131,7 +130,7 @@ function renderUnlock(params) {
   if (!p) {
     return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  const trip = rideTripFor(p);
+  const trip = APP.ride.trip.arrivedAt(p.id);
   const isRide = !!trip;
   const got = collected(p);
   /* 已收過的地方不重抽：顯示當初收下的那一款。走路抵達還沒抽的是 null（卡背；mount 抽完重畫） */
@@ -301,7 +300,7 @@ function mountUnlock(root, params) {
   const p = APP.place(params.id);
   if (!p) { APP.ui.setStatus('dark'); return; }
   const F = APP.fx;
-  const isRide = !!rideTripFor(p);
+  const isRide = !!APP.ride.trip.arrivedAt(p.id);
   const got = collected(p);
   /* 走路抵達還沒抽：在這裡抽（render 是純函式，不寫 store），抽完照新的款式重畫這一頁。
      mount 在第一次繪製之前，看不到卡背閃一下；之後重整、返回都讀 store.draws，不會重抽 */
@@ -772,15 +771,10 @@ function mountUnlock(root, params) {
       btn.disabled = true;
       const note = noteInput ? String(noteInput.value || '').trim().slice(0, NOTE_MAX) : '';
       /* 收的當下再判一次（畫面開著的時候行程可能被取消或換掉了） */
-      const trip = rideTripFor(p);
+      const trip = APP.ride.trip.arrivedAt(p.id);
       const ride = isRide && !!trip;
       const km = ride && trip.km != null ? trip.km : fmt.km(p.dist);
-      /* 轉換歸因：這趟車是從哪個入口叫的，記在 app store（行程紀錄的小標），collect 會清掉 trip 所以先記 */
-      if (ride && trip.via && p.card) {
-        const rv = Object.assign({}, APP.store.get('rideVia') || {});
-        rv[p.card] = trip.via;
-        APP.store.set('rideVia', rv);
-      }
+      /* 搭車收下：collect 會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
       const drawn = ride ? drawStyle('ride', 0) : rollDraw(p);
       collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km, style: drawn.key });
       APP.ui.toast('收進收藏了');

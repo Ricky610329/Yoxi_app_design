@@ -69,15 +69,14 @@ function lastWorkPath() {
 /* 模擬抵達：回傳 null 表示現在沒有可以抵達的東西 */
 function arriveTarget(cur) {
   cur = cur || lastWorkPath();
-  const t0 = APP.store.get('trip');
-  const riding = t0 && t0.phase !== 'done';
+  const riding = !!APP.ride.trip.active();
   /* 行程進行中的 /going 顯示的是「你正在搭車」卡，模擬抵達要抵達的是那一趟 */
   if (cur && cur.pattern === '/going/:id' && cur.params && cur.params.id && !riding) {
     const id = cur.params.id;
     return function () { APP.store.set('arrivedDemo', id); APP.nav.go('/unlock/' + encodeURIComponent(id)); };
   }
   const onTrip = cur && cur.pattern === '/trip';
-  if (onTrip || APP.store.get('trip')) {
+  if (onTrip || APP.ride.trip.current()) {
     return function () {
       if (APP.ride && typeof APP.ride.arrive === 'function') APP.ride.arrive();
       else APP.nav.go('/trip/done');
@@ -129,8 +128,9 @@ function wipeFootprint() {
     STATE.setToday({ photo: null, mood: null, done: false });
   }
   const fresh = APP.store.fresh ? APP.store.fresh() : {};
+  APP.ride.trip.clear();
   APP.store.patch({
-    dropoff: null, trip: null, arrivedDemo: null,
+    dropoff: null, arrivedDemo: null,
     rideVia: {}, cardStyle: {}, draws: {}, pushes: [],
     tabPaths: fresh.tabPaths || { ride: '/ride', explore: '/explore', album: '/album' },
   });
@@ -598,8 +598,8 @@ function placeGot(p) { return !!(p && p.card && window.STATE && STATE.has(p.card
 function contextPlace(cur) {
   const id = cur && cur.params && cur.params.id;
   if (cur && /^\/(place|going|unlock)\//.test(cur.pattern || '') && APP.place(id)) return APP.place(id).id;
-  const t = APP.store.get('trip');
-  if (t && t.phase !== 'done' && APP.place(t.placeId)) return APP.place(t.placeId).id;
+  const t = APP.ride.trip.active();
+  if (t) return APP.place(t.placeId).id;
   const d = APP.store.get('dropoff');
   if (d && APP.place(d.id)) return APP.place(d.id).id;
   return null;
@@ -607,30 +607,19 @@ function contextPlace(cur) {
 
 /* demo 面板的模擬抵達（任何一頁都能用，地點從下拉選單挑）：
    走路     → 記下 arrivedDemo，進 /unlock/:id；行程進行中不行（人在車上）。
-   搭 yoxi → 這一趟直接在這裡結束（store.trip phase done；原本是別的目的地就被這一趟取代，契約 §3.3 只有一筆 trip），
-             進 /unlock/:id?ride=1。抵達頁會再驗一次 trip，所以手打網址拿不到金框。 */
+   搭 yoxi → 這一趟直接在這裡結束（APP.ride.trip.arriveAt：phase done；原本是別的目的地就被這一趟取代，
+             契約 §3.3 只有一筆 trip），進 /unlock/:id?ride=1。抵達頁會再驗一次行程，所以手打網址拿不到金框。 */
 function demoArrive(id, by) {
   const p = APP.place(id);
   if (!p) { APP.ui.toast('先選一個地方'); return false; }
-  const t = APP.store.get('trip');
   if (by !== 'ride') {
-    if (t && t.phase !== 'done') { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
+    if (APP.ride.trip.active()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
     APP.store.set('arrivedDemo', p.id);
     APP.nav.go('/unlock/' + encodeURIComponent(p.id));
     return true;
   }
-  const same = !!(t && t.placeId === p.id);
-  APP.store.patch({
-    trip: {
-      placeId: p.id, phase: 'done',
-      startedAt: same && t.startedAt ? t.startedAt : new Date().toISOString(),
-      rated: same && !!t.rated,
-      km: same && t.km != null ? t.km : APP.fmt.km(p.dist),
-      via: same ? (t.via || null) : null,
-    },
-    dropoff: null,
-    arrivedDemo: p.id,
-  });
+  APP.ride.trip.arriveAt(p.id);
+  APP.store.patch({ dropoff: null, arrivedDemo: p.id });
   APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1');
   return true;
 }

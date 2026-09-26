@@ -290,7 +290,7 @@ T.spec('flows', function (t) {
     await app.click('.app-confirm [data-act="confirm-no"]');
     await app.at('/trip');
     t.eq(A.store.get('trip').placeId, 'lake', '新 trip 覆蓋');
-    t.ok(!A.ride.pendingUnlock(), '覆蓋後沒有待解鎖');
+    t.ok(!A.ride.trip.pending(), '覆蓋後沒有待解鎖');
 
     /* 沒有待解鎖：不問 */
     await app.reset({ store: { dropoff: drop } });
@@ -489,7 +489,7 @@ T.spec('flows', function (t) {
     await app.click('[data-act="call-ride"]');
     await app.at('/trip');
     /* 不斷言「剛載入一定是 matching」：virtual time 下轉場＋畫地圖可能就吃掉 1.2 s（時間競賽）。
-       phase 由 trip.startedAt 推導（APP.ride.phaseOf），這裡只要求：現在是配對中或行程中、畫面跟 phase 一致、最後會到行程中。
+       phase 由 trip.startedAt 推導（APP.ride.trip.phase），這裡只要求：現在是配對中或行程中、畫面跟 phase 一致、最後會到行程中。
        「剛叫車是配對中、過了 MATCH_MS 才是行程中」由「審查 1」用注入的時間驗。 */
     const ph0 = app.APP.store.get('trip').phase;
     t.includes(['matching', 'riding'], ph0, '叫車後是配對中或行程中');
@@ -672,12 +672,9 @@ T.spec('flows', function (t) {
     const R = app.APP.ride;
     const t0 = Date.parse('2026-09-21T13:18:00.000Z');
     const trip = T.fixtures.trip({ placeId: 'lake', phase: 'matching', startedAt: new Date(t0).toISOString(), km: 6.4 });
-    t.eq(R.phaseOf(trip, t0), 'matching', '剛叫車：配對中');
-    t.eq(R.phaseOf(trip, t0 + R.MATCH_MS - 1), 'matching', 'MATCH_MS 之前：配對中');
-    t.eq(R.phaseOf(trip, t0 + R.MATCH_MS), 'riding', 'MATCH_MS 之後：行程中');
-    t.eq(R.phaseOf(Object.assign({}, trip, { phase: 'done' }), t0), 'done', 'done 不受時間影響');
-    t.eq(R.phaseOf(Object.assign({}, trip, { startedAt: 'x' }), t0), 'riding', '壞掉的 startedAt 不會永遠卡在配對中');
-    t.eq(R.phaseOf(null), null, '沒有行程');
+    /* 純函式的各種情況在 tests/unit/views.test.mjs（node）；這裡只看瀏覽器裡同一個函式 */
+    t.eq(R.trip.phase(trip, t0), 'matching', '剛叫車：配對中');
+    t.eq(R.trip.phase(trip, t0 + R.MATCH_MS), 'riding', 'MATCH_MS 之後：行程中');
 
     /* 非 still：配對中離開 /trip（計時器被清掉）很久之後再回來 → 一進來就是行程中，不必再等 */
     const old = Object.assign({}, trip, { startedAt: new Date(Date.now() - 60000).toISOString() });

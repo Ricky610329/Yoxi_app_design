@@ -11,21 +11,7 @@ const ids = (list) => list.map((p) => p.id).join(',');
 /* system 不載：它的 demo 面板在 state:change 時會去畫 DOM（node 沒有 document） */
 const VIEWS = ['ride', 'explore-fx', 'explore-cards', 'explore-gold', 'explore', 'explore-unlock', 'album'];
 
-/* ---------------------------------------------------------------- ride */
-
-test('phaseOf：配對中由 startedAt＋MATCH_MS 推導，不靠計時器', () => {
-  const { APP } = loadApp({ views: ['ride'] });
-  const R = APP.ride;
-  const t0 = Date.parse('2026-09-21T13:18:00.000Z');
-  const trip = { placeId: 'lake', phase: 'matching', startedAt: new Date(t0).toISOString(), rated: false, km: 6.4 };
-  assert.equal(R.phaseOf(trip, t0), 'matching', '剛叫車：配對中');
-  assert.equal(R.phaseOf(trip, t0 + R.MATCH_MS - 1), 'matching', 'MATCH_MS 之前：配對中');
-  assert.equal(R.phaseOf(trip, t0 + R.MATCH_MS), 'riding', 'MATCH_MS 之後：行程中');
-  assert.equal(R.phaseOf({ ...trip, phase: 'done' }, t0), 'done', 'done 不受時間影響');
-  assert.equal(R.phaseOf({ ...trip, phase: 'riding' }, t0), 'riding', 'riding 不受時間影響');
-  assert.equal(R.phaseOf({ ...trip, startedAt: 'x' }, t0), 'riding', '壞掉的 startedAt 不會永遠卡在配對中');
-  assert.equal(R.phaseOf(null), null, '沒有行程');
-});
+/* ---------------------------------------------------------------- ride（行程 module 在 trip.test.mjs） */
 
 test('點數：總數＝明細相加；城事列＝RIDE_BONUS＝MOCK.FAR_PLACE.ridePoints', () => {
   const { APP, MOCK } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });

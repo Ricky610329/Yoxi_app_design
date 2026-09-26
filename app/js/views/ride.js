@@ -31,6 +31,8 @@
      APP.ride.setDropoff(placeId, via)   寫 store.dropoff → toast → #/ride（已在 /ride 就重畫）
      APP.ride.clearDropoff()
      APP.ride.arrive()                   demo：行程直接抵達 → #/trip/done（system 的 demo 面板用）
+     APP.ride.trip                       行程 module：store.trip 只有它讀寫（current／active／arrivedAt／pending／phase、
+                                         start／toRiding／arrive／arriveAt／cancel／rate／consume／clear／clearBroken）
      APP.ride.pointsRows() / pointsTotal()   點數明細與總數（總數＝明細相加）
      APP.ride.RIDE_BONUS                 搭車抵達走不到的地方另外回饋的點數（MOCK.FAR_PLACE.ridePoints；全 app 唯一來源）
    ========================================================================== */
@@ -109,49 +111,139 @@ function emptyCard(eyebrow, title, text) {
     '<a class="btn-primary" href="#/ride" data-act="go-ride">回叫車</a>' +
     '</div></div>';
 }
-/* 行程：placeId 要認得（APP.place 不認得的 id 回 null）。舊資料或手改過的 id 不算行程——
-   不然 /ride 顯示「回到行程」卻沒有目的地、setDropoff 被擋、/trip 又說沒有行程，只剩重設逃得出去。 */
-function tripNow() {
-  const t = store().get('trip');
-  return t && t.placeId && APP.place(t.placeId) ? t : null;
-}
+/* ---------------------------------------------------------------- 行程（APP.ride.trip）
+   store.trip 只有這個 module 讀寫；別的區塊、別的畫面一律透過它（契約 §3.3、§7）。
+   一趟行程：{ placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }
+   - placeId 要認得（APP.place 不認得的 id 回 null）。舊資料或手改過的 id 不算行程——不然 /ride 顯示
+     「回到行程」卻沒有目的地、setDropoff 被擋、/trip 又說沒有行程，只剩重設逃得出去。讀的時候一律當作沒有，
+     clearBroken() 才真的清（在 mount 裡叫；render 是純函式，不寫 store）。
+   - km：一律 kmOf(地方)。距離不明是 null（畫面寫「距離待確認」），不拿 0 去算起跳價。
+   - 一次只有一趟：start、arriveAt 都會取代原本的那一趟。
+   - phase：存的是 matching 但已經過了 MATCH_MS 就算 riding（phase(t, now)，now 可注入）。
+   - 抵達之後這一趟留著（限定版還沒收），直到搭車收下（consume）才清；走路收同一個地方不碰它。 */
+const TRIP = (function () {
+  function raw() { return store().get('trip'); }
+  function put(t) { store().set('trip', t); return t; }
+  /* 行程的形狀只在這裡寫一次 */
+  function make(p, o) {
+    return {
+      placeId: p.id, phase: o.phase, startedAt: o.startedAt || new Date().toISOString(),
+      rated: !!o.rated, km: o.km !== undefined ? o.km : kmOf(p), via: o.via || null,
+    };
+  }
+  function current() {
+    const t = raw();
+    return t && t.placeId && APP.place(t.placeId) ? t : null;
+  }
+  /* 行程現在是哪一段（純函式）。舊資料沒有 startedAt：不要永遠卡在配對中 */
+  function phase(t, now) {
+    if (!t) return null;
+    if (t.phase !== 'matching') return t.phase;
+    const t0 = Date.parse(t.startedAt);
+    if (isNaN(t0)) return 'riding';
+    return ((now == null ? Date.now() : now) - t0 >= MATCH_MS) ? 'riding' : 'matching';
+  }
+  /* 進行中：配對中或行程中（抵達之後不算） */
+  function active() {
+    const t = current();
+    return t && t.phase !== 'done' ? t : null;
+  }
+  /* 搭 yoxi 抵達這個地方的那一趟（已抵達、目的地就是這裡）。/unlock 的金框與 +50 點、/going 的
+     「收下這張明信片」、/ride 的金色入口、/trip/done 的金色橫幅都是同一個判斷。網址上的 ?ride=1 只是入口的記號，
+     不參與判斷：沒有這一趟，手打 ?ride=1 也拿不到金框和點數；有這一趟，不論從哪裡進來都是搭車抵達
+     （不然走路收下會把還沒領的限定版一起清掉）。 */
+  function arrivedAt(placeId) {
+    const t = current();
+    return t && t.phase === 'done' && placeId != null && t.placeId === placeId ? t : null;
+  }
+  /* 抵達了、明信片還沒收的那一趟。按「回首頁」不能讓限定版消失（產品決定），
+     所以 /ride 與明信片頁都有一個回去解鎖的入口。明信片 id 一律用 APP.place(id).card（collect 存的就是它）：
+     MOCK.cardIdOf('market') 回 'market'，收過 p2 的人每一趟到東門市場都會被當成還沒收。
+     這個地方沒有明信片 → 沒有東西要等。 */
+  function pending() {
+    const t = current();
+    if (!t || t.phase !== 'done') return null;
+    const p = APP.place(t.placeId);
+    const card = p && p.card;
+    if (!card || S().has(card)) return null;
+    return { trip: t, place: p, card: card, limited: limitedPlace(p),
+             href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1' };
+  }
+
+  /* 叫車：新的一趟從配對中開始。via＝這個下車點是從哪個入口設的（轉換歸因） */
+  function start(placeId, via) {
+    const p = APP.place(placeId);
+    if (!p) return null;
+    return put(make(p, { phase: 'matching', via: via }));
+  }
+  function toRiding() {
+    const t = current();
+    if (!t || t.phase !== 'matching') return false;
+    put(Object.assign({}, t, { phase: 'riding' }));
+    return true;
+  }
+  /* 這一趟抵達了 */
+  function arrive() {
+    const t = current();
+    return t ? put(Object.assign({}, t, { phase: 'done' })) : null;
+  }
+  /* demo「搭 yoxi 抵達」：這一趟直接在這裡結束。原本就是去這裡的那一趟：保留叫車時間、評分、公里與歸因；
+     別的目的地：被這一趟取代（只有一筆 trip）。評了幾顆星不留（跟以前的 demoArrive 一樣）。 */
+  function arriveAt(placeId) {
+    const p = APP.place(placeId);
+    if (!p) return null;
+    const t = raw();
+    const same = !!(t && t.placeId === p.id);
+    return put(make(p, {
+      phase: 'done',
+      startedAt: same && t.startedAt ? t.startedAt : null,
+      rated: same && !!t.rated,
+      km: same && t.km != null ? t.km : undefined,
+      via: same ? t.via : null,
+    }));
+  }
+  function cancel() {
+    if (!active()) return false;
+    put(null);
+    return true;
+  }
+  function rate(stars) {
+    const t = current();
+    if (!t) return null;
+    return put(Object.assign({}, t, { rated: true, stars: stars }));
+  }
+  /* 搭車收下這個地方的明信片：用掉這一趟。placeId 可以是地點 id 或明信片 id。
+     這趟車是從哪個入口叫的記進 store.rideVia（行程紀錄的小標）。回傳用掉的那一趟的 { via, km }，沒有就 null */
+  function consume(placeId) {
+    const t = raw();
+    const p = APP.place(placeId);
+    const pid = p ? p.id : placeId;
+    if (!t || (t.placeId !== pid && t.placeId !== placeId)) return null;
+    if (t.via && p && p.card) {
+      store().set('rideVia', Object.assign({}, store().get('rideVia') || {}, { [p.card]: t.via }));
+    }
+    put(null);
+    return { via: t.via || null, km: t.km != null ? t.km : null };
+  }
+  function clear() { if (raw()) put(null); }
+  function clearBroken() { if (raw() && !current()) put(null); }
+
+  return {
+    current: current, active: active, arrivedAt: arrivedAt, pending: pending, phase: phase,
+    start: start, toRiding: toRiding, arrive: arrive, arriveAt: arriveAt, cancel: cancel, rate: rate,
+    consume: consume, clear: clear, clearBroken: clearBroken,
+  };
+})();
 function tripPlace(t) { return (t && APP.place(t.placeId)) || null; }
 /* 壞掉的行程／下車點（id 不認得）：安靜清掉。在 mount 裡叫（render 是純函式，不寫 store） */
 function dropBroken() {
-  const t = store().get('trip');
-  if (t && !tripNow()) store().set('trip', null);
+  TRIP.clearBroken();
   const d = store().get('dropoff');
   if (d && !(d.id && APP.place(d.id))) store().set('dropoff', null);
-}
-/* 行程現在是哪一段：存的是 matching 但已經過了 MATCH_MS → riding。now 可注入（測試用）。 */
-function phaseOf(t, now) {
-  if (!t) return null;
-  if (t.phase !== 'matching') return t.phase;
-  const t0 = Date.parse(t.startedAt);
-  if (isNaN(t0)) return 'riding';                /* 舊資料沒有 startedAt：不要永遠卡在配對中 */
-  return ((now == null ? Date.now() : now) - t0 >= MATCH_MS) ? 'riding' : 'matching';
-}
-/* 行程進行中（配對中或行程中；抵達之後不算） */
-function tripActive() {
-  const t = tripNow();
-  return t && t.phase !== 'done' ? t : null;
 }
 function validDate(iso) {
   const d = iso ? new Date(iso) : null;
   return d && !isNaN(d.getTime()) ? d : null;
-}
-/* 抵達了、限定明信片還沒收的那一趟：它一直留在 store.trip，直到 APP.explore.collect 收卡才清。
-   按「回首頁」不能讓限定版消失（產品決定），所以 /ride 與明信片頁都有一個回去解鎖的入口。 */
-function pendingUnlock() {
-  const t = tripNow();
-  if (!t || t.phase !== 'done') return null;
-  const p = tripPlace(t);
-  /* 明信片 id 一律用 APP.place(id).card（collect 存的就是它）：MOCK.cardIdOf('market') 回 'market'，
-     收過 p2 的人每一趟到東門市場都會被當成還沒收。這個地方沒有明信片 → 沒有東西要等。 */
-  const card = p && p.card;
-  if (!card || S().has(card)) return null;
-  return { trip: t, place: p, card: card, limited: limitedPlace(p),
-           href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1' };
 }
 
 /* 限定版（金框＋和泰 Points +50）只給「走路到不了」的地方：搭車去 900 m 外的地方不該換到 50 點。
@@ -204,7 +296,7 @@ let lastSet = { id: null, at: 0 };
 /* 寫下車點（不導覽）。回傳寫到的地方，或 null（行程中、找不到） */
 function writeDropoff(placeId, via) {
   /* 車已經叫了：目的地不能從旁邊偷改（K1、E 小卡、路線斷點、搜尋四個入口都經過這裡） */
-  if (tripActive()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return null; }
+  if (TRIP.active()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return null; }
   const p = APP.place(placeId);
   if (!p) { APP.ui.toast('找不到這個地方'); return null; }
   lastSet = { id: p.id, at: Date.now() };
@@ -240,9 +332,7 @@ function clearDropoff() {
 
 function arrive() {
   dropBroken();
-  const t = tripNow();
-  if (!t) { APP.ui.toast('目前沒有行程'); return false; }
-  store().set('trip', Object.assign({}, t, { phase: 'done' }));
+  if (!TRIP.arrive()) { APP.ui.toast('目前沒有行程'); return false; }
   store().set('dropoff', null);
   const cur = APP.nav.current();
   /* 從行程中頁抵達：取代那一頁（返回不會回到已結束的行程）；從 demo 面板或別頁叫：照常 push */
@@ -253,7 +343,7 @@ function arrive() {
 /* confirm 開著的時候世界可能變了（瀏覽器返回、demo 抵達、別的入口改了下車點）：
    回答回來時只在「還在叫車首頁的搭車模式、trip 與 dropoff 都沒變」才照做 */
 function rideSnapshot() {
-  return JSON.stringify([store().get('trip'), store().get('dropoff')]);
+  return JSON.stringify([TRIP.current(), store().get('dropoff')]);
 }
 function stillOnRide() {
   const here = APP.nav.current();
@@ -263,14 +353,13 @@ function stillOnRide() {
 function callRide() {
   const here = APP.nav.current();
   if (here && here.path === '/trip') return;     /* 連點：第一下已經到行程頁了 */
-  const t = tripNow();
-  if (t && t.phase !== 'done') { APP.nav.go('/trip'); return; }
+  if (TRIP.active()) { APP.nav.go('/trip'); return; }
   const d = store().get('dropoff');
   if (!d || !d.id || !APP.place(d.id)) { APP.ui.toast('先選一個下車點'); return; }
   /* 上一趟的限定版還沒收：先問一次。先去解鎖 → 不建新 trip；直接叫車 → 新行程覆蓋舊的（契約 §3.3 只有一筆 trip）。
      APP.ui.confirm：按「直接叫車」是 false；按 Esc、點遮罩、導覽離開（core 的 dismissOverlays）是 null。
      叫車是有後果的動作，只認真的按了「直接叫車」（=== false）；null 什麼都不做。 */
-  const pend = pendingUnlock();
+  const pend = TRIP.pending();
   if (pend) {
     if (asking || document.querySelector('.app-confirm')) return;
     asking = true;
@@ -289,12 +378,7 @@ function callRide() {
 
 let asking = false;
 function startTrip(d) {
-  const p = APP.place(d.id);
-  store().set('trip', {
-    placeId: p.id, phase: 'matching', startedAt: new Date().toISOString(), rated: false,
-    km: kmOf(p),
-    via: d.via || null,          /* 轉換歸因：這個下車點是從哪個入口設的 */
-  });
+  TRIP.start(d.id, d.via);        /* via：轉換歸因，這個下車點是從哪個入口設的 */
   APP.nav.go('/trip');
 }
 
@@ -342,12 +426,10 @@ APP.ride = Object.assign(APP.ride || {}, {
   pointsRows: pointsRows,
   pointsTotal: pointsTotal,
   pastTrips: pastTrips,
-  pendingUnlock: pendingUnlock,
   limitedPlace: limitedPlace,
   limitedCard: limitedCard,
   VIA_LABEL: VIA_LABEL,
-  tripActive: tripActive,
-  phaseOf: phaseOf,
+  trip: TRIP,
   MATCH_MS: MATCH_MS,
   RIDE_BONUS: RIDE_BONUS,
 });
@@ -474,8 +556,8 @@ function keepClear(map) {
 }
 
 function rideRender() {
-  let trip = tripNow();
-  const pend = pendingUnlock();
+  let trip = TRIP.current();
+  const pend = TRIP.pending();
   if (trip && trip.phase === 'done') trip = null;      /* 已抵達：不是「回到行程」；限定版另有金色入口 */
   /* 行程進行中：下車點欄位是這一趟的目的地（store.dropoff 可能已經被別的入口改過或清掉），點了回行程 */
   const tp = trip ? tripPlace(trip) : null;
@@ -560,8 +642,8 @@ function rideMount(root) {
   dropBroken();
   /* 評分完直接回首頁的人：限定明信片還沒收 → trip 留著（render 畫了金色入口）；
      已經收過（別的路收的）→ 這趟沒有東西要等了，安靜收掉 */
-  const t0 = store().get('trip');
-  if (t0 && t0.phase === 'done' && !pendingUnlock()) store().set('trip', null);
+  const t0 = TRIP.current();
+  if (t0 && t0.phase === 'done' && !TRIP.pending()) TRIP.clear();
 
   /* ---- sheet 與地圖 ---- */
   const sheet = root.querySelector('.ride-sheet');
@@ -1225,9 +1307,9 @@ function tripMapOpts(p) {
 
 APP.view('trip', {
   path: '/trip', tab: null, status: 'light',
-  title: function () { const t = tripNow(); return phaseOf(t) === 'matching' ? '正在找車' : '行程中'; },
+  title: function () { return TRIP.phase(TRIP.current()) === 'matching' ? '正在找車' : '行程中'; },
   render: function () {
-    const t = tripNow();
+    const t = TRIP.current();
     const p = tripPlace(t);
     if (!t || !p) {
       return '<header class="hdr-red hdr-red--compact"><div class="hdr-red__bar"><h1 class="hdr-red__title">行程</h1></div></header>' +
@@ -1247,7 +1329,7 @@ APP.view('trip', {
     const pick = story.filter(function (s) { return s.label === '以前的它'; })[0] || story[0];
     const heading = rs ? rs.heading : (p.name + ' 以前是什麼樣子');
     const paras = rs ? [rs.text].concat(pick ? [pick.text] : []) : story.slice(0, 2).map(function (s) { return s.text; });
-    const matching = phaseOf(t) === 'matching';
+    const matching = TRIP.phase(t) === 'matching';
 
     return '' +
       '<header class="hdr-red hdr-red--compact ride-trip-hdr">' +
@@ -1300,7 +1382,7 @@ APP.view('trip', {
   },
   mount: function (root) {
     dropBroken();
-    const t = tripNow();
+    const t = TRIP.current();
     const p = tripPlace(t);
     if (!t || !p || t.phase === 'done') return;
     const offs = [];
@@ -1331,15 +1413,13 @@ APP.view('trip', {
 
     /* ---- 配對 → 行程中：時間到（從 startedAt 算）才切；已經過了就當場切 ---- */
     function toRiding() {
-      const cur = tripNow();
-      if (!cur || cur.phase !== 'matching') return;
-      store().set('trip', Object.assign({}, cur, { phase: 'riding' }));
+      if (!TRIP.toRiding()) return;
       root.querySelector('[data-phase="matching"]').hidden = true;
       root.querySelector('[data-phase="riding"]').hidden = false;
       document.title = '行程中 — yoxi 城事';
     }
     if (t.phase === 'matching') {
-      if (still() || phaseOf(t) === 'riding') toRiding();
+      if (still() || TRIP.phase(t) === 'riding') toRiding();
       else {
         const left = MATCH_MS - (Date.now() - Date.parse(t.startedAt));
         const tm = setTimeout(toRiding, Math.max(0, Math.min(MATCH_MS, left)));
@@ -1365,10 +1445,10 @@ APP.view('trip', {
       APP.ui.confirm({ text: '要取消這趟行程嗎？下車點會留著。', yes: '取消行程', no: '繼續搭', danger: true }).then(function (yes) {
         if (!yes) return;
         /* confirm 開著的時候可能已經抵達（demo 面板）、換了一趟、或人已經不在這一頁：那就不是要取消的這一趟 */
-        const cur = tripActive();
+        const cur = TRIP.active();
         const here = APP.nav.current();
         if (!cur || cur.startedAt !== started || cur.placeId !== pid || !here || here.path !== '/trip') return;
-        store().set('trip', null);
+        TRIP.cancel();
         backToRide();
       });
     };
@@ -1384,9 +1464,9 @@ const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2.9 6
 
 APP.view('trip-done', {
   path: '/trip/done', tab: null, status: 'light',
-  title: function () { const t = tripNow(); return t && t.phase === 'done' && tripPlace(t) ? '行程完成' : '行程'; },
+  title: function () { const t = TRIP.current(); return t && t.phase === 'done' && tripPlace(t) ? '行程完成' : '行程'; },
   render: function () {
-    const t = tripNow();
+    const t = TRIP.current();
     const p = tripPlace(t);
     const hdrOf = function (title) {
       return '<header class="hdr-red hdr-red--compact"><div class="hdr-red__bar"><h1 class="hdr-red__title">' + title + '</h1></div></header>';
@@ -1465,10 +1545,8 @@ APP.view('trip-done', {
     const gold = root.querySelector('[data-gold]');
     root.querySelectorAll('[data-act="rate"]').forEach(function (b) {
       b.onclick = function () {
-        const t = tripNow();
-        if (!t) return;
         const n = Number(b.getAttribute('data-star'));
-        store().set('trip', Object.assign({}, t, { rated: true, stars: n }));
+        if (!TRIP.rate(n)) return;
         root.querySelectorAll('[data-act="rate"]').forEach(function (x) {
           x.classList.toggle('is-on', Number(x.getAttribute('data-star')) <= n);
         });

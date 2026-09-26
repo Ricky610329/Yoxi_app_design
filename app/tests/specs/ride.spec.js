@@ -504,7 +504,7 @@ T.spec('ride', function (t) {
     const A = app.APP;
     t.eq(A.place('market').card, 'p2', "APP.place('market').card＝p2");
     t.ok(app.STATE.has('p2'), 'demo 已經收過 p2');
-    t.eq(A.ride.pendingUnlock(), null, '沒有待收的明信片');
+    t.eq(A.ride.trip.pending(), null, '沒有待收的明信片');
     t.includes(app.text('[data-gold]'), '已經在收藏', '/trip/done 說已經在收藏裡');
     await app.go('/ride');
     t.ok(!app.$('[data-act="unlock-ride"]'), '/ride 沒有「明信片還沒收」入口');
@@ -525,7 +525,7 @@ T.spec('ride', function (t) {
     t.ok(app.$('[data-act="pick-dropoff"] .route-input__value--ph'), '下車點欄位是空的');
     t.eq(A.store.get('trip'), null, '壞掉的 trip 清掉');
     t.eq(A.store.get('dropoff'), null, '壞掉的 dropoff 清掉');
-    t.eq(A.ride.tripActive(), null, 'tripActive＝null');
+    t.eq(A.ride.trip.active(), null, 'trip.active()＝null');
     A.ride.setDropoff('moat', 'e');
     await app.waitFor(function () { const d = A.store.get('dropoff'); return d && d.id === 'moat'; }, 2000, 'setDropoff 不被擋');
     await app.reset({ store: { trip: broken }, hash: '/trip' });

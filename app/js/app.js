@@ -59,7 +59,7 @@ function fresh() {
     version: STORE_VERSION,
     onboarded: false,
     dropoff: null,        /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
-    trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km } */
+    trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }；只有 APP.ride.trip 讀寫 */
     pushes: [],           /* [{ when:'am'|'pm', at:ISO }] */
     arrivedDemo: null,    /* placeId */
     rideSpots: true,      /* 叫車地圖上要不要疊城事的景點（設定頁可關） */

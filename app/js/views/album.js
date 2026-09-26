@@ -677,7 +677,7 @@ APP.view('postcard', {
       const pid = visitKey(P.id);
       const canGo = !!APP.place(pid);
       /* 搭車抵達了、評分後直接回首頁的那一趟：這張卡就是它的限定版 → 回去解鎖的入口 */
-      const pu = APP.ride && APP.ride.pendingUnlock ? APP.ride.pendingUnlock() : null;
+      const pu = APP.ride.trip.pending();
       const pend = pu && pu.card === P.id ? pu : null;
       return header({ title: '明信片', back: '/postcards' }) +
         '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +

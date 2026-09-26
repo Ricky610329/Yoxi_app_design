@@ -31,7 +31,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | `specs/app.spec.js` | 跨區塊：§8 每條 route、tab bar、返回、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder |
 | `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫 |
 | `specs/flows.spec.js` | QA：三條 demo 流程端到端、跨區塊縫合、全站兩種狀態掃描、非 still 模式 |
-| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（phaseOf、點數、限定版、抽卡機率、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors） |
+| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、抽卡機率、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id） |
 | `fixtures/mini-app.html`、`fixtures/selftest.html` | 驗 harness 本身 |
 
 ## 寫新 spec
