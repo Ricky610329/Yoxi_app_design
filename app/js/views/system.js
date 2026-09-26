@@ -594,25 +594,6 @@ function demoPlaces() {
 }
 function placeGot(p) { return !!(p && p.card && window.STATE && STATE.has(p.card)); }
 
-/* 地點 id（也可能是明信片 id、路線站 id）→ 下拉選單裡的哪一個。
-   先認選單裡本來就有的；再把明信片換成它所在的地方：CARD_TO_PLACE（p19 → moat）→ 景點的 card 欄位
-   → 選單裡 card 相同的地方（p1 → 新竹車站 station）。都對不上（p3 護城河親水公園、p14 玻璃工藝博物館這種
-   只在路線上的站）就回它自己，updatePanel 會為它多加一個選項——不然選單是空白、「走路抵達」只會說先選一個地方。 */
-function pickFor(id, list) {
-  const p = APP.place(id);
-  if (!p) return null;
-  const inList = function (x) { return !!x && list.some(function (q) { return q.id === x; }); };
-  if (inList(p.id)) return p.id;
-  const M = window.MOCK || {};
-  const card = p.card || id;
-  const map = M.CARD_TO_PLACE || {};
-  if (Object.prototype.hasOwnProperty.call(map, card) && inList(map[card])) return map[card];
-  const spot = (M.SPOTS || []).filter(function (s) { return s.card && s.card === card; })[0];
-  if (spot && inList(spot.id)) return spot.id;
-  const same = list.filter(function (q) { return q.card && q.card === card; })[0];
-  return same ? same.id : p.id;
-}
-
 /* 這一頁在講哪個地方：地方詳情／前往中／抵達頁的 :id → 進行中行程的目的地 → 下車點 */
 function contextPlace(cur) {
   const id = cur && cur.params && cur.params.id;
@@ -690,7 +671,8 @@ function updatePanel(cur) {
   const sel = panel.querySelector('[data-demo-place]');
   let list = demoPlaces();
   const here = contextPlace(cur);
-  if (here) panelPick = pickFor(here, list);
+  /* contextPlace 已經是 APP.place 正規化過的地點 id（p19 → moat、p1 → station）；選單外的站（p3、p14）下面會補一個選項 */
+  if (here) panelPick = here;
   else if (panelPick && placeGot(APP.place(panelPick))) panelPick = null;
   if (!panelPick || !APP.place(panelPick)) {
     const first = list.filter(function (p) { return !placeGot(p); })[0] || list[0];

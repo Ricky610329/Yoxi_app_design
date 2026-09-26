@@ -689,21 +689,14 @@ function renderRoutes() {
 
 /* ---------------------------------------------------------------- /route/:id */
 
-function stopPlaceId(st) {
-  const c2p = M().CARD_TO_PLACE || {};
-  if (st.card && c2p[st.card]) return c2p[st.card];
-  const p = APP.place(st.card || st.id);
-  return p ? p.id : null;
-}
-
 /* 一條路線的畫面模型：每站的狀態、下一站、斷點 */
 function routeModel(R) {
   /* 下一站：路線有 feature（先去這裡）且還沒收就是它，否則第一個還沒收的（route.html 的規則） */
   const nx = R.stops.filter(function (st) { return R.feature && st.card === R.feature && !S().has(st.card); })[0] ||
              R.stops.filter(function (st) { return !S().has(st.card); })[0] || null;
   const stops = R.stops.map(function (st) {
-    const pid = stopPlaceId(st);
-    const p = pid ? APP.place(pid) : null;
+    const p = APP.place(st.card || st.id);   /* 站 → 地點（CARD_TO_PLACE 也在 APP.place 裡） */
+    const pid = p ? p.id : null;
     const dist = p && p.dist != null ? p.dist : st.dist;
     return { st: st, pid: pid, place: p, dist: dist,
              done: S().has(st.card), next: st === nx, walk: fmt.canWalk(dist) };

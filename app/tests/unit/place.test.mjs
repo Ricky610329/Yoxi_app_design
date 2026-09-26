@@ -67,3 +67,70 @@ test('places() 沒有重複、每個都是地點 id（不是明信片 id）', ()
   assert.equal(new Set(ids).size, ids.length);
   for (const id of ids) assert.ok(!/^p\d+$/.test(id), id);
 });
+
+/* 明信片 → 地點的兩種答案（ARCHITECTURE.md §3.4）：APP.place(id).id 與 APP.footprintPlace(id)。
+   這張表釘住現行行為，包括刻意保留的差異：足跡以地圖認得的地點為準，路線站的卡落到同名的地點
+   （p3 → moat、p6 → hill、p8 → lake），地圖上沒有的站是 null；APP.place 把它們當成只在路線上的站。
+   產品決定要合併時，改 app.js 的 footprintPlace 跟這張表。 */
+const CARD_PLACES = {
+  //      APP.place(id).id   APP.footprintPlace(id)
+  p1:  ['station',    'station'],
+  p2:  ['market',     'market'],
+  p3:  ['p3',         'moat'],
+  p4:  ['harbour',    'harbour'],
+  p5:  ['rail',       'rail'],
+  p6:  ['p6',         'hill'],
+  p7:  ['temple',     'temple'],
+  p8:  ['p8',         'lake'],
+  p9:  ['neiwan',     'neiwan'],
+  p10: ['p10',        null],
+  p11: ['glass-kiln', 'glass-kiln'],
+  p12: ['p12',        null],
+  p13: ['p13',        null],
+  p14: ['p14',        null],
+  p15: ['p15',        null],
+  p16: ['p16',        null],
+  p17: ['p17',        null],
+  p18: ['p18',        null],
+  p19: ['moat',       'moat'],
+  p20: ['brick',      'brick'],
+  p21: ['hill',       'hill'],
+  p22: ['lake',       'lake'],
+};
+
+test('明信片 → 地點：APP.place 與 APP.footprintPlace 的對照表（22 張全列）', () => {
+  const G = loadApp({ views: ['album'] });   /* footprintPlace 要 hs-places 的地名 */
+  const ids = [...G.MOCK.POSTCARDS].map((c) => c.id);   /* 展開成這邊的陣列（vm 的陣列原型不同，deepEqual 會說不一樣） */
+  assert.deepEqual([...ids].sort(), Object.keys(CARD_PLACES).sort(), '表上剛好是全部的明信片');
+  for (const id of ids) {
+    const [pl, fp] = CARD_PLACES[id];
+    assert.equal(G.APP.place(id).id, pl, 'APP.place(' + id + ').id');
+    assert.equal(G.APP.footprintPlace(id), fp, 'APP.footprintPlace(' + id + ')');
+  }
+});
+
+test('路線站：站 id 與站上明信片 id 落在同一個地方（路線詳情、demo 面板都只問 APP.place）', () => {
+  const G = loadApp({ views: ['album'] });
+  for (const r of G.MOCK.ROUTES) {
+    for (const st of r.stops) {
+      assert.equal(G.APP.place(st.id).id, CARD_PLACES[st.card][0], st.id + '（' + st.card + '）');
+      assert.equal(G.APP.footprintPlace(st.card), CARD_PLACES[st.card][1], st.card + ' 的足跡地點');
+    }
+  }
+});
+
+test('APP.place 對自己的輸出是穩定的：再查一次還是同一個地方（demo 面板直接拿它當選項）', () => {
+  const G = loadApp({ views: ['album'] });
+  for (const p of G.APP.places()) assert.equal(G.APP.place(p.id).id, p.id, p.id);
+  for (const id of Object.keys(CARD_PLACES)) {
+    const p = G.APP.place(id);
+    assert.equal(G.APP.place(p.id).id, p.id, id + ' → ' + p.id);
+  }
+});
+
+test('footprintPlace：不是明信片 → null；原型鏈上的名字撿不到東西', () => {
+  const G = loadApp({ views: ['album'] });
+  for (const id of ['p0', 'p999', 'nope', '', 'station', 'constructor', 'toString', '__proto__']) {
+    assert.equal(G.APP.footprintPlace(id), null, JSON.stringify(id));
+  }
+});

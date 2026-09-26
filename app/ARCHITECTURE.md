@@ -189,6 +189,11 @@ APP.esc(s)            // HTML escape
 接受地點 id、明信片 id、路線站 id，一律正規化成地點（p1 → station、p2 → market、p9 → neiwan；只出現在路線上的卡如 p3、p14 保留卡片 id）；**不認得的 id 回 `null`**（findPlace 會默默退回今天的地方，這裡擋掉），`/place/:id` 請自己顯示找不到。
 `card` 找不到明信片時是 `null`。距離以 findPlace 為準（例：brick 在 PENDING 是 2400、SPOTS 是 1500，取 2400）。
 `APP.places()` → 全部可去的地方（SPOTS ∪ PENDING ∪ TODAY ∪ FAR_PLACE，去重）。
+`APP.place` 對自己的輸出是穩定的（`APP.place(APP.place(x).id).id === APP.place(x).id`）；路線詳情的每一站、demo 面板的選單都直接問它，不自己查 `CARD_TO_PLACE`。
+`APP.footprintPlace(cardId)` → 城市足跡上的地點 id（地圖認得的地方）或 `null`：CARD_TO_PLACE → 景點同名 → hs-places 名稱以卡名開頭。
+**跟 `APP.place(id).id` 刻意不同**：足跡以地圖認得的地點為準，路線站的卡落到同名的地點（p3 → moat、p6 → hill、p8 → lake），地圖上沒有的站（p10、p12–p18）是 `null`；
+`APP.place` 則把它們當成只在路線上的站（id 就是明信片 id）。兩種答案都是現行行為，產品決定前不合併；要改就改 `app.js` 的 `footprintPlace` 與 `tests/unit/place.test.mjs` 的對照表。
+收藏（足跡、去過的地方、週回顧的地方數、城市顏色、明信片詳情的距離與故事）一律問 `footprintPlace`，其餘都問 `APP.place`；不要再在 view 裡寫第三種查法。
 
 ### 3.5 UI 零件
 ```js

@@ -257,6 +257,28 @@ function canonId(id) {
   return hit ? hit.id : id;
 }
 
+/* 明信片 id → 城市足跡上的地點 id（地圖認得的地方）；對不到就 null。
+   依序：CARD_TO_PLACE → 景點同名 → hs-places 名稱以卡名開頭（護城河親水公園、十八尖山、青草湖）。
+   跟 APP.place(id).id 刻意不同：足跡的「地方」以地圖上認得的地點為準，所以路線站的卡會落到同名的地點
+   （p3 → moat、p6 → hill、p8 → lake）；APP.place 把它們當成只在路線上的站（id 就是明信片 id）。
+   地圖上沒有的站（p10、p12–p18）這裡是 null，APP.place 則是明信片 id。
+   兩種答案都是現行行為，產品決定之前不合併；要合併時改這裡跟 tests/unit/place.test.mjs 的對照表。 */
+function footprintPlace(cardId) {
+  const m = M();
+  if (m.CARD_TO_PLACE && Object.prototype.hasOwnProperty.call(m.CARD_TO_PLACE, cardId) && m.CARD_TO_PLACE[cardId]) {
+    return m.CARD_TO_PLACE[cardId];
+  }
+  const c = (m.POSTCARDS || []).filter(function (x) { return x.id === cardId; })[0];
+  if (!c) return null;
+  const spot = (m.SPOTS || []).filter(function (s) { return s.name === c.name; })[0];
+  if (spot) return spot.id;
+  const geo = W.HSINCHU_PLACES || {};
+  const hit = Object.keys(geo).filter(function (k) {
+    return geo[k] && geo[k].name && geo[k].name.indexOf(c.name) === 0;
+  })[0];
+  return hit || null;
+}
+
 function place(id) {
   const m = M();
   if (!id || !m.findPlace || !knownId(id)) return null;
@@ -1316,6 +1338,7 @@ W.APP = {
   esc: esc,
   place: place,
   places: places,
+  footprintPlace: footprintPlace,
   ui: ui,
   map: map,
   start: start,

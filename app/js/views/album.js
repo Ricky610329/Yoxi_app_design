@@ -53,22 +53,9 @@ function stepsPerKm() {
   return L.km ? L.steps / L.km : 0;
 }
 
-/* 明信片 → 地圖認得的地點 id。
-   依序：CARD_TO_PLACE → SPOTS 同名 → hs-places 名稱含卡名（護城河親水公園、十八尖山、青草湖）。
-   都對不上就回 null（城市足跡略過這張）。 */
-function placeOfCard(cardId) {
-  const m = M();
-  if (m.CARD_TO_PLACE && m.CARD_TO_PLACE[cardId]) return m.CARD_TO_PLACE[cardId];
-  const c = cardById(cardId);
-  if (!c) return null;
-  const spot = (m.SPOTS || []).filter(function (s) { return s.name === c.name; })[0];
-  if (spot) return spot.id;
-  const geo = window.HSINCHU_PLACES || {};
-  const hit = Object.keys(geo).filter(function (k) {
-    return geo[k] && geo[k].name && geo[k].name.indexOf(c.name) === 0;
-  })[0];
-  return hit || null;
-}
+/* 明信片 → 城市足跡上的地點一律問 APP.footprintPlace（app.js；它跟 APP.place 刻意不同，理由寫在那裡）。
+   「去過的地方」的鍵：對得到地點就用地點，對不到的卡自己算一個地方。 */
+function visitKey(cardId) { return APP.footprintPlace(cardId) || cardId; }
 
 /* 已收的卡 → 足跡地圖上的點；回傳 { seen:[placeId], missing:[cardId] } */
 function footprintSeen() {
@@ -77,7 +64,7 @@ function footprintSeen() {
   const missing = [];
   M().POSTCARDS.forEach(function (p) {
     if (!STATE.has(p.id)) return;
-    const pid = placeOfCard(p.id);
+    const pid = APP.footprintPlace(p.id);
     if (pid && geo[pid]) { if (seen.indexOf(pid) < 0) seen.push(pid); }
     else missing.push(p.id);
   });
@@ -90,7 +77,7 @@ function visitedPlaces() {
   const out = [];
   M().POSTCARDS.forEach(function (p) {
     if (!STATE.has(p.id)) return;
-    const k = placeOfCard(p.id) || p.id;
+    const k = visitKey(p.id);
     if (out.indexOf(k) < 0) out.push(k);
   });
   return out;
@@ -263,7 +250,7 @@ function photoCreditHTML(cardId) {
 
 function storyOf(cardId) {
   if (STORY[cardId]) return STORY[cardId];
-  const pid = placeOfCard(cardId);
+  const pid = APP.footprintPlace(cardId);
   const pl = pid ? APP.place(pid) : null;
   const past = pl && (pl.story || []).filter(function (s) { return s.label === '以前的它'; })[0];
   return past ? past.text : '在這裡停了一下。';
@@ -318,7 +305,7 @@ function weekStats() {
     const steps = days.reduce(function (s, x) { return s + x.steps; }, 0);
     const cards = inKeys(mm * 100 + a, mm * 100 + b);
     /* 地方數跟收藏首頁同一個算法：同一個地方的兩張卡算一個 */
-    const places = cards.map(function (p) { return placeOfCard(p.id) || p.id; })
+    const places = cards.map(function (p) { return visitKey(p.id); })
       .filter(function (k, i, arr) { return arr.indexOf(k) === i; }).length;
     return { from: a, to: b, days: days, steps: steps,
              km: spk ? Math.round(steps / spk * 10) / 10 : 0, cards: cards, places: places };
@@ -687,7 +674,7 @@ APP.view('postcard', {
            '<span class="alb-row__s">單獨收藏也算數</span></span></div>';
 
     if (!got) {
-      const pid = placeOfCard(P.id) || P.id;
+      const pid = visitKey(P.id);
       const canGo = !!APP.place(pid);
       /* 搭車抵達了、評分後直接回首頁的那一趟：這張卡就是它的限定版 → 回去解鎖的入口 */
       const pu = APP.ride && APP.ride.pendingUnlock ? APP.ride.pendingUnlock() : null;
@@ -722,7 +709,7 @@ APP.view('postcard', {
        框用 ::after 畫在插圖上面（album.css 的 .alb-big__card.postcard--gold）：chengshi.css 的 inset 陰影會被滿版插圖蓋住。 */
     const limited = limitedCard(P.id);
     const gold = limited || goldCard(P.id);
-    const pid = placeOfCard(P.id);
+    const pid = APP.footprintPlace(P.id);
     const pl = pid ? APP.place(pid) : APP.place(P.id);
     const dist = pl && pl.dist != null ? pl.dist : null;
     const how = ride
@@ -858,7 +845,7 @@ function cityColors() {
   const places = {};
   const bands = [];
   recentCards(M().POSTCARDS.length).reverse().forEach(function (p) {
-    const k = placeOfCard(p.id) || p.id;
+    const k = visitKey(p.id);
     if (places[k]) return;
     places[k] = 1;
     const sky = (ART[p.art] || {}).sky || [];
@@ -1394,7 +1381,7 @@ APP.view('elder', {
 });
 
 /* 給別的區塊／測試用 */
-APP.album = { placeOfCard: placeOfCard, footprintSeen: footprintSeen, weekStats: weekStats,
+APP.album = { footprintSeen: footprintSeen, weekStats: weekStats,
               visitedPlaces: visitedPlaces, recentCards: recentCards, cityColors: cityColors,
               coverage: function () { return fixedCoverage({ seen: footprintSeen().seen, fade: [] }); } };
 

@@ -156,7 +156,7 @@ python app/tests/run.py                           # web app：node 單元＋head
 - **brick 的距離兩處不一致**：`MOCK.PENDING` 是 2400 m、`MOCK.SPOTS` 是 1500 m。app 統一走 `APP.place(id).dist`（以 `findPlace` 為準，取 2400），不要直接讀 SPOTS 的 dist。
 - **`interact.js` 的 listener 不會自己解除**：`initSheet／initPan` 用 `addEventListener` 掛在 `window` 上。原型不能改，所以由 app 的 router 在 mount 期間記下、離開該頁時移除（第三波加的，`ARCHITECTURE.md` §3.2）；自己在 mount 外呼叫 `INTERACT.init*` 就不受這個保護。
 - **內灣在底圖外**：底圖只有新竹 11×12 km，內灣在 28 km 外，行程與路線上會夾到地圖邊緣（`.spot--edge`）。
-- **城市足跡少算八張卡**：22 張明信片裡 8 張（p10 合興、p12 九讚頭、p13 橫山、p14 玻璃工藝博物館、p15 春池玻璃、p16 舊社的矽砂場、p17 水源地的窯口、p18 頭前溪河口）對不到地圖座標，收了也不進覆蓋率（`album.js` 的 `placeOfCard`）。
+- **城市足跡少算八張卡**：22 張明信片裡 8 張（p10 合興、p12 九讚頭、p13 橫山、p14 玻璃工藝博物館、p15 春池玻璃、p16 舊社的矽砂場、p17 水源地的窯口、p18 頭前溪河口）對不到地圖座標，收了也不進覆蓋率（`app.js` 的 `APP.footprintPlace`；它跟 `APP.place` 對 p3／p6／p8 的答案刻意不同，見 `app/ARCHITECTURE.md` §3.4）。
 - 叫車、抵達、推播都是模擬；PWA 只能在 localhost 或 https 安裝。
 - **六條承諾在 app 只有④有斷言**：合一版動了叫車首頁（tab bar、4 顆景點、banner 第一格），驗收數字量的是原型的 `home.html`。講的時候要說清楚（`docs/narratives/zero-harm.md`）。
 - **桌機縮放後拖曳跟手 80%**：1280×720 投影時 `.device` 用 `transform: scale()` 縮到約 0.8，`interact.js` 的平移與 sheet 拖曳用 clientX／Y 差值換算，沒有除以 scale。要修得動 `prototype/js/interact.js`。
