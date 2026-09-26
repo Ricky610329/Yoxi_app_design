@@ -284,32 +284,34 @@ function collect(placeId, opt) {
   const p = APP.place(placeId);
   const pid = p ? p.id : placeId;
   const target = (p && p.card) || placeId;
-  const a = arrivalAt(p);
-  const drawn = a.trip ? a.draw : (p ? rollDraw(p) : null);
-  const isNew = S().collect(target, {
-    by: a.by,
-    note: opt.note || '',
-    km: a.km,
-    date: fmt.todayMMDD(),
+  /* STATE 與 app store 的寫入包成一次 state:change，全部寫完才發 */
+  return APP.state.batch(function () {
+    const a = arrivalAt(p);
+    const drawn = a.trip ? a.draw : (p ? rollDraw(p) : null);
+    const isNew = APP.state.collect(target, {
+      by: a.by,
+      note: opt.note || '',
+      km: a.km,
+      date: fmt.todayMMDD(),
+    });
+    /* 抽到的款式記在 app store（STATE 的卡片結構不動）；這次抵達的暫存抽卡用完就清 */
+    if (isNew && drawn) {
+      APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: drawn.key }));
+    }
+    const draws = APP.store.get('draws');
+    if (draws && (draws[pid] || draws[placeId])) {
+      const rest = Object.assign({}, draws);
+      delete rest[pid]; delete rest[placeId];
+      APP.store.set('draws', rest);
+    }
+    if (a.trip) APP.ride.trip.consume(placeId);
+    const drop = APP.store.get('dropoff');
+    if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
+    /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
+    const arrived = APP.store.get('arrivedDemo');
+    if (arrived && (arrived === pid || arrived === placeId)) APP.store.set('arrivedDemo', null);
+    return isNew;
   });
-  /* 抽到的款式記在 app store（STATE 的卡片結構不動）；這次抵達的暫存抽卡用完就清 */
-  if (isNew && drawn) {
-    APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: drawn.key }));
-  }
-  const draws = APP.store.get('draws');
-  if (draws && (draws[pid] || draws[placeId])) {
-    const rest = Object.assign({}, draws);
-    delete rest[pid]; delete rest[placeId];
-    APP.store.set('draws', rest);
-  }
-  if (a.trip) APP.ride.trip.consume(placeId);
-  const drop = APP.store.get('dropoff');
-  if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
-  /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
-  const arrived = APP.store.get('arrivedDemo');
-  if (arrived && (arrived === pid || arrived === placeId)) APP.store.set('arrivedDemo', null);
-  APP.emit('state:change');
-  return isNew;
 }
 
 /**

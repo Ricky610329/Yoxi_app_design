@@ -54,29 +54,34 @@ function emit(name, data) {
    讀進來一律跟 fresh() 對過型別，版本只是讓下一次改結構時知道要不要搬資料。 */
 const STORE_VERSION = 2;
 
+/* store 的每一把鍵：預設值、型別、類別。新增一把鍵只要在這裡加一行（契約 §3.3 的表跟著寫）。
+   型別：'?' 結尾＝也可以是 null；map＝一般物件（不是陣列）。預設是 null 的鍵光看預設值看不出型別，所以寫在這裡。
+   類別：footprint＝「你去過哪、做過什麼」，清除我的足跡（store.clear('footprint')）回到預設；
+        pref＝偏好，清除足跡時留著；meta＝存檔結構本身。 */
+const KEYS = {
+  version:     { def: STORE_VERSION, kind: 'number', group: 'meta' },
+  onboarded:   { def: false, kind: 'boolean', group: 'pref' },
+  dropoff:     { def: null,  kind: 'object?', group: 'footprint' },  /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
+  trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }；只有 APP.ride.trip 讀寫 */
+  pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
+  arrivedDemo: { def: null,  kind: 'string?', group: 'footprint' },  /* placeId */
+  rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
+  rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
+  draws:       { def: {},    kind: 'map',     group: 'footprint' },  /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
+  cardStyle:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時抽到的款式 key（explore） */
+  fxMute:      { def: false, kind: 'boolean', group: 'pref' },       /* 抵達與抽卡的音效關掉（explore） */
+  tabPaths:    { def: { ride: '/ride', album: '/album' }, kind: 'map', group: 'footprint' },  /* 各 tab 最後停的 path */
+};
+
 function fresh() {
-  return {
-    version: STORE_VERSION,
-    onboarded: false,
-    dropoff: null,        /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
-    trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }；只有 APP.ride.trip 讀寫 */
-    pushes: [],           /* [{ when:'am'|'pm', at:ISO }] */
-    arrivedDemo: null,    /* placeId */
-    rideSpots: true,      /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
-    rideVia: {},          /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
-    draws: {},            /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
-    cardStyle: {},        /* 明信片 id → 收下時抽到的款式 key（explore） */
-    fxMute: false,        /* 抵達與抽卡的音效關掉（explore） */
-    tabPaths: { ride: '/ride', album: '/album' },
-  };
+  const o = {};
+  Object.keys(KEYS).forEach(function (k) {
+    const d = KEYS[k].def;
+    o[k] = d && typeof d === 'object' ? JSON.parse(JSON.stringify(d)) : d;
+  });
+  return o;
 }
 
-/* 每個鍵收什麼型別（預設是 null 的鍵光看 fresh() 看不出來）。'?' 結尾＝也可以是 null；map＝一般物件（不是陣列） */
-const KIND = {
-  version: 'number', onboarded: 'boolean', dropoff: 'object?', trip: 'object?', pushes: 'array',
-  arrivedDemo: 'string?', rideSpots: 'boolean', rideVia: 'map', draws: 'map', cardStyle: 'map',
-  fxMute: 'boolean', tabPaths: 'map',
-};
 function kindOk(kind, v) {
   if (!kind) return true;
   const nullable = kind.slice(-1) === '?';
@@ -108,7 +113,7 @@ function load() {
       s[k] = got[k];
     });
     Object.keys(base).forEach(function (k) {
-      if (!Object.prototype.hasOwnProperty.call(got, k) || !kindOk(KIND[k], got[k])) s[k] = base[k];
+      if (!Object.prototype.hasOwnProperty.call(got, k) || !kindOk(KEYS[k].kind, got[k])) s[k] = base[k];
     });
     /* tabPaths 只收「/ 開頭的字串」：舊版或手改過的值（null、數字、整串字串）不能讓 nav.tab 導到怪地方。
        第 1 版的 tabPaths.explore 不再用（探索歸在叫車底下），順手丟掉 */
@@ -143,8 +148,59 @@ const store = {
     Object.keys(obj || {}).forEach(function (k) { emit('store:change', { key: k }); });
   },
   reset: function () { S = fresh(); save(); emit('store:change', { key: null }); },
+  /* 一類鍵回到預設（KEYS 的 group；清除我的足跡＝clear('footprint')）。別類的鍵、不認得的鍵不動。回傳清了哪些鍵 */
+  clear: function (group) {
+    const f = fresh();
+    const keys = Object.keys(KEYS).filter(function (k) { return KEYS[k].group === group; });
+    keys.forEach(function (k) { S[k] = f[k]; });
+    save();
+    keys.forEach(function (k) { emit('store:change', { key: k }); });
+    return keys;
+  },
   /* 重新從 localStorage 讀（測試換了 localStorage 之後用） */
   reload: function () { S = load(); },
+};
+
+/* --------------------------------------------------------------------------
+   state：寫 STATE（prototype/js/state.js，app 不改它）的唯一入口
+   每一次寫都跟著 emit('state:change')——統計、設定開關、demo 面板靠它更新，不用每個呼叫的人記得配對。
+   batch(fn) 把一串寫入（可以夾著 APP.store 的寫入）包成一次 state:change，寫完才發：listener 看到的一定是
+   寫完的樣子。讀照舊直接讀 STATE（has、card、count、all…）。
+   -------------------------------------------------------------------------- */
+let stateDepth = 0;
+let stateDirty = false;
+function stateChanged() {
+  if (stateDepth) stateDirty = true;
+  else emit('state:change');
+}
+const state = {
+  batch: function (fn) {
+    stateDepth++;
+    try { return fn(); }
+    finally {
+      stateDepth--;
+      if (!stateDepth && stateDirty) { stateDirty = false; emit('state:change'); }
+    }
+  },
+  /* 收下一張明信片（只有 APP.explore.collect 用；它決定搭車或走路、款式、公里）。回傳是否新收 */
+  collect: function (id, opt) { const r = W.STATE.collect(id, opt); stateChanged(); return r; },
+  setToday: function (patch) { W.STATE.setToday(patch); stateChanged(); },
+  setSetting: function (k, v) { W.STATE.setSetting(k, v); stateChanged(); },
+  markLastSeen: function () { W.STATE.markLastSeen(); stateChanged(); },
+  /* 回到 demo 初始（8 張明信片、原本的點數與設定） */
+  reset: function () { W.STATE.reset(); stateChanged(); },
+  /* 清除我的足跡在 STATE 的那一半：真的清空（不是回到 demo 的 8 張）。哪些欄位算足跡只寫在這裡；
+     STATE.settings 的開關是偏好，留著。state.js 沒有清空的 API：STATE.all 是活物件，改完用 setToday() 觸發存檔 */
+  wipe: function () {
+    const A = W.STATE.all;
+    A.cards = {};
+    A.km = 0;
+    A.lastCard = null;
+    A.lastSeen = null;
+    A.today = { photo: null, mood: null, done: false };
+    W.STATE.setToday({ photo: null, mood: null, done: false });
+    stateChanged();
+  },
 };
 
 /* --------------------------------------------------------------------------
@@ -1332,6 +1388,7 @@ W.APP = {
   parse: parse,
   nav: nav,
   store: store,
+  state: state,
   on: on,
   emit: emit,
   fmt: fmt,

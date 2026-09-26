@@ -140,33 +140,47 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
 ### 3.3 狀態
 - 收藏／獎章／路線／點數／設定：**沿用 `STATE`**（`../prototype/js/state.js`，localStorage `yoxi-chengshi-v1-2`）。
   新收的卡日期用 `APP.fmt.todayMMDD()`，不再寫死 09.21。
+  **讀**直接讀 `STATE`（`has`、`card`、`count`、`all`、`badge`…）；**寫**一律經過 app.js 的 `APP.state`（state.js 是 prototype 的檔，app 不改它）：
+  ```js
+  APP.state.collect(id, opt)    // 只有 APP.explore.collect 用（它決定搭車或走路、款式、公里）
+  APP.state.setToday(patch)     APP.state.setSetting(k, v)     APP.state.markLastSeen()
+  APP.state.reset()             // 回到 demo 初始（8 張）
+  APP.state.wipe()              // 清除我的足跡的 STATE 那一半：明信片、公里、日誌清空（哪些欄位算足跡只寫在這裡）；settings 留著
+  APP.state.batch(fn)           // 一串寫入（可以夾著 APP.store）寫完才發一次 state:change；回傳 fn 的結果
+  ```
+  每一次寫都自己 `emit('state:change')`（在 batch 裡就等 batch 結束），呼叫的人不用配對。
 - app 自己的狀態：`APP.store`（localStorage `yoxi-chengshi-app-v1`）
   ```js
   APP.store.get('dropoff')            // 讀
   APP.store.set('dropoff', {...})     // 寫＋save＋emit('store:change', {key})
   APP.store.patch({ a:1, b:2 })
-  APP.store.reset()                   // 只清 app 狀態；STATE.reset() 另外呼叫
+  APP.store.reset()                   // 只清 app 狀態；STATE 那一半是 APP.state.reset()
+  APP.store.clear('footprint')        // 一類鍵回到預設（清除我的足跡）；偏好與不認得的鍵不動，回傳清了哪些鍵
   APP.store.all                       // 整個物件（唯讀用）；APP.store.reload() 重新讀 localStorage
   ```
   `tabPaths` 由 router 安靜寫入（不 emit）。
-  鍵與型別（預設值在 app.js 的 `fresh()`）：
+  鍵、型別、類別都在 app.js 的 `KEYS` 表（一把鍵一行：預設值、型別、類別；`fresh()` 從它產生）。**新增一把鍵只改 `KEYS`**（加這張表的一列）；
+  類別 `footprint`＝你去過哪、做過什麼（清除我的足跡會回到預設），`pref`＝偏好（留著），`meta`＝結構本身。
   | 鍵 | 型別 | 說明 |
   |---|---|---|
-  | `onboarded` | bool | 看過 onboarding |
+  | `onboarded` | bool | 看過 onboarding（pref） |
   | `dropoff` | `{ id, name, km, setAt, via:'k1'|'e'|'search'|'route' }` 或 null | 下車點。km 從 MOCK 的距離算（距離不明時是 null，畫面寫「距離待確認」、不顯示車資與分鐘），車資與分鐘不存，畫面用 `APP.fmt` 現算 |
   | `trip` | `{ placeId, phase:'matching'|'riding'|'done', startedAt, rated:bool, km, via, stars? }` 或 null | 進行中的叫車。**只有 `APP.ride.trip`（§7）讀寫**；km 距離不明是 null；via＝下車點從哪個入口設的（轉換歸因）；stars 評分後才有 |
   | `pushes` | `[{ when:'am'|'pm', at:ISO }]` | 今天發過的推播（最多兩則） |
   | `arrivedDemo` | string 或 null | demo「模擬抵達」暫存的 placeId |
   | `draws` | `{ 地點 id: 款式 key }` | 走路抵達抽到、還沒收的款式（重進不重抽；收下就清掉） |
   | `cardStyle` | `{ 明信片 id: 款式 key }` | 收下時抽到的款式（金框的明信片在收藏裡也是金框） |
-  | `fxMute` | bool | 抵達與抽卡的音效關掉 |
+  | `fxMute` | bool | 抵達與抽卡的音效關掉（pref） |
+  | `rideSpots` | bool | 叫車地圖上要不要疊城事的景點（設定頁可關；pref） |
+  | `rideVia` | `{ 明信片 id: 'k1'|'e'|'route'|'search' }` | 搭車收下的那一趟是從哪個入口叫的（行程紀錄的小標；`APP.ride.trip.consume` 寫） |
   | `tabPaths` | `{ ride, album }` | 各 tab 最後停的 path（由 nav 維護；`remember:false` 的不記） |
-  | `version` | number | store 的結構版本（目前 2）；load 時每個鍵照 `fresh()` 的型別檢查，型別不對退回預設，不認得的鍵原樣保留 |
+  | `version` | number | store 的結構版本（目前 2；meta）；load 時每個鍵照 `KEYS` 的型別檢查，型別不對退回預設，不認得的鍵原樣保留 |
+  沒標類別的都是 footprint。
 - 事件：`APP.on('store:change'|'state:change'|'route:change', fn)`／`APP.emit(...)`。
-  任何寫 `STATE.*` 的地方請跟著 `APP.emit('state:change')`，統計才會更新（底欄不聽這些事件，也沒有小紅點）。
+  `state:change` 由 `APP.state` 自己發（見上），統計、設定開關、demo 面板靠它更新（底欄不聽這些事件，也沒有小紅點）。
 - id 認不得的 `trip`／`dropoff`（舊版資料、手改）：`APP.ride.trip` 讀的時候一律當作沒有行程（任何畫面都一樣）；`/ride`、`/trip`、`/trip/done` 的 mount 與 `arrive()` 再真的清掉，不會卡住叫車。
-- 「清除我的足跡」（system）清 STATE 與 `dropoff`、`trip`、`arrivedDemo`、`rideVia`、`cardStyle`、`draws`、`pushes`，`tabPaths` 回預設；保留 `onboarded`、`fxMute`、`rideSpots` 與 `STATE.settings`。
-- 每日回顧結束時用 `STATE.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情與照片。
+- 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`arrivedDemo`、`rideVia`、`cardStyle`、`draws`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`）與 `STATE.settings`。
+- 每日回顧結束時用 `APP.state.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情與照片。
 
 ### 3.4 格式與公式（不准手寫數字）
 ```js
@@ -344,7 +358,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 需要 core 多給一個 helper 時：先在自己的 view 檔裡以 `APP.<area>.<fn>` 命名空間放（例 `APP.ride.setDropoff()`），
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
-- `APP.explore.collect(placeId, { note })`：收下一張明信片（explore 提供；/unlock 用）。呼叫的人只給那一句話，其餘由它判斷：有搭 yoxi 抵達這裡的那一趟（`APP.ride.trip.arrivedAt`）就是搭車——必得金框、公里用這一趟的、收下時 `APP.ride.trip.consume` 用掉它（連同 rideVia 歸因）；否則走路——款式是這次抵達抽到的（`store.draws`，還沒抽就當場抽）、公里用地方的距離，行程不碰（還沒領的限定版不會消失）。包 `STATE.collect` ＋ emit；款式記進 `store.cardStyle[卡片 id]`，清掉 `store.draws[地點 id]`；回傳是否新收。測試要準備「收過了」的狀態用 `T.helpers.collect(app, placeId, { by, style, note })` 或 `app.reset({ cards })`
+- `APP.explore.collect(placeId, { note })`：收下一張明信片（explore 提供；/unlock 用）。呼叫的人只給那一句話，其餘由它判斷：有搭 yoxi 抵達這裡的那一趟（`APP.ride.trip.arrivedAt`）就是搭車——必得金框、公里用這一趟的、收下時 `APP.ride.trip.consume` 用掉它（連同 rideVia 歸因）；否則走路——款式是這次抵達抽到的（`store.draws`，還沒抽就當場抽）、公里用地方的距離，行程不碰（還沒領的限定版不會消失）。經 `APP.state.collect` 寫進 STATE（跟 app store 的寫入包成一次 state:change，寫完才發）；款式記進 `store.cardStyle[卡片 id]`，清掉 `store.draws[地點 id]`；回傳是否新收。測試要準備「收過了」的狀態用 `T.helpers.collect(app, placeId, { by, style, note })` 或 `app.reset({ cards })`
 - `APP.explore.cardOrigin(cardId)`（explore 提供）：收下的那一張是怎麼來的，還沒收是 null：`{ id, date, note, km, by:'walk'|'ride', style, gold, limited, via }`。`gold`＝抽到金框那一款或限定版；`limited`＝`APP.ride.limitedCard`；`via`＝`store.rideVia`。收藏、叫車的浮起來小卡、探索的「已收藏」一行都問它，不各自翻 STATE 的 by、store.cardStyle、store.rideVia
 - `APP.ride.trip`（ride 提供）：**行程 module，`store.trip` 只有它讀寫**，別的區塊與畫面一律透過它。讀：`current()`（id 認得的那一趟或 null）、`active()`（配對中／行程中）、`arrivedAt(placeId)`（搭車抵達這裡、phase done 的那一趟）、`pending()`（抵達了、明信片還沒收：`{ trip, place, card, limited, href }`）、`phase(t, now)`（純函式，matching 過了 `MATCH_MS` 算 riding）。寫：`start(placeId, via)`、`toRiding()`、`arrive()`、`arriveAt(placeId)`（demo 搭 yoxi 抵達）、`cancel()`、`rate(stars)`、`consume(placeId)` → `{ via, km }`（搭車收下時用掉這一趟、記 `store.rideVia[明信片 id]`）、`clear()`、`clearBroken()`。行程的形狀只在 ride.js 的 `make()` 寫一次；km 一律從地方的距離算，距離不明是 null。node 測試在 `tests/unit/trip.test.mjs`
 - `APP.ride.RIDE_BONUS`（ride 提供）：搭車抵達走不到的地方的加點，＝`MOCK.FAR_PLACE.ridePoints`（資料缺了才用 50）；全 app 唯一來源，explore 的「+50 點」也讀它。`APP.ride.pointsRows()` 每一列多一個 `place` 欄位

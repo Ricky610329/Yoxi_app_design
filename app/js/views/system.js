@@ -112,29 +112,15 @@ function dismissAll() {
   else closeOverlays();
 }
 
-/* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。
-   state.js 沒有清空的 API；STATE.all 回傳的是活物件，改完用 setToday() 觸發 save。
-   app store 裡跟「你去過哪、做過什麼」有關的也一起清：下車點、行程、抵達暫存、
-   叫車歸因（rideVia）、抽到的款式（cardStyle、draws）、各 tab 停在哪（tabPaths 回預設）、今天發過的推播。
+/* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。哪些東西算足跡不寫在這裡：
+   STATE 那一半在 APP.state.wipe()（明信片、公里、日誌），app store 那一半是 app.js 的 KEYS 裡 group 為
+   footprint 的鍵（下車點、行程、抵達暫存、叫車歸因、抽到的款式、各 tab 停在哪、今天發過的推播）。
    留著的是偏好：onboarded、fxMute、rideSpots 與 STATE.settings 的開關。 */
 function wipeFootprint() {
-  if (window.STATE) {
-    const A = STATE.all;
-    A.cards = {};
-    A.km = 0;
-    A.lastCard = null;
-    A.lastSeen = null;
-    A.today = { photo: null, mood: null, done: false };
-    STATE.setToday({ photo: null, mood: null, done: false });
-  }
-  const fresh = APP.store.fresh ? APP.store.fresh() : {};
-  APP.ride.trip.clear();
-  APP.store.patch({
-    dropoff: null, arrivedDemo: null,
-    rideVia: {}, cardStyle: {}, draws: {}, pushes: [],
-    tabPaths: fresh.tabPaths || { ride: '/ride', explore: '/explore', album: '/album' },
+  APP.state.batch(function () {
+    APP.state.wipe();
+    APP.store.clear('footprint');
   });
-  emitState();
 }
 
 function resetDemo() {
@@ -142,10 +128,11 @@ function resetDemo() {
     .then(function (yes) {
       if (!yes) return false;
       dismissAll();
-      if (window.STATE) STATE.reset();
-      APP.store.reset();
-      APP.store.set('onboarded', true);       /* 重設不該再看一次 onboarding */
-      emitState();
+      APP.state.batch(function () {
+        APP.state.reset();
+        APP.store.reset();
+        APP.store.set('onboarded', true);     /* 重設不該再看一次 onboarding */
+      });
       APP.nav.go('/ride', { replace: true });
       APP.ui.toast('demo 已重設');
       return true;
@@ -532,11 +519,11 @@ APP.view('settings', {
       el.onclick = function () {
         const k = el.getAttribute('data-switch');
         const on = !switchOn(k);
-        if (STORE_SWITCH[k]) APP.store.set(k, on);
-        else if (window.STATE) STATE.setSetting(k, on);
         el.classList.toggle('is-on', on);
         el.setAttribute('aria-checked', on ? 'true' : 'false');
-        emitState();
+        /* 別處靠 state:change 同步開關：STATE 的開關由 APP.state 發；存在 app store 的開關也發同一個事件 */
+        if (STORE_SWITCH[k]) { APP.store.set(k, on); emitState(); }
+        else APP.state.setSetting(k, on);
       };
     });
 

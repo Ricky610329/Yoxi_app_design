@@ -169,3 +169,39 @@ test('cityColors：每個去過的地方算進一道顏色；一張都沒有就�
   assert.deepEqual([...empty.APP.album.cityColors()], [], '0 張卡沒有顏色');
   assert.equal(empty.APP.album.visitedPlaces().length, 0);
 });
+
+test('APP.state：寫 STATE 一定跟著 state:change；batch 裡的寫入寫完才發一次', () => {
+  const { APP, STATE } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });
+  let n = 0;
+  const off = APP.on('state:change', () => { n++; });
+  APP.state.setToday({ mood: 'calm' });
+  assert.equal(n, 1, 'setToday 發一次');
+  assert.equal(STATE.all.today.mood, 'calm');
+  APP.state.setSetting('layer', false);
+  APP.state.markLastSeen();
+  assert.equal(n, 3, 'setSetting、markLastSeen 各發一次');
+  let seenInside = null;
+  const r = APP.state.batch(() => {
+    APP.state.setToday({ mood: 'tired' });
+    APP.state.setToday({ photo: 'x' });
+    seenInside = n;
+    return 'done';
+  });
+  assert.equal(seenInside, 3, 'batch 裡還沒發');
+  assert.equal(n, 4, 'batch 結束發一次');
+  assert.equal(r, 'done', 'batch 回傳 fn 的結果');
+  APP.state.batch(() => {});
+  assert.equal(n, 4, '沒寫東西的 batch 不發');
+  let order = null;
+  const off2 = APP.on('state:change', () => { order = APP.store.get('cardStyle')[APP.place('glass-kiln').card]; });
+  APP.store.set('draws', { 'glass-kiln': 'oil' });
+  APP.explore.collect('glass-kiln');
+  assert.equal(order, 'oil', 'collect：listener 看到的是寫完 app store 的樣子');
+  off2();
+  const km0 = STATE.all.km;
+  assert.ok(STATE.count() > 0 && km0 > 0);
+  APP.state.wipe();
+  assert.deepEqual([STATE.count(), STATE.all.km, STATE.all.lastCard, STATE.lastIsNew], [0, 0, null, false], 'wipe 真的清空');
+  assert.equal(STATE.all.settings.layer, false, 'STATE.settings 的開關是偏好，留著');
+  off();
+});

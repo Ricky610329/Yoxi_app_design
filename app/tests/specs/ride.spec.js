@@ -381,8 +381,7 @@ T.spec('ride', function (t) {
     await app.go('/drawer');
     t.eq(Number(app.text('[data-points-total]')), sum, '抽屜點數＝點數頁總數');
     /* 多收一張搭車卡：+50 與搭車回饋都進來，總數仍＝明細相加 */
-    app.STATE.collect('neiwan', { by: 'ride', date: app.APP.fmt.todayMMDD(), km: 28 });
-    app.APP.emit('state:change');
+    app.APP.state.collect('neiwan', { by: 'ride', date: app.APP.fmt.todayMMDD(), km: 28 });
     await app.go('/points');
     const amts2 = app.$$('[data-amt]').map(function (e) { return Number(e.getAttribute('data-amt')); });
     const sum2 = amts2.reduce(function (a, b) { return a + b; }, 0);

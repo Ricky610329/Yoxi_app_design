@@ -559,7 +559,7 @@ const LAND = { journal: '[data-look-tile="journal"]', week: '[data-look-tile="we
                badges: '.alb-v2__medals', cards: '.alb-v2__hero' };
 function albumV2Mount(root, params, ctx) {
   /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
-  if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+  if (STATE.lastIsNew) APP.state.markLastSeen();
   const q = ctx && ctx.query;
   if (!q || !q.has('tab')) return;
   const el = LAND[q.get('tab')] ? root.querySelector(LAND[q.get('tab')]) : null;
@@ -611,7 +611,7 @@ APP.view('postcards', {
     '</div></div>';
   },
   mount: function (root, params, ctx) {
-    if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+    if (STATE.lastIsNew) APP.state.markLastSeen();
     subMount(root, ctx, 'postcards');
   },
 });
@@ -1140,8 +1140,7 @@ APP.view('lookback', {
       /* 「先不選」：今天稍早選過的心情留著；別天留下來的清掉，不然它會被當成今天的 */
       if (mood) patch.mood = mood;
       else if ((STATE.all.today || {}).date !== day) patch.mood = null;
-      STATE.setToday(patch);
-      APP.emit('state:change');
+      APP.state.setToday(patch);
       APP.nav.go('/album?tab=journal', { replace: true });
     }
 

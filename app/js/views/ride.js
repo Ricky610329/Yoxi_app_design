@@ -113,6 +113,7 @@ function emptyCard(eyebrow, title, text) {
 }
 /* ---------------------------------------------------------------- 行程（APP.ride.trip）
    store.trip 只有這個 module 讀寫；別的區塊、別的畫面一律透過它（契約 §3.3、§7）。
+   唯一的例外是「清除我的足跡」：APP.store.clear('footprint') 把它跟其他足跡一起回到預設（null）。
    一趟行程：{ placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }
    - placeId 要認得（APP.place 不認得的 id 回 null）。舊資料或手改過的 id 不算行程——不然 /ride 顯示
      「回到行程」卻沒有目的地、setDropoff 被擋、/trip 又說沒有行程，只剩重設逃得出去。讀的時候一律當作沒有，
