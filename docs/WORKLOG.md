@@ -140,5 +140,6 @@
 | commit | 做了什麼／為什麼 |
 |---|---|
 | `f3d7f0b` | `recentCards` 照收下的先後（`STATE.all.cards` 鍵順序），同一天連收、跨年都對；新增 `explore-gold.js`：`data-gold-aura` 的元素邊緣散金粉，被跟著卡片走的空氣帶著、有慣性；收藏、叫車面板、浮起來的小卡、`/unlock` 翻開後都標；VERSION v17 |
+| `a1924ec` | 使用者：「物理不錯、質感差」。只改畫法：細金粉／會翻的金箔／細長閃光／暗底散景、遠近分層、相對空氣才拉變淡的尾巴、沿圓角冒、每 4.8 秒斜光掃過框；三頁穩定 60 fps |
 
 驗收：`python app/tests/run.py` node 47/47、瀏覽器 277/277；Playwright 看過捲動、換頁、翻面、蓋住、still。
