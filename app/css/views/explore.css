@@ -970,3 +970,28 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
 .ex-brk__k { display: block; font-size: var(--fs-xs); font-weight: var(--fw-heavy); letter-spacing: .08em; color: var(--app-muted); }
 .ex-brk__t { display: block; margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: 1.6; }
 .ex-brk__btn { margin-top: var(--sp-3); min-height: 44px; font-size: var(--fs-sm); }
+
+/* ---- 金框明信片的金粉（explore-gold.js）----
+   整台手機一張 canvas，掛在 .device，在所有畫面層之上（抽卡、每日回顧的全螢幕層是 95，ex-odds 96）：
+   金框卡在這些層裡也要看得到金粉。被分享面板、對話框蓋住的卡不冒金粉，由 explore-gold.js 用 elementFromPoint 判斷。
+   不吃點擊、報讀器看不到；圓角跟外框一樣。 */
+.gold-aura {
+  position: absolute;
+  inset: 0;
+  z-index: 97;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* 通用的金框：paintCardArt 替沒有自己畫框的 [data-card-art] 補上。
+   框畫在成品圖與插圖上面（inset 陰影會被滿版的圖蓋住，所以用 ::after），角標（z-index 2）之上 */
+.card-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 3px color-mix(in srgb, var(--gold-lite) 70%, transparent);
+  pointer-events: none;
+}

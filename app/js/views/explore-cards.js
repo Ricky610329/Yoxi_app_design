@@ -126,7 +126,9 @@ function cardStyleOf(cardId) {
 }
 
 /* 別的畫面（收藏、叫車首頁的卡片）要顯示「收下的那一張」：元素帶 data-card-art="<明信片 id>"，
-   這裡把那一款的成品疊在插圖上面；圖載不到就拿掉，插圖照舊。還沒收的不疊（維持灰階插圖）。 */
+   這裡把那一款的成品疊在插圖上面；圖載不到就拿掉，插圖照舊。還沒收的不疊（維持灰階插圖）。
+   金框那一款在哪裡顯示都有金框和金粉（explore-gold.js）：畫面自己標了 data-gold-aura（框畫在外層）就照它的，
+   沒標的這裡補上 data-gold-aura＋.card-gold（通用的框，explore.css） */
 function paintCardArt(root) {
   if (!root || !root.querySelectorAll) return;
   root.querySelectorAll('[data-card-art]:not([data-card-painted])').forEach(function (el) {
@@ -134,6 +136,10 @@ function paintCardArt(root) {
     el.setAttribute('data-card-painted', '');
     if (!S() || !S().has(id)) return;
     const d = cardStyleOf(id);
+    if (d && d.gold && !el.closest('[data-gold-aura]')) {
+      el.classList.add('card-gold');
+      el.setAttribute('data-gold-aura', '');
+    }
     const src = postcardSrc(id, d && d.key);
     if (!src) return;
     const img = document.createElement('img');

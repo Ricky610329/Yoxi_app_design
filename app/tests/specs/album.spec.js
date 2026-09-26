@@ -674,6 +674,73 @@ T.spec('album', function (t) {
     t.ok(app.$('[data-group="got"] .is-gold[data-card="p4"]'), '搭車收的 p4 是金框');
   });
 
+  /* 11b. 疊卡是最新收下的三張：照收下的先後，不是明信片編號 */
+  t.test('連收三張：主卡疊卡與 /postcards 都照收下的先後；跨年新收的也排最前面', async function (app) {
+    await app.reset();
+    const S = app.STATE, A = app.APP, today = A.fmt.todayMMDD();
+    const ids = function (els) { return els.map(function (el) { return el.getAttribute('data-card'); }).join(','); };
+    /* 之前同一天只把 lastCard 提前、其餘照編號倒序：這一組會排成 p10,p11,p9 */
+    ['glass-kiln', 'neiwan', 'p10'].forEach(function (id) { S.collect(id, { date: today }); });
+    A.emit('state:change');
+    t.eq(A.album.recentCards(3).map(function (p) { return p.id; }).join(','), 'p10,p9,p11', 'recentCards：最後收的在前');
+    await app.go('/album');
+    t.eq(ids(app.$$('.alb-v2__stack [data-card]')), 'p10,p9,p11', '疊卡由上到下 p10、p9、p11');
+    await app.go('/postcards');
+    t.eq(ids(app.$$('[data-group="got"] [data-card]').slice(0, 3)), 'p10,p9,p11', '/postcards 前三格也是');
+    /* 跨年：01.05 比 demo 的 09.xx「小」，只比日期會排到最後 */
+    S.collect('p12', { date: '01.05' });
+    A.emit('state:change');
+    await app.go('/album');
+    t.eq(app.$('.alb-v2__stack-art--0').getAttribute('data-card'), 'p12', '跨年新收的在最上面');
+  });
+
+  /* 5b. 金框卡在收藏哪裡都有金框和金粉（data-gold-aura → explore-gold.js） */
+  t.test('金框卡在收藏各處都有金框和金粉：疊卡、/postcards、詳情、獎章、回顧、週回顧', async function (app) {
+    await app.reset();
+    const A = app.APP, S = app.STATE;
+    const gold = function (id) { return !!(A.explore.cardStyleOf(id) || {}).gold; };
+    await app.go('/album');
+    app.$$('.alb-v2__stack [data-card]').forEach(function (el) {
+      const id = el.getAttribute('data-card');
+      t.eq(el.hasAttribute('data-gold-aura'), gold(id), '疊卡 ' + id + '：金粉 ＝ 金框');
+      t.eq(el.classList.contains('is-gold'), gold(id), '疊卡 ' + id + '：金邊 ＝ 金框');
+    });
+    const top = app.$('.alb-v2__stack [data-card="p8"]');
+    t.ok(top && top.hasAttribute('data-gold-aura'), '初始最上面的 p8（搭車收的）有金粉');
+    t.eq(top && app.win.getComputedStyle(top).borderTopColor, 'rgb(201, 162, 39)', '疊卡的金邊是 --gold');
+    await app.go('/postcards');
+    app.$$('[data-group="got"] [data-card]').forEach(function (el) {
+      const id = el.getAttribute('data-card');
+      t.eq(!!el.querySelector('.alb-v2__art[data-gold-aura]'), gold(id), '/postcards ' + id + '：金粉從畫金框的那張圖冒出來');
+    });
+    t.eq(app.$$('[data-group="todo"] [data-gold-aura]').length, 0, '還沒去的沒有金粉');
+    await app.go('/postcard/p4');
+    t.ok(app.$('[data-flip].postcard--gold[data-gold-aura]'), '詳情：整張卡（翻到背面也是）');
+    await app.go('/postcard/p1');
+    t.eq(!!app.$('main.view [data-gold-aura]'), gold('p1'), '詳情 p1：照收下的款式');
+    await app.go('/badge/b2');
+    ['p3', 'p4', 'p8', 'p18'].forEach(function (id) {
+      const pic = app.$('[data-member="' + id + '"] .alb-member__pic');
+      const g = S.has(id) && gold(id);
+      t.eq(!!(pic && pic.hasAttribute('data-gold-aura')), g, '獎章的組成卡 ' + id + '：金粉 ＝ 金框');
+      if (g) t.ok(goldFrame(app, pic), '獎章的組成卡 ' + id + '：框看得到');
+    });
+    /* 今天搭車收的 p11：每日回顧「今天多了一張」、週回顧（在範圍裡的話）也是金框 */
+    S.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
+    A.emit('state:change');
+    await app.go('/lookback');
+    const lb = app.$('.alb-lb__card .postcard');
+    t.ok(lb && lb.hasAttribute('data-gold-aura') && goldFrame(app, lb), '每日回顧：今天收的金框卡有框和金粉');
+    await app.go('/week');
+    app.$$('.alb-weekcard').forEach(function (el) {
+      const id = el.getAttribute('data-card');
+      t.eq(!!el.querySelector('[data-gold-aura]'), gold(id), '週回顧 ' + id + '：金粉 ＝ 金框');
+    });
+    /* 測試跑在 ?still=1（減少動態效果）：框照舊，但不建 canvas、不追蹤 */
+    t.ok(!app.doc.querySelector('canvas.gold-aura'), 'still：沒有金粉的 canvas');
+    t.eq(A.fx.gold.tracked(), 0, 'still：不追蹤');
+  });
+
   /* 12. 0 張卡的空狀態 */
   t.test('0 張卡：首頁不拿還沒收的獎章放大、足跡沒有顏色、長輩圖不說「用你去過的地方做的」', async function (app) {
     await app.reset();

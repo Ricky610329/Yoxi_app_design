@@ -30,7 +30,7 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v16';
+const VERSION = 'chengshi-app-v17';
 const RUNTIME = VERSION + '-img';          /* 執行期的圖片快取；跟著 VERSION 換代，activate 一起清 */
 const NAV_TIMEOUT_MS = 3000;               /* 導覽等網路最多這麼久，超過就先給快取（網路回來仍會更新快取） */
 
@@ -75,6 +75,7 @@ const PRECACHE = [
   './js/views/ride.js',
   './js/views/explore-fx.js',
   './js/views/explore-cards.js',
+  './js/views/explore-gold.js',
   './js/views/explore.js',
   './js/views/explore-unlock.js',
   './js/views/album.js',

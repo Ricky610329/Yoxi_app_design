@@ -594,6 +594,47 @@ T.spec('explore', function (t) {
     await app.reset();
   }, { timeout: 20000 });
 
+  /* 金框的金粉（explore-gold.js）：翻開以後才標；非 still 才建 canvas */
+  t.test('金粉：金框翻開以後才標 data-gold-aura；canvas 掛在 .device、不吃點擊；still 與其他款式沒有', async function (app) {
+    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'gold' } } });
+    await app.go('/unlock/glass-kiln');
+    t.ok(app.$('[data-final-card].postcard--gold'), '這一次是金框');
+    t.ok(!app.$('[data-final-card][data-gold-aura]'), '翻開前沒有金粉（不先洩底）');
+    await drawThrough(app);
+    t.ok(app.$('[data-final-card][data-gold-aura]'), '翻開以後有金粉');
+    await app.waitFor(function () { return app.APP.fx.gold.tracked() >= 1; }, 2000, '追蹤到金框卡');
+    const cv = app.doc.querySelector('.device > canvas.gold-aura');
+    t.ok(cv, 'canvas 掛在 .device（只有一張）');
+    t.eq(app.doc.querySelectorAll('canvas.gold-aura').length, 1, '整台手機一張');
+    t.eq(cv && cv.getAttribute('aria-hidden'), 'true', '報讀器看不到');
+    t.eq(cv && app.win.getComputedStyle(cv).pointerEvents, 'none', '不吃點擊');
+    t.noDeadButtons(app, '/unlock 金框結果（有金粉）');
+    await app.reset({ store: { draws: { 'glass-kiln': 'oil' } } });
+    await app.go('/unlock/glass-kiln');
+    t.ok(!app.$('[data-gold-aura]'), '油畫：沒有金粉');
+    t.ok(!app.doc.querySelector('canvas.gold-aura'), 'still：沒有 canvas');
+    t.eq(app.APP.fx.gold.tracked(), 0, 'still：不追蹤');
+    await app.reset();
+  }, { timeout: 20000 });
+
+  t.test('金粉的物理：卡片往上走金粉跟著往上、落在後面；停下來帶著慣性；靜止時慢慢往上飄', async function (app) {
+    await app.reset();
+    const step = app.APP.fx.gold.step;
+    const dt = 1 / 60;
+    const p = { x: 0, y: 0, vx: 0, vy: 0, t: 0, ph: 0 };
+    for (let i = 0; i < 18; i++) step(p, 0, -600, dt);          /* 0.3 秒，卡片帶著空氣往上 600 px/s */
+    t.ok(p.vy < -300 && p.y < -40, '往上捲：金粉跟著往上（vy ' + p.vy.toFixed(0) + '、y ' + p.y.toFixed(0) + '）');
+    t.ok(p.vy > -600, '比卡片慢一點，落在後面');
+    const y0 = p.y;
+    step(p, 0, 0, dt);
+    t.ok(p.vy < -200 && p.y < y0, '卡片停下：金粉帶著慣性繼續往上（vy ' + p.vy.toFixed(0) + '）');
+    for (let i = 0; i < 240; i++) step(p, 0, 0, dt);           /* 再 4 秒 */
+    t.ok(p.vy < 0 && p.vy > -40, '靜止的空氣：慢慢往上飄（vy ' + p.vy.toFixed(1) + '）');
+    const q = { x: 0, y: 0, vx: 0, vy: 0, t: 0, ph: 0 };
+    for (let i = 0; i < 18; i++) step(q, 0, 600, dt);
+    t.ok(q.vy > 300 && q.y > 40, '往下捲：金粉跟著往下（vy ' + q.vy.toFixed(0) + '）');
+  });
+
   /* 審查 11：render 是純函式（契約 §3.1）；走路抵達的抽卡在 mount 做；重進、重整都不重抽 */
   t.test('render 不寫 store：/unlock 在 mount 才抽；重進、重整都是同一款', async function (app) {
     await app.reset();

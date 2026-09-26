@@ -373,6 +373,9 @@ function mountUnlock(root, params) {
     if (draw && !got && F) box.style.setProperty('--aura', 'rgb(' + auraColor(tier - 1).join(' ') + ')');
     if (draw && draw.key === 'ink' && !got) { box.classList.add('is-paper'); APP.ui.setStatus('dark'); }
     if (draw && draw.gold && !got) box.classList.add('is-gold-up');
+    /* 翻開以後才標：金框的邊開始散金粉（explore-gold.js），跟收藏裡看到它時一樣；翻開前標會先洩底 */
+    const finalCard = q('[data-final-card].postcard--gold');
+    if (finalCard) finalCard.setAttribute('data-gold-aura', '');
     if (skipBtn) skipBtn.hidden = true;
     if (!quiet) focusEl(q('[data-draw]') || q('[data-act="collect"]'));
     /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見），DUST_MS 之後、或開始寫那一句話時停下來；其他款式安靜收尾 */

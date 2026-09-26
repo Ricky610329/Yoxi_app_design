@@ -1,6 +1,6 @@
 /* ==========================================================================
    yoxi 城事 web app — explore 區塊的特效工具（抵達亮燈、抽卡）
-   契約：app/ARCHITECTURE.md §7（APP.fx）。只給 explore-unlock.js 的 /unlock 用，不註冊畫面。
+   契約：app/ARCHITECTURE.md §7（APP.fx）。給 explore-unlock.js 的 /unlock 與 explore-gold.js 的金粉用，不註冊畫面。
 
    為什麼自己寫、不用 GSAP／PixiJS：repo 不加 CDN、不加套件（AGENTS.md），
    而這裡要的東西不多——Web Animations API 做時間軸，一張 <canvas> 做粒子，Web Audio 合成音效。
@@ -22,6 +22,7 @@
      APP.fx.color(name)         讀 tokens.css 的顏色 → [r, g, b]
      APP.fx.ease                與 tokens 一致的 easing 字串
      APP.fx.calm()              使用者要不要少一點動態
+     APP.fx.sprite(rgb, kind)   預先畫好的光點小圖（'glow'／'soft'／'star'），explore-gold.js 的金粉也用
    ========================================================================== */
 
 (function () {
@@ -609,6 +610,7 @@ APP.fx = {
   ease: ease,
   calm: calm,
   rnd: rnd,
+  sprite: sprite,
 };
 
 })();

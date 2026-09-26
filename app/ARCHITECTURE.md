@@ -56,6 +56,7 @@ app/
   js/views/ride.js          叫車首頁（E）、下車地點、上車地點、配對／行程中／行程完成、抽屜、點數、通知
   js/views/explore-fx.js    explore 的特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）；在 explore-cards.js 之前載入
   js/views/explore-cards.js 明信片與抽卡的共用 API（DRAW_STYLES、drawStyle、cardStyleOf、postcardSrc、POSTCARD_GEN、paintCardArt、openOdds、collect）
+  js/views/explore-gold.js  金框明信片的金粉（APP.fx.gold）：畫面上標了 data-gold-aura 的金框卡，邊緣一直散出金粉，捲動、拖面板、換頁時帶著慣性跟著飄
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、路線列表／詳情
   js/views/explore-unlock.js 抵達與抽卡（/unlock）
   js/views/album.js         收藏（摘要式＋X4 六角章）、明信片子頁、全部獎章、明信片、獎章、城市足跡、每日回顧、週回顧、長輩圖
@@ -82,7 +83,7 @@ css: ../prototype/css/tokens.css → base.css → components.css → chengshi.cs
 js:  ../prototype/js/icons.js → mock.js → state.js → shell.js → interact.js
      → ../prototype/assets/map/hs-core.js → hs-wide.js → hs-places.js → ../prototype/js/hsmap.js
      → ../prototype/assets/photos/credits.js → ../prototype/js/photos.js
-     → js/app.js → js/views/system.js → ride.js → explore-fx.js → explore-cards.js → explore.js → explore-unlock.js → album.js
+     → js/app.js → js/views/system.js → ride.js → explore-fx.js → explore-cards.js → explore-gold.js → explore.js → explore-unlock.js → album.js
 ```
 傳統 `<script>`，不用 ES module（file:// 會被 CORS 擋）。`APP.start()` 在 DOMContentLoaded 之後才跑，
 所以四支 views 在它之前都已註冊完。`concept.css` 不載；`hsmap` 需要的規則（`.hsmap-*`、署名）由 `app.css` 自備。
@@ -336,10 +337,11 @@ T.spec('ride', function (t) {
 - 抽卡（explore 提供）：`APP.explore.DRAW_STYLES`（每個地方五款：四種畫風＋金框；`walk`／`ride` 權重為千分比，各自加總 1000）、`APP.explore.drawStyle(by, r)`（純函式）、`APP.explore.openOdds()`（機率說明）。搭 yoxi 抵達必得金框：是不是搭車只看 `store.trip`（這個地方、phase done），`?ride=1` 只是入口的記號；走路抵達在 mount 抽一次、記在 `store.draws[地點 id]`（render 只讀，還沒抽就畫卡背），重進不重抽。機率只放在 `/unlock` 收集面板與成品右上角的「?」（`data-act="open-odds"`）；面板與結果都不寫機率、不寫「必得」。`openOdds()` 掛在 `.device`，帶 `data-overlay`＋`_dismiss`。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
 - 生成的明信片（explore 提供）：`APP.explore.postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片；`cardStyleOf(cardId)` 收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡以明信片 id 為種子照機率表抽一次）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore.js 監看 `#view` 自動把成品 `<img class="card-gen">` 疊上去（還沒收的不疊；載不到就拿掉）
+- 金框卡在哪裡顯示都有金框和金粉（explore 提供，`explore-gold.js`）：在「畫金框的那個元素」加 `data-gold-aura`，金粉就從它的邊緣冒出來（照元素的旋轉角度）。`[data-card-art]` 的金框卡沒人標的話，`paintCardArt` 自己補 `data-gold-aura`＋`.card-gold`（通用的框，explore.css）；框畫在外層的（明信片詳情整張卡、叫車的浮起來小卡）由畫面自己標在外層，`paintCardArt` 看到祖先標了就不再補。`/unlock` 翻開之後（`finish()`）才標，翻開前不洩底。整台手機一張 `canvas.gold-aura`（掛 `.device`、z-index 97、`pointer-events:none`、`aria-hidden`）；金粉裁在卡片的捲動範圍裡，被別的東西蓋住的邊不冒（`elementFromPoint`）；卡片移動時金粉被「跟著卡片走的空氣」帶著、有慣性（`APP.fx.gold.step` 是純函式）。`APP.reduceMotion()` 時不建 canvas（框照舊）；看不到金框卡時不跑 rAF。測試用：`APP.fx.gold.tracked()`、`particles()`
 - `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `arrivedDemo` ＋ `/unlock/:id`（行程進行中不行）；搭 yoxi → `store.trip` 設成這個地方、phase done（取代原本的行程）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用；明信片分享帶 `card`，長輩圖 `/elder?card=<id>` 把那張排第一）
-- `APP.album`（album 提供）：`visitedPlaces()`（不重複的地點）、`recentCards()`（同一天時 `lastCard` 排第一）、`cityColors()`（足跡頁的城市顏色，從去過的地方算）、`weekStats()`（`now.after`＝範圍之後才收的卡）。角標：`APP.ride.limitedCard(id)` 為真寫「yoxi 限定版」，其他金框卡寫「yoxi 金框」
+- `APP.album`（album 提供）：`visitedPlaces()`（不重複的地點）、`recentCards()`（照收下的先後、最後收的排第一：看 `STATE.all.cards` 的鍵順序，不比 `MM.DD`，同一天連收與跨年都對）、`cityColors()`（足跡頁的城市顏色，從去過的地方算）、`weekStats()`（`now.after`＝範圍之後才收的卡）。角標：`APP.ride.limitedCard(id)` 為真寫「yoxi 限定版」，其他金框卡寫「yoxi 金框」
 
 ## 8. 路由總表
 

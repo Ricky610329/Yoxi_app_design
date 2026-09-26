@@ -3,7 +3,7 @@
    契約：app/ARCHITECTURE.md §0（S3 路線書架＋X4 勳章牆、隱私分軌、長輩圖是分享選項）、§3、§5、§8。
 
    這支註冊九個 view：
-     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近三張疊卡，點了進 /postcards）、統計兩格、
+     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近收下的三張疊卡，最後收的在最上面，點了進 /postcards）、統計兩格、
                       「回顧」一列三格（今天的回顧 → /lookback、這一週 → /week、城市足跡 → /footprint）、
                       獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。390×844 一屏放得下。
                       舊連結 ?tab=journal|week|badges|cards 落在同一頁：捲到對應的那一塊、亮一下，再把 ?tab 拿掉。
@@ -26,6 +26,8 @@
      只有明信片、週回顧、長輩圖可以分享。
    - /album 不攤開明信片網格：L1 一屏一事、可按數 ≤ 12；網格在 /postcards（整片算一個可按的東西，見 harness 的 data-gallery）。
    - 「yoxi 限定版」只給 APP.ride.limitedCard（搭 yoxi 去走不到的地方、+50 點）；其他金框卡寫「yoxi 金框」。
+   - 金框卡不管在哪裡顯示（疊卡、/postcards、詳情、獎章的組成卡、每日回顧、週回顧）都是金框，畫框的那個元素標 data-gold-aura，
+     金粉由 explore-gold.js 畫（契約 §7）；長輩圖挑的是插圖不是明信片，不標。
    - 城市足跡不寫「多久沒回去會變淡」：app 沒有記回訪，寫了就是假的。
    - 回顧不靠計時器自動翻頁：每一幕都等使用者按「下一步」或做選擇。
    - 數字一律從 STATE／MOCK／APP.fmt 算；步幅＝LOOKBACK.steps ÷ LOOKBACK.km，不另寫常數。
@@ -456,7 +458,8 @@ function albumV2CardHTML(p) {
   const fresh = isFresh(p);
   const gold = !!got && goldCard(p.id);
   const inner =
-    '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '">' +
+    '<span class="alb-v2__art" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '"' +
+      (gold ? ' data-gold-aura' : '') + '>' +
       (fresh ? '<span class="postcard__new">新</span>' : '') + '</span>' +
     '<strong>' + esc(p.name) + '</strong>' +
     (got ? '<small>' + (fresh ? '新收下' : esc(got.date) + ' 收下') + (gold ? ' · 金框' : '') + '</small>' : '');
@@ -548,8 +551,10 @@ function albumV2Render() {
           '<p>' + (got.length ? '一張卡，記下一個到過的地方。' : '到了一個地方，就收下一張。') + '</p>' +
           '<span class="alb-v2__hero-go">看全部<span class="arrow arrow--onred"></span></span></div>' +
         '<div class="alb-v2__stack" aria-hidden="true">' + recentCards(3).map(function (p, i) {
-          return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + '" data-card="' + esc(p.id) +
-            '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '">' +
+          const gold = goldCard(p.id);
+          return '<span class="alb-v2__stack-art alb-v2__stack-art--' + i + (gold ? ' is-gold' : '') + '" data-card="' + esc(p.id) +
+            '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '"' +
+            (gold ? ' data-gold-aura' : '') + '>' +
             (isFresh(p) ? '<span class="postcard__new">新</span>' : '') + '</span>';
         }).join('') + '</div>' +
       '</a>' +
@@ -720,7 +725,7 @@ APP.view('postcard', {
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
         '<div class="alb-big">' +
           '<button class="postcard alb-big__card' + (gold ? ' postcard--gold' : '') + '" type="button" data-flip data-act="flip" ' +
-            'data-card="' + esc(P.id) + '" aria-label="翻面">' +
+            'data-card="' + esc(P.id) + '"' + (gold ? ' data-gold-aura' : '') + ' aria-label="翻面">' +
             '<div data-art="' + esc(P.art) + '" data-seed="' + i + '" data-card-art="' + esc(P.id) + '" style="position:absolute;inset:0"></div>' +
             '<span class="ai-mark">AI 生成示意</span>' +
             (limited ? '<span class="postcard__ribbon" data-ribbon="limited">yoxi 限定版</span>'
@@ -814,8 +819,10 @@ APP.view('badge', {
             const P = cardById(cid);
             if (!P) return '';
             const has = STATE.has(cid);
+            const gold = has && goldCard(cid);
             return '<a class="row-nav alb-member' + (has ? ' is-got' : '') + '" href="#/postcard/' + esc(cid) + '" data-member="' + esc(cid) + '">' +
-              '<span class="alb-member__pic' + (has ? '' : ' postcard--locked') + '" data-art="' + esc(P.art) + '" data-seed="' + cardIdx(P) + '" data-card-art="' + esc(cid) + '"></span>' +
+              '<span class="alb-member__pic' + (has ? '' : ' postcard--locked') + (gold ? ' card-gold' : '') + '" data-art="' + esc(P.art) +
+                '" data-seed="' + cardIdx(P) + '" data-card-art="' + esc(cid) + '"' + (gold ? ' data-gold-aura' : '') + '></span>' +
               '<span class="row-nav__body"><span class="row-nav__title">' + esc(P.name) + '</span>' +
               '<span class="row-nav__sub">' + (has ? '收過 · ' + esc(STATE.card(cid).date) : '還沒去') + '</span></span>' +
               (has ? '<span class="alb-member__check" data-icon="check"></span>' : '<span class="arrow"></span>') +
@@ -1032,7 +1039,8 @@ APP.view('lookback', {
     if (last) {
       const owner = badgeOfCard(last.id);
       const r = owner ? STATE.badge(owner.id) : null;
-      act2 = '<div class="alb-lb__card"><div class="postcard">' +
+      const gold = goldCard(last.id);
+      act2 = '<div class="alb-lb__card"><div class="postcard' + (gold ? ' card-gold" data-gold-aura' : '"') + '>' +
           '<div data-art="' + esc(last.art) + '" data-seed="1" data-card-art="' + esc(last.id) + '" style="position:absolute;inset:0"></div>' +
           '<span class="ai-mark">AI 生成示意</span>' +
           '<span class="postcard__foot"><span class="postcard__name">' + esc(last.name) + '</span></span>' +
@@ -1246,8 +1254,10 @@ APP.view('week', {
         (shown.length
           ? '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">這一週收的卡</h2></div>' +
             '<div class="hscroll alb-weekcards">' + shown.map(function (p) {
+              const gold = goldCard(p.id);
               return '<a class="alb-weekcard" href="#/postcard/' + esc(p.id) + '" data-card="' + esc(p.id) + '">' +
-                '<span class="alb-weekcard__pic" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide></span>' +
+                '<span class="alb-weekcard__pic' + (gold ? ' card-gold' : '') + '" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide' +
+                  (gold ? ' data-gold-aura' : '') + '></span>' +
                 '<span class="alb-weekcard__t">' + esc(p.name) + '</span></a>';
             }).join('') + '</div></div>'
           : '<div class="alb-pad"><p class="alb-foot">這一週還沒有新的卡，走過的路都算。</p></div>') +
@@ -1271,13 +1281,17 @@ APP.view('week', {
 
 /* ================================================================ /elder */
 
-/* 最近收的 n 張：日期新的在前；同一天的，最後收的那張（STATE.all.lastCard）排第一，
-   其餘照 POSTCARDS 倒序（沒有時間，只能這樣）。收藏首頁的疊卡、長輩圖的預設都用它。 */
+/* 最近收的 n 張：照收下的先後，最後收的排第一。收藏首頁的疊卡、/postcards、長輩圖的預設、城市顏色都用它。
+   先後看 STATE.all.cards 的鍵順序：STATE.collect 每收一張就加在最後（'p11' 這種鍵照插入順序排，
+   存進 localStorage 再讀回來也不變），demo 一開始的 8 張也是照日期寫的，所以不必另外記時間。
+   以前先比日期（'MM.DD'）、同一天只把 lastCard 提前、其餘照 POSTCARDS 編號倒序：
+   同一天連收三張，第二、三張會顛倒；跨年以後（01.05 < 09.20）新收的卡還會排到 demo 的舊卡後面。
+   萬一有卡不在鍵順序裡（不會發生），退回比日期。 */
 function recentCards(n) {
-  const last = STATE.all && STATE.all.lastCard;
+  const order = Object.keys((STATE.all && STATE.all.cards) || {});
   return M().POSTCARDS.filter(function (p) { return STATE.has(p.id); })
-    .map(function (p, i) { return { p: p, d: STATE.card(p.id).date, i: i, l: p.id === last ? 1 : 0 }; })
-    .sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : (b.l - a.l) || (b.i - a.i); })
+    .map(function (p) { return { p: p, o: order.indexOf(p.id), d: String(STATE.card(p.id).date) }; })
+    .sort(function (a, b) { return (b.o - a.o) || (a.d < b.d ? 1 : a.d > b.d ? -1 : 0); })
     .slice(0, n)
     .map(function (x) { return x.p; });
 }

@@ -67,6 +67,8 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__stack-art--0 { right: 0; bottom: 0; transform: rotate(8deg); z-index: 3; }
 .alb-v2__stack-art--1 { right: 28px; bottom: 8px; transform: rotate(-7deg); z-index: 2; }
 .alb-v2__stack-art--2 { right: 49px; bottom: 15px; transform: rotate(-16deg); z-index: 1; }
+/* 金框的疊卡：白邊換金邊、外面一圈淡淡的金光；金粉從這一圈冒出來（explore-gold.js） */
+.alb-v2__stack-art.is-gold { border-color: var(--gold); box-shadow: var(--sh-lift), 0 0 14px color-mix(in srgb, var(--gold) 45%, transparent); }
 /* 統計兩格：只放一個數字，高度收到內容那麼高（原本 128px 的空白讓給下面的「回顧」一列，首頁仍是一屏） */
 .alb-v2__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-3) var(--gutter) 0; }
 .alb-v2__stat { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }

@@ -147,6 +147,12 @@
 .ride-card-float__art > * { width: 100%; height: 100%; }
 .ride-card-float__name { position: absolute; right: 0; bottom: 0; left: 0; z-index: 2; display: block; min-height: 46px; padding: var(--sp-3); background: var(--yoxi-white); color: var(--yoxi-navy); font-size: var(--fs-sm); font-weight: var(--fw-heavy); text-align: left; }
 .ride-card-float__front .ai-mark { position: absolute; top: var(--sp-2); left: var(--sp-2); }
+/* 金框的卡：框畫在正反兩面上（畫在翻面的按鈕本身會跟兩面搶同一個平面），名字那條（z-index 2）之上 */
+.ride-card-float__object.is-gold .ride-card-float__front::after,
+.ride-card-float__object.is-gold .ride-card-float__back::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  border-radius: inherit; box-shadow: inset 0 0 0 3px var(--gold), inset 0 0 0 4px color-mix(in srgb, var(--gold-lite) 70%, transparent);
+}
 .ride-card-float__back { align-items: center; justify-content: center; gap: var(--sp-3); padding: var(--sp-4); transform: rotateY(180deg); background: var(--yoxi-navy); color: var(--yoxi-white); text-align: center; }
 .ride-card-float__back strong { font-size: var(--fs-lead); }
 .ride-card-float__back span:last-child { font-size: var(--fs-sm); }

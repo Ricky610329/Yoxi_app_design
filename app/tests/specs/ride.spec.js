@@ -276,6 +276,28 @@ T.spec('ride', function (t) {
     t.includes(app.text('[data-card-back]'), '已收藏', '懸浮卡片狀態跟著 STATE 更新');
   });
 
+  t.test('金框的卡在探索面板與浮起來看都是金框、有金粉；還沒收的沒有', async function (app) {
+    await app.reset();
+    app.APP.explore.collect('glass-kiln', { by: 'ride', style: 'gold', km: 1 });
+    await app.go('/ride?mode=explore&area=glass-kiln');
+    await app.click('[data-act="expand-cards"]');
+    const art = function () { return app.$('[data-area-expanded] [data-card="p11"] .ride-v2__card-art'); };
+    await app.waitFor(function () { return art() && art().hasAttribute('data-gold-aura'); }, 1000, 'paintCardArt 補上金粉');
+    t.ok(art().classList.contains('card-gold'), '面板上的卡：通用的金框（.card-gold）');
+    const ring = app.win.getComputedStyle(art(), '::after').boxShadow;
+    t.ok(ring.indexOf('201, 162, 39') >= 0, '框是 --gold：' + ring);
+    t.ok(!app.$('[data-area-expanded] [data-card="p17"] [data-gold-aura]'), '還沒收的 p17 沒有');
+    await app.click('[data-act="open-card"][data-card="p11"]');
+    const obj = app.$('.ride-card-float__object');
+    t.ok(obj.classList.contains('is-gold') && obj.hasAttribute('data-gold-aura'), '浮起來的卡：整張金框＋金粉');
+    t.ok(!app.$('.ride-card-float__art[data-gold-aura]'), '外層標了，裡面的插圖不再補一個');
+    t.ok(app.win.getComputedStyle(app.$('.ride-card-float__front'), '::after').boxShadow.indexOf('201, 162, 39') >= 0, '正面有金框');
+    await app.click('[data-act="close-card"]');
+    await app.click('[data-act="open-card"][data-card="p17"]');
+    t.ok(!obj.classList.contains('is-gold') && !obj.hasAttribute('data-gold-aura'), '換成還沒收的 p17：金框和金粉都拿掉');
+    await app.click('[data-act="close-card"]');
+  });
+
   t.test('沒有下車點時顯示選址入口，不能直接叫車', async function (app) {
     await app.reset();
     await app.go('/ride');
