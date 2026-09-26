@@ -644,6 +644,29 @@ T.spec('app', function (t) {
     }
   });
 
+  t.test('APP.map.mount({ pan:true }).destroy()：連同 initPan 掛在 window 上的 listener 一起拆（同一頁重畫地圖不會越疊越多）', async function (app) {
+    await app.go('/album');
+    const W = app.win, A = app.APP;
+    const host = app.doc.createElement('div');
+    host.style.cssText = 'position:absolute;left:0;top:0;width:300px;height:300px';
+    app.$('main.view').appendChild(host);
+    const added = [], removed = [];
+    const oa = W.addEventListener, or = W.removeEventListener;
+    W.addEventListener = function (type, fn, o) { added.push(fn); return oa.call(W, type, fn, o); };
+    W.removeEventListener = function (type, fn, o) { removed.push(fn); return or.call(W, type, fn, o); };
+    try {
+      const m = A.map.mount(host, { style: 'paper', center: 'station', spanM: 1800, spots: false, pan: true });
+      W.addEventListener = oa;
+      t.ok(added.length >= 2, 'initPan 在 window 上掛了 listener：' + added.length);
+      m.destroy();
+      t.ok(added.length > 0 && added.every(function (fn) { return removed.indexOf(fn) >= 0; }), 'destroy 全部拆掉');
+    } finally {
+      W.addEventListener = oa;
+      W.removeEventListener = or;
+      host.remove();
+    }
+  });
+
   t.test('APP.map.mount 推開景點後 m.spots 的 px/py 跟畫的位置一致', async function (app) {
     await app.reset();
     tempView(app, '_t-map', {

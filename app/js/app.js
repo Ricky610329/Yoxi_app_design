@@ -1296,15 +1296,22 @@ const map = {
       }
     }
 
+    /* INTERACT.initPan 在 window 上掛 pointermove／pointerup、自己不拆：記下來，destroy 時拆掉。
+       同一頁重畫地圖（例：叫車首頁視窗改大小）不會越疊越多；mount 期間 router 也記得到（離頁照樣拆） */
+    let panListeners = null;
     if (opt.pan) {
       el.setAttribute('data-pan', '');
-      if (W.INTERACT) INTERACT.initPan(el);
+      if (W.INTERACT) {
+        panListeners = trackListeners();
+        try { INTERACT.initPan(el); } finally { panListeners.stop(); }
+      }
     }
 
     return {
       el: el, svg: svg, spotsEl: spotsEl, spots: placed, handle: handle,
       destroy: function () {
         try { handle.destroy(); } catch (e) { /* ignore */ }
+        if (panListeners) { panListeners.remove(); panListeners = null; }
         el.remove();
       },
     };

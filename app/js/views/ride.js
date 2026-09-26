@@ -34,6 +34,7 @@
      APP.ride.trip                       行程 module：store.trip 只有它讀寫（current／active／arrivedAt／pending／phase、
                                          start／toRiding／arrive／arriveAt／cancel／rate／consume／clear／clearBroken）
      APP.ride.pointsRows() / pointsTotal()   點數明細與總數（總數＝明細相加）
+     APP.ride.snapTarget(order, heights, from, moved, base, v)   拉面板放手停在哪一段（純函式，給測試）
      APP.ride.RIDE_BONUS                 搭車抵達走不到的地方另外回饋的點數（MOCK.FAR_PLACE.ridePoints；全 app 唯一來源）
    ========================================================================== */
 
@@ -407,6 +408,7 @@ APP.ride = Object.assign(APP.ride || {}, {
   limitedCard: limitedCard,
   VIA_LABEL: VIA_LABEL,
   trip: TRIP,
+  snapTarget: snapTarget,
   MATCH_MS: MATCH_MS,
   RIDE_BONUS: RIDE_BONUS,
 });
@@ -940,38 +942,16 @@ function mountFullMap(host, sheet, opt) {
   return map;
 }
 
-/* 在 fn 執行期間記下掛到 window 上的 listener（INTERACT.initPan 掛了 pointermove／pointerup 不拆）。
-   mount 當下 router 也會記；視窗改大小重畫地圖是在 mount 之後，router 看不到，這裡自己拆。 */
-function trackWindowListeners(fn) {
-  const added = [];
-  const own = Object.prototype.hasOwnProperty.call(window, 'addEventListener');
-  const orig = window.addEventListener;
-  window.addEventListener = function (type, f, o) {
-    added.push([type, f, o]);
-    return orig.call(window, type, f, o);
-  };
-  try { fn(); }
-  finally {
-    if (own) window.addEventListener = orig;
-    else delete window.addEventListener;
-  }
-  return function () {
-    added.splice(0).forEach(function (a) { window.removeEventListener(a[0], a[1], a[2]); });
-  };
-}
-
 /* 叫車首頁的地圖控制：畫地圖、放上車點 pin、補綁浮動鈕、讓景點避開浮動鈕，
    視窗改大小（手機轉向、網址列收放）時整張重畫——地圖高度、中心、只剩拉把的高度都是當下量的。
    opts() 每次重畫都重新產生 APP.map.mount 的選項；after(map) 在每次畫好之後叫。回傳 { map, destroy }，map 會換。 */
 function rideMap(root, sheet, opts, after) {
   const host = root.querySelector('[data-ride-map]');
   const ctl = { map: null };
-  let untrack = null;
   function draw() {
+    /* 舊的地圖連同它掛在 window 上的拖曳 listener 一起拆（APP.map.mount 的 destroy） */
     if (ctl.map) ctl.map.destroy();
-    if (untrack) untrack();
-    let map = null;
-    untrack = trackWindowListeners(function () { map = mountFullMap(host, sheet, opts()); });
+    const map = mountFullMap(host, sheet, opts());
     ctl.map = map;
     placePickup(map);
     SHELL.injectIcons(host);
@@ -998,7 +978,6 @@ function rideMap(root, sheet, opts, after) {
     window.removeEventListener('resize', check);
     clearTimeout(timer);
     if (ctl.map) ctl.map.destroy();
-    if (untrack) untrack();
   };
   return ctl;
 }
@@ -1022,6 +1001,20 @@ function hideSheetBody(sheet, hidden) {
 const TAP_PX = 8;
 const FLING_MS = 150;        /* 放手時的速度往前推多久 */
 const FLING_MAX = 1.5;       /* 速度上限（px/ms）：甩得再快也只多推 225 px */
+/* 放手之後停在哪一段（純函式；node 測試直接測它）。order 由低到高的段名、heights { 段名: px }、from 放手前的段、
+   moved 拖了多少 px（往上是正）、base 開始拖時的高度、v 放手時的速度（px/ms，往上是正；上限與「停太久不算甩」
+   由呼叫的人處理）。移動 ≤ TAP_PX 不換段；只往拖的方向換，那個方向有兩段可選時挑離「放手高度＋甩出去的慣性」最近的。 */
+function snapTarget(order, heights, from, moved, base, v) {
+  if (Math.abs(moved) <= TAP_PX) return from;
+  const i = order.indexOf(from);
+  const at = base + moved + (v || 0) * FLING_MS;
+  let next = from;
+  order.forEach(function (s, j) {
+    if (moved > 0 ? j <= i : j >= i) return;
+    if (next === from || Math.abs(heights[s] - at) < Math.abs(heights[next] - at)) next = s;
+  });
+  return next;
+}
 function bindDragSheet(sheet, opt) {
   const grip = sheet.querySelector('.sheet__grip');
   const order = opt.order;
@@ -1083,16 +1076,12 @@ function bindDragSheet(sheet, opt) {
   function up(e) {
     if (y0 === null || e.pointerId !== pointer) return;
     pointerAt = Date.now();
-    const i = order.indexOf(from);
     let next = from;
     if (!dragging) next = opt.tap(from);
-    else if (Math.abs(moved) > TAP_PX) {
+    else {
+      /* 放手前 80 ms 沒動就不算甩；甩得再快也只算到 FLING_MAX */
       const v = now(e) - lastT > 80 ? 0 : Math.max(-FLING_MAX, Math.min(FLING_MAX, vel));
-      const at = base + moved + v * FLING_MS;
-      order.forEach(function (s, j) {
-        if (moved > 0 ? j <= i : j >= i) return;
-        if (next === from || Math.abs(h[s] - at) < Math.abs(h[next] - at)) next = s;
-      });
+      next = snapTarget(order, h, from, moved, base, v);
     }
     end();
     opt.set(next);

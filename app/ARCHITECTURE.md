@@ -253,7 +253,7 @@ const m = APP.map.mount(containerEl, {
 });
 m.handle   // HSMAP 的 handle（project／spotsAt／coverage）
 m.el / m.svg / m.spotsEl / m.spots   // .map 元素、svg、景點層、實際畫上去的景點（spotsAt 後、含 x/y/px/py/edge）
-m.destroy()
+m.destroy()   // 拆掉地圖，連同 pan 時 INTERACT.initPan 掛在 window 上的 listener（同一頁重畫地圖不會越疊越多）
 ```
 其他選項：`overlay`（HTML 字串，插進 .map；裡面的 `.pin` 會跟著平移，`.fab`／`[data-recenter]` 不動——要在 initPan 之前就在，所以用這個而不是 mount 後再插）、
 `clamp`（預設 true，框外的景點夾到邊緣並加 `.spot--edge`）、`layers／labels／avoid／rotate／dataset` 直接傳給 HSMAP。

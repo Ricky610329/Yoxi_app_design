@@ -212,3 +212,22 @@ test('arriveAt（demo 搭 yoxi 抵達）：距離不明是 null 不是 0；同�
   }, '別的目的地：被這一趟取代');
   assert.equal(T.arriveAt('no-such-place'), null);
 });
+
+test('snapTarget（拉面板放手停哪一段）：點一下不換、只往拖的方向換、兩段可選挑最近的、甩出去的慣性算進去', () => {
+  const { APP } = load();
+  const snap = APP.ride.snapTarget;
+  const order = ['handle', 'collapsed', 'expanded'];
+  const h = { handle: 44, collapsed: 300, expanded: 700 };
+  assert.equal(snap(order, h, 'collapsed', 8, 300, 0), 'collapsed', '移動 ≤ 8 px 不換段');
+  assert.equal(snap(order, h, 'collapsed', -8, 300, 0), 'collapsed');
+  assert.equal(snap(order, h, 'collapsed', 50, 300, 0), 'expanded', '往上拖一點：往上那一段');
+  assert.equal(snap(order, h, 'collapsed', -50, 300, 0), 'handle', '往下拖一點：往下那一段');
+  assert.equal(snap(order, h, 'expanded', -20, 700, 0), 'collapsed', '往下有兩段：挑離放手高度近的');
+  assert.equal(snap(order, h, 'expanded', -600, 700, 0), 'handle', '拖到底：最低那一段');
+  assert.equal(snap(order, h, 'expanded', -200, 700, 0), 'collapsed', '放在 500：collapsed 比較近');
+  assert.equal(snap(order, h, 'expanded', -200, 700, -3), 'handle', '同一個位置用力往下甩：慣性帶到最低');
+  assert.equal(snap(order, h, 'handle', 200, 44, 1.5), 'collapsed', '往上甩但不夠遠：停在中間');
+  assert.equal(snap(order, h, 'handle', 400, 44, 1.5), 'expanded', '往上甩得夠遠：到最上面');
+  assert.equal(snap(order, h, 'expanded', 100, 700, 1.5), 'expanded', '已經在最上面還往上：不換');
+  assert.equal(snap(order, h, 'handle', -30, 44, -1), 'handle', '已經在最下面還往下：不換');
+});
