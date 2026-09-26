@@ -7,7 +7,8 @@
      底下的檔案都要在清單裡。
   3. index.html 載入的每個檔（<script src>、<link rel=stylesheet／manifest／icon／apple-touch-icon href>，
      含 ../prototype 的共用檔）與 manifest 的 icons 都要在清單裡：不然離線時畫面缺樣式或腳本。
-  4. sw.js 與 js/views/system.js 的 VERSION 字串相同。
+  4. 版本只有一個來源 js/version.js：它定義 self.APP_VERSION、sw.js 用 importScripts 載它、
+     sw.js 與 js/views/system.js 都不另外寫死版本字串。
 不一致就印出來並 exit 1。
 生成的明信片（app/assets/postcards/）刻意不在清單：sw 在執行期 cache-first 存（見 sw.js 檔頭）。
 """
@@ -99,16 +100,19 @@ def main():
         elif p not in listed:
             print(f'  index.html 載了、清單沒有：{kind} {href}'); bad += 1
 
-    # VERSION 單一來源：sw.js 的快取版本與設定頁「關於」顯示的版本（system.js）必須相同
-    vre = re.compile(r"^const VERSION = '([^']+)';", re.M)
-    sw_v = vre.search(src)
-    sys_v = vre.search((APP / 'js' / 'views' / 'system.js').read_text(encoding='utf-8'))
-    if not sw_v or not sys_v:
-        print('  找不到 VERSION：' + ('sw.js ' if not sw_v else '') + ('js/views/system.js' if not sys_v else '')); bad += 1
-    elif sw_v.group(1) != sys_v.group(1):
-        print(f'  VERSION 不一致：sw.js={sw_v.group(1)}、system.js={sys_v.group(1)}'); bad += 1
-    else:
-        print(f'  VERSION：{sw_v.group(1)}（sw.js＝system.js）')
+    # 版本單一來源：js/version.js。sw.js 的快取名字與設定頁「關於」顯示的版本都讀它，不另外寫死
+    ver_file = APP / 'js' / 'version.js'
+    ver = re.search(r"^self\.APP_VERSION = '([^']+)';", ver_file.read_text(encoding='utf-8'), re.M) if ver_file.is_file() else None
+    hard = re.compile(r"^const VERSION = '[^']*';", re.M)
+    if not ver:
+        print("  js/version.js 找不到 self.APP_VERSION = '…';"); bad += 1
+    if "importScripts('./js/version.js')" not in src:
+        print("  sw.js 沒有 importScripts('./js/version.js')"); bad += 1
+    for f in (APP / 'sw.js', APP / 'js' / 'views' / 'system.js'):
+        if hard.search(f.read_text(encoding='utf-8')):
+            print(f'  {f.relative_to(ROOT).as_posix()} 自己寫死了版本（改讀 js/version.js 的 APP_VERSION）'); bad += 1
+    if ver:
+        print(f'  VERSION：{ver.group(1)}（js/version.js，sw.js 與設定頁都讀它）')
 
     print(f'check-sw：清單 {len(entries)} 筆、index.html＋manifest 載入 {n_loads} 個檔，'
           + ('PASS' if not bad else f'FAIL（{bad} 處）'))

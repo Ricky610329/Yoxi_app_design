@@ -812,15 +812,9 @@ function rideV2Mount(root, params, ctx) {
 
   /* ---- 懸浮小卡 ----
      第一次打開才建、掛在 .device 上（main.view 外面、data-overlay）：遮罩連底欄一起蓋住，
-     導覽時 core 的 dismissOverlays 叫 _dismiss 收掉（舊版 core 沒有它：這一頁的 cleanup 也會收）。
-     APP.ui.a11yDialog 管焦點、Esc、關掉後焦點回到點開的那張卡。新版 core 的 a11yDialog 另外讓 #view／#tabbar inert、
-     Tab 在框裡繞；舊版沒有（看有沒有 APP.ui.dismissOverlays）就在這裡自己補。 */
-  const coreDialog = typeof APP.ui.dismissOverlays === 'function';
+     導覽時 core 的 dismissOverlays 叫 _dismiss 收掉（這一頁的 cleanup 也會收）。
+     APP.ui.a11yDialog 管焦點、Esc、Tab 在框裡繞、#view／#tabbar inert，關掉後焦點回到點開的那張卡。 */
   let floating = null, floatCard = null, release = null, returnFocus = null;
-  function behind(on) {
-    if (coreDialog) return;
-    ['view', 'tabbar'].forEach(function (id) { const el = document.getElementById(id); if (el) el.inert = on; });
-  }
   function ensureFloat() {
     if (floating && floating.isConnected) return;
     const wrap = document.createElement('div');
@@ -836,16 +830,6 @@ function rideV2Mount(root, params, ctx) {
     };
     closeBtn.onclick = closeCard;
     floating.onclick = function (e) { if (e.target === floating) closeCard(); };
-    /* Tab／Shift+Tab 在小卡的兩顆按鈕之間繞，不跑到 demo 面板或網址列（新版 core 的 a11yDialog 自己會做） */
-    if (!coreDialog) {
-      floating.onkeydown = function (e) {
-        if (e.key !== 'Tab') return;
-        const f = [floatCard, closeBtn];
-        const i = f.indexOf(document.activeElement);
-        e.preventDefault();
-        f[i < 0 ? 0 : (i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus();
-      };
-    }
     floating._dismiss = dismissFloat;
   }
   /* 收起來並拆掉（導覽、這一頁 cleanup）；可以重複叫 */
@@ -856,7 +840,6 @@ function rideV2Mount(root, params, ctx) {
   }
   function closeCard() {
     if (!floating || floating.hidden) return;
-    behind(false);
     floating.hidden = true;
     const r = release;
     release = null;
@@ -890,9 +873,8 @@ function rideV2Mount(root, params, ctx) {
       '<span>' + (S().has(id) ? '已收藏' : '抵達後可以收下') + '</span>';
     SHELL.injectArt(floating);             /* 收下的那一款由 explore-face.js 自己疊上（它監看整台 .device） */
     floating.hidden = false;
-    /* 先交給 a11yDialog（它記下現在的焦點＝點開的卡），再把背後變 inert（inert 會把焦點踢掉） */
+    /* a11yDialog 記下現在的焦點（點開的那張卡）、把背後變 inert、焦點放到小卡上 */
     release = APP.ui.a11yDialog(floating, { label: c.name, onEsc: closeCard, focus: floatCard });
-    behind(true);
   }
   paint();
   const stopDrag = bindDragSheet(sheet, {

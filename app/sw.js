@@ -12,14 +12,14 @@
    3. 其他靜態檔（PRECACHE 清單裡的 css／js／圖示…）：stale-while-revalidate。
       先回快取（快、離線可用），同時在背景抓一份新的蓋回快取，下次開就是新的。
       清單外的檔（例如 tests/）只走網路、不寫入快取。
-   更新：VERSION 加一 → 瀏覽器發現 sw.js 變了 → install 重新預先快取（cache:'reload' 繞過 HTTP 快取）
+   更新：js/version.js 的 VERSION 加一 → 瀏覽器發現 sw.js（連同 importScripts 的 version.js）變了 → install 重新預先快取（cache:'reload' 繞過 HTTP 快取）
          → skipWaiting → activate 刪掉舊版本的兩個快取（PRECACHE 與 RUNTIME 都跟著 VERSION）→ clients.claim。
          頁面（app.js 的註冊段）看到新的 sw 接手，會跳「有新版本，重新整理就會套用」。
          忘了加 VERSION 也會更新（1＋3），只是晚一次開啟，而且不會跳提示。
 
    ★ 新增檔案要來這裡加：app/css、app/js、prototype/assets/map、
      prototype/assets/photos 底下多了檔案，或 index.html 多載了 prototype 的檔，
-     就把路徑加進下面的 PRECACHE，並把 VERSION 的數字加一（js/views/system.js 的 VERSION 也要一起改）。
+     就把路徑加進下面的 PRECACHE，並把 js/version.js 的數字加一（設定頁顯示的版本也讀它，只有這一處）。
      檢查：python app/tools/check-sw.py（清單有、檔案沒有／檔案有、清單沒有／index.html 載的檔不在清單 → exit 1）
    注意：cache.addAll 是全有全無，清單裡任何一個 404 整個 install 就失敗。
 
@@ -30,7 +30,8 @@
      }
    ========================================================================== */
 
-const VERSION = 'chengshi-app-v18';
+importScripts('./js/version.js');
+const VERSION = self.APP_VERSION;          /* 唯一來源：js/version.js（設定頁顯示的也是它） */
 const RUNTIME = VERSION + '-img';          /* 執行期的圖片快取；跟著 VERSION 換代，activate 一起清 */
 const NAV_TIMEOUT_MS = 3000;               /* 導覽等網路最多這麼久，超過就先給快取（網路回來仍會更新快取） */
 
@@ -70,6 +71,7 @@ const PRECACHE = [
   '../prototype/assets/photos/credits.js',
   '../prototype/js/photos.js',
   // app js
+  './js/version.js',
   './js/app.js',
   './js/views/system.js',
   './js/views/ride.js',

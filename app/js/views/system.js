@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v18';
+const VERSION = window.APP_VERSION || '';     /* 唯一來源：js/version.js（sw.js 的快取名字也用它） */
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -73,7 +73,7 @@ function arriveTarget(cur) {
   /* 行程進行中的 /going 顯示的是「你正在搭車」卡，模擬抵達要抵達的是那一趟 */
   if (cur && cur.pattern === '/going/:id' && cur.params && cur.params.id && !riding) {
     const id = cur.params.id;
-    return function () { APP.store.set('arrivedDemo', id); APP.nav.go('/unlock/' + encodeURIComponent(id)); };
+    return function () { APP.nav.go('/unlock/' + encodeURIComponent(id)); };
   }
   const onTrip = cur && cur.pattern === '/trip';
   if (onTrip || APP.ride.trip.current()) {
@@ -85,31 +85,12 @@ function arriveTarget(cur) {
   return null;
 }
 
-/* 浮層一律從這裡拆：順便還焦點、拿掉 Esc 的 listener（重複呼叫沒事：remove 與 _release 都是冪等的） */
+/* 推播、分享面板都是 APP.ui.overlay 掛上去的浮層（data-overlay、el._dismiss、a11yDialog；導覽時 core 收）。
+   從這裡拆：拆掉自己、還焦點、拿掉 Esc（重複呼叫沒事） */
 function dropOverlay(el) {
   if (!el) return;
-  el.remove();
-  if (typeof el._release === 'function') el._release();
-}
-
-/* 浮層約定：掛在 .device（main.view 之外）、換頁就該消失的東西加 data-overlay，
-   並提供 el._dismiss()（拆掉自己、還焦點、拿掉 listener；可重複呼叫）。core 每次導覽開頭呼叫 APP.ui.dismissOverlays()。
-   _navSeq 給還沒有 dismissOverlays 的 core 用（見下面 route:change）：導覽進行中（data-view-ready 拿掉了）才開的浮層屬於下一頁。 */
-let navSeq = 0;
-function markOverlay(el) {
-  el.setAttribute('data-overlay', '');
-  el._dismiss = function () { dropOverlay(el); };
-  el._navSeq = document.documentElement.hasAttribute('data-view-ready') ? navSeq : navSeq + 1;
-  return el;
-}
-function closeOverlays() {
-  document.querySelectorAll('.device > [data-overlay], .device > .pushmock, .device > .sys-share').forEach(function (el) {
-    if (typeof el._dismiss === 'function') el._dismiss(); else dropOverlay(el);
-  });
-}
-function dismissAll() {
-  if (typeof APP.ui.dismissOverlays === 'function') APP.ui.dismissOverlays();
-  else closeOverlays();
+  if (typeof el._dismiss === 'function') el._dismiss();
+  else el.remove();
 }
 
 /* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。哪些東西算足跡不寫在這裡：
@@ -127,7 +108,7 @@ function resetDemo() {
   return APP.ui.confirm({ text: '回到 demo 初始狀態（8 張明信片、原本的點數與設定）？', yes: '重設', no: '先不要', danger: true })
     .then(function (yes) {
       if (!yes) return false;
-      dismissAll();
+      APP.ui.dismissOverlays();
       APP.state.batch(function () {
         APP.state.reset();
         APP.store.reset();
@@ -199,10 +180,7 @@ function push(opt) {
   };
   el.querySelector('[data-act="close-push"]').onclick = function () { dropOverlay(el); };
 
-  const host = $('.device') || document.body;
-  markOverlay(el);
-  host.appendChild(el);
-  el._release = APP.ui.a11yDialog(el, { label: '推播通知：' + title, onEsc: function () { dropOverlay(el); } });
+  APP.ui.overlay(el, { label: '推播通知：' + title });
 
   if (!sent) {
     APP.store.set('pushes', todayPushes().concat([{ when: when, at: new Date().toISOString() }]).slice(-PUSH_MAX));
@@ -281,9 +259,7 @@ function share(opt) {
   };
 
   if (window.SHELL) SHELL.injectIcons(scrim);
-  markOverlay(scrim);
-  host.appendChild(scrim);
-  scrim._release = APP.ui.a11yDialog(scrim.querySelector('.sharesheet'), { label: title, onEsc: close });
+  APP.ui.overlay(scrim, { dialog: scrim.querySelector('.sharesheet'), label: title });
   return scrim;
 }
 
@@ -593,7 +569,7 @@ function contextPlace(cur) {
 }
 
 /* demo 面板的模擬抵達（任何一頁都能用，地點從下拉選單挑）：
-   走路     → 記下 arrivedDemo，進 /unlock/:id；行程進行中不行（人在車上）。
+   走路     → 進 /unlock/:id；行程進行中不行（人在車上）。
    搭 yoxi → 這一趟直接在這裡結束（APP.ride.trip.arriveAt：phase done；原本是別的目的地就被這一趟取代，
              契約 §3.3 只有一筆 trip），進 /unlock/:id?ride=1。抵達頁會再驗一次行程，所以手打網址拿不到金框。 */
 function demoArrive(id, by) {
@@ -601,12 +577,11 @@ function demoArrive(id, by) {
   if (!p) { APP.ui.toast('先選一個地方'); return false; }
   if (by !== 'ride') {
     if (APP.ride.trip.active()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
-    APP.store.set('arrivedDemo', p.id);
     APP.nav.go('/unlock/' + encodeURIComponent(p.id));
     return true;
   }
   APP.ride.trip.arriveAt(p.id);
-  APP.store.patch({ dropoff: null, arrivedDemo: p.id });
+  APP.store.set('dropoff', null);
   APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1');
   return true;
 }
@@ -665,15 +640,8 @@ function updatePanel(cur) {
 /* --------------------------------------------------------------------------
    訂閱（載入時，不在 view 內）
    -------------------------------------------------------------------------- */
+/* 換頁收掉上一頁開的推播與分享面板：core 在導覽開頭呼叫 APP.ui.dismissOverlays() 就收了，這裡不用管 */
 APP.on('route:change', function (cur) {
-  navSeq++;
-  /* 換頁收掉上一頁開的推播與分享面板。有 APP.ui.dismissOverlays 的 core 在導覽開頭就收了；
-     還沒有的版本由這裡收（只收這一頁之前開的，mount 裡或轉場中才開的留著） */
-  if (typeof APP.ui.dismissOverlays !== 'function') {
-    document.querySelectorAll('.device > .pushmock[data-overlay], .device > .sys-share[data-overlay]').forEach(function (el) {
-      if ((el._navSeq || 0) < navSeq && typeof el._dismiss === 'function') el._dismiss();
-    });
-  }
   if (cur) {
     recent.push({ path: cur.path, pattern: cur.pattern, params: cur.params });
     if (recent.length > 8) recent.shift();

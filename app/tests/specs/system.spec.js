@@ -261,7 +261,6 @@ T.spec('system', function (t) {
     t.eq(app.$('#demo-panel [data-demo-place]').value, 'moat', '地點跟著這一頁');
     await app.click('#demo-panel [data-act="arrive-walk"]');
     await app.at('/unlock/moat');
-    t.eq(app.APP.store.get('arrivedDemo'), 'moat', 'arrivedDemo 記下地點');
     t.ok(!app.$('[data-unlock][data-ride]'), '走路：不是搭車版');
 
     /* 搭 yoxi 抵達：行程直接在這裡結束，抵達頁認得這一趟 → 必得金框 */
@@ -392,7 +391,6 @@ T.spec('system', function (t) {
     await app.reset({ store: {
       dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }),
       trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: now, rated: true, km: 6.4 }),
-      arrivedDemo: 'moat',
       rideVia: { p9: 'k1' }, cardStyle: { p1: 'gold' }, draws: { moat: 'ink' },
       pushes: [{ when: 'am', at: now }],
       tabPaths: { ride: '/points', explore: '/routes', album: '/badges' },
@@ -415,7 +413,6 @@ T.spec('system', function (t) {
     t.eq(JSON.stringify(ls.tabPaths), JSON.stringify(app.APP.store.fresh().tabPaths), 'tabPaths 回預設');
     t.eq(ls.dropoff, null, 'dropoff');
     t.eq(ls.trip, null, 'trip');
-    t.eq(ls.arrivedDemo, null, 'arrivedDemo');
     t.eq(ls.onboarded, true, 'onboarded 留著');
     t.eq(ls.fxMute, true, 'fxMute 留著');
     t.eq(ls.rideSpots, false, 'rideSpots 開關留著');
@@ -452,7 +449,6 @@ T.spec('system', function (t) {
     const val = app.$('#demo-panel [data-demo-place]').value;
     await app.click('#demo-panel [data-act="arrive-walk"]');
     await app.at('/unlock/' + val);
-    t.eq(A.store.get('arrivedDemo'), val, 'arrivedDemo');
     t.ok(!/先選一個地方/.test(app.text('.toast') || ''), '沒有「先選一個地方」');
     t.eq(app.errors.length, 0, '沒有錯誤 ' + app.errors.join('；'));
   });

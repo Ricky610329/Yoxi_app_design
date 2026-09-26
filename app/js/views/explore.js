@@ -47,8 +47,9 @@
 
 const APP = window.APP;
 const K = APP && APP.explore && APP.explore._;
-/* explore-cards.js 要先載入（APP.explore 的明信片、抽卡、收下都在那裡） */
-if (!K) return;
+/* explore-cards.js 要先載入（APP.explore 的明信片、抽卡、收下都在那裡）。順序錯了直接丟錯（寫進 #app-errors），
+   不要安靜 return——那樣路由全部變成「尚未建檔」，看不出是載入順序的問題 */
+if (!K) throw new Error('explore.js 要在 explore-cards.js 之後載入（index.html 的順序）');
 
 const esc = APP.esc;
 const fmt = APP.fmt;

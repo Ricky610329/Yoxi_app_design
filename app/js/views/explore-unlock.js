@@ -29,8 +29,8 @@
 
 const APP = window.APP;
 const K = APP && APP.explore && APP.explore._;
-/* explore-cards.js 與 explore.js 要先載入（K.notFound 是 explore.js 掛上的） */
-if (!K || !K.notFound) return;
+/* explore-cards.js 與 explore.js 要先載入（K.notFound 是 explore.js 掛上的）；順序錯了直接丟錯，不要安靜 return */
+if (!K || !K.notFound) throw new Error('explore-unlock.js 要在 explore-cards.js、explore.js 之後載入（index.html 的順序）');
 
 const esc = APP.esc;
 const fmt = APP.fmt;

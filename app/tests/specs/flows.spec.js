@@ -36,7 +36,6 @@ T.spec('flows', function (t) {
     t.eq(app.$('#demo-panel [data-demo-place]').value, T0.id, 'demo 面板的地點跟著前往中的目的地');
     await app.click('#demo-panel [data-act="arrive-walk"]');
     await app.at('/unlock/' + T0.id);
-    t.eq(A.store.get('arrivedDemo'), T0.id, 'demo 面板寫了 store.arrivedDemo');
     if (!app.still) {
       t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先是抵達（這個地方亮起來）');
       await drawThrough(app);
@@ -46,7 +45,6 @@ T.spec('flows', function (t) {
     inp.value = note;
     await app.click('[data-act="collect"]');
     await app.at('/album');
-    t.eq(A.store.get('arrivedDemo'), null, '收下之後 arrivedDemo 清掉');
   }
 
   /* ============================================================ 1. 三條流程 */
@@ -867,8 +865,7 @@ T.spec('flows', function (t) {
 
   t.test('QA 2：清除我的足跡真的清空；重設 demo 的文案寫清楚是回到初始', async function (app) {
     await app.reset({ store: { dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: now() }),
-                               trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
-                               arrivedDemo: 'moat' } });
+                               trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
     await app.go('/settings');
     await app.click('[data-act="more"]');
     await app.click('[data-act="wipe"]');
@@ -881,7 +878,6 @@ T.spec('flows', function (t) {
     t.eq(S.all.today.done, false, 'today 歸零');
     t.eq(A.store.get('dropoff'), null, 'dropoff 清掉');
     t.eq(A.store.get('trip'), null, 'trip 清掉');
-    t.eq(A.store.get('arrivedDemo'), null, 'arrivedDemo 清掉');
     t.includes(app.text('.toast') || '', '足跡已清除', 'toast');
     const saved = app.storage('state');
     t.ok(saved && Object.keys(saved.cards).length === 0, '寫進 localStorage');

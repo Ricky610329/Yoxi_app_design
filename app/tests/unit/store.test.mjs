@@ -11,7 +11,6 @@ test('預設值齊全', () => {
   assert.equal(s.get('dropoff'), null);
   assert.equal(s.get('trip'), null);
   assert.equal(s.get('pushes').length, 0);
-  assert.equal(s.get('arrivedDemo'), null);
   assert.equal(s.get('fxMute'), false);
   assert.deepEqual({ ...s.get('draws') }, {});
   assert.deepEqual({ ...s.get('cardStyle') }, {});
@@ -22,7 +21,7 @@ test('預設值齊全', () => {
 
 test('每個鍵都跟 fresh() 對型別：型別不對退回預設，型別對的照收', () => {
   const bad = {
-    onboarded: 'yes', dropoff: 'neiwan', trip: [1], pushes: { a: 1 }, arrivedDemo: 42,
+    onboarded: 'yes', dropoff: 'neiwan', trip: [1], pushes: { a: 1 },
     rideSpots: 'no', rideVia: [], draws: 'x', cardStyle: null, fxMute: 1, tabPaths: [], version: 'v9',
   };
   const { APP } = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(bad) }) });
@@ -32,7 +31,7 @@ test('每個鍵都跟 fresh() 對型別：型別不對退回預設，型別對�
   }
   const good = {
     onboarded: true, dropoff: { id: 'neiwan', km: 28 }, trip: null, pushes: [{ when: 'am', at: 'x' }],
-    arrivedDemo: 'lake', rideSpots: false, rideVia: { p9: 'k1' }, draws: { lake: 'oil' },
+    rideSpots: false, rideVia: { p9: 'k1' }, draws: { lake: 'oil' },
     cardStyle: { p22: 'gold' }, fxMute: true,
   };
   const ok = loadApp({ storage: memoryStorage({ [KEY]: JSON.stringify(good) }) }).APP.store;
@@ -93,10 +92,10 @@ test('set 寫進 localStorage 並 emit store:change', () => {
 
 test('patch 合併多鍵', () => {
   const { APP, storage } = loadApp();
-  APP.store.patch({ onboarded: true, arrivedDemo: 'glass-kiln' });
+  APP.store.patch({ onboarded: true, fxMute: true });
   const saved = JSON.parse(storage.getItem(KEY));
   assert.equal(saved.onboarded, true);
-  assert.equal(saved.arrivedDemo, 'glass-kiln');
+  assert.equal(saved.fxMute, true);
   assert.equal(saved.dropoff, null, '沒給的鍵保留');
 });
 
@@ -180,7 +179,7 @@ test('clear(group)：只把那一類鍵回到預設；偏好與不認得的鍵�
   st.patch({
     onboarded: true, fxMute: true, rideSpots: false,
     dropoff: { id: 'neiwan' }, trip: { placeId: 'neiwan', phase: 'done' }, pushes: [{ when: 'am', at: 'x' }],
-    arrivedDemo: 'lake', rideVia: { p9: 'k1' }, draws: { lake: 'oil' }, cardStyle: { p22: 'gold' },
+    rideVia: { p9: 'k1' }, draws: { lake: 'oil' }, cardStyle: { p22: 'gold' },
     tabPaths: { ride: '/points', album: '/week' }, later: { a: 1 },
   });
   const seen = [];
@@ -189,7 +188,7 @@ test('clear(group)：只把那一類鍵回到預設；偏好與不認得的鍵�
   off();
   const f = st.fresh();
   assert.deepEqual([...cleared].sort(),
-    ['arrivedDemo', 'cardStyle', 'draws', 'dropoff', 'pushes', 'rideVia', 'tabPaths', 'trip'], '足跡的鍵');
+    ['cardStyle', 'draws', 'dropoff', 'pushes', 'rideVia', 'tabPaths', 'trip'], '足跡的鍵');
   for (const k of cleared) {
     assert.deepEqual(JSON.parse(JSON.stringify(st.get(k))), JSON.parse(JSON.stringify(f[k])), k + ' 回到預設');
   }

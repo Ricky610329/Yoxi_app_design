@@ -41,13 +41,9 @@ function collected(p) { return !!(p && p.card && S() && S().has(p.card)); }
 
 function num(n) { return '<span class="num">' + esc(n) + '</span>'; }
 
-/* 搭車抵達走不到的地方回饋的點數：唯一來源是 ride.js 的 APP.ride.RIDE_BONUS（/points 的明細也用它）。
-   ride 還沒匯出時退回 MOCK.FAR_PLACE.ridePoints（資料裡同一個數） */
-function ridePoints() {
-  const R = APP.ride && APP.ride.RIDE_BONUS;
-  if (typeof R === 'number') return R;
-  return (window.MOCK && MOCK.FAR_PLACE && MOCK.FAR_PLACE.ridePoints) || 50;
-}
+/* 搭車抵達走不到的地方回饋的點數：唯一來源是 ride.js 的 APP.ride.RIDE_BONUS（/points 的明細也用它；
+   資料缺了退回幾點也只寫在那裡）。ride.js 比這支先載入 */
+function ridePoints() { return APP.ride.RIDE_BONUS; }
 
 /* 抽卡機率表（全 app 唯一來源；畫面上的百分比都從這裡算，不另外手寫）。
    每個地方五款：四種一般畫風，越後面越難抽；一款金框（yoxi 限定版），搭 yoxi 抵達必得，走路抵達機率極低。
@@ -123,11 +119,11 @@ function cardStyleOf(cardId) {
 
 /* 收在「?」裡的機率說明。掛在 .device 上（壓在全螢幕的解鎖頁上面），所以離開這一頁要自己收：
    帶 data-overlay、el._dismiss()（core 導覽前會呼叫；/unlock 的 cleanup 也呼叫 closeOdds），可以重複呼叫。
-   Esc 與焦點交給 APP.ui.a11yDialog；它在點「?」時才掛 keydown，router 記不到，所以一定要經過 _dismiss 拆掉。 */
+   掛法（data-overlay、_dismiss、Esc 與焦點）交給 APP.ui.overlay；它在點「?」時才掛 keydown，router 記不到，
+   所以一定要經過 _dismiss 拆掉。 */
 let oddsOpen = null;
 function openOdds() {
   if (oddsOpen && oddsOpen.isConnected) return oddsOpen;
-  const host = document.querySelector('.device') || document.body;
   const rows = function (k) {
     return DRAW_STYLES.map(function (d) {
       return '<li class="ex-odds__row' + (d.gold ? ' is-gold' : '') + '">' +
@@ -136,7 +132,6 @@ function openOdds() {
   };
   const scrim = document.createElement('div');
   scrim.className = 'scrim ex-odds';
-  scrim.setAttribute('data-overlay', '');
   scrim.innerHTML =
     '<div class="modal app-modal ex-odds__box">' +
       '<h2 class="ex-odds__t">明信片抽取機率</h2>' +
@@ -146,18 +141,14 @@ function openOdds() {
       '<p class="ex-odds__note">機率固定，不因抵達次數改變。畫風以該地景點照片為底，由 AI 生成。</p>' +
       '<button class="btn-primary" type="button" data-act="close-odds">知道了</button>' +
     '</div>';
-  let release = null;
-  const end = function () {
-    if (oddsOpen === scrim) oddsOpen = null;
-    scrim.remove();
-    if (release) { const r = release; release = null; r(); }
-  };
-  scrim._dismiss = end;
+  const end = APP.ui.overlay(scrim, {
+    dialog: scrim.querySelector('.modal'),
+    label: '明信片抽取機率',
+    onClose: function () { if (oddsOpen === scrim) oddsOpen = null; },
+  });
   scrim.querySelector('[data-act="close-odds"]').onclick = end;
   scrim.onclick = function (e) { if (e.target === scrim) end(); };
-  host.appendChild(scrim);
   oddsOpen = scrim;
-  release = APP.ui.a11yDialog(scrim.querySelector('.modal'), { label: '明信片抽取機率', onEsc: end });
   return scrim;
 }
 function closeOdds() {
@@ -204,9 +195,6 @@ function collect(placeId, opt) {
     if (a.trip) APP.ride.trip.consume(placeId);
     const drop = APP.store.get('dropoff');
     if (drop && (drop.id === pid || drop.id === placeId)) APP.store.set('dropoff', null);
-    /* demo 面板「模擬抵達」留下的暫存：收下之後就用完了 */
-    const arrived = APP.store.get('arrivedDemo');
-    if (arrived && (arrived === pid || arrived === placeId)) APP.store.set('arrivedDemo', null);
     return isNew;
   });
 }

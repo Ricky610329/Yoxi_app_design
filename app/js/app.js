@@ -64,7 +64,6 @@ const KEYS = {
   dropoff:     { def: null,  kind: 'object?', group: 'footprint' },  /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
   trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }；只有 APP.ride.trip 讀寫 */
   pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
-  arrivedDemo: { def: null,  kind: 'string?', group: 'footprint' },  /* placeId */
   rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
   rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
   draws:       { def: {},    kind: 'map',     group: 'footprint' },  /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
@@ -1119,10 +1118,8 @@ const ui = {
        已經有一個開著時，新的這次直接回 null（第一個照常等使用者回答）。 */
     if (document.querySelector('.app-confirm')) return Promise.resolve(null);
     return new Promise(function (resolve) {
-      const host = $('.device') || document.body;
       const scrim = document.createElement('div');
       scrim.className = 'scrim app-confirm';
-      scrim.setAttribute('data-overlay', '');
       scrim.innerHTML =
         '<div class="modal app-modal" role="dialog" aria-modal="true">' +
           '<p class="modal__text">' + esc(o.text || '確定嗎？') + '</p>' +
@@ -1130,29 +1127,40 @@ const ui = {
             '<button class="btn-primary" type="button" data-act="confirm-yes">' + esc(o.yes || '好') + '</button>' +
             '<button class="btn-ghost" type="button" data-act="confirm-no">' + esc(o.no || '先不要') + '</button>' +
           '</div></div>';
-      let release = null;
-      let settled = false;
-      const end = function (v) {
-        if (settled) return;
-        settled = true;
-        scrim.remove();
-        if (release) release();
-        resolve(v);
-      };
+      /* 沒有回答就被關掉（Esc、點遮罩、導覽時 dismissOverlays）：null，動作不會落在新的一頁上 */
+      let answer = null;
       const yesB = scrim.querySelector('[data-act="confirm-yes"]');
       const noB = scrim.querySelector('[data-act="confirm-no"]');
-      yesB.onclick = function () { end(true); };
-      noB.onclick = function () { end(false); };
-      scrim.onclick = function (e) { if (e.target === scrim) end(null); };
-      /* 導覽時（APP.ui.dismissOverlays）：沒有回答，動作不會落在新的一頁上 */
-      scrim._dismiss = function () { end(null); };
-      host.appendChild(scrim);
-      release = a11yDialog(scrim.querySelector('.modal'), {
+      const close = ui.overlay(scrim, {
+        dialog: scrim.querySelector('.modal'),
         label: o.text || '確定嗎？',
-        onEsc: function () { end(null); },
         focus: o.danger ? noB : yesB,
+        onClose: function () { resolve(answer); },
       });
+      yesB.onclick = function () { answer = true; close(); };
+      noB.onclick = function () { answer = false; close(); };
+      scrim.onclick = function (e) { if (e.target === scrim) close(); };
     });
+  },
+  /* 掛一個浮層（契約 §3.5 的浮層約定）：標 data-overlay、掛到 .device（main.view 外面）、交給 a11yDialog。
+     回傳 close()：拆掉自己、還焦點、拿掉 Esc，可以重複呼叫；Esc 與導覽時的 dismissOverlays（el._dismiss）也是叫它。
+     opt：dialog（套 a11yDialog 的那一塊，預設 el）、label、focus、onClose()（真的關掉的那一次叫） */
+  overlay: function (el, opt) {
+    opt = opt || {};
+    let open = true;
+    let release = null;
+    const close = function () {
+      if (!open) return;
+      open = false;
+      el.remove();
+      if (release) { const r = release; release = null; r(); }
+      if (opt.onClose) opt.onClose();
+    };
+    el.setAttribute('data-overlay', '');
+    el._dismiss = close;
+    ($('.device') || document.body).appendChild(el);
+    release = a11yDialog(opt.dialog || el, { label: opt.label, onEsc: close, focus: opt.focus });
+    return close;
   },
   /* 預設實作：system.js 會覆寫這兩個 */
   share: function () { ui.toast('分享尚未接上'); },

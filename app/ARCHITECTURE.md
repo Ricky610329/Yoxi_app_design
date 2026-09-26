@@ -178,7 +178,6 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   | `dropoff` | `{ id, name, km, setAt, via:'k1'|'e'|'search'|'route' }` 或 null | 下車點。km 從 MOCK 的距離算（距離不明時是 null，畫面寫「距離待確認」、不顯示車資與分鐘），車資與分鐘不存，畫面用 `APP.fmt` 現算 |
   | `trip` | `{ placeId, phase:'matching'|'riding'|'done', startedAt, rated:bool, km, via, stars? }` 或 null | 進行中的叫車。**只有 `APP.ride.trip`（§7）讀寫**；km 距離不明是 null；via＝下車點從哪個入口設的（轉換歸因）；stars 評分後才有 |
   | `pushes` | `[{ when:'am'|'pm', at:ISO }]` | 今天發過的推播（最多兩則） |
-  | `arrivedDemo` | string 或 null | demo「模擬抵達」暫存的 placeId |
   | `draws` | `{ 地點 id: 款式 key }` | 走路抵達抽到、還沒收的款式（重進不重抽；收下就清掉） |
   | `cardStyle` | `{ 明信片 id: 款式 key }` | 收下時抽到的款式（金框的明信片在收藏裡也是金框） |
   | `fxMute` | bool | 抵達與抽卡的音效關掉（pref） |
@@ -190,7 +189,7 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
 - 事件：`APP.on('store:change'|'state:change'|'route:change', fn)`／`APP.emit(...)`。
   `state:change` 由 `APP.state` 自己發（見上），統計、設定開關、demo 面板靠它更新（底欄不聽這些事件，也沒有小紅點）。
 - id 認不得的 `trip`／`dropoff`（舊版資料、手改）：`APP.ride.trip` 讀的時候一律當作沒有行程（任何畫面都一樣）；`/ride`、`/trip`、`/trip/done` 的 mount 與 `arrive()` 再真的清掉，不會卡住叫車。
-- 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`arrivedDemo`、`rideVia`、`cardStyle`、`draws`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`）與 `STATE.settings`。
+- 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`rideVia`、`cardStyle`、`draws`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`）與 `STATE.settings`。
 - 每日回顧結束時用 `APP.state.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情與照片。
 
 ### 3.4 格式與公式（不准手寫數字）
@@ -226,6 +225,7 @@ APP.ui.toast(msg)                                 // 沿用 SHELL.toast，掛在
 APP.ui.confirm({ text, yes:'清除', no:'先不要', danger })  // Promise：按是 true、按否 false、沒有回答就被關掉（Esc、點遮罩、導覽離開、已經有一個開著）null；
                                                   // danger:true 時預設焦點在「否」。「否」本身是動作的（叫車前的「直接叫車」）要寫 === false
 APP.ui.dismissOverlays()                          // 收掉 .device 裡所有 [data-overlay]（router 每次導覽一開始自己呼叫）
+APP.ui.overlay(el, { dialog, label, focus, onClose })   // 掛一個浮層：標 data-overlay、掛到 .device、交給 a11yDialog；回傳 close()（可重複呼叫，也是 el._dismiss）
 APP.ui.announce(text)                             // 念給報讀器聽（常駐的 #app-live）
 APP.ui.share({ title, kind, card, url })          // 分享面板；第一格永遠是「傳給家人（長輩圖）」→ #/elder（有 card 時 #/elder?card=<id>）；
                                                   // url 沒給就用打開那一刻的網址（面板上 data-share-url）
@@ -234,7 +234,9 @@ APP.ui.setStatus(tone)                            // 切狀態列字色
 ```
 tab bar：`<nav class="tabbar" id="tabbar">` 沿用 chengshi.css 樣式與 `TABSETS.default` 的圖示；只建一次，換頁只更新 `is-active`／`aria-current`。沒有小紅點。
 
-**浮層約定**：掛在 `.device`（`main.view` 外面）、換頁就該消失的東西（分享面板、推播、確認框、機率說明、懸浮小卡）加 `data-overlay`；要收尾的設 `el._dismiss = function(){…}`（移除自己、還焦點、拆 listener，可重複呼叫）。toast 不是浮層，會跟著跳到下一頁。
+**浮層約定**：掛在 `.device`（`main.view` 外面）、換頁就該消失的東西（分享面板、推播、確認框、機率說明、懸浮小卡）加 `data-overlay`；要收尾的設 `el._dismiss = function(){…}`（移除自己、還焦點、拆 listener，可重複呼叫）。
+新的浮層一律用 `APP.ui.overlay(el, opt)` 掛（確認框、機率說明、推播、分享面板都是）：上面這些它一次做完，回傳的 `close()` 就是 `_dismiss`。
+叫車的懸浮小卡是同一個元素重複開關（hidden），自己接 `data-overlay`＋`_dismiss`＋`a11yDialog`。toast 不是浮層，會跟著跳到下一頁。
 **對話框**：`APP.ui.a11yDialog(el, { label, onEsc, focus })` → release。Tab／Shift+Tab 在框裡繞；開著時 `#view`、`#tabbar`、`#demo-panel` 設 `inert`（疊層計數，全部關掉才解除）；只有最上層吃 Esc；沒標 `data-overlay` 的對話框在導覽時當作按了 Esc。
 **toast**：畫面上的 toast 是 `aria-hidden`，文字另外放進常駐的 `#app-live`（`role=status`），先清空、稍後再放字，報讀器才念得到。
 
@@ -377,7 +379,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
 - 明信片的卡面（explore 提供，`explore-face.js`）：`APP.explore.cardFace(cardId, key)` → `{ gen, photo, credit }`——疊法只有這一個，`/unlock` 的卡面與收藏的卡都照它；`postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片（明信片自己的 → 對照表的地點 → 這張卡所在地點的；出處也從它來）；`cardStyleOf(cardId)`（explore-cards.js）收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡以明信片 id 為種子照機率表抽一次）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore-face.js 監看整台 `.device`（`#view` 與掛在上面的浮層、懸浮小卡）自動疊上 `<img class="card-gen">`，畫面不用自己呼叫，順序跟 `/unlock` 卡面一樣：生成的成品 → 沒有成品或載不到：底圖照片＋那一款的 SVG 濾鏡（`.card-gen--photo`，先排成 220 px 寬套濾鏡再縮放到容器，容器加 `.card-photo-host` 藏起底下的插圖）→ 都沒有才留插圖（還沒收的不疊）。收藏裡顯示明信片的地方都要帶 `data-card-art`（含週回顧的卡與封面）；明信片詳情寫底圖照片的出處（`data-credit`，作者、授權、連結）
 - 金框卡在哪裡顯示都有金框和金粉（explore 提供，`explore-gold.js`）：在「畫金框的那個元素」加 `data-gold-aura`，金粉就從它的邊緣冒出來（照元素的旋轉角度）。`[data-card-art]` 的金框卡沒人標的話，`paintCardArt` 自己補 `data-gold-aura`＋`.card-gold`（通用的框，explore.css）；框畫在外層的（明信片詳情整張卡、叫車的浮起來小卡）由畫面自己標在外層，`paintCardArt` 看到祖先標了就不再補。`/unlock` 翻開之後（`finish()`）才標，翻開前不洩底。整台手機一張 `canvas.gold-aura`（掛 `.device`、z-index 97、`pointer-events:none`、`aria-hidden`）；金粉裁在卡片的捲動範圍裡，被別的東西蓋住的邊不冒（`elementFromPoint`）；卡片移動時金粉被「跟著卡片走的空氣」帶著、有慣性（`APP.fx.gold.step` 是純函式）。樣子：細金粉、會翻會閃的金箔、細長四芒閃光、暗底的散景；相對空氣動得快的金粉拉出變淡的尾巴；每張卡每 4.8 秒有一道斜光掃過框、從亮的地方多灑一把（每張卡錯開）。`APP.reduceMotion()` 時不建 canvas（框照舊）；看不到金框卡時不跑 rAF。測試用：`APP.fx.gold.tracked()`、`particles()`
-- `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `arrivedDemo` ＋ `/unlock/:id`（行程進行中不行）；搭 yoxi → `APP.ride.trip.arriveAt(placeId)`（這一趟在這裡結束、取代原本的行程；距離不明的 km 是 null，跟一般叫車一樣）＋ `/unlock/:id?ride=1`
+- `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `/unlock/:id`（行程進行中不行）；搭 yoxi → `APP.ride.trip.arriveAt(placeId)`（這一趟在這裡結束、取代原本的行程；距離不明的 km 是 null，跟一般叫車一樣）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用；明信片分享帶 `card`，長輩圖 `/elder?card=<id>` 把那張排第一）
 - `APP.album`（album 提供）：`visitedPlaces()`（不重複的地點）、`recentCards()`（照收下的先後、最後收的排第一：看 `STATE.all.cards` 的鍵順序，不比 `MM.DD`，同一天連收與跨年都對）、`cityColors()`（足跡頁的城市顏色，從去過的地方算）、`weekStats()`（`now.after`＝範圍之後才收的卡）。角標：`APP.ride.limitedCard(id)` 為真寫「yoxi 限定版」，其他金框卡寫「yoxi 金框」
