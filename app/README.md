@@ -129,7 +129,7 @@ python app/tools/shoot-app.py        # 每條 route 用手機寬度拍一張（a
 1. 在對應區塊的檔（`js/views/{ride,explore,album,system}.js`）用 `APP.view('名字', { path, tab, render, mount })` 註冊；檔頭補「回答什麼／從哪張原型來／刻意沒有的東西」。
 2. 樣式寫在同區塊的 `css/views/X.css`，只用 `tokens.css` 的變數，不寫 hex。
 3. 在 `tests/specs/X.spec.js` 加 spec：render、死按鈕、禁用詞、可按數、數字對公式、返回鍵。
-4. 新增檔案要加進 `sw.js` 的 `PRECACHE`、`VERSION` 加一，跑 `python app/tools/check-sw.py`。
+4. 新增檔案要加進 `sw.js` 的 `PRECACHE`、`js/version.js` 的版本加一（sw.js 與設定頁都讀它），跑 `python app/tools/check-sw.py`。
 5. `python app/tests/run.py` 全綠。
 
 按鈕一律 `element.onclick`＋`data-act="動詞-名詞"`；數字一律走 `APP.fmt`／`STATE`／`MOCK`。API 與規矩全在 `ARCHITECTURE.md`，改契約先改那份。

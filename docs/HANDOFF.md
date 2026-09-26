@@ -247,3 +247,27 @@ python app/tests/run.py                           # web app：node 單元＋head
 - **標了哪些地方**：收藏首頁疊卡（新增金邊）、`/postcards`、明信片詳情、獎章組成卡、每日回顧「今天多了一張」、週回顧、叫車探索面板的卡、浮起來看的小卡（正反面金框）、`/unlock` 翻開之後（翻開前不標，不洩底）。長輩圖挑的是插圖不是明信片，沒有標。
 
 驗證：`python app/tests/run.py` node 47/47、瀏覽器 277/277（新增 5 條）；Playwright 實機看過手機與桌機縮放外框、捲動中、換頁中、翻面、分享面板蓋住、`?still=1`。`check-sw.py` 的清單本身對，只被工作目錄裡兩個沒進版控的 `* 2.js` 複本（Finder 產生，跟 HEAD 一模一樣）判 FAIL；`verify-quiet.py` 在這台 Mac 仍然找不到 Chrome、只跑得了 ②（PASS）。沒有改 `prototype/`、`pitch/`、`site/`。
+
+
+## 16. 2026-09-26 架構整理：散掉的概念收成 deep module（分支 `refactor/app-deepening`）
+
+使用者要「看看這個網站有沒有可以改進的」（範圍定為 `app/`），先拿到一份架構審查（8 個候選，只讀），接著「全修，在不動到任何功能的情況下」。
+做法：先錄一份 golden master（Playwright、固定時間與亂數、`?still=1`，496 個情境＝10 種 store 狀態 × 每條 route，加上 26 條按 `data-act` 走完的流程；逐步比對 `#view`、浮層、底欄、demo 面板、網址、歷史筆數、兩把 localStorage），每一步都要 `python app/tests/run.py` 全綠、golden master 0 差異（或只有事先說好的差異）才 commit。腳本不進 repo。
+
+收成一處的東西（介面細節都在 `app/ARCHITECTURE.md`）：
+- **行程**：`APP.ride.trip`（ride.js）是 `store.trip` 唯一的讀寫者——`current／active／arrivedAt／pending／phase`、`start／toRiding／arrive／arriveAt／cancel／rate／consume／clear`。行程的形狀只寫一次；demo 的「搭 yoxi 抵達」也走它。
+- **收下明信片**：`APP.explore.collect(placeId, { note })` 自己判斷搭車或走路、哪一款、幾公里（跟 `/unlock` 畫面同一個 `arrivalAt`）；讀的那一側只有 `APP.explore.cardOrigin(cardId)`（by、style、gold、limited、via）。
+- **明信片 → 地點**：`APP.place` 與 `APP.footprintPlace`（app.js）。兩種答案**刻意保留**：足跡把 p3 算成 moat、p6 hill、p8 lake，`APP.place` 當成路線上的站——產品還沒決定，對照表在 `tests/unit/place.test.mjs`。
+- **STATE 的寫入**：`APP.state`（app.js）——每次寫都自己發 `state:change`，`batch(fn)` 寫完才發一次；清除足跡的 STATE 欄位只寫在 `APP.state.wipe`。store 的鍵、型別、類別在 app.js 的 `KEYS` 一張表，`APP.store.clear('footprint')`。
+- **返回**：router 在 `history.state` 記每一筆的 `prev` 與 `via`，`APP.nav.prev()`、`APP.nav.up(parent, { backIf })`；收藏子頁的返回鍵只標 `data-up`，叫車的「回到 /ride」是 `nav.up('/ride', …)`。ride 的 `histAt` 與 album 的 `yoxi-album-nav` 刪掉。
+- **卡面**：新檔 `explore-face.js`，`cardFace(cardId, key)` 是唯一的疊法（`/unlock` 與收藏都照它）；監看整台 `.device`，懸浮小卡不用自己叫 `paintCardArt`。
+- **其他**：`APP.map.mount().destroy()` 自己拆 initPan 的 window listener；拉面板的換段是純函式 `APP.ride.snapTarget`；`APP.ui.overlay` 掛浮層（確認框、機率、推播、分享）；版本只在 `app/js/version.js`；拿掉只寫不讀的 `store.arrivedDemo` 與給舊 core 的相容分支；測試的 node 載得動 views（`loadApp({ views, now })`），specs 共用 `T.ROUTES`、`T.fixtures`、`T.helpers`（含 `collect`），只牽涉一個區塊的回歸測試從 flows.spec 搬回各區塊。
+
+跟以前不一樣的只有這三件（都寫在 commit 訊息裡）：
+1. demo 面板在距離不明的地方（十八尖山 p6）按「搭 yoxi 抵達」：以前 km 寫成 0、行程完成頁印 $75；現在跟一般叫車一樣寫「距離待確認」（使用者核可）。
+2. store 裡的行程指向認不得的地點（舊資料、手改）時，`/going` 與設定頁的「模擬抵達」也當作沒有行程（以前只有 `/ride` 這樣）。
+3. 叫車的子頁重新整理之後，上一格若是 `/ride` 會照歷史退回（以前記憶體裡的紀錄沒了，改成就地換成 `/ride`；兩種都停在 `/ride`）。
+
+驗證：`python app/tests/run.py` node 47 → 77、瀏覽器 278 → 280（全綠）；`check-sw.py` 63 筆 PASS（PWA `chengshi-app-v18`）；golden master 每一步對上一步 0 差異（除了上面三件、設定頁顯示的版本號、收藏返回鍵多的 `data-up` 屬性、存檔少了 `arrivedDemo`）。`verify-quiet.py` 在這台 Mac 只跑得了 ①②（PASS、數字與基準相同）；沒有改 `prototype/`、`pitch/`、`site/`。`app/assets/shots/` 沒有重拍（畫面沒變）。
+
+還沒做的：金框標在哪個元素（`data-gold-aura`）仍由各畫面自己決定（那是版面的事）；`/going` 的拉面板還是 prototype 的 `INTERACT.initSheet`（換成 ride 那一套會多出甩動與吸附，是行為改變）；p3／moat 的產品決定。

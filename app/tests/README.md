@@ -28,10 +28,10 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | `run.py` | 總入口，解析 `<pre id="result">` 印表格 |
 | `runner.html` | 載 harness 與各 spec；spec 檔不存在會列在「找不到的 spec 檔」，而且算 FAIL（run.py exit 1） |
 | `harness.js` | `T`、`app`、`t` |
-| `specs/app.spec.js` | 跨區塊：§8 每條 route、tab bar、返回、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder |
-| `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫 |
-| `specs/flows.spec.js` | QA：三條 demo 流程端到端、跨區塊縫合、全站兩種狀態掃描、非 still 模式 |
-| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、抽卡機率、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id） |
+| `specs/app.spec.js` | core：§8 每條 route、tab bar、返回與 `nav.prev／nav.up`、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder、地圖 |
+| `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫；最後一段是「回歸測試（從 flows.spec 搬來）」：只牽涉這個區塊的審查／QA／評估，名稱保留原編號 |
+| `specs/flows.spec.js` | 跨區塊：三條 demo 流程端到端、縫合、全站兩種狀態掃描、非 still 模式、跨區塊的審查／QA／評估、無障礙 |
+| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、抽卡機率、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors、`APP.state`、`cardFace`）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id）、`collect` 怎麼判斷搭車或走路、`cardOrigin`、拉面板的 `snapTarget`；`store.test.mjs` 含 `store.clear('footprint')`；`place.test.mjs` 含 22 張明信片的 `APP.place`／`footprintPlace` 對照表 |
 | `fixtures/mini-app.html`、`fixtures/selftest.html` | 驗 harness 本身 |
 
 ## 寫新 spec
@@ -117,6 +117,7 @@ T.spec('ride', function (t) {
 | `T.helpers.histI(app)` | router 蓋在 `history.state` 上的序號 |
 | `T.helpers.drag(app, grip, dy, { id, init, hold })` | 在拉把上拖 `dy`（正＝往下）：down 在拉把、move／up 在 window；`hold` 回傳放手函式 |
 | `T.helpers.drawThrough(app)` | 非 still 的 `/unlock`：點發光的地方 → 收集 → 一路點到 `data-at="3"` |
+| `T.helpers.collect(app, placeId, { by, style, note })` | 收下一張，走跟 `/unlock` 一樣的路：`by:'ride'` 先 `APP.ride.trip.arriveAt`（會取代原本的行程）；走路先把款式寫進 `store.draws`（預設水彩，免得隨機抽到金框）。回傳是否新收。要「收過了、但不動行程」就用 `app.reset({ cards })` |
 
 ### node：`unit/helpers.mjs`
 
