@@ -62,7 +62,7 @@ const KEYS = {
   version:     { def: STORE_VERSION, kind: 'number', group: 'meta' },
   onboarded:   { def: false, kind: 'boolean', group: 'pref' },
   dropoff:     { def: null,  kind: 'object?', group: 'footprint' },  /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
-  trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }；只有 APP.ride.trip 讀寫 */
+  trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'waiting'|'returning'|'done', startedAt, rated, km, via, stars?, round?:true, collected?:true, backAt? }（waiting／returning 只有來回）；只有 APP.ride.trip 讀寫 */
   pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
   rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
   rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */

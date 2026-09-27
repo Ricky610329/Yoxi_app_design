@@ -65,6 +65,11 @@
 .ride-sheet__row { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-4); }
 .ride-call { margin-top: var(--sp-4); }
 
+/* 單程／來回（選好下車點、還沒叫車時）：跟搭車／探索同一種兩格切換，選中的那一格是字（.ride-mode__active） */
+.ride-round { margin-top: var(--sp-3); }
+.ride-round__note { margin: var(--sp-2) 0 0; font-size: var(--fs-cap); line-height: var(--lh-body); color: var(--app-muted); }
+.ride-round__note .num { font-size: var(--fs-sm); color: var(--yoxi-navy); }
+
 /* 變體 F：模式切換在面板頂端。搭車與探索的面板都可上下拉，最低收到只剩拉把。 */
 .ride-mode__pills { margin-bottom: var(--sp-4); }
 .ride-mode__active {
@@ -271,6 +276,22 @@
 .ride-trip__acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-3); }
 .ride-trip__cancel { display: flex; min-height: 44px; margin: var(--sp-1) auto 0; padding: 0 var(--sp-3); }   /* 命中區 44 */
 .ride-trip__match .tile-icon .ride-ic { width: 26px; height: 26px; }
+.ride-trip__acts--one { grid-template-columns: 1fr; }
+
+/* 來回：去程的車資多一行三段、一句「到了之後司機等你」；候車那一段是一句話＋金色的收下入口＋回程鈕 */
+.ride-trip__legs { display: block; margin-top: 2px; font-size: var(--fs-cap); }
+.ride-trip__round { margin: 0 0 var(--sp-3); font-size: var(--fs-cap); line-height: var(--lh-body); color: var(--app-muted); }
+.ride-wait__p { margin: 0 0 var(--sp-3); font-size: var(--fs-body); line-height: var(--lh-body); }
+.ride-wait__gold { margin-bottom: var(--sp-3); }
+.ride-wait__got {
+  margin: 0 0 var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--yoxi-cream);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+.ride-wait__back { margin-bottom: var(--sp-3); }
 
 .ride-pulse { animation: ride-pulse var(--t-scene) var(--ease) infinite alternate; }
 @keyframes ride-pulse { from { transform: scale(.94); } to { transform: scale(1.04); } }
@@ -297,6 +318,19 @@
 .ride-done__line { justify-content: space-between; gap: var(--sp-3); }
 .ride-done__fare { font-size: var(--fs-title); }
 .ride-done__meta { margin-top: 6px; font-size: var(--fs-cap); color: var(--app-muted); }
+/* 來回的結算：去程、候車、回程三段 */
+.ride-done__legs {
+  display: grid;
+  gap: var(--sp-1);
+  margin: var(--sp-3) 0 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--yoxi-line);
+  font-size: var(--fs-cap);
+}
+.ride-done__leg { display: flex; align-items: baseline; gap: var(--sp-3); }
+.ride-done__leg dt { flex: none; font-weight: var(--fw-bold); }
+.ride-done__leg dd { flex: 1; display: flex; justify-content: space-between; gap: var(--sp-2); margin: 0; }
+.ride-done__leg-meta { color: var(--app-muted); }
 
 .ride-stars { display: flex; justify-content: center; gap: var(--sp-1); margin-top: 14px; }
 .ride-star { width: 44px; height: 44px; padding: 3px; background: none; }   /* 命中區 44，星星本身仍是 38 */
