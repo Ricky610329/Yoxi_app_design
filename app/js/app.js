@@ -66,9 +66,10 @@ const KEYS = {
   pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
   rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
   rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
-  draws:       { def: {},    kind: 'map',     group: 'footprint' },  /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
-  cardStyle:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時抽到的款式 key（explore） */
-  fxMute:      { def: false, kind: 'boolean', group: 'pref' },       /* 抵達與抽卡的音效關掉（explore） */
+  cardStyle:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時照規則定下的款式 key（explore） */
+  cardMarks:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時蓋的郵戳 { fest: 節慶 key 或 '', far: 遠行的公里數或 0 }（explore） */
+  fxMute:      { def: false, kind: 'boolean', group: 'pref' },       /* 抵達與翻卡的音效關掉（explore） */
+  demoDate:    { def: null,  kind: 'string?', group: 'pref' },       /* demo：假裝今天是 'YYYY-MM-DD'（只影響明信片的款式與郵戳；explore） */
   tabPaths:    { def: { ride: '/ride', album: '/album' }, kind: 'map', group: 'footprint' },  /* 各 tab 最後停的 path */
 };
 

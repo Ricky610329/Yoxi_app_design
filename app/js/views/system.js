@@ -95,8 +95,8 @@ function dropOverlay(el) {
 
 /* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。哪些東西算足跡不寫在這裡：
    STATE 那一半在 APP.state.wipe()（明信片、公里、日誌），app store 那一半是 app.js 的 KEYS 裡 group 為
-   footprint 的鍵（下車點、行程、抵達暫存、叫車歸因、抽到的款式、各 tab 停在哪、今天發過的推播）。
-   留著的是偏好：onboarded、fxMute、rideSpots 與 STATE.settings 的開關。 */
+   footprint 的鍵（下車點、行程、叫車歸因、收下的款式與節慶郵戳、各 tab 停在哪、今天發過的推播）。
+   留著的是偏好：onboarded、fxMute、rideSpots、demoDate 與 STATE.settings 的開關。 */
 function wipeFootprint() {
   APP.state.batch(function () {
     APP.state.wipe();
@@ -586,6 +586,25 @@ function demoArrive(id, by) {
   return true;
 }
 
+/* demo 面板的模擬日期：假裝今天是別天（store.demoDate），現場才看得到四季的畫風與三節的郵戳。
+   選項從 explore-cards.js 的規則表長出來（季節取中間那個月的 15 號、三節取第一天），不另外手寫日期；
+   三節今年不在表上就用表上最早的那一年。只影響明信片，收藏的回顧照舊用真的今天。 */
+function demoDates() {
+  const E = APP.explore || {};
+  const y = new Date().getFullYear();
+  const p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  const out = [{ v: '', t: '今天' }];
+  (E.CARD_STYLES || []).forEach(function (d) {
+    if (d.months) out.push({ v: y + '-' + p2(d.months[1]) + '-15', t: d.season + '（' + d.name + '）' });
+  });
+  (E.FESTIVALS || []).forEach(function (f) {
+    const yy = f.days[y] ? y : Number(Object.keys(f.days)[0]);
+    const r = f.days[yy];
+    if (r) out.push({ v: yy + '-' + r[0], t: f.name + '（' + yy + '/' + r[0].replace('-', '/') + '）' });
+  });
+  return out;
+}
+
 function fillPanel() {
   const panel = document.getElementById('demo-panel');
   if (!panel || panelFilled) return panel;
@@ -602,6 +621,12 @@ function fillPanel() {
         '<button class="demo-panel__btn demo-panel__btn--gold" type="button" data-act="arrive-ride">搭 yoxi 抵達</button>' +
       '</div>' +
     '</div>' +
+    '<div class="demo-panel__group">' +
+      '<label class="demo-panel__label" for="demo-date">模擬日期（明信片）</label>' +
+      '<select class="demo-panel__select" id="demo-date" data-demo-date>' +
+        demoDates().map(function (o) { return '<option value="' + esc(o.v) + '">' + esc(o.t) + '</option>'; }).join('') +
+      '</select>' +
+    '</div>' +
     '<button class="demo-panel__btn" type="button" data-act="reset-demo">重設 demo</button>' +
     '<a class="demo-panel__btn demo-panel__btn--ghost" href="../prototype/index.html" target="_blank" rel="noopener" data-act="prototype">原型總覽</a>' +
     '<p class="demo-panel__note">這是提案用的 demo：叫車、抵達與推播都是模擬的。</p>';
@@ -612,6 +637,11 @@ function fillPanel() {
   panel.querySelector('[data-act="reset-demo"]').onclick = function () { resetDemo(); };
   panel.querySelector('[data-act="arrive-walk"]').onclick = function () { demoArrive(sel.value, 'walk'); };
   panel.querySelector('[data-act="arrive-ride"]').onclick = function () { demoArrive(sel.value, 'ride'); };
+  const date = panel.querySelector('[data-demo-date]');
+  date.onchange = function () {
+    APP.store.set('demoDate', date.value || null);
+    APP.ui.toast(date.value ? '明信片的日期：' + date.options[date.selectedIndex].text : '明信片的日期：今天');
+  };
   return panel;
 }
 
@@ -635,6 +665,9 @@ function updatePanel(cur) {
     return '<option value="' + esc(p.id) + '">' + esc(p.name) + (placeGot(p) ? '（已收藏）' : '') + '</option>';
   }).join('');
   if (panelPick) sel.value = panelPick;
+  /* 重設 demo 會把 demoDate 清掉：選單跟著 store */
+  const date = panel.querySelector('[data-demo-date]');
+  if (date) date.value = APP.store.get('demoDate') || '';
 }
 
 /* --------------------------------------------------------------------------

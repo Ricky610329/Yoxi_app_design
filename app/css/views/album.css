@@ -253,6 +253,9 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-fact .tile-icon [data-icon] { width: 22px; height: 22px; display: block; }
 .alb-fact .row-nav__sub { margin-top: 0; }
 .alb-fact .row-nav__title { font-size: var(--fs-body); }
+/* 為什麼是這一款：一條規則一行 */
+.alb-why__l { display: block; }
+.alb-why__l + .alb-why__l { margin-top: 2px; font-size: var(--fs-sm); font-weight: var(--fw-reg); }
 .alb-again { margin-top: var(--sp-3); background: var(--yoxi-cream); border: 0; }
 .alb-again__k {
   margin-bottom: 6px;

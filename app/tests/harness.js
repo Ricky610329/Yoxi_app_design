@@ -655,7 +655,7 @@
   }
 
   /* ------------------------------------------------------------ 共用的路由表、測試資料、小工具（§6.2）
-     以前每支 spec 各寫一份路由清單、一份 TAP_MAX、一份拖曳／返回／抽卡的小函式，
+     以前每支 spec 各寫一份路由清單、一份 TAP_MAX、一份拖曳／返回／翻卡的小函式，
      新增一條 route 要改六個地方，忘了一個就少測一塊。現在只有這裡一份。 */
 
   /* §8 每條 route 一個範例網址（順序＝§8）。area＝「誰做」；flow＝有狀態前提、沒有狀態時會被導走的流程頁。
@@ -749,28 +749,36 @@
       if (opt.hold) return up;
       up();
     },
-    /* 收下一張明信片，走跟 /unlock 一樣的路（APP.explore.collect 自己判斷搭車或走路、哪一款、幾公里）：
+    /* 收下一張明信片，走跟 /unlock 一樣的路（APP.explore.collect 自己照規則判斷搭車或走路、哪一款、幾公里）：
        by:'ride' 先讓行程 module 記一趟搭 yoxi 抵達這裡（APP.ride.trip.arriveAt，會取代原本的行程）；
-       走路先把這次抵達抽到的款式寫進 store.draws（opt.style，預設水彩：不然隨機抽到金框，測試會忽紅忽綠）。
+       走路要指定畫風就給 opt.style（四季的一款）：暫時把 store.demoDate 撥到那個季節（T.helpers.seasonDate），收完撥回來。
        回傳是否新收 */
     collect: function (appObj, placeId, opt) {
       opt = opt || {};
       const A = appObj.APP;
-      const p = A.place(placeId);
       if (opt.by === 'ride') A.ride.trip.arriveAt(placeId);
-      else if (p) A.store.set('draws', Object.assign({}, A.store.get('draws') || {}, { [p.id]: opt.style || 'watercolor' }));
-      return A.explore.collect(placeId, { note: opt.note });
+      const d0 = A.store.get('demoDate');
+      if (opt.style && opt.by !== 'ride') A.store.set('demoDate', helpers.seasonDate(appObj, opt.style));
+      try { return A.explore.collect(placeId, { note: opt.note }); }
+      finally { if (A.store.get('demoDate') !== d0) A.store.set('demoDate', d0); }
+    },
+    /* 四季畫風的 key → 那個季節中間那個月 15 號（'YYYY-MM-DD'，給 store.demoDate）。app.reset({ store: { demoDate } }) 用它指定 /unlock 的款式 */
+    seasonDate: function (appObj, key) {
+      const d = appObj.APP.explore.CARD_STYLES.filter(function (x) { return x.key === key; })[0];
+      if (!d || !d.months) throw new Error('seasonDate：' + key + ' 不是四季的畫風');
+      const m = d.months[1];
+      return new Date().getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-15';
     },
     /* 非 still 的抵達：點發光的地方 → 收集明信片 → 一路點畫面（蓄力快轉 → 翻開 → 看結果），停在 data-at=3 */
-    drawThrough: async function (appObj) {
+    revealThrough: async function (appObj) {
       await appObj.click('[data-act="open-spot"]');
-      await appObj.click('[data-act="draw"]');
-      await appObj.waitFor(function () { return appObj.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
+      await appObj.click('[data-act="open-card"]');
+      await appObj.waitFor(function () { return appObj.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入翻卡');
       for (let i = 0; i < 16 && appObj.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
         await appObj.click('[data-unlock]');
         await appObj.tick(300);
       }
-      await appObj.waitFor(function () { return appObj.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
+      await appObj.waitFor(function () { return appObj.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '翻卡結果');
     },
   };
 

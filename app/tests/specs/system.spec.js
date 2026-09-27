@@ -284,6 +284,36 @@ T.spec('system', function (t) {
     await app.reset();
   });
 
+  t.test('demo 面板的模擬日期：選項從規則表長出來；選了寫進 store.demoDate、/unlock 跟著換款式；重設 demo 回到今天', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    const E = app.APP.explore;
+    const sel = app.$('#demo-panel [data-demo-date]');
+    t.ok(sel, '有模擬日期的選單');
+    const opts = Array.prototype.map.call(sel.options, function (o) { return o.textContent; });
+    E.CARD_STYLES.filter(function (d) { return d.months; }).forEach(function (d) {
+      t.ok(opts.indexOf(d.season + '（' + d.name + '）') >= 0, '季節選項：' + d.season);
+    });
+    E.FESTIVALS.forEach(function (f) {
+      t.ok(opts.some(function (o) { return o.indexOf(f.name + '（') === 0; }), '三節選項：' + f.name);
+    });
+    t.eq(sel.value, '', '預設是今天');
+    const winter = Array.prototype.filter.call(sel.options, function (o) { return o.textContent.indexOf('冬天') === 0; })[0];
+    sel.value = winter.value;
+    sel.dispatchEvent(new app.win.Event('change', { bubbles: true }));
+    t.eq(app.APP.store.get('demoDate'), winter.value, '寫進 store.demoDate');
+    await app.click('#demo-panel [data-act="arrive-walk"]');
+    await app.waitFor(function () { return /^\/unlock\//.test(app.route().path) && app.$('[data-unlock]'); }, 3000, '走路抵達 → /unlock');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), 'ink', '冬天走路抵達是水墨');
+    await app.go('/ride');
+    await app.click('#demo-panel [data-act="reset-demo"]');
+    await app.click('[data-act="confirm-yes"]');
+    await app.at('/ride');
+    t.eq(app.APP.store.get('demoDate'), null, '重設 demo：回到今天');
+    t.eq(app.$('#demo-panel [data-demo-date]').value, '', '選單跟著回到今天');
+    await app.reset();
+  });
+
   t.test('demo 面板的早上推播也遵守一天兩則', async function (app) {
     await app.reset();
     await app.go('/ride');
@@ -391,10 +421,10 @@ T.spec('system', function (t) {
     await app.reset({ store: {
       dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }),
       trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: now, rated: true, km: 6.4 }),
-      rideVia: { p9: 'k1' }, cardStyle: { p1: 'gold' }, draws: { moat: 'ink' },
+      rideVia: { p9: 'k1' }, cardStyle: { p1: 'gold' }, cardMarks: { p1: { fest: 'moon', far: 0 } },
       pushes: [{ when: 'am', at: now }],
       tabPaths: { ride: '/points', explore: '/routes', album: '/badges' },
-      fxMute: true, rideSpots: false,
+      fxMute: true, rideSpots: false, demoDate: '2027-01-15',
     } });
     let seen = null;
     const orig = app.APP.ui.confirm;
@@ -408,7 +438,7 @@ T.spec('system', function (t) {
     const ls = app.storage('store') || {};
     t.eq(JSON.stringify(ls.rideVia), '{}', 'rideVia 清掉');
     t.eq(JSON.stringify(ls.cardStyle), '{}', 'cardStyle 清掉');
-    t.eq(JSON.stringify(ls.draws), '{}', 'draws 清掉');
+    t.eq(JSON.stringify(ls.cardMarks), '{}', 'cardMarks 清掉');
     t.eq(JSON.stringify(ls.pushes), '[]', 'pushes 清掉');
     t.eq(JSON.stringify(ls.tabPaths), JSON.stringify(app.APP.store.fresh().tabPaths), 'tabPaths 回預設');
     t.eq(ls.dropoff, null, 'dropoff');
@@ -416,6 +446,7 @@ T.spec('system', function (t) {
     t.eq(ls.onboarded, true, 'onboarded 留著');
     t.eq(ls.fxMute, true, 'fxMute 留著');
     t.eq(ls.rideSpots, false, 'rideSpots 開關留著');
+    t.eq(ls.demoDate, '2027-01-15', 'demoDate 留著（demo 的設定，不是足跡）');
     t.eq(app.STATE.count(), 0, 'STATE 清空');
   });
 

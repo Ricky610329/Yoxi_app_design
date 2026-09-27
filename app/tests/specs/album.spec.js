@@ -684,7 +684,7 @@ T.spec('album', function (t) {
   });
 
   /* 5c. 還沒生成成品的明信片（p12–p22）：收下之後在收藏裡是實景照片＋畫風濾鏡，不是插圖 */
-  t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋抽到的畫風，詳情寫照片出處', async function (app) {
+  t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋收下的畫風，詳情寫照片出處', async function (app) {
     await app.reset();
     const A = app.APP;
     T.helpers.collect(app, 'hill', { style: 'oil' });

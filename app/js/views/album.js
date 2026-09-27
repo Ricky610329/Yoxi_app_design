@@ -88,7 +88,7 @@ function badgeOfCard(cardId) {
 }
 
 /* 收下的那一張是怎麼來的：一律問 explore-cards.js 的 cardOrigin（契約 §7），這裡不另外判斷。
-   金框＝抽到金框那一款（或 demo 一開始就有的搭車卡），契約：「金框的明信片在收藏裡也是金框」。
+   金框＝搭 yoxi 抵達收下的那一款（款式規則在 explore-cards.js），契約：「金框的明信片在收藏裡也是金框」。
    yoxi 限定版（金框＋和泰 Points +50）＝ride.js 的判斷（搭 yoxi 去走不到的地方）。限定版一定是金框，
    金框不一定是限定版——搭車去 900 m 外的玻璃窯是金框、不是限定版，所以不能拿「金框」回推「限定版」。 */
 function goldCard(cardId) { const o = APP.explore.cardOrigin(cardId); return !!(o && o.gold); }
@@ -346,7 +346,7 @@ function notFound(o) {
    收藏的子頁有兩種來法：
    1. 從上一層點進來（/album → /badges → /badge/b3、/trips → /postcard/p8、分享 → /elder）：返回＝照歷史退一格。
    2. 切到叫車再點「收藏」停回這一頁、重新整理、直接開網址、從流程頁（/unlock…）過來：照歷史退一格會跑錯頁
-      （退回叫車、退回抽卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）；換上來的那一層再按返回也往上走。
+      （退回叫車、退回翻卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）；換上來的那一層再按返回也往上走。
    這個判斷是 router 的 APP.nav.up（它在 history.state 記了每一筆從哪裡來、怎麼來的）；這裡只標返回鍵：
    data-back＝上一層、data-up＝用 nav.up 的預設規則（上一筆是有底欄的一般頁、而且不是這一頁才退）。 */
 const PARENT = { postcards: '/album', badges: '/album', postcard: '/postcards', badge: '/badges',
@@ -649,6 +649,7 @@ APP.view('postcard', {
             '<span class="ai-mark">AI 生成示意</span>' +
             (limited ? '<span class="postcard__ribbon" data-ribbon="limited">yoxi 限定版</span>'
               : gold ? '<span class="postcard__ribbon" data-ribbon="gold">yoxi 金框</span>' : '') +
+            origin.marks +
             '<span class="postcard__foot"><span class="postcard__name alb-big__name">' + esc(P.name) + '</span>' +
               '<span class="postcard__date">' + esc(date) + '</span></span>' +
             '<span class="postcard__back alb-big__back">' +
@@ -673,6 +674,12 @@ APP.view('postcard', {
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="place"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">地點</span>' +
             '<span class="row-nav__title">' + esc(pl && pl.area ? pl.area : '新竹') + '</span></span></div>' +
+          /* 為什麼是這一款：規則寫在 explore-cards.js（季節定畫風、搭 yoxi 是金框、三節與遠行多蓋郵戳），這裡只念 */
+          '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="postcard"></span></span>' +
+            '<span class="row-nav__body"><span class="row-nav__sub">為什麼是這一款</span>' +
+            '<span class="row-nav__title alb-why" data-why>' +
+              origin.lines.map(function (t) { return '<span class="alb-why__l">' + esc(t) + '</span>'; }).join('') +
+            '</span></span></div>' +
         '</div></div>' +
         '<div class="alb-pad">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
         '<div class="alb-pad alb-pad--end">' +

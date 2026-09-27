@@ -330,88 +330,141 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  /* 機率表本身（加總、遞減、搭車必得金框、區間邊界）是純函式：在 tests/unit/views.test.mjs */
+  /* 款式規則本身（季節、三節、遠行、金框、表上沒有的年份）是純函式：在 tests/unit/views.test.mjs */
+  const seasonDate = T.helpers.seasonDate;
 
-  t.test('/unlock/glass-kiln：抽到的款式固定（重進不重抽）、? 打開機率、收下記款式', async function (app) {
-    await app.reset({ store: { draws: { 'glass-kiln': 'ink' } } });
+  t.test('/unlock/glass-kiln：照規則的款式與為什麼寫在結果、? 打開規則說明（沒有機率）、收下記款式', async function (app) {
+    await app.reset();
+    const E = app.APP.explore;
+    await app.reset({ store: { demoDate: seasonDate(app, 'ink') } });
     await app.go('/unlock/glass-kiln');
-    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '用 store.draws 的那一款');
-    t.includes(app.text('[data-draw]'), '水墨', '寫出畫風名');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '冬天走路抵達 → 水墨');
+    t.includes(app.text('[data-result-style]'), '水墨', '寫出畫風名');
+    t.includes(app.text('[data-result-style] [data-why]'), '冬天的畫風是水墨', '寫出為什麼');
     t.ok(!app.$('[data-final-card].postcard--gold'), '水墨不是金框');
+    t.ok(!app.$('[data-final-card] .card-marks'), '不是三節、不是搭車：沒有郵戳');
     await app.go('/explore');
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '重進還是同一款');
-    t.ok(!app.$('.ex-odds'), '機率預設收起來');
-    await app.click('[data-act="open-odds"]');
-    t.ok(app.$('.ex-odds'), '? → 機率說明');
-    const box = app.$('.ex-odds__box').getBoundingClientRect();
+    t.ok(!app.$('.ex-rules'), '規則說明預設收起來');
+    await app.click('[data-act="open-rules"]');
+    t.ok(app.$('.ex-rules'), '? → 規則說明');
+    const box = app.$('.ex-rules__box').getBoundingClientRect();
     const top = app.doc.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-    t.ok(top && top.closest('.ex-odds'), '機率說明在最上層（沒有被解鎖頁蓋住）');
+    t.ok(top && top.closest('.ex-rules'), '規則說明在最上層（沒有被解鎖頁蓋住）');
     t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '點 ? 不會動到幕');
-    const walk = app.$$('[data-odds="walk"] .ex-odds__row').map(function (r) { return r.textContent; }).join('|');
-    app.APP.explore.DRAW_STYLES.forEach(function (d) {
-      t.includes(walk, d.name + (d.walk / 10) + '%', '走路：' + d.name);
-    });
-    t.includes(app.text('[data-odds="ride"]'), '100%', '搭車：金框 100%');
-    await app.click('[data-act="close-odds"]');
-    t.ok(!app.$('.ex-odds'), '知道了 → 關掉');
+    const txt = app.text('.ex-rules');
+    E.CARD_STYLES.forEach(function (d) { t.includes(txt, d.name, '寫出 ' + d.name); });
+    E.FESTIVALS.forEach(function (f) { t.includes(txt, f.name + '', '寫出 ' + f.name); });
+    t.includes(txt, E.FAR_KM + ' 公里以上', '遠行的門檻（APP.explore.FAR_KM）');
+    t.ok(!/機率|%|抽到|抽取/.test(txt), '不寫機率');
+    t.ok(app.$('.ex-rules [data-rule="ink"].is-now'), '現在的季節（冬天）標出來');
+    t.eq(app.$$('.ex-rules .is-now').length, 1, '只標一個季節');
+    t.noBannedWords(app, { msg: '規則說明' });
+    await app.click('[data-act="close-rules"]');
+    t.ok(!app.$('.ex-rules'), '知道了 → 關掉');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.APP.store.get('cardStyle').p11, 'ink', 'store.cardStyle 記下水墨');
-    t.ok(!(app.APP.store.get('draws') || {})['glass-kiln'], '這次抵達的暫存抽卡清掉');
+    t.eq(JSON.stringify(app.APP.store.get('cardMarks').p11), JSON.stringify({ fest: '', far: 0 }), '沒有郵戳也記一筆（查過了，沒有）');
+    t.eq(app.STATE.card('p11').date, app.APP.fmt.todayMMDD(new Date(seasonDate(app, 'ink') + 'T12:00:00')), '收下的日期是 demo 的那一天');
     await app.reset();
   });
 
-  /* 審查 2：機率說明掛在 .device 上，離開 /unlock 要跟著收掉（不會蓋在下一頁上） */
-  t.test('機率說明：離開 /unlock（返回、導覽）就收掉；Esc 關；data-overlay＋_dismiss', async function (app) {
-    await app.reset({ store: { draws: { 'glass-kiln': 'oil' } } });
+  /* 審查 2：規則說明掛在 .device 上，離開 /unlock 要跟著收掉（不會蓋在下一頁上） */
+  t.test('規則說明：離開 /unlock（返回、導覽）就收掉；Esc 關；data-overlay＋_dismiss', async function (app) {
+    await app.reset();
     await app.go('/album');
     await app.go('/unlock/glass-kiln');
-    await app.click('.ex-unlock__card [data-act="open-odds"]');
-    const sc = app.$('.ex-odds');
-    t.ok(sc, '? → 機率說明');
+    await app.click('.ex-unlock__card [data-act="open-rules"]');
+    const sc = app.$('.ex-rules');
+    t.ok(sc, '? → 規則說明');
     t.ok(sc && sc.hasAttribute('data-overlay'), 'data-overlay');
     t.eq(sc && typeof sc._dismiss, 'function', 'el._dismiss');
     t.ok(sc && sc.querySelector('[role="dialog"]'), 'role=dialog（a11yDialog）');
     /* Esc 關掉 */
     app.doc.dispatchEvent(new app.win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    t.ok(!app.$('.ex-odds'), 'Esc → 關掉');
+    t.ok(!app.$('.ex-rules'), 'Esc → 關掉');
     /* 再開一次，按瀏覽器的返回 */
-    await app.click('.ex-unlock__card [data-act="open-odds"]');
-    t.ok(app.$('.ex-odds'), '再開一次');
+    await app.click('.ex-unlock__card [data-act="open-rules"]');
+    t.ok(app.$('.ex-rules'), '再開一次');
     app.win.history.back();
     await app.at('/album');
-    t.ok(!app.$('.ex-odds'), '返回 /album：機率說明收掉了');
+    t.ok(!app.$('.ex-rules'), '返回 /album：規則說明收掉了');
     /* 導覽（不經返回）也一樣；_dismiss 可以重複呼叫 */
     await app.go('/unlock/glass-kiln');
-    await app.click('.ex-unlock__card [data-act="open-odds"]');
-    const sc2 = app.$('.ex-odds');
+    await app.click('.ex-unlock__card [data-act="open-rules"]');
+    const sc2 = app.$('.ex-rules');
     await app.go('/explore');
-    t.ok(!app.$('.ex-odds'), '導覽到 /explore：收掉了');
+    t.ok(!app.$('.ex-rules'), '導覽到 /explore：收掉了');
     try { sc2._dismiss(); sc2._dismiss(); t.ok(true, '_dismiss 重複呼叫不丟例外'); }
     catch (e) { t.fail('_dismiss 重複呼叫丟例外：' + e.message); }
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
     await app.reset();
   });
 
-  t.test('/unlock/glass-kiln：走路抽到金框也是金框（但不加點）', async function (app) {
-    await app.reset({ store: { draws: { 'glass-kiln': 'gold' } } });
+  t.test('三節當天走路抵達：季節的畫風＋節慶郵戳，面板先寫；收下記 cardMarks，明信片頁也蓋、也寫為什麼；不加點', async function (app) {
+    await app.reset();
+    const E = app.APP.explore;
+    const moon = E.FESTIVALS.filter(function (f) { return f.key === 'moon'; })[0];
+    const y = Object.keys(moon.days)[0];
+    await app.reset({ still: false, store: { demoDate: y + '-' + moon.days[y][0] } });
     const pts0 = app.STATE.points;
     await app.go('/unlock/glass-kiln');
-    t.ok(app.$('[data-final-card].postcard--gold'), '金框');
+    await app.click('[data-act="open-spot"]');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), moon.when + '，多蓋一枚中秋郵戳', '面板先寫會多一枚郵戳');
+    await T.helpers.revealThrough(app);
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'woodcut', '中秋在秋天：木刻版畫');
+    t.ok(app.$('[data-final-card] .card-mark[data-mark="moon"]'), '卡面蓋中秋郵戳');
+    t.ok(!app.$('[data-final-card] .card-mark[data-mark="far"]'), '走路沒有遠行戳');
+    t.includes(app.text('[data-result-style] [data-why]'), '秋天的畫風是木刻版畫', '結果寫為什麼（畫風）');
+    t.includes(app.text('[data-result-style] [data-why]'), '中秋郵戳', '結果寫為什麼（郵戳）');
     t.ok(!app.$('[data-points]'), '走路沒有 +50');
     await app.click('[data-act="collect"]');
     await app.at('/album');
-    await app.go('/postcard/p11');
-    t.ok(app.$('.postcard--gold'), '明信片頁是金框');
+    t.eq(app.APP.store.get('cardMarks').p11.fest, 'moon', 'store.cardMarks 記下中秋');
     t.eq(app.STATE.points, pts0, '點數不變');
+    /* 過了中秋再看：郵戳是收下那天記的，不跟著今天變 */
+    app.APP.store.set('demoDate', null);
+    await app.go('/postcard/p11');
+    t.ok(app.$('.alb-big__card .card-mark[data-mark="moon"]'), '明信片頁也蓋中秋郵戳');
+    t.includes(app.text('[data-why]'), '中秋郵戳', '明信片頁寫為什麼');
+    t.ok(!app.$('.postcard--gold'), '走路收的不是金框');
+    t.noBannedWords(app, { msg: '/postcard/p11 中秋' });
+    await app.reset();
+  }, { timeout: 20000 });
+
+  t.test('搭 yoxi 20 公里以上：金框＋遠行紀念戳（寫出公里數）；不到就只有金框', async function (app) {
+    await app.reset();
+    const E = app.APP.explore;
+    const far = T.fixtures.trip({ phase: 'done', startedAt: new Date().toISOString(), rated: true });
+    t.ok(far.km >= E.FAR_KM, '前提：fixture 的內灣這一趟超過門檻（' + far.km + ' km）');
+    await app.reset({ store: { trip: far } });
+    await app.go('/unlock/neiwan');
+    t.ok(app.$('[data-final-card].postcard--gold'), '金框');
+    const mark = app.$('[data-final-card] .card-mark[data-mark="far"]');
+    t.ok(mark, '遠行紀念戳');
+    t.includes(mark && mark.textContent, far.km + ' km', '戳上寫公里數（行程的 km）');
+    t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi ' + far.km + ' 公里，多蓋一枚遠行紀念戳', '結果寫為什麼');
+    t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi 抵達是金框', '金框的理由');
+    await app.click('[data-act="collect"]');
+    await app.at('/album');
+    await app.go('/postcard/p9');
+    t.ok(app.$('.alb-big__card .card-mark[data-mark="far"]'), '明信片頁也蓋遠行戳');
+    /* 近的：玻璃窯 1 km，金框但不蓋遠行戳 */
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 }) } });
+    await app.go('/unlock/glass-kiln');
+    t.ok(app.$('[data-final-card].postcard--gold'), '近的也是金框');
+    t.ok(!app.$('[data-final-card] .card-mark[data-mark="far"]'), '不到門檻：沒有遠行戳');
+    t.ok(!/遠行/.test(app.text('[data-result-style] [data-why]')), '不到門檻：不寫遠行');
     await app.reset();
   });
 
-  /* 非 still：抵達亮燈 → 收集面板 → 抽卡 → 結果（T.helpers.drawThrough）。五款都跑一次，確認每款的收尾狀態 */
-  const drawThrough = T.helpers.drawThrough;
+  /* 非 still：抵達亮燈 → 收集面板 → 翻卡 → 結果（T.helpers.revealThrough）。五款都跑一次，確認每款的收尾狀態 */
+  const revealThrough = T.helpers.revealThrough;
 
-  t.test('/unlock 非 still：亮起來 → 點它出面板（5 款＋?）→ 抽卡 → 結果；五款各自收尾', async function (app) {
+  t.test('/unlock 非 still：亮起來 → 點它出面板（寫好會收到哪一款＋?）→ 翻卡 → 結果；五款各自收尾', async function (app) {
+    await app.reset();
     const cases = [
       { key: 'watercolor', place: 'glass-kiln' },
       { key: 'oil', place: 'glass-kiln' },
@@ -422,20 +475,21 @@ T.spec('explore', function (t) {
     for (const c of cases) {
       const store = c.ride
         ? { trip: T.fixtures.trip({ placeId: c.place, phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 28 }) }
-        : { draws: { [c.place]: c.key } };
+        : { demoDate: seasonDate(app, c.key) };
       await app.reset({ still: false, store: store });
       await app.go('/unlock/' + c.place + (c.ride ? '?ride=1' : ''));
       const box = app.$('[data-unlock]');
       t.eq(box.getAttribute('data-at'), '1', c.key + '：先停在抵達');
-      t.eq(box.getAttribute('data-style'), c.key, c.key + '：抽到的款式');
+      t.eq(box.getAttribute('data-style'), c.key, c.key + '：照規則的款式');
       await app.waitFor(function () { return app.$('[data-unlock]').classList.contains('is-lit'); }, 2000, '亮起來');
       t.ok(app.$('[data-arrive-sheet]').hidden, c.key + '：面板一開始收著');
       await app.click('[data-act="open-spot"]');
       t.ok(!app.$('[data-arrive-sheet]').hidden, c.key + '：點發光的地方 → 面板');
-      t.includes(app.text('[data-arrive-sheet]'), app.APP.explore.DRAW_STYLES.length + ' 款', c.key + '：寫幾款');
-      t.ok(app.$('[data-arrive-sheet] [data-act="open-odds"]'), c.key + '：面板上有機率的 ?');
-      t.ok(!/必得/.test(app.text('[data-arrive-sheet]')), c.key + '：面板不寫「必得」（機率只在「?」裡）');
-      await drawThrough(app);
+      const style = app.APP.explore.CARD_STYLES.filter(function (d) { return d.key === c.key; })[0];
+      t.includes(app.text('[data-arrive-sheet]'), c.ride ? '搭 yoxi 抵達是金框' : style.season + '的畫風是' + style.name, c.key + '：面板先寫會收到哪一款、為什麼');
+      t.ok(app.$('[data-arrive-sheet] [data-act="open-rules"]'), c.key + '：面板上有規則說明的 ?');
+      t.ok(!/必得|機率|抽/.test(app.text('[data-arrive-sheet]')), c.key + '：面板不寫機率、抽、必得');
+      await revealThrough(app);
       t.ok(app.$('[data-flip]').classList.contains('is-front'), c.key + '：翻到正面');
       t.eq(app.$('[data-final-card]').getAttribute('data-style'), c.key, c.key + '：卡面款式');
       t.eq(app.$('[data-unlock]').classList.contains('is-paper'), !!c.paper, c.key + '：只有水墨把背景洗成宣紙');
@@ -448,7 +502,8 @@ T.spec('explore', function (t) {
   }, { timeout: 60000 });
 
   t.test('/unlock 非 still：點畫面快轉（蓄力 → 可以翻 → 翻開）；音效開關記在 store.fxMute', async function (app) {
-    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'ink' } } });
+    await app.reset();
+    await app.reset({ still: false, store: { demoDate: seasonDate(app, 'ink') } });
     await app.go('/unlock/glass-kiln');
     const snd = app.$('[data-act="toggle-sound"]');
     t.eq(snd.getAttribute('aria-pressed'), 'true', '音效預設開');
@@ -457,8 +512,8 @@ T.spec('explore', function (t) {
     t.eq(snd.getAttribute('aria-pressed'), 'false', 'aria-pressed 跟著');
     t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '按音效不會動到幕');
     await app.click('[data-act="open-spot"]');
-    await app.click('[data-act="draw"]');
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '2'; }, 2000, '抽卡中');
+    await app.click('[data-act="open-card"]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '2'; }, 2000, '翻卡中');
     await app.tick(700);
     await app.click('[data-unlock]');
     await app.waitFor(function () { return app.$('[data-unlock]').classList.contains('is-ready'); }, 2500, '蓄力中點一下 → 可以翻');
@@ -470,17 +525,18 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  /* 審查 4：抽卡時焦點不掉到 body；鍵盤與報讀器能跳過；抽完焦點到結果、念一次抽到什麼 */
-  t.test('抽卡的鍵盤與報讀器：收集 → 焦點在「跳過動畫」→ 跳過 → 焦點在「抽到 ○○」', async function (app) {
-    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'woodcut' } } });
+  /* 審查 4：翻卡時焦點不掉到 body；鍵盤與報讀器能跳過；翻完焦點到結果、念一次收到什麼 */
+  t.test('翻卡的鍵盤與報讀器：收集 → 焦點在「跳過動畫」→ 跳過 → 焦點在「收到 ○○」', async function (app) {
+    await app.reset();
+    await app.reset({ still: false, store: { demoDate: seasonDate(app, 'woodcut') } });
     await app.go('/unlock/glass-kiln');
     await app.click('[data-act="open-spot"]');
-    const drawBtn = app.$('[data-act="draw"]');
-    t.eq(app.doc.activeElement, drawBtn, '面板打開：焦點在「收集明信片」');
-    const skip = app.$('[data-act="skip-draw"]');
+    const openBtn = app.$('[data-act="open-card"]');
+    t.eq(app.doc.activeElement, openBtn, '面板打開：焦點在「收集明信片」');
+    const skip = app.$('[data-act="skip-reveal"]');
     t.ok(skip && skip.hidden, '跳過動畫平常收著');
-    await app.click(drawBtn);
-    t.ok(skip && !skip.hidden, '開始抽卡：跳過動畫出現');
+    await app.click(openBtn);
+    t.ok(skip && !skip.hidden, '開始翻卡：跳過動畫出現');
     t.eq(app.doc.activeElement, skip, '焦點沒有掉到 body（在跳過動畫）');
     t.ok(!app.$('[data-stage-cap]').hasAttribute('aria-live'), '蓄力說明字不是 live region（不會每 0.5 秒打斷報讀器）');
     skip.blur();
@@ -489,24 +545,25 @@ T.spec('explore', function (t) {
     await app.click(skip);
     t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '跳過 → 直接看結果');
     t.ok(skip.hidden, '跳過動畫收起來');
-    const lab = app.$('[data-draw]');
+    const lab = app.$('[data-result-style]');
     t.eq(app.doc.activeElement, lab, '焦點在結果那一行（tabindex=-1）');
-    t.includes(lab && lab.textContent, '抽到', '報讀器念「抽到」');
+    t.includes(lab && lab.textContent, '收到', '報讀器念「收到」');
     t.includes(lab && lab.textContent, '木刻版畫', '念出畫風');
+    t.includes(lab && lab.textContent, '秋天的畫風是木刻版畫', '念出為什麼');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
 
     /* 不跳過、一路點畫面跑完：收尾一樣把焦點放到結果 */
-    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'oil' } } });
+    await app.reset({ still: false, store: { demoDate: seasonDate(app, 'oil') } });
     await app.go('/unlock/glass-kiln');
-    await drawThrough(app);
-    t.eq(app.doc.activeElement, app.$('[data-draw]'), '跑完：焦點在結果那一行');
-    t.ok(app.$('[data-act="skip-draw"]').hidden, '跑完：跳過動畫收起來');
+    await revealThrough(app);
+    t.eq(app.doc.activeElement, app.$('[data-result-style]'), '跑完：焦點在結果那一行');
+    t.ok(app.$('[data-act="skip-reveal"]').hidden, '跑完：跳過動畫收起來');
     await app.reset();
   }, { timeout: 20000 });
 
-  /* 審查 5：抵達的鐘聲與光點排在 420ms 之後；在那之前就開始抽卡，它不能在抽卡中冒出來。靜音、離開都切掉排好的聲音 */
-  t.test('抵達的鐘聲：還沒亮就開始抽卡 → 不再響；靜音與離開 /unlock 都呼叫 sfx.stopAll()', async function (app) {
-    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'watercolor' } } });
+  /* 審查 5：抵達的鐘聲與光點排在 420ms 之後；在那之前就開始翻卡，它不能在翻卡中冒出來。靜音、離開都切掉排好的聲音 */
+  t.test('抵達的鐘聲：還沒亮就開始翻卡 → 不再響；靜音與離開 /unlock 都呼叫 sfx.stopAll()', async function (app) {
+    await app.reset({ still: false });
     const sfx = app.APP.fx.sfx;
     t.eq(typeof sfx.stopAll, 'function', 'APP.fx.sfx.stopAll');
     let arrive = 0, stops = 0;
@@ -523,9 +580,9 @@ T.spec('explore', function (t) {
     app.doc.documentElement.style.setProperty('--t-scene', '12000ms');
     await app.go('/unlock/glass-kiln');
     await app.click('[data-act="open-spot"]');
-    await app.click('[data-act="draw"]');
+    await app.click('[data-act="open-card"]');
     await app.tick(4800);
-    t.eq(arrive, 0, '抽卡開始之後，抵達的鐘聲（與光點）不再出現');
+    t.eq(arrive, 0, '翻卡開始之後，抵達的鐘聲（與光點）不再出現');
     const s1 = stops;
     await app.click('[data-act="toggle-sound"]');
     t.eq(app.APP.store.get('fxMute'), true, '靜音');
@@ -540,15 +597,19 @@ T.spec('explore', function (t) {
   }, { timeout: 20000 });
 
   /* 審查 6、8：結果頁不會一直動（光芒、全息掃光跑有限次）；?still=1 直接關掉，縮圖每次一樣 */
+  /* 金框只有搭 yoxi 抵達才有：行程記一趟到玻璃窯（phase done） */
+  const rideKiln = function () {
+    return { trip: T.fixtures.trip({ placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 }) };
+  };
   t.test('金框結果頁：光芒與全息掃光有限次；still 關掉', async function (app) {
-    await app.reset({ store: { draws: { 'glass-kiln': 'gold' } } });
+    await app.reset({ store: rideKiln() });
     await app.go('/unlock/glass-kiln');
     const cs = function (sel) { const el = app.$(sel); return el ? app.win.getComputedStyle(el) : null; };
     t.eq(cs('.ex-rays i') && cs('.ex-rays i').animationName, 'none', 'still：光芒不轉');
     t.eq(cs('.ex-face__holo') && cs('.ex-face__holo').animationName, 'none', 'still：全息掃光不掃');
-    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'gold' } } });
+    await app.reset({ still: false, store: rideKiln() });
     await app.go('/unlock/glass-kiln');
-    await drawThrough(app);
+    await revealThrough(app);
     const rays = cs('.ex-rays i'), holo = cs('.ex-face__holo');
     t.eq(rays && rays.animationName, 'ex-rays-settle', '結果：光芒在轉（昇格之後才開始）');
     t.ok(rays && rays.animationIterationCount !== 'infinite', '光芒：有限次（' + (rays && rays.animationIterationCount) + '）');
@@ -559,11 +620,11 @@ T.spec('explore', function (t) {
 
   /* 金框的金粉（explore-gold.js）：翻開以後才標；非 still 才建 canvas */
   t.test('金粉：金框翻開以後才標 data-gold-aura；canvas 掛在 .device、不吃點擊；still 與其他款式沒有', async function (app) {
-    await app.reset({ still: false, store: { draws: { 'glass-kiln': 'gold' } } });
+    await app.reset({ still: false, store: rideKiln() });
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-final-card].postcard--gold'), '這一次是金框');
-    t.ok(!app.$('[data-final-card][data-gold-aura]'), '翻開前沒有金粉（不先洩底）');
-    await drawThrough(app);
+    t.ok(!app.$('[data-final-card][data-gold-aura]'), '翻開前沒有金粉');
+    await revealThrough(app);
     t.ok(app.$('[data-final-card][data-gold-aura]'), '翻開以後有金粉');
     await app.waitFor(function () { return app.APP.fx.gold.tracked() >= 1; }, 2000, '追蹤到金框卡');
     const cv = app.doc.querySelector('.device > canvas.gold-aura');
@@ -572,7 +633,7 @@ T.spec('explore', function (t) {
     t.eq(cv && cv.getAttribute('aria-hidden'), 'true', '報讀器看不到');
     t.eq(cv && app.win.getComputedStyle(cv).pointerEvents, 'none', '不吃點擊');
     t.noDeadButtons(app, '/unlock 金框結果（有金粉）');
-    await app.reset({ store: { draws: { 'glass-kiln': 'oil' } } });
+    await app.reset({ store: { demoDate: seasonDate(app, 'oil') } });
     await app.go('/unlock/glass-kiln');
     t.ok(!app.$('[data-gold-aura]'), '油畫：沒有金粉');
     t.ok(!app.doc.querySelector('canvas.gold-aura'), 'still：沒有 canvas');
@@ -598,10 +659,11 @@ T.spec('explore', function (t) {
     t.ok(q.vy > 300 && q.y > 40, '往下捲：金粉跟著往下（vy ' + q.vy.toFixed(0) + '）');
   });
 
-  /* 審查 11：render 是純函式（契約 §3.1）；走路抵達的抽卡在 mount 做；重進、重整都不重抽 */
-  t.test('render 不寫 store：/unlock 在 mount 才抽；重進、重整都是同一款', async function (app) {
+  /* 審查 11：render 是純函式（契約 §3.1）；款式照規則在 render 就算得出來；重進、重整都是同一款 */
+  t.test('render 不寫 store：款式在 render 就照規則算好；重進、重整都是同一款', async function (app) {
     await app.reset();
     const A = app.APP;
+    const k = A.explore.cardRule({ by: 'walk' }).style.key;
     const before = JSON.stringify(A.store.all);
     let writes = 0;
     const off = A.on('store:change', function () { writes++; });
@@ -609,23 +671,20 @@ T.spec('explore', function (t) {
     off();
     t.eq(writes, 0, 'render 沒有 store:change');
     t.eq(JSON.stringify(A.store.all), before, 'render 沒有改 store');
-    t.ok(html.indexOf('data-style=') < 0, '還沒抽：沒有款式');
-    t.ok(html.indexOf('ex-flip__back') >= 0, '還沒抽：畫卡背');
+    t.ok(html.indexOf('data-style="' + k + '"') >= 0, 'render 就有今天的款式：' + k);
     await app.go('/unlock/glass-kiln');
-    const k = (A.store.get('draws') || {})['glass-kiln'];
-    t.ok(!!k, 'mount 抽了一款：' + k);
-    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '畫面是抽到的那一款');
+    t.eq(JSON.stringify(A.store.all), before, 'mount 也不寫 store（沒有暫存的抽卡）');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '畫面是照規則的那一款');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), k, '卡面也是');
-    t.ok(app.$('[data-draw="' + k + '"]'), '結果寫出畫風名');
+    t.ok(app.$('[data-result-style="' + k + '"]'), '結果寫出畫風名');
     const arts = app.$$('[data-unlock] [data-art]');
-    t.ok(arts.length > 0 && arts.every(function (el) { return el.querySelector(':scope > .postcard__art'); }), '重畫之後插圖照樣畫上去');
-    t.noDeadButtons(app, '/unlock 抽完重畫之後');
+    t.ok(arts.length > 0 && arts.every(function (el) { return el.querySelector(':scope > .postcard__art'); }), '插圖畫上去了');
+    t.noDeadButtons(app, '/unlock');
     await app.go('/album');
     await app.go('/unlock/glass-kiln');
-    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '重進不重抽');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '重進同一款');
     await app.reload('/unlock/glass-kiln');
-    t.eq((app.APP.store.get('draws') || {})['glass-kiln'], k, '重整不重抽（store）');
-    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '重整不重抽（畫面）');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), k, '重整同一款');
     await app.reset();
   });
 
@@ -644,16 +703,17 @@ T.spec('explore', function (t) {
     t.eq(E.cardStyleOf('p11'), null, '還沒收的沒有款式');
     t.eq(E.cardStyleOf('p4').key, 'gold', 'demo 一開始的搭車卡 → 金框');
     const w = E.cardStyleOf('p1');
-    t.ok(w && !w.gold, '走路收的預設款式不是金框：' + (w && w.key));
-    t.eq(E.cardStyleOf('p1').key, w.key, '同一張每次都一樣');
+    t.eq(S.card('p1').date.slice(0, 2), '09', '前提：p1 是九月收的');
+    t.eq(w && w.key, 'woodcut', 'demo 一開始的走路卡照規則補：九月是秋天 → 木刻版畫');
     app.APP.store.set('cardStyle', { p1: 'ink' });
-    t.eq(E.cardStyleOf('p1').key, 'ink', '抽到的款式優先');
+    t.eq(E.cardStyleOf('p1').key, 'ink', '收下時記的款式優先');
     t.ok(S.has('p1'), 'p1 在收藏裡');
     await app.reset();
   });
 
   t.test('/unlock 卡面用生成的成品；收藏與叫車卡片疊上收下的那一款', async function (app) {
-    await app.reset({ store: { draws: { 'glass-kiln': 'ink' } } });
+    await app.reset();
+    await app.reset({ store: { demoDate: seasonDate(app, 'ink') } });
     await app.go('/unlock/glass-kiln');
     const img = app.$('[data-final-card] .ex-face__img');
     t.ok(img && /assets\/postcards\/p11-ink\.jpg$/.test(img.getAttribute('src')), '成品：' + (img && img.getAttribute('src')));
@@ -806,8 +866,8 @@ T.spec('explore', function (t) {
       { label: '這一趟還沒抵達', store: { trip: T.fixtures.trip({ startedAt: now() }) } },
     ];
     for (const c of cases) {
-      /* 走路抽卡有極低機率抽到金框：先把這次抵達的抽卡定成水彩，這條只驗「不是 ride 版」 */
-      await app.reset({ store: Object.assign({ draws: { neiwan: 'watercolor' } }, c.store) });
+      /* 走路抵達照規則一定不是金框（金框只給搭 yoxi），這條只驗「不是 ride 版」 */
+      await app.reset({ store: c.store });
       const pts0 = app.STATE.points;
       await app.go('/unlock/neiwan?ride=1');
       t.ok(!app.$('[data-final-card].postcard--gold'), c.label + '：沒有金框');

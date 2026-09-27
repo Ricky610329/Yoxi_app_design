@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 web app — explore 區塊的特效工具（抵達亮燈、抽卡）
+   yoxi 城事 web app — explore 區塊的特效工具（抵達亮燈、翻卡）
    契約：app/ARCHITECTURE.md §7（APP.fx）。給 explore-unlock.js 的 /unlock 與 explore-gold.js 的金粉用，不註冊畫面。
 
    為什麼自己寫、不用 GSAP／PixiJS：repo 不加 CDN、不加套件（AGENTS.md），
@@ -9,7 +9,7 @@
    - 分級給：常見的款式輕、稀有的重；停格、閃光、震動、全螢幕光芒只留給金框。
    - 三拍：蓄力（anticipation）→ 動作 → 餘韻；沒有蓄力的特效只是「突然冒出來」。
    - 只動 transform／opacity；粒子上百顆一律畫在 canvas，不塞 DOM。
-   - 減少動態效果：不震、不閃、不噴粒子，改成短淡入（APP.fx.calm()）。全螢幕閃光一次抽卡最多一次。
+   - 減少動態效果：不震、不閃、不噴粒子，改成短淡入（APP.fx.calm()）。全螢幕閃光一次翻卡最多一次。
    - 顏色全部從 tokens.css 讀，這支檔案不寫任何色碼。
 
    提供：
@@ -364,7 +364,7 @@ function hitstop(root, eng, ms) {
   });
 }
 
-/* 全螢幕閃一下：60ms 亮起、260ms 退掉。只給金框用，一次抽卡最多一次（閃光安全） */
+/* 全螢幕閃一下：60ms 亮起、260ms 退掉。只給金框用，一次翻卡最多一次（閃光安全） */
 function flash(el, c) {
   if (!el || calm() || !el.animate) return null;
   el.style.background = rgba(c || [255, 255, 255], 1);
@@ -411,7 +411,7 @@ const sfx = (function () {
       old.disconnect();
     } catch (e) { /* 已經拔掉了 */ }
   }
-  /* 每次音高隨機差 ±4%，連續抽不會像機器 */
+  /* 每次音高隨機差 ±4%，連續響不會像機器 */
   function vary() { return 1 + (Math.random() * 2 - 1) * .04; }
   function tone(o) {
     const c = ctx();

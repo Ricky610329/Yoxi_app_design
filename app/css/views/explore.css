@@ -271,7 +271,7 @@
 .ex-going__sheet.is-collapsed .ex-going__card--mist { display: none; }
 
 /* ---------- /unlock/:id ---------- */
-/* 抵達 → 收集 → 抽卡。圖層（下到上）：夜色地圖 → 宣紙（水墨）→ 後景粒子 → 兩幕 → 前景粒子 → 閃光 → 音效鈕。
+/* 抵達 → 收集 → 翻卡。圖層（下到上）：夜色地圖 → 宣紙（水墨）→ 後景粒子 → 兩幕 → 前景粒子 → 閃光 → 音效鈕。
    只動 transform／opacity；顏色全用 tokens；時間跟著 --t-scene。 */
 .ex-unlock { overflow: hidden; padding: 0; }
 .ex-unlock[data-at="1"], .ex-unlock[data-at="2"] { cursor: pointer; }
@@ -318,8 +318,8 @@
 .ex-sound[aria-pressed="false"] .ex-sound__on,
 .ex-sound[aria-pressed="true"] .ex-sound__off { display: none; }
 
-/* 抽取機率的「?」：命中區 40×40，看得到的只有 24 的小圈 */
-.ex-odds-btn {
+/* 規則說明的「?」：命中區 40×40，看得到的只有 24 的小圈 */
+.ex-rules-btn {
   flex: none;
   width: 40px;
   height: 40px;
@@ -329,7 +329,7 @@
   background: transparent;
   color: color-mix(in srgb, var(--yoxi-white) 75%, transparent);
 }
-.ex-odds-btn__i {
+.ex-rules-btn__i {
   width: 24px;
   height: 24px;
   display: grid;
@@ -528,10 +528,13 @@
 .ex-sheet__txt { flex: 1; min-width: 0; }
 .ex-sheet__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
 .ex-sheet__p { display: block; margin-top: var(--sp-1); color: var(--yoxi-slate); font-size: var(--fs-cap); line-height: var(--lh-body); }
-.ex-sheet .ex-odds-btn { color: var(--yoxi-slate); }
+.ex-sheet .ex-rules-btn { color: var(--yoxi-slate); }
+/* 為什麼是這一款：一條規則一行（面板與結果共用） */
+.ex-why__l { display: block; }
+.ex-why__l + .ex-why__l { margin-top: 2px; }
 .ex-sheet__go { width: 100%; height: 52px; margin-top: var(--sp-4); font-size: var(--fs-body); }
 
-/* ---- 抽卡舞台＋結果（同一幕：卡片不換元素，翻完直接滑到結果的位置） ---- */
+/* ---- 翻卡舞台＋結果（同一幕：卡片不換元素，翻完直接滑到結果的位置） ---- */
 .ex-unlock .ex-stage.is-on {
   display: flex;
   flex-direction: column;
@@ -553,12 +556,12 @@
   0%, 100% { transform: translateY(var(--dy, 0px)); }
   50%      { transform: translateY(calc(var(--dy, 0px) - 7px)); }
 }
-.ex-unlock__card > .ex-odds-btn { position: absolute; top: calc(var(--sp-2) * -1); right: -48px; z-index: 2; }
-.ex-unlock[data-at="2"] .ex-unlock__card > .ex-odds-btn { opacity: 0; pointer-events: none; }
+.ex-unlock__card > .ex-rules-btn { position: absolute; top: calc(var(--sp-2) * -1); right: -48px; z-index: 2; }
+.ex-unlock[data-at="2"] .ex-unlock__card > .ex-rules-btn { opacity: 0; pointer-events: none; }
 
 .ex-flip { position: relative; aspect-ratio: 3 / 4; transform-style: preserve-3d; }
 .ex-flip.is-front { transform: rotateY(180deg); }
-.ex-unlock.is-drawing .ex-flip { will-change: transform; }
+.ex-unlock.is-revealing .ex-flip { will-change: transform; }
 .ex-flip__back,
 .ex-flip__front {
   position: absolute;
@@ -738,7 +741,7 @@
   color: var(--yoxi-navy);
 }
 .ex-unlock.is-paper .ex-unlock__input::placeholder { color: var(--yoxi-slate); }
-.ex-unlock.is-paper .ex-odds-btn,
+.ex-unlock.is-paper .ex-rules-btn,
 .ex-unlock.is-paper .ex-sound { color: var(--yoxi-navy); }
 
 /* 結果 */
@@ -748,6 +751,7 @@
 .ex-unlock__style { display: grid; justify-items: center; gap: 2px; margin: 0 0 var(--sp-3); }
 .ex-unlock__sname { font-size: var(--fs-title); font-weight: var(--fw-heavy); letter-spacing: .14em; }
 .ex-unlock[data-style="gold"] .ex-unlock__sname { color: var(--gold-lite); }
+.ex-unlock__why { margin-top: var(--sp-1); font-size: var(--fs-cap); line-height: var(--lh-body); text-align: center; opacity: .8; }
 .ex-credit { margin: calc(var(--sp-2) * -1) 0 var(--sp-2); font-size: var(--fs-xs); opacity: .6; }
 .ex-credit__a { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; color: inherit; text-decoration: underline; }
 .ex-unlock__in { padding: 0 var(--sp-2); }
@@ -807,7 +811,7 @@
   pointer-events: none;
 }
 /* 還沒生成成品的：底圖照片＋那一款的濾鏡（跟 /unlock 的卡面一樣）。
-   大小由 paintCardArt 設成 220 px 寬再縮放到容器（濾鏡參數是 px，照抽卡時的卡面大小調的），所以從左上角縮 */
+   大小由 paintCardArt 設成 220 px 寬再縮放到容器（濾鏡參數是 px，照翻卡時的卡面大小調的），所以從左上角縮 */
 .card-gen--photo {
   inset: 0 auto auto 0;
   max-width: none;
@@ -866,7 +870,7 @@
 html[data-still] .ex-unlock .ex-rays i,
 html[data-still] .ex-unlock .ex-face__holo { animation: none; }
 
-/* 只給報讀器念的字（例：結果那一行的「抽到」） */
+/* 只給報讀器念的字（例：結果那一行的「收到」） */
 .ex-sr {
   position: absolute;
   width: 1px;
@@ -925,23 +929,55 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
   .ex-unlock.is-done .ex-result { animation-duration: var(--t-fast); }
 }
 
-/* 機率說明（「?」打開） */
+/* 規則說明（「?」打開） */
 /* 解鎖頁（chengshi.css 的 .unlock）是 z-index 95，遮罩要壓在它上面 */
-.ex-odds { z-index: 96; }
-.ex-odds__box { max-height: 100%; overflow: auto; }
-.ex-odds__t { font-size: var(--fs-title); font-weight: var(--fw-heavy); margin-bottom: var(--sp-2); }
-.ex-odds__p { font-size: var(--fs-sm); line-height: 1.6; margin-bottom: var(--sp-4); }
-.ex-odds__h { font-size: var(--fs-sm); font-weight: var(--fw-heavy); margin: var(--sp-3) 0 var(--sp-2); }
-.ex-odds__list { list-style: none; margin: 0; padding: 0; }
-.ex-odds__row {
+.ex-rules { z-index: 96; }
+.ex-rules__box { max-height: 100%; overflow: auto; }
+.ex-rules__t { font-size: var(--fs-title); font-weight: var(--fw-heavy); margin-bottom: var(--sp-2); }
+.ex-rules__p { font-size: var(--fs-sm); line-height: 1.6; margin-bottom: var(--sp-4); }
+.ex-rules__h { font-size: var(--fs-sm); font-weight: var(--fw-heavy); margin: var(--sp-3) 0 var(--sp-2); }
+.ex-rules__list { list-style: none; margin: 0; padding: 0; }
+.ex-rules__row {
   display: flex;
   justify-content: space-between;
+  gap: var(--sp-3);
   padding: var(--sp-2) 0;
   border-bottom: 1px solid color-mix(in srgb, var(--yoxi-navy) 10%, transparent);
   font-size: var(--fs-sm);
 }
-.ex-odds__row.is-gold { font-weight: var(--fw-heavy); color: var(--gold); }
-.ex-odds__note { font-size: var(--fs-xs); line-height: 1.6; opacity: .7; margin: var(--sp-4) 0; }
+.ex-rules__row > span:last-child { text-align: right; }
+/* 現在是這個季節：粗體就好，不加徽章（沒有「限時」的語氣） */
+.ex-rules__row.is-now { font-weight: var(--fw-heavy); }
+.ex-rules__note { font-size: var(--fs-xs); line-height: 1.6; opacity: .7; margin: var(--sp-4) 0; }
+
+/* 卡面上的郵戳（節慶、遠行；explore-cards.js 的 marksHTML）：蓋在右下、地名那一條的上面。
+   /unlock 的卡面與收藏的明信片頁共用；小卡（收藏牆、疊卡）不蓋，免得一面牆都是章。 */
+.card-marks {
+  position: absolute;
+  right: var(--sp-2);
+  bottom: 56px;
+  z-index: 2;
+  display: flex;
+  gap: var(--sp-1);
+  pointer-events: none;
+}
+.card-mark {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  border-radius: var(--r-pill);
+  border: 1.5px dashed var(--yoxi-red);
+  background: color-mix(in srgb, var(--yoxi-white) 82%, transparent);
+  color: var(--yoxi-red);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-heavy);
+  line-height: 1.15;
+  transform: rotate(-8deg);
+}
+.card-mark small { font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+.card-mark + .card-mark { transform: rotate(6deg); }
 
 /* ---------- /routes ---------- */
 .ex-routes { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--gutter) 0; }
@@ -986,7 +1022,7 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
 .ex-brk__btn { margin-top: var(--sp-3); min-height: 44px; font-size: var(--fs-sm); }
 
 /* ---- 金框明信片的金粉（explore-gold.js）----
-   整台手機一張 canvas，掛在 .device，在所有畫面層之上（抽卡、每日回顧的全螢幕層是 95，ex-odds 96）：
+   整台手機一張 canvas，掛在 .device，在所有畫面層之上（翻卡、每日回顧的全螢幕層是 95，ex-rules 96）：
    金框卡在這些層裡也要看得到金粉。被分享面板、對話框蓋住的卡不冒金粉，由 explore-gold.js 用 elementFromPoint 判斷。
    不吃點擊、報讀器看不到；圓角跟外框一樣。 */
 .gold-aura {
