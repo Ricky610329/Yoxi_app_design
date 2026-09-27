@@ -185,3 +185,18 @@
 | `2655314` | `FESTIVALS` 改成當天＋官方連假、`festSpan` 算那一週；加賞櫻；新增 `explore-fest.js`／`explore-fest.css`：四種會動的 SVG 插畫，只放在卡片四周、5 秒停；比例測試；VERSION v20 |
 
 驗收：`python app/tests/run.py` node 80/80、瀏覽器 283/283；check-sw PASS。
+
+## 2026-09-27 照使用者的流程補齊（分支 `feat/flow-progress-rewards`）
+
+使用者貼來一條流程（來回接送、100 m、每一次都拿得到的明信片、款式規則、一鍵 LINE、子女回應、進度換相框與稱號），要專案照它走、抽獎改成固定規則的進度累積。細節與前後對照見 `docs/HANDOFF.md` §19。ride 與 family 兩段交給兩個 worktree agent 並行，explore／album 自己做。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `7423519` | 先定 store 的鍵（visits、look、shares、replies），並行的兩個 agent 從這一版開工 |
+| `8afe694` | 每一次來都收一張（一天一張）；首訪紀念、里程紀念（累積 km，取代單趟遠行戳）；抵達 100 m；/rewards 相框與稱號；收藏首頁與明信片頁跟著改 |
+| `a512058`、`658cfea` | 一鍵傳到 LINE（示意）、/line、/family/:id 子女喜歡與留言、APP.family |
+| `dccbe8a`、`53faf46`、`2a0e683` | 叫車的來回：去程 → 司機候車 → 回程 → 到家結算；候車時收下這一次的明信片 |
+| `4e43007`、`a33c7f0` | 相框牆的文字與櫻花框；ARCHITECTURE 契約、pitch/docs 的 80 m → 100 m、明信片 README 的機率表換成規則表 |
+| （本段最後一筆） | 合併後的縫合：回訪也算進行程紀錄與點數、回訪的歸因不蓋掉第一次、`rideRound` 取代 `rideVia._round`、候車頁的 100 m 讀同一個常數、/going 候車中的說法、demo 走路抵達候車中的地方；VERSION v21 |
+
+驗收：`python app/tests/run.py` node 106/106、瀏覽器 313/313；check-sw PASS；`verify-quiet.py` 在這台 Mac 只跑得了 ②（PASS）。

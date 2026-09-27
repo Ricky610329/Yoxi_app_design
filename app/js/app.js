@@ -65,10 +65,11 @@ const KEYS = {
   trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'waiting'|'returning'|'done', startedAt, rated, km, via, stars?, round?:true, collected?:true, backAt? }（waiting／returning 只有來回）；只有 APP.ride.trip 讀寫 */
   pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
   rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
-  rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
+  rideRound:   { def: {},    kind: 'map',     group: 'footprint' },  /* '<明信片 id>#<第幾次>' → true：搭來回收下、而且到家了的那一次（行程紀錄寫「來回」、回程多一列搭車回饋；ride） */
+  rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 第一次搭車收下的那一趟是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因；回訪的記在 visits 的 via */
   cardStyle:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時照規則定下的款式 key（explore） */
   cardMarks:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 第一次收下時記的 { fest: 節日 key 或 '', mile: 跨過的里程 km 或 0, km: 這一趟的公里, ymd, seq: 第幾張收下的, at }（explore） */
-  visits:      { def: [],    kind: 'array',   group: 'footprint' },  /* 回訪收下的明信片（第二次起；第一次在 STATE）：[{ card, v, date:'YYYY-MM-DD', by, km, style, fest, mile, note, seq, at }]（explore） */
+  visits:      { def: [],    kind: 'array',   group: 'footprint' },  /* 回訪收下的明信片（第二次起；第一次在 STATE）：[{ card, v, date:'YYYY-MM-DD', by, km, style, fest, mile, note, seq, at, via }]（explore） */
   look:        { def: {},    kind: 'map',     group: 'pref' },       /* 選用的相框與稱號 { frame: key, title: key }；還沒收下的不算（album） */
   shares:      { def: [],    kind: 'array',   group: 'footprint' },  /* 傳到 LINE 的紀錄（示意，沒有真的送出）：[{ id, card, v, at:ISO, cap? }]，舊的在前、最多 30 筆；只經 APP.family 寫（album-family） */
   replies:     { def: {},    kind: 'map',     group: 'footprint' },  /* 家人的回應（示意）：share id → [{ who:'yun', heart:bool, text, at:ISO }]；heart:true 是一個喜歡（text ''），否則是一句話；只經 APP.family 寫（album-family） */

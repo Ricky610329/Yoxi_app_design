@@ -82,14 +82,9 @@ const FARE_PER_POINT = 20;
    - WAIT_FEE：候車費，一趟固定一筆（不按分鐘跳錶：沒有一個會跑的數字要長輩盯著）。
      來回的車資＝去程＋WAIT_FEE＋回程，回程的公里＝去程（家 ↔ 這個地方），每一段都是 APP.fmt.fare(km)。
      搭車回饋只算兩段車資（候車費不是車資，不回饋）。
-   - WAIT_NEAR_M：司機停在附近，長輩在這個範圍內走走、收下這一次的明信片（旅程文案用）。 */
+   長輩在多大的範圍內走走、收下這一次的明信片：跟走路抵達同一個數（explore.js 的 APP.explore.ARRIVE_RADIUS_M），這裡不另寫。 */
 const WAIT_MAX_MIN = 60;
 const WAIT_FEE = 100;
-const WAIT_NEAR_M = 100;
-/* 來回到家、這一趟的明信片也收了：記在 store.rideVia 的這一格（{ 明信片 id: true }），行程紀錄與點數讀它。
-   rideVia 本來就是「搭車收下的那一趟」的註記（明信片 id → 從哪裡叫的），明信片 id 不會長這樣，不會撞到；
-   清除我的足跡跟著 rideVia 一起清。 */
-const ROUND_KEY = '_round';
 const DRIVER = { name: '陳先生', plate: 'AHB-2836', car: 'TOYOTA Corolla Cross · 白色' };
 const PICKUPS = [
   { name: '水利路 46 巷 58 號', area: '新竹市東區' },
@@ -180,8 +175,9 @@ function emptyCard(eyebrow, title, text) {
    - 單程抵達之後這一趟留著（明信片還沒收），直到搭車收下（consume）才清；走路收同一個地方不碰它。
    - 來回什麼時候清：到家（done）而且沒有東西要等（這一趟的卡收了、或這裡沒有卡可收）→ /ride 的 mount 安靜清掉
      （跟單程同一條：done 而且 pending() 是 null；評分不擋，跟單程一樣）；下一次 start 也會取代它。
-   - 行程紀錄與點數只從收下的搭車卡來（pastTrips）：來回要「到家、而且這一趟的卡收了」才在 store.rideVia 的
-     ROUND_KEY 記一筆（寫入一律經過 put，哪一段先發生都一樣）。半路取消回程的不記——回程沒搭，就是單程。 */
+   - 行程紀錄與點數只從收下的搭車卡來（pastTrips，每一次收下都算，回訪也是）：來回要「到家、而且這一趟的卡收了」
+     才在 store.rideRound 記一筆（'<明信片 id>#<第幾次>'；寫入一律經過 put，哪一段先發生都一樣）。
+     半路取消回程的不記——回程沒搭，就是單程。 */
 const TRIP = (function () {
   function raw() { return store().get('trip'); }
   function put(t) {
@@ -242,7 +238,8 @@ const TRIP = (function () {
     const p = APP.place(t.placeId);
     const card = p && p.card;
     if (!card || !canCollect(card)) return null;
-    return { trip: t, place: p, card: card, limited: limitedPlace(p),
+    /* 限定版（金框＋點數）只給第一次去：收過的地方再搭車去是回訪，一樣收一張金框，但不是限定版 */
+    return { trip: t, place: p, card: card, limited: limitedPlace(p) && !S().has(card),
              href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1' };
   }
   /* 候車中的那一趟來回（司機在附近等）；explore 的 /unlock 收下之後看它決定回 /trip 還是去收藏 */
@@ -323,7 +320,10 @@ const TRIP = (function () {
     const pid = p ? p.id : placeId;
     if (!t || (t.placeId !== pid && t.placeId !== placeId)) return null;
     if (t.round && t.collected) return null;
-    if (t.via && p && p.card) {
+    /* 歸因記在 rideVia[明信片 id]，只記第一次（圖鑑上那一張）；回訪的歸因 explore 記在那一次（store.visits 的 via），
+       不能蓋掉第一次的 */
+    const again = p && p.card && APP.explore && APP.explore.visits ? APP.explore.visits(p.card).length > 1 : false;
+    if (t.via && p && p.card && !again) {
       store().set('rideVia', Object.assign({}, store().get('rideVia') || {}, { [p.card]: t.via }));
     }
     put(t.round ? Object.assign({}, t, { collected: true }) : null);
@@ -338,17 +338,25 @@ const TRIP = (function () {
     consume: consume, clear: clear, clearBroken: clearBroken,
   };
 })();
-/* 來回到家、這一趟的卡也收了：記進行程紀錄（store.rideVia[ROUND_KEY][明信片 id]）。重複寫不會多一筆 */
+/* 來回到家、這一趟的卡也收了：記進行程紀錄（store.rideRound['<明信片 id>#<第幾次>']）。
+   這一趟收的是這張卡最新的那一次（一天一張，候車時收的就是最後一次）。重複寫不會多一筆 */
+function roundKey(cardId, v) { return cardId + '#' + (v || 1); }
 function markRound(t) {
   const p = APP.place(t.placeId);
   if (!p || !p.card) return;
-  const via = store().get('rideVia') || {};
-  const had = via[ROUND_KEY] || {};
-  if (had[p.card]) return;
-  store().set('rideVia', Object.assign({}, via, { [ROUND_KEY]: Object.assign({}, had, { [p.card]: true }) }));
+  const n = APP.explore && APP.explore.visits ? APP.explore.visits(p.card).length : 1;
+  const had = store().get('rideRound') || {};
+  const k = roundKey(p.card, n || 1);
+  if (had[k]) return;
+  store().set('rideRound', Object.assign({}, had, { [k]: true }));
 }
-/* 這張搭車卡是搭來回收下的（到家了才算） */
-function roundCard(cardId) { return !!((store().get('rideVia') || {})[ROUND_KEY] || {})[cardId]; }
+/* 這一次搭車收下的是搭來回（到家了才算） */
+function roundCard(cardId, v) { return !!(store().get('rideRound') || {})[roundKey(cardId, v)]; }
+/* 收下的最後一次（來回候車時收的那一張）：明信片頁的 ?v= */
+function lastVisitQuery(cardId) {
+  const n = APP.explore && APP.explore.visits ? APP.explore.visits(cardId).length : 1;
+  return n > 1 ? '?v=' + n : '';
+}
 function tripPlace(t) { return (t && APP.place(t.placeId)) || null; }
 /* 壞掉的行程／下車點（id 不認得）：安靜清掉。在 mount 裡叫（render 是純函式，不寫 store） */
 function dropBroken() {
@@ -479,16 +487,22 @@ function startTrip(d) {
   APP.nav.go('/trip');
 }
 
-/* 行程紀錄：搭車抵達的明信片＋城事以外的一般行程（新到舊）。round＝搭來回收下的（到家了才算，見 TRIP 的註解） */
+/* 行程紀錄：搭車抵達的明信片（每一次收下都算，回訪也是）＋城事以外的一般行程（新到舊）。
+   round＝搭來回收下的（到家了才算，見 TRIP 的註解）；限定版只有第一次；回訪的歸因記在那一次（explore 的 visits） */
 function pastTrips() {
   const out = [];
-  M().POSTCARDS.forEach(function (pc) {
-    const c = S().card(pc.id);
-    if (!c || c.by !== 'ride') return;
+  const byId = {};
+  M().POSTCARDS.forEach(function (pc) { byId[pc.id] = pc; });
+  const list = APP.explore && APP.explore.recentVisits ? APP.explore.recentVisits()
+    : Object.keys(S().all.cards).map(function (id) { const c = S().card(id); return { card: id, v: 1, by: c.by, md: String(c.date || '') }; });
+  list.forEach(function (x) {
+    const pc = byId[x.card];
+    if (!pc || x.by !== 'ride') return;
     const p = APP.place(pc.id);
-    out.push({ card: pc.id, from: '新竹市', to: pc.name, date: String(c.date || ''),
-               time: '', km: kmOf(p), city: true, limited: limitedCard(pc.id),
-               via: (store().get('rideVia') || {})[pc.id] || null, round: roundCard(pc.id) });
+    const o = x.v > 1 && APP.explore.cardOrigin ? APP.explore.cardOrigin(pc.id, x.v) : null;
+    out.push({ card: pc.id, v: x.v, from: '新竹市', to: pc.name, date: String(x.md || ''),
+               time: '', km: x.v > 1 && x.km ? x.km : kmOf(p), city: true, limited: x.v === 1 && limitedCard(pc.id),
+               via: x.v > 1 ? (o && o.via) || null : (store().get('rideVia') || {})[pc.id] || null, round: roundCard(pc.id, x.v) });
   });
   PLAIN_TRIPS.forEach(function (x) { out.push(Object.assign({ city: false }, x)); });
   out.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
@@ -1464,14 +1478,14 @@ function waitingHTML(t, p, km, pend) {
   return '<div data-phase="waiting">' +
     driverHTML(esc(DRIVER.name) + ' 在附近等你',
       esc(DRIVER.plate) + ' · 司機最多等 <span class="num" data-wait-max>' + WAIT_MAX_MIN + '</span> 分鐘') +
-    '<p class="ride-wait__p">在 <span class="num">' + esc(F.dist(WAIT_NEAR_M)) + '</span> 內走走' +
+    '<p class="ride-wait__p">在 <span class="num">' + esc(F.dist(APP.explore.ARRIVE_RADIUS_M)) + '</span> 內走走' +
       (pend ? '、收下這一次的明信片' : '') + '；好了按「回程」，司機就過來載你回家。</p>' +
     (pend
       ? goldHTML({ href: pend.href, act: 'unlock-ride', cls: 'ride-wait__gold', art: p.art,
                    eyebrow: pend.limited ? 'yoxi 限定版' : '搭 yoxi 抵達',
                    title: pend.limited ? '解鎖這一次的限定明信片' : '收下這一次的明信片',
                    sub: '你抵達了' + esc(p.name) })
-      : '<p class="ride-wait__got" data-wait-got>' + (t.collected ? '這一次的明信片收下了' : '這個地方的明信片已經在收藏裡') + '</p>') +
+      : '<p class="ride-wait__got" data-wait-got>' + (t.collected ? '這一次的明信片收下了' : '今天這個地方的明信片已經收下了') + '</p>') +
     '<button class="' + (pend ? 'btn-ghost' : 'btn-primary') + ' ride-wait__back" type="button" data-act="ride-back">回程，載我回家</button>' +
     tripFareHTML(t, km) +
     '<div class="ride-trip__acts ride-trip__acts--one">' +
@@ -1737,17 +1751,19 @@ APP.view('trip-done', {
     const start = validDate(t.startedAt) || new Date();
     const end = min == null ? null : new Date(start.getTime() + min * 60000);
     const stars = t.stars || 0;
-    const lim = limitedPlace(p);
-    /* 這一趟的明信片還收得到嗎（行程 module 說了算；明信片 id 用 APP.place(id).card，不是 MOCK.cardIdOf） */
+    /* 限定版只給第一次去（收過的地方是回訪：一樣金框、不是限定版） */
+    const lim = limitedPlace(p) && !!p.card && !S().has(p.card);
+    /* 這一趟的明信片還收得到嗎（行程 module 說了算；明信片 id 用 APP.place(id).card，不是 MOCK.cardIdOf）。
+       每一次來都收一張、一天一張：收不到＝今天已經收過這個地方 */
     const got = !!p.card && !TRIP.pending();
     /* 來回在候車時已經收了：金色橫幅連到收下的那一張；還沒收（或單程）照舊連到 /unlock */
     const gold = t.collected
-      ? goldHTML({ href: '#/postcard/' + encodeURIComponent(p.card), act: 'open-postcard', art: p.art,
+      ? goldHTML({ href: '#/postcard/' + encodeURIComponent(p.card) + lastVisitQuery(p.card), act: 'open-postcard', art: p.art,
                    eyebrow: lim ? 'yoxi 限定版' : '搭 yoxi 抵達', title: '你抵達了' + esc(p.name),
                    sub: '這一次的明信片收下了 · 看明信片' })
       : goldHTML({ href: '#/unlock/' + encodeURIComponent(p.id) + '?ride=1', act: 'unlock-ride', art: p.art,
                    eyebrow: lim ? 'yoxi 限定版' : '搭 yoxi 抵達', title: '你抵達了' + esc(p.name),
-                   sub: got ? '這個地方的明信片已經在收藏裡' : lim ? '解鎖 yoxi 限定明信片' : '收下這張明信片' });
+                   sub: got ? '今天這個地方的明信片已經收下了' : lim ? '解鎖 yoxi 限定明信片' : '收下這一次的明信片' });
 
     return hdr +
       '<div class="scroll ride-done">' +
@@ -1965,7 +1981,7 @@ APP.view('trips', {
     /* 來回：一列就是一整趟（去程＋候車＋回程），車資寫總數、公里寫「來回各 N 公里」 */
     const rows = pastTrips().map(function (tr) {
       const attrs = tr.city
-        ? 'href="#/postcard/' + esc(tr.card) + '" data-act="open-trip-card"'
+        ? 'href="#/postcard/' + esc(tr.card) + (tr.v > 1 ? '?v=' + tr.v : '') + '" data-act="open-trip-card"'
         : 'href="#" data-toast="' + TOAST_NA + '"';
       return '<a class="row-nav" ' + attrs + ' data-trip-row' + (tr.round ? ' data-round' : '') + '>' +
         '<span class="tile-icon"><span data-icon="tabRide"></span></span>' +

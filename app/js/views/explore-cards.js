@@ -230,7 +230,7 @@ function laterVisits(cardId) {
         card: cardId, v: Number(x.v), first: false, md: ymd.slice(5).replace('-', '.'), ymd: ymd,
         by: x.by === 'ride' ? 'ride' : 'walk', km: Number(x.km) || 0,
         style: styleOf(x.style) || cardStyleOf(cardId), fest: x.fest || '', mile: Number(x.mile) || 0,
-        note: x.note || '', seq: Number(x.seq) || 0, at: x.at || '',
+        note: x.note || '', seq: Number(x.seq) || 0, at: x.at || '', via: x.via || null,
       };
     })
     .sort(function (a, b) { return a.v - b.v; });
@@ -399,6 +399,7 @@ function collect(placeId, opt) {
       APP.store.set('visits', (APP.store.get('visits') || []).concat([{
         card: target, v: a.v, date: ymdOf(d), by: a.by, km: a.km, style: a.rule.style.key,
         fest: a.rule.festival ? a.rule.festival.key : '', mile: a.rule.mile, note: note, seq: seq, at: new Date().toISOString(),
+        via: a.trip && a.trip.via ? a.trip.via : null,
       }]));
       got = true;
     }
@@ -444,7 +445,7 @@ function cardOrigin(cardId, v) {
     style: x.style,
     gold: limited || !!(x.style && x.style.gold),
     limited: limited,
-    via: x.v === 1 ? (APP.store.get('rideVia') || {})[cardId] || null : null,
+    via: x.v === 1 ? (APP.store.get('rideVia') || {})[cardId] || null : x.via || null,
     festival: rule.festival,
     mile: rule.mile,
     lines: ruleLines(rule),
