@@ -3,4 +3,4 @@
    sw.js 用 importScripts 載（快取的名字跟著它換代）。
    ★ 新增檔案、或 PRECACHE 清單變了：這裡的數字加一。瀏覽器更新 service worker 時也會比對 importScripts 進來的檔，
      所以只改這一支也會觸發更新。檢查：python app/tools/check-sw.py */
-self.APP_VERSION = 'chengshi-app-v21';
+self.APP_VERSION = 'chengshi-app-v22';

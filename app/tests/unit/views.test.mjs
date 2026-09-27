@@ -9,7 +9,7 @@ const STATE_KEY = 'yoxi-chengshi-v1-2';
 const TAIPEI = (mmdd) => '2026-' + mmdd.replace('.', '-') + 'T10:00:00+08:00';
 const ids = (list) => list.map((p) => p.id).join(',');
 /* system 不載：它的 demo 面板在 state:change 時會去畫 DOM（node 沒有 document） */
-const VIEWS = ['ride', 'explore-fx', 'explore-cards', 'explore-gold', 'explore', 'explore-unlock', 'album'];
+const VIEWS = ['ride', 'explore-fx', 'explore-cards', 'explore-verse', 'explore-gold', 'explore', 'explore-unlock', 'album'];
 
 /* ---------------------------------------------------------------- ride（行程 module 在 trip.test.mjs） */
 

@@ -293,7 +293,7 @@ T.spec('explore', function (t) {
     t.eq(app.$('[data-unlock]').getAttribute('data-visit'), '2', '第 2 次');
     t.includes(app.text('[data-visit-n]'), '第 2 次來', '寫第幾次來');
     t.ok(!app.$('[data-final-card] [data-mark="first"]'), '回訪沒有首訪戳');
-    t.ok(!/首訪/.test(app.text('[data-result-style] [data-why]')), '為什麼：不寫首訪');
+    t.ok(!/首訪/.test(app.text('[data-arrive-sheet] [data-why]')), '為什麼：不寫首訪');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.STATE.count(), n0, '圖鑑（STATE）不多一張');
@@ -382,11 +382,13 @@ T.spec('explore', function (t) {
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '冬天走路抵達 → 水墨');
     t.includes(app.text('[data-result-style]'), '水墨', '寫出畫風名');
-    t.includes(app.text('[data-result-style] [data-why]'), '冬天的畫風是水墨', '寫出為什麼');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), '冬天的畫風是水墨', '面板寫出為什麼');
+    t.ok(!app.$('[data-result-style] [data-why]'), '結果不再重複為什麼');
+    t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), E.VERSES.p11.ink, '結果寫這個地方冬天的那一句');
     t.ok(!app.$('[data-final-card].postcard--gold'), '水墨不是金框');
     t.ok(app.$('[data-final-card] .card-mark[data-mark="first"]'), '第一次來：首訪紀念戳');
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]') && !app.$('[data-final-card] .fest'), '不是節日、不是搭車：沒有插畫、沒有里程戳');
-    t.includes(app.text('[data-result-style] [data-why]'), '第一次來，多蓋一枚首訪紀念戳', '為什麼：首訪');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), '第一次來，多蓋一枚首訪紀念戳', '為什麼：首訪');
     await app.go('/explore');
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '重進還是同一款');
@@ -475,8 +477,8 @@ T.spec('explore', function (t) {
     t.ok(/^\d/.test(app.win.getComputedStyle(rabbit).animationIterationCount), '有限次（不會一直動）：' + app.win.getComputedStyle(rabbit).animationIterationCount);
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'woodcut', '中秋在秋天：木刻版畫');
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '走路沒有里程戳');
-    t.includes(app.text('[data-result-style] [data-why]'), '秋天的畫風是木刻版畫', '結果寫為什麼（畫風）');
-    t.includes(app.text('[data-result-style] [data-why]'), moon.deco, '結果寫為什麼（節日版）');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), '秋天的畫風是木刻版畫', '面板寫為什麼（畫風）');
+    t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), E.VERSES.p11.moon, '結果寫這個地方中秋的那一句（不是秋天那一句）');
     t.ok(!app.$('[data-points]'), '走路沒有 +50');
     t.noDeadButtons(app, '/unlock 節日版');
     await app.click('[data-act="collect"]');
@@ -548,8 +550,12 @@ T.spec('explore', function (t) {
     const mark = app.$('[data-final-card] .card-mark[data-mark="mile"]');
     t.ok(mark, '里程紀念戳');
     t.includes(mark && mark.textContent, mile + ' km', '戳上寫跨過的里程');
-    t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi 累積到 ' + mile + ' 公里，多蓋一枚里程紀念戳', '結果寫為什麼');
-    t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi 抵達是金框', '金框的理由');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), '搭 yoxi 累積到 ' + mile + ' 公里，多蓋一枚里程紀念戳', '面板寫為什麼');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), '搭 yoxi 抵達是金框', '金框的理由');
+    const E2 = app.APP.explore;               /* reset 之後重新拿（E 是 reset 前那一頁的） */
+    const verse = E2.verseOf('p9', E2._.arrivalAt(app.APP.place('neiwan')).rule);
+    t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), verse.text, '結果寫內灣的那一句（金框，或今天是節日就是節日那一句）');
+    t.eq(app.text('[data-result-style] .ex-verse__by') || '', verse.by ? verse.by + '〈' + verse.title + '〉' : '', '引用的句子寫作者與篇名');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     await app.go('/postcard/p9');
@@ -560,7 +566,7 @@ T.spec('explore', function (t) {
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-final-card].postcard--gold'), '近的也是金框');
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '沒跨過：沒有里程戳');
-    t.ok(!/里程/.test(app.text('[data-result-style] [data-why]')), '沒跨過：不寫里程');
+    t.ok(!/里程/.test(app.text('[data-arrive-sheet] [data-why]')), '沒跨過：不寫里程');
     await app.reset();
   });
 
@@ -659,7 +665,7 @@ T.spec('explore', function (t) {
     t.eq(app.doc.activeElement, lab, '焦點在結果那一行（tabindex=-1）');
     t.includes(lab && lab.textContent, '收到', '報讀器念「收到」');
     t.includes(lab && lab.textContent, '木刻版畫', '念出畫風');
-    t.includes(lab && lab.textContent, '秋天的畫風是木刻版畫', '念出為什麼');
+    t.includes(lab && lab.textContent, app.APP.explore.VERSES.p11.woodcut, '念出那一句話');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
 
     /* 不跳過、一路點畫面跑完：收尾一樣把焦點放到結果 */
