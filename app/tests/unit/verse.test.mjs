@@ -7,10 +7,11 @@ const load = () => loadApp({ views: ['ride', 'explore-fx', 'explore-fest', 'expl
 const BANNED = ['任務', '完成', '達成', '挑戰', '每日'];
 const textOf = (v) => (typeof v === 'string' ? v : v[0]);
 
-test('VERSES：每一張明信片的每一種款式與節日都有自己的一句，全表不重複', () => {
+test('VERSES：每一張明信片的每一種款式、節日、節日搭 yoxi 都有自己的一句，全表不重複', () => {
   const { APP, MOCK } = load();
   const E = APP.explore;
-  const keys = E.CARD_STYLES.map((d) => d.key).concat(E.FESTIVALS.map((f) => f.key));
+  const fests = E.FESTIVALS.map((f) => f.key);
+  const keys = E.CARD_STYLES.map((d) => d.key).concat(fests, fests.map((k) => 'gold+' + k));
   const seen = new Map();
   for (const c of MOCK.POSTCARDS.concat([{ id: '_' }])) {
     const row = E.VERSES[c.id];
@@ -51,13 +52,18 @@ test('verseOf：節日那一週用節日那一句、其他看款式；表上沒�
   assert.equal(E.verseOf('p4', R('ride', '2026-10-05')).text, V.p4.gold, '搭 yoxi：金框那一句');
   const moon = E.verseOf('p4', R('walk', '2026-09-25'));
   assert.deepEqual([moon.text, moon.by, moon.title], [...V.p4.moon], '中秋那一週：中秋那一句，帶作者與篇名');
-  assert.equal(E.verseOf('p4', R('ride', '2026-09-25')).text, V.p4.moon[0], '節日碰上搭 yoxi：還是節日那一句');
+  assert.equal(E.verseOf('p4', R('ride', '2026-09-25')).text, V.p4['gold+moon'], '節日搭 yoxi：節日搭車那一句（跟走路的不一樣）');
+  assert.equal(E.verseOf('p1', R('ride', '2027-02-08')).text, V.p1['gold+spring'], '春節那一週搭 yoxi：春節搭車那一句');
+  assert.equal(E.verseOf('p1', R('ride', '2027-03-01')).text, V.p1['gold+sakura'], '櫻花季搭 yoxi：賞櫻搭車那一句');
   assert.equal(E.verseOf('p1', R('walk', '2027-03-01')).text, V.p1.sakura, '櫻花季：賞櫻那一句');
   assert.equal(E.verseOf('p1', R('walk', '2026-12-20')).by, '', '自己寫的句子沒有作者');
   assert.equal(E.verseOf('p1', R('walk', '2026-10-05')).text, E.verseOf('p1', R('walk', '2026-10-05')).text, '同樣的組合每次都一樣（沒有亂數）');
   assert.notEqual(E.verseOf('p1', R('walk', '2026-10-05')).text, E.verseOf('p2', R('walk', '2026-10-05')).text, '不同地方不同句');
   assert.equal(E.verseOf('nope', R('walk', '2026-12-20')).text, V._.ink, '表上沒有的卡：通用句');
   assert.equal(E.verseOf('p1', null), null, '沒有款式：沒有句子');
+  assert.equal(E.verseOf('nope', R('ride', '2026-09-25')).text, V._['gold+moon'], '表上沒有的卡、節日搭車：通用的節日搭車句');
+  delete V.p4['gold+moon'];
+  assert.equal(E.verseOf('p4', R('ride', '2026-09-25')).text, V.p4.moon[0], '少了節日搭車那一句：先退回同一張卡的節日那一句');
   /* 收下之後（cardOrigin）挑到的跟當下（cardRule）一樣 */
   E.collect('station');
   const o = E.cardOrigin('p1', E.visits('p1').length);
