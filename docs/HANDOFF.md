@@ -343,7 +343,7 @@ python app/tests/run.py                           # web app：node 單元＋head
 | 款式依規則 | 季節畫風／金框、節日版、單趟 20 km 遠行戳 | 常態款（季節畫風／金框）、節慶限定（節日那一週）、首訪紀念戳、里程紀念戳（搭 yoxi 累積 30／60／100… km） |
 | 一鍵分享至 LINE | 分享 → 長輩圖頁 → 傳送（3 下，沒寫 LINE） | 分享面板第一格「傳到 LINE 給家人」一鍵 → `/line`（示意） |
 | 子女按讚／留言 | 沒有 | `/family/:id` 子女的手機：喜歡、快速回覆、打一句；長輩在 `/line` 與明信片頁看到（示意，只寫名字、沒有數字） |
-| 進度累積解鎖客製化獎勵 | 只有獎章「收集 n/m」；§17 刻意不做進度換獎勵 | `/rewards` 八個相框、九個稱號，規則與 n/m 先寫好，湊到就收下、自己挑一個用 |
+| 進度累積解鎖客製化獎勵 | 只有獎章「收集 n/m」；§17 刻意不做進度換獎勵 | `/rewards` 八個相框、九個稱號，規則與 n/m 先寫好，湊到就收下、自己挑一個用（**同一天使用者拿掉了，見 §21**） |
 
 §17 寫的「2 圖鑑進度條＋里程碑獎勵刻意不做」這次是使用者明確要做，照做；但守住原本的理由：沒有進度環與集點卡的倒數語氣（只寫 n/m）、稱號不比高低（沒有等級、沒有「第一」）、沒有限時。
 
@@ -351,7 +351,7 @@ python app/tests/run.py                           # web app：node 單元＋head
 - **每一次來**（`explore-cards.js`）：第一次仍寫 STATE（圖鑑、獎章、去過的地方都只認它），第二次起記 `store.visits`（第 N 次、款式、節日、里程、那一句話、`via`、`seq`）。`canCollect` 一天一張（今天看 demo 的模擬日期）。`cardOrigin(cardId, v)`、`visits`、`recentVisits`（照 `seq`，不照時間：同一秒收兩張也分得出先後）、`rideKm`、`totalKm`。回訪不給限定版與 +50（點數只給第一次）。
 - **首訪紀念、里程紀念**：`cardRule({ by, km, date, first, before })`。里程看「搭 yoxi 去收明信片的累積公里」跨過 `MILE_STEPS`，不看單趟（常搭短程的長輩也走得到）；一趟跨過兩個記大的；回程不收明信片，不算。demo 一開始 14.6 km，搭去內灣就跨過 30。
 - **畫面**：/unlock 回訪寫「第 N 次來」、今天收過直接看今天那一張；地方頁收過的可以「再走過去一次」；明信片頁 `?v=` 與「每一次來」一排；收藏首頁頁首寫稱號、疊卡含回訪、「留下的距離」含回訪、一列「相框與稱號」入口。
-- **相框與稱號**（新檔 `album-rewards.js`／`.css`）：規則表 `REWARDS` 是唯一來源，進度全從收下的東西算（不另存）；`store.look`（pref）記選了哪個。相框全用 tokens 畫（竹塹、風城、老朋友、里程、春節、端午、中秋、櫻花），套在 `APP.album.cardHTML` 上（LINE 示意、子女那一頁、預覽）。
+- **相框與稱號**（已拿掉，見 §21；新檔 `album-rewards.js`／`.css`）：規則表 `REWARDS` 是唯一來源，進度全從收下的東西算（不另存）；`store.look`（pref）記選了哪個。相框全用 tokens 畫（竹塹、風城、老朋友、里程、春節、端午、中秋、櫻花），套在 `APP.album.cardHTML` 上（LINE 示意、子女那一頁、預覽）。
 - **來回**（ride agent，`dccbe8a`／`53faf46`）：行程多 `waiting`／`returning`、`round`、`collected`、`backAt`；`waiting()`、`back()`、`roundFare()`。候車時在 /unlock 收下，收好回 /trip；「取消回程」＝不搭回程了，變成單程 done、卡照樣收得到。**假設**：`WAIT_MAX_MIN` 60 分、`WAIT_FEE` 100 元一趟（yoxi 沒有公開的來回產品與價格）；畫面只寫「司機最多等 60 分鐘」，沒有計時器、沒有倒數。/ride 選好下車點才出現「單程／來回」，同時收起只會 toast 的掃碼鈕（可按數仍 ≤ 10，單程的叫車步數不變）。來回的歷史記在新的 `store.rideRound['<卡>#<第幾次>']`（agent 原本塞在 `rideVia._round`，合併時改成獨立的鍵）。
 - **LINE 與子女回應**（family agent，`a512058`；新檔 `album-family.js`／`.css`）：`APP.family.send／sendToLine／react／repliesHTML`；`store.shares`、`store.replies`。每一頁都標「示意」；子女那一端只看得到那一張，沒有地點、已讀、按讚數。
 
@@ -363,3 +363,24 @@ python app/tests/run.py                           # web app：node 單元＋head
 - ~~`explore-fx.js` 檔頭還有一句「常見的款式輕、稀有的重」（舊的抽卡說法）~~：合併到 main 時改掉了（見 WORKLOG 的翻卡特效那一段）。
 
 驗證：`python app/tests/run.py` node 106/106、瀏覽器 313/313；`check-sw.py` PASS（`chengshi-app-v21`）；Playwright 看過 /album、/rewards（選相框與稱號）、八種相框、/postcard ?v=2、/unlock 內灣（首訪＋里程 30 km）、規則說明、/place 回訪、/line、/family、分享面板、來回的每一段。`verify-quiet.py` 在這台 Mac 只跑得了 ②（PASS、三個變體與基準完全相同），其餘段落找不到 Chrome 略過；`prototype/` 沒動。
+
+## 21. 2026-09-27 拿掉相框與稱號、收藏首頁真的一屏（分支 `feat/remove-rewards`）
+
+使用者先要收藏首頁不捲，傾向把「相框與稱號」併進其中一個選項：`116882c` 把它併進獎章卡最底下一列。使用者看了還是要捲，
+接著說「已經有獎章了，把相框跟稱號的功能整個刪掉」。
+
+**還是要捲的原因**（`116882c` 量錯了）：測試 iframe 與 Playwright 用 390×844 開的是手機版，`--statusbar-h` 只有 12px；
+使用者在桌機看的是手機外框，狀態列 54px（有瀏海的真手機也差不多），可視只剩 768px，內容 801px。
+量「一屏」一律用桌機外框（`album.spec` 的那一條把 iframe 撐到 1280×720 再量）。
+
+**拿掉了什麼**：`album-rewards.js`／`.css`、`rewards.spec.js`、`/rewards`、`APP.album.rewards／look／setLook／cardHTML／REWARDS`、
+store 的 `look` 鍵（舊存檔裡的 `look` 載入時就丟掉）、收藏首頁頁首的稱號與獎章卡底的入口、家人頁寄件人旁的稱號；PRECACHE 少兩筆，VERSION v22。
+**留下的**：明信片頁「每一次來」一排的樣式（原本寄住在 album-rewards.css）搬到 `album.css`；`/family`、`/line` 的明信片原本借 `cardHTML` 畫
+「那一次」的卡，改成 `album-family.js` 的 `cardArt` 自己問 `APP.explore.cardOrigin`（第幾次、金框、首訪／里程戳、節日插畫；不套相框）。
+里程紀念（`MILE_STEPS`、`rideKm`）與首訪紀念是明信片的款式，不是相框與稱號，照舊。
+
+結果：桌機外框裡收藏首頁內容約 755px（可視 768），預設、回訪、0 張都不用捲。
+
+驗證：`python app/tests/run.py` node 103/103、瀏覽器 308/308（少的是 rewards 的測試與 /rewards 這條 route）；`check-sw.py` PASS（`chengshi-app-v22`）；
+Playwright（桌機 1512×860）看過 /album、/family、/line。`prototype/` 沒動。
+

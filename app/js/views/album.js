@@ -2,11 +2,11 @@
    yoxi 城事 web app — album 區塊（收藏 tab）
    契約：app/ARCHITECTURE.md §0（S3 路線書架＋X4 勳章牆、隱私分軌、長輩圖是分享選項）、§3、§5、§8。
 
-   這支註冊九個 view（/rewards 相框與稱號在 album-rewards.js）：
+   這支註冊九個 view：
      /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近收下的三張疊卡，最後收的在最上面，點了進 /postcards）、統計兩格、
                       「回顧」一列三格（今天的回顧 → /lookback、這一週 → /week、城市足跡 → /footprint）、
-                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」，卡底細線隔開一列「相框與稱號」→ /rewards）。
-                      390×844 一屏放得下、不用捲。
+                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。
+                      390×844（含狀態列，桌機外框就是這個尺寸）一屏放得下、不用捲。
                       舊連結 ?tab=journal|week|badges|cards 落在同一頁：捲到對應的那一塊、亮一下，再把 ?tab 拿掉。
      /postcards       明信片子頁：收下的一段（最近的在前，每張連到詳情）、還沒去的一段，左上返回。
      /badges          全部獎章：三欄六角章牆，收下的寫日期、還在路上的寫「收集 n/m」。
@@ -27,6 +27,7 @@
    - 日誌／心情／照片沒有分享鍵（隱私分軌）：首頁「今天的回顧」那一格標「只有你」、沒有分享；
      只有明信片、週回顧、長輩圖可以分享。
    - /album 不攤開明信片網格：L1 一屏一事、可按數 ≤ 12；網格在 /postcards（整片算一個可按的東西，見 harness 的 data-gallery）。
+   - 相框與稱號：做過（/rewards），2026-09-27 使用者拿掉了——已經有獎章，再多一套收集的東西是重複的，收藏首頁也因此要捲。
    - 「yoxi 限定版」只給 APP.ride.limitedCard（搭 yoxi 去走不到的地方、+50 點）；其他金框卡寫「yoxi 金框」。
    - 金框卡不管在哪裡顯示（疊卡、/postcards、詳情、獎章的組成卡、每日回顧、週回顧）都是金框，畫框的那個元素標 data-gold-aura，
      金粉由 explore-gold.js 畫（契約 §7）；長輩圖整張就是那張明信片，金框卡的長輩圖也是金框、有金粉。
@@ -352,7 +353,7 @@ function notFound(o) {
    這個判斷是 router 的 APP.nav.up（它在 history.state 記了每一筆從哪裡來、怎麼來的）；這裡只標返回鍵：
    data-back＝上一層、data-up＝用 nav.up 的預設規則（上一筆是有底欄的一般頁、而且不是這一頁才退）。 */
 const PARENT = { postcards: '/album', badges: '/album', postcard: '/postcards', badge: '/badges',
-                 week: '/album', elder: '/week', footprint: '/album', rewards: '/album' };
+                 week: '/album', elder: '/week', footprint: '/album' };
 
 /* 每個子頁的 mount 都呼叫：把返回鍵（第一個 a[data-back]）指向上一層，交給 router 的 nav.up */
 function subMount(root, ctx, name) {
@@ -390,7 +391,7 @@ function albumV2CardHTML(p) {
     'data-card="' + esc(p.id) + '"' + (gold ? ' data-gold' : '') + '>' + inner + '</a>';
 }
 
-/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges），卡底一列相框與稱號（→ /rewards）。
+/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges）。
    一枚都還沒收下時，放大的位置不拿還在路上的章充數（那一格的意思是「最近收下」），改成一個空的章位＋一句話。 */
 const MEDAL_MINI = 5;
 function albumV2MedalsHTML() {
@@ -417,7 +418,6 @@ function albumV2MedalsHTML() {
       '<a class="alb-v2__medal-all" href="#/badges" data-act="go-badges">' +
         (extra > 0 ? '<small>+' + extra + ' 枚</small>' : '') + '顯示全部</a>' +
     '</div>' +
-    albumV2RewardsHTML() +
   '</section>';
 }
 
@@ -462,30 +462,13 @@ function albumV2LookHTML() {
   '</section>';
 }
 
-/* 相框與稱號的入口（album-rewards.js）：現在用的相框、稱號，收下了幾個。一列、一個可按。
-   放在獎章卡的最底下（稱號多半是湊齊一組獎章換到的，同一類東西），不自己一張卡：
-   單獨一張只有一列很孤單，收藏首頁也因為它要往下捲一截。 */
-function albumV2RewardsHTML() {
-  if (!APP.album.rewards) return '';
-  const all = APP.album.rewards();
-  const got = all.filter(function (r) { return r.got; }).length;
-  const L = APP.album.look();
-  return '<a class="alb-v2__rw" href="#/rewards" data-act="go-rewards">' +
-      '<span class="rw-swatch"' + (L.frame ? ' data-frame="' + esc(L.frame.key) + '"' : '') + ' aria-hidden="true"><span class="rw-swatch__in"></span></span>' +
-      '<span class="u-fill"><strong>相框與稱號</strong>' +
-        '<small>收下 <span data-stat="rewards">' + got + '</span>/' + all.length + (L.title ? ' · 稱號「' + esc(L.title.name) + '」' : '') + '</small></span>' +
-      '<span class="arrow"></span></a>';
-}
-
 function albumV2Render() {
   const cards = M().POSTCARDS || [];
   const got = cards.filter(function (p) { return STATE.has(p.id); });
   /* 每去一次收一張：圖鑑算的是不同的明信片（got），回訪收下的另外寫一句 */
   const again = APP.explore.recentVisits().length - got.length;
-  const L = APP.album.look ? APP.album.look() : { title: null };
   return '<div class="alb alb-v2 alb-v2--home"><div class="scroll alb-scroll alb-v2__scroll">' +
       '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
-        (L.title ? '<span class="alb-v2__title-chip" data-look-title>' + esc(L.title.name) + '</span>' : '') +
         '<p>走過的地方，都留在這裡。</p></header>' +
       '<a class="alb-v2__hero" href="#/postcards" data-act="go-postcards">' +
         '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
@@ -1408,7 +1391,7 @@ APP.view('elder', {
 APP.album = Object.assign(APP.album || {}, { footprintSeen: footprintSeen, weekStats: weekStats,
               visitedPlaces: visitedPlaces, recentCards: recentCards, cityColors: cityColors,
               coverage: function () { return fixedCoverage({ seen: footprintSeen().seen, fade: [] }); } });
-/* album 的子檔（album-rewards.js、album-family.js）共用的零件。不可列舉：別的區塊不要依賴 */
+/* album 的子檔（album-family.js）共用的零件。不可列舉：別的區塊不要依賴 */
 Object.defineProperty(APP.album, '_', {
   enumerable: false,
   value: { subHeader: subHeader, subMount: subMount, cardById: cardById, cardIdx: cardIdx, header: header },

@@ -1,11 +1,10 @@
-/* 每一次來都收一張（explore-cards.js 的 visits／canCollect／recentVisits／rideKm／totalKm）
-   與照進度累積的相框、稱號（album-rewards.js 的 rewards／look／setLook／cardHTML） */
+/* 每一次來都收一張（explore-cards.js 的 visits／canCollect／recentVisits／rideKm／totalKm） */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadApp } from './helpers.mjs';
 
 const NOW = '2026-09-26T10:00:00+08:00';     /* 115 年中秋那一週（9/21–9/28）裡 */
-const load = (o = {}) => loadApp(Object.assign({ views: ['ride', 'explore-fx', 'explore-fest', 'explore-cards', 'album', 'album-rewards'], now: NOW }, o));
+const load = (o = {}) => loadApp(Object.assign({ views: ['ride', 'explore-fx', 'explore-fest', 'explore-cards', 'album'], now: NOW }, o));
 const plain = (o) => JSON.parse(JSON.stringify(o));
 
 test('visits：第一次在 STATE、第二次起在 store.visits；同一個地方同一天一張', () => {
@@ -84,59 +83,6 @@ test('rideKm：搭 yoxi 去收明信片的公里累積（回訪也算、走路�
   assert.equal(E.cardOrigin('p9', 2).mile, 60, '回訪的那一趟也算、跨過 60');
   assert.equal(E.cardOrigin('p9', 2).limited, false, '回訪不是限定版（+50 只給第一次）');
   assert.equal(E.cardOrigin('p9', 2).gold, true, '搭 yoxi 抵達還是金框');
-});
-
-test('rewards：每一個都寫規則與「n/m」的進度，湊到就收下；沒有機率', () => {
-  const { APP, STATE } = load();
-  const R = APP.album.rewards();
-  assert.ok(R.length >= 10, '相框與稱號都有');
-  for (const r of R) {
-    assert.ok(r.rule && /\d+\/\d+/.test(r.prog), r.key + '：有規則、有 n/m');
-    assert.equal(r.got, r.done >= r.total, r.key + '：湊到才收下');
-    assert.ok(!/機率|抽|保底|任務|完成|達成|挑戰|每日|排名/.test(r.name + r.rule + r.prog), r.key + '：沒有抽獎、沒有禁用詞');
-  }
-  const by = (k) => R.find((r) => r.key === k);
-  const places = APP.album.visitedPlaces().length;
-  assert.equal(by('bamboo').done, places, '竹塹：去過的地方');
-  assert.equal(by('bamboo').got, places >= 5);
-  assert.equal(by('road').total, APP.explore.MILE_STEPS[0], '里程相框：第一個里程');
-  assert.equal(by('b1').got, STATE.badge('b1').got, '稱號跟著獎章');
-  assert.equal(by('moon').got, false, '還沒在中秋那一週收過');
-  APP.explore.collect('glass-kiln');                      /* 9/26 在中秋那一週 */
-  assert.equal(APP.album.rewards().find((r) => r.key === 'moon').got, true, '中秋那一週收下一張：中秋相框');
-  const friend = () => APP.album.rewards().find((r) => r.key === 'friend');
-  assert.equal(friend().got, false);
-  APP.explore.collect('station');
-  APP.store.set('demoDate', '2026-10-01');
-  APP.explore.collect('station');
-  assert.equal(friend().done, 3, '新竹車站去了 3 次');
-  assert.equal(friend().got, true, '同一個地方 3 次：老朋友相框');
-});
-
-test('look／setLook：沒選過用收下的第一個稱號、不套相框；還沒收下的選了也不算', () => {
-  const { APP } = load();
-  const A = APP.album;
-  const firstTitle = A.rewards('title').find((r) => r.got);
-  assert.deepEqual(plain(A.look()), { frame: null, title: { key: firstTitle.key, name: firstTitle.name } });
-  A.setLook({ frame: 'bamboo', title: 'b3' });
-  assert.deepEqual(plain(A.look()), { frame: { key: 'bamboo', name: '竹塹' }, title: { key: 'b3', name: '老車站的常客' } });
-  A.setLook({ title: null });
-  assert.equal(A.look().title, null, '選「不顯示」就不顯示');
-  A.setLook({ frame: 'wind' });
-  assert.equal(A.look().frame, null, '還沒收下的相框：不算');
-});
-
-test('cardHTML：那一次的明信片套上相框；還沒收的卡是空字串', () => {
-  const { APP } = load();
-  const A = APP.album;
-  assert.equal(A.cardHTML('p11'), '', '還沒收');
-  const h = A.cardHTML('p1', { frame: 'bamboo' });
-  assert.ok(/data-frame="bamboo"/.test(h) && /data-card-art="p1"/.test(h) && /AI 生成示意/.test(h), '相框、卡面、AI 標示');
-  assert.ok(/data-mark="first"/.test(h), '第一次那一張：首訪戳');
-  APP.explore.collect('station');
-  const h2 = A.cardHTML('p1', { v: 2, frame: '' });
-  assert.ok(/data-card-visit="2"/.test(h2) && !/data-frame=/.test(h2), '第 2 次、不套相框');
-  assert.ok(!/data-mark/.test(A.cardHTML('p1', { size: 'sm' })), '小卡不蓋戳');
 });
 
 test('搭車回訪：行程紀錄與點數每一次都算（回訪不給城事解鎖回饋）；回訪的歸因記在那一次、不蓋掉第一次', () => {

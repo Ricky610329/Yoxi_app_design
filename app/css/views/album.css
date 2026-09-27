@@ -122,9 +122,8 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-v2__postcard small { margin-top: 2px; color: var(--app-muted); font-size: var(--fs-xs); }
 .alb-v2__note { padding: var(--sp-2) var(--gutter) var(--sp-6); }
 
-/* 獎章精選卡：最近收下的一枚（左邊章、右邊名字與日期），下面一列小章疊在一起＋「顯示全部」，
-   卡底一列相框與稱號（album-rewards.css 的 .alb-v2__rw）。
-   做成橫排而不是大章置中、放大那一枚上下只留 --sp-1：收藏首頁在 390×844 一屏放得下，不用往下捲 */
+/* 獎章精選卡：最近收下的一枚（左邊章、右邊名字與日期），下面一列小章疊在一起＋「顯示全部」。
+   做成橫排而不是大章置中、放大那一枚上下只留 --sp-1：收藏首頁在 390×844（含狀態列）一屏放得下，不用往下捲 */
 .alb-v2__medals {
   margin: var(--sp-3) var(--gutter) 0; padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
@@ -500,3 +499,12 @@ main.view .alb-row [data-icon] > svg,
 main.view .alb-fact [data-icon] > svg,
 main.view .alb-member__check > svg,
 main.view .alb-cell__lock [data-icon] > svg { width: 100%; height: 100%; display: block; }
+
+/* ---------- 明信片頁：每一次來（album.js 的 visitsStripHTML） ---------- */
+.alb-visits { display: flex; gap: var(--sp-3); overflow-x: auto; padding-bottom: var(--sp-1); }
+.alb-visit { display: flex; flex: none; flex-direction: column; align-items: center; width: 72px; min-height: 44px; color: var(--yoxi-navy); }
+.alb-visit__art { position: relative; display: block; width: 60px; height: 80px; overflow: hidden; border-radius: var(--r-img); box-shadow: var(--sh-card); }
+.alb-visit__art > .postcard__art { width: 100%; height: 100%; }
+.alb-visit strong { margin-top: var(--sp-1); font-size: var(--fs-cap); }
+.alb-visit small { color: var(--app-muted); font-size: var(--fs-xs); }
+.alb-visit.is-on .alb-visit__art { box-shadow: 0 0 0 2px var(--yoxi-navy); }

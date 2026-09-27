@@ -1,7 +1,7 @@
 /* ==========================================================================
    yoxi 城事 web app — album-family：傳到 LINE 給家人、家人的回應（全部是示意）
    契約：app/ARCHITECTURE.md §3.3（store.shares／store.replies）、§3.5（分享面板的「傳到 LINE 給家人」）、§7、§8。
-   載入順序：album.js 之後（它有 APP.album.cardHTML／look 就用，沒有就退回插圖卡）。
+   載入順序：album.js 之後（用它的 APP.album._ 零件）；明信片那一次的樣子問 APP.explore.cardOrigin。
 
    這支註冊兩個 view：
      /line          長輩的手機：LINE 的「家人」群組（示意）。傳出去的明信片（store.shares，最新的在最下面，只放最近三張）
@@ -207,35 +207,27 @@ function repliesHTML(cardId, v) {
 
 /* ---------------------------------------------------------------- 畫面零件 */
 
-/* 那一次造訪的明信片：album.js 有 cardHTML（相框、那一次的款式）就用它；沒有就退回插圖卡
-   （data-card-art 讓 explore-face.js 疊上收下的那一款）。寬度由外面的 .fam-cardwrap 決定 */
+/* 那一次造訪的明信片（第幾次、金框、首訪／里程戳與節日插畫照 APP.explore.cardOrigin）。
+   data-card-art＋data-card-visit 讓 explore-face.js 疊上收下的那一款；對不到那一次（還沒收、舊的分享）就畫卡面本身。
+   size 'sm'（/line 的小卡）不蓋戳、不放插畫，免得一串聊天都在動。寬度由外面的 .fam-cardwrap 決定 */
 function cardArt(cardId, o) {
   o = o || {};
-  const A = APP.album;
-  if (A && typeof A.cardHTML === 'function') {
-    try {
-      const h = A.cardHTML(cardId, { v: o.v, size: o.size });
-      if (h) return String(h);
-    } catch (e) { console.error('APP.album.cardHTML:', e); }
-  }
   const p = cardById(cardId);
   if (!p) return '';
   const i = (M().POSTCARDS || []).indexOf(p);
-  return '<div class="postcard fam-card">' +
-    '<div data-art="' + esc(p.art) + '" data-seed="' + i + '" data-card-art="' + esc(p.id) + '" style="position:absolute;inset:0"></div>' +
+  let org = null;
+  try { org = APP.explore && APP.explore.cardOrigin ? APP.explore.cardOrigin(cardId, o.v) : null; }
+  catch (e) { console.error('APP.explore.cardOrigin:', e); }
+  const gold = !!(org && org.gold);
+  return '<div class="postcard fam-card' + (gold ? ' postcard--gold' : '') + '"' + (gold ? ' data-gold-aura' : '') +
+      ' data-card="' + esc(p.id) + '"' + (org ? ' data-v="' + org.v + '"' : '') + '>' +
+    '<div class="fam-card__art" data-art="' + esc(p.art) + '" data-seed="' + i + '" data-card-art="' + esc(p.id) + '"' +
+      (org && org.v > 1 ? ' data-card-visit="' + org.v + '"' : '') + '></div>' +
     '<span class="ai-mark">AI 生成示意</span>' +
-    '<span class="postcard__foot"><span class="postcard__name">' + esc(p.name) + '</span></span>' +
+    (org && o.size !== 'sm' ? String(org.marks || '') : '') +
+    '<span class="postcard__foot"><span class="postcard__name">' + esc(p.name) + '</span>' +
+      (org && org.dateText ? '<span class="postcard__date">' + esc(org.dateText) + '</span>' : '') + '</span>' +
   '</div>';
-}
-
-/* 長輩選用的稱號（album.js 的 look()；沒有這支或沒選就是 ''） */
-function lookTitle() {
-  const A = APP.album;
-  if (!A || typeof A.look !== 'function') return '';
-  try {
-    const L = A.look();
-    return L && L.title && L.title.name ? String(L.title.name) : '';
-  } catch (e) { return ''; }
 }
 
 function dayLabel(iso) {
@@ -411,13 +403,10 @@ APP.view('family', {
                 action: '<a class="btn-primary" href="#/line" data-act="go-line">回到' + esc(FAMILY.elder.name) + '的手機</a>' }) +
         '</div></div>';
     }
-    const title = lookTitle();
     const on = hearted(s.id, KID.id);
     return '<div class="fam fam-kidpage" data-family data-share="' + esc(s.id) + '">' + top +
       '<div class="scroll fam-kid">' +
-        '<h1 class="fam-kid__from" data-family-from><b>' + esc(FAMILY.elder.name) + '</b>' +
-          (title ? '<span class="fam-kid__title" data-family-title> · ' + esc(title) + '</span> ' : '') +
-          '傳來一張明信片</h1>' +
+        '<h1 class="fam-kid__from" data-family-from><b>' + esc(FAMILY.elder.name) + '</b>傳來一張明信片</h1>' +
         '<div class="fam-cardwrap fam-cardwrap--lg">' + cardArt(P.id, { v: s.v, size: 'lg' }) + '</div>' +
         (s.cap ? '<p class="fam-kid__cap" data-share-cap>' + esc(s.cap) + '</p>' : '') +
         '<p class="fam-kid__name">' + esc(P.name) + '</p>' +

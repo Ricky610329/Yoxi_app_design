@@ -25,7 +25,7 @@
      （exploreHome、notFound、backFabBar、distHTML）。
    刻意沒有：機率、抽籤、保底（明信片是哪一款只看規則，長輩知道「為什麼」；里程看的是累積的公里，不是「抽幾次必中」）；
              搶先、限量（每個人去都拿得到）；畫面（/unlock 在 explore-unlock.js）、
-             卡面（explore-face.js）、特效（explore-fx.js 的 APP.fx）、相框與稱號（album-rewards.js）。
+             卡面（explore-face.js）、特效（explore-fx.js 的 APP.fx）。
 
    數字一律從 STATE／MOCK／APP.fmt 算；按鈕一律 element.onclick；動作鈕帶 data-act。
    ========================================================================== */
@@ -90,7 +90,7 @@ const FESTIVALS = [
 /* 里程紀念（公里）：搭 yoxi 去收明信片的路程累積起來（rideKm），這一趟跨過其中一個數字，這張卡就蓋一枚里程紀念戳。
    看累積、不看單趟，所以常搭短程的人也會走到；一趟跨過兩個數字時記大的那一個。回程不收明信片，不算。
    demo 一開始搭 yoxi 收了南寮（8.2）與青草湖（6.4）：14.6 km，搭車去內灣（28 km）就會跨過 30。
-   跟走路門檻（fmt.WALK_MAX_M）一樣是寫死的規則，改這裡畫面上的說明、相框與稱號頁的進度會跟著變。 */
+   跟走路門檻（fmt.WALK_MAX_M）一樣是寫死的規則，改這裡畫面上的說明會跟著變。 */
 const MILE_STEPS = [30, 60, 100, 200, 300, 500];
 
 function styleOf(key) {
@@ -165,7 +165,7 @@ function round1(n) { return Math.round(n * 10) / 10; }
 function mileCrossed(before, after) {
   return MILE_STEPS.filter(function (m) { return m > before && m <= after; }).pop() || 0;
 }
-/* 下一個里程（都跨過了是 null）：相框與稱號頁、規則說明寫「累積 42.6／60 公里」 */
+/* 下一個里程（都跨過了是 null）：規則說明寫「累積 42.6／60 公里」 */
 function nextMile(km) {
   return MILE_STEPS.filter(function (m) { return m > km; })[0] || null;
 }
@@ -255,7 +255,7 @@ function recentVisits(n) {
 function nextSeq() {
   return recentVisits().reduce(function (m, x) { return Math.max(m, x.seq); }, 0) + 1;
 }
-/* 搭 yoxi 去收明信片的累積公里（里程紀念、相框與稱號看它）：每一張搭車收下的卡，這一趟的公里加起來 */
+/* 搭 yoxi 去收明信片的累積公里（里程紀念看它）：每一張搭車收下的卡，這一趟的公里加起來 */
 function rideKm() {
   return round1(recentVisits().reduce(function (t, x) { return x.by === 'ride' ? t + x.km : t; }, 0));
 }

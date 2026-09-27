@@ -265,35 +265,24 @@ T.spec('family', function (t) {
     t.eq(W.__xss, 0, '沒有執行');
   });
 
-  /* album.js 的 cardHTML（那一次造訪的明信片＋相框）與 look()（稱號）：有就用，沒有就退回插圖卡、不寫稱號 */
-  t.test('APP.album.cardHTML／look 有就用（帶 v 與 size），沒有就退回插圖卡', async function (app) {
+  /* 那一次造訪的明信片（cardArt 問 APP.explore.cardOrigin）：/family 與 /line 都是傳出去的那一次；沒有相框、沒有稱號 */
+  t.test('/family、/line 的明信片是傳出去的那一次（第 2 次、首訪戳只在第一次）；寄件人旁邊不寫稱號', async function (app) {
     await app.reset();
     const A = app.APP;
-    const s = A.family.send({ card: 'p1', v: 2 });
-    const calls = [];
-    const hadCard = A.album.cardHTML, hadLook = A.album.look;
-    A.album.cardHTML = function (id, o) {
-      calls.push(id + ':' + o.v + ':' + o.size);
-      return '<div class="postcard" data-stub-card="' + id + '"></div>';
-    };
-    A.album.look = function () { return { frame: null, title: { key: 'old-town', name: '舊城散步人' } }; };
-    try {
-      await app.go('/family/p1?share=' + s.id);
-      t.eq(app.text('[data-family-from]'), '媽媽 · 舊城散步人 傳來一張明信片', '寄件人旁邊是稱號');
-      t.ok(app.$('main.view [data-stub-card="p1"]'), '/family 用 cardHTML');
-      await app.go('/line?share=' + s.id);
-      t.ok(app.$('.fam-share [data-stub-card="p1"]'), '/line 用 cardHTML');
-      t.includes(calls.join(','), 'p1:2:lg', '/family 帶 v＝2、size＝lg');
-      t.includes(calls.join(','), 'p1:2:sm', '/line 帶 v＝2、size＝sm');
-      A.album.cardHTML = function () { throw new Error('壞掉的 cardHTML'); };
-      A.album.look = function () { return { frame: null, title: null }; };
-      await app.go('/family/p1?share=' + s.id);
-      t.eq(app.text('[data-family-from]'), '媽媽傳來一張明信片', '沒選稱號就不寫');
-      t.ok(app.$('main.view .fam-card [data-card-art="p1"]'), 'cardHTML 丟例外時退回插圖卡');
-    } finally {
-      if (hadCard) A.album.cardHTML = hadCard; else delete A.album.cardHTML;
-      if (hadLook) A.album.look = hadLook; else delete A.album.look;
-    }
+    A.explore.collect('station');                  /* p1 第 2 次 */
+    const s2 = A.family.send({ card: 'p1', v: 2 });
+    await app.go('/family/p1?share=' + s2.id);
+    t.eq(app.text('[data-family-from]'), '媽媽傳來一張明信片', '寄件人：只有名字');
+    t.ok(app.$('main.view .fam-card [data-card-art="p1"][data-card-visit="2"]'), '/family：第 2 次那一張');
+    t.ok(!app.$('main.view .fam-card [data-mark="first"]'), '/family：回訪沒有首訪戳');
+    t.ok(!app.$('main.view [data-frame]'), '沒有相框');
+    await app.go('/line?share=' + s2.id);
+    t.ok(app.$('.fam-share .fam-card [data-card-visit="2"]'), '/line：第 2 次那一張');
+    t.ok(!app.$('.fam-share .fam-card [data-mark]'), '/line 的小卡不蓋戳');
+    const s1 = A.family.send({ card: 'p1', v: 1 });
+    await app.go('/family/p1?share=' + s1.id);
+    t.ok(app.$('main.view .fam-card [data-mark="first"]'), '/family：第一次那一張有首訪戳');
+    t.ok(!app.$('main.view .fam-card [data-card-visit]'), '第一次不帶 data-card-visit');
   });
 
   t.test('album-family.css 沒有 hex 色碼、圓角只用 --r-*', async function (app) {

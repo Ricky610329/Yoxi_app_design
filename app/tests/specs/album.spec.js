@@ -289,30 +289,39 @@ T.spec('album', function (t) {
     t.eq(app.text('[data-stat="badges"]'), (got.length + 1) + '/' + B.length, '獎章數 +1');
   });
 
-  t.test('/album 一屏：相框與稱號併在獎章卡最底下，390×844 不用往下捲（預設、回訪＋換相框、0 張都一樣）', async function (app) {
+  /* 一屏：量桌機外框（390×844 縮放、狀態列 54px，跟有瀏海的手機一樣）。測試 iframe 本身是手機版、狀態列只有 12px，
+     在那裡量會少算 42px（2026-09-27 就是這樣漏掉的）。 */
+  t.test('/album 一屏：桌機外框（含狀態列）不用往下捲（預設、回訪、0 張都一樣）；沒有相框與稱號', async function (app) {
+    const fr = app.win.frameElement;
     const fits = function (msg) {
       const s = app.$('main.view .alb-v2__scroll');
       t.ok(s && s.scrollHeight <= s.clientHeight + 1, msg + '：不用捲 ' + (s && s.scrollHeight) + ' ≤ ' + (s && s.clientHeight));
     };
+    const size = async function (w, h) {
+      fr.style.width = w ? w + 'px' : ''; fr.style.height = h ? h + 'px' : '';
+      fr.getBoundingClientRect();
+      await app.tick(60);
+      app.APP.fitDevice();
+      await app.tick(60);
+    };
     await app.reset();
-    await app.go('/album');
-    t.ok(app.$('.alb-v2__medals [data-act="go-rewards"]'), '相框與稱號的入口在獎章卡裡');
-    t.eq(app.$$('main.view .alb-v2__rw').length, 1, '只有這一個入口，不另開一張卡');
-    fits('預設');
-    /* 回訪（主卡多一句）＋用一個相框、最長的稱號 */
-    app.APP.explore.collect('station');
-    const A = app.APP.album;
-    const frame = A.rewards('frame').filter(function (r) { return r.got; })[0];
-    const title = A.rewards('title').filter(function (r) { return r.got; })
-      .sort(function (x, y) { return y.name.length - x.name.length; })[0];
-    A.setLook({ frame: frame ? frame.key : null, title: title ? title.key : null });
-    await app.go('/album');
-    fits('回訪＋相框＋稱號');
-    const A0 = app.STATE.all;
-    A0.cards = {}; A0.km = 0; A0.lastCard = null; A0.lastSeen = null;
-    await app.go('/album');
-    fits('0 張');
-    await app.reset();
+    await size(1280, 720);
+    try {
+      await app.go('/album');
+      t.eq(app.doc.documentElement.getAttribute('data-layout'), 'desktop', '桌機外框');
+      t.ok(!app.$('[data-act="go-rewards"], .alb-v2__rw, [data-look-title]'), '沒有相框與稱號的入口、頁首沒有稱號');
+      fits('預設');
+      app.APP.explore.collect('station');           /* 回訪：主卡多一句 */
+      await app.go('/album');
+      fits('回訪');
+      const A0 = app.STATE.all;
+      A0.cards = {}; A0.km = 0; A0.lastCard = null; A0.lastSeen = null;
+      await app.go('/album');
+      fits('0 張');
+    } finally {
+      await size(null, null);
+      await app.reset();
+    }
   });
 
   /* 隱私分軌 */

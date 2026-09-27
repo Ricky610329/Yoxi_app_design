@@ -90,11 +90,13 @@
 .fam-bubble__line b { font-size: var(--fs-body); font-weight: var(--fw-heavy); }
 .fam-bubble__line small { font-size: var(--fs-cap); color: var(--app-muted); }
 
-/* 明信片：寬度由外框決定（album.js 的 cardHTML 或這裡的退路 .fam-card 都是 100% 寬） */
+/* 明信片：寬度由外框決定（album-family.js 的 cardArt，.fam-card 是 100% 寬） */
 .fam-cardwrap { position: relative; }
 .fam-cardwrap--sm { width: 100%; }
 .fam-cardwrap--lg { width: 100%; max-width: 300px; margin: var(--sp-4) auto 0; }
 .fam-card { box-shadow: var(--sh-card); }
+.fam-card__art { position: absolute; inset: 0; display: block; }
+.fam-card__art > .postcard__art { width: 100%; height: 100%; }
 .fam-cardwrap--lg .fam-card { box-shadow: var(--sh-lift); }
 .fam-cardwrap--lg .postcard__name { font-size: var(--fs-body); }
 
@@ -139,7 +141,6 @@
 .fam-kid { padding: var(--sp-4) var(--gutter) var(--sp-6); background: var(--yoxi-paper); }
 .fam-kid__from { font-size: var(--fs-lead); font-weight: var(--fw-bold); line-height: 1.45; }
 .fam-kid__from b { font-weight: var(--fw-heavy); }
-.fam-kid__title { color: var(--app-muted); }
 .fam-kid__cap { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
 .fam-kid__name { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
 .fam-kid__note {
