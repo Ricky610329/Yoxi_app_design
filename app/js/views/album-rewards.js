@@ -54,12 +54,12 @@ const TRACK = {
   fest:   function (need, key) { return { done: festCount(key), total: need }; },
   badge:  function (need, id) { return badgeTrack(id); },
 };
-/* 進度怎麼念：「收集 n/m」的格式，單位跟著這一條走 */
+/* 進度怎麼念：「收集 n/m」的格式，接在規則後面念（「去過 10 個地方 · 8/10」），規則裡寫過的字不再寫一次 */
 const PROG = {
-  places: function (d, t) { return '去過 ' + d + '/' + t + ' 個地方'; },
-  again:  function (d, t) { return '同一個地方 ' + d + '/' + t + ' 次'; },
-  mile:   function (d, t) { return '累積 ' + d + '/' + t + ' 公里'; },
-  fest:   function (d, t) { return '收下 ' + d + '/' + t + ' 張'; },
+  places: function (d, t) { return d + '/' + t; },
+  again:  function (d, t) { return d + '/' + t + ' 次'; },
+  mile:   function (d, t) { return d + '/' + t + ' 公里'; },
+  fest:   function (d, t) { return d + '/' + t + ' 張'; },
   badge:  function (d, t) { return '收集 ' + d + '/' + t; },
 };
 
@@ -173,15 +173,15 @@ function previewHTML() {
 function frameTile(r, on) {
   const inner = swatch(r ? r.key : '') +
     '<strong>' + (r ? esc(r.name) : '不用相框') + '</strong>' +
-    '<small>' + (r ? esc(r.got ? r.rule : r.prog) : '原本的卡面') + '</small>' +
-    (r && !r.got ? '<small class="rw-tile__rule">' + esc(r.rule) + '</small>' : '');
+    '<small>' + (r ? esc(r.rule) : '原本的卡面') + '</small>' +
+    (r && !r.got ? '<small class="rw-tile__prog" data-prog>' + esc(r.prog) + '</small>' : '');
   if (r && !r.got) return '<div class="rw-tile is-locked" data-reward="' + esc(r.key) + '">' + inner + '</div>';
   return '<button class="rw-tile' + (on ? ' is-on' : '') + '" type="button" data-act="use-frame" data-reward="' + esc(r ? r.key : '') +
     '" aria-pressed="' + (on ? 'true' : 'false') + '">' + inner + '</button>';
 }
 function titleRow(r, on) {
   const inner = '<span class="rw-row__t">' + (r ? esc(r.name) : '不顯示稱號') + '</span>' +
-    '<span class="rw-row__s">' + (r ? esc(r.rule) + (r.got ? '' : ' · ' + esc(r.prog)) : '收藏頁與傳出去的明信片都不寫') + '</span>';
+    '<span class="rw-row__s">' + (r ? esc(r.rule) + (r.got ? '' : ' · <span data-prog>' + esc(r.prog) + '</span>') : '收藏頁與傳出去的明信片都不寫') + '</span>';
   if (r && !r.got) return '<div class="rw-row is-locked" data-reward="' + esc(r.key) + '">' + inner + '</div>';
   return '<button class="rw-row' + (on ? ' is-on' : '') + '" type="button" data-act="use-title" data-reward="' + esc(r ? r.key : '') +
     '" aria-pressed="' + (on ? 'true' : 'false') + '">' + inner + '</button>';

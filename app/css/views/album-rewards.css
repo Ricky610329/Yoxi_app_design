@@ -63,13 +63,13 @@
     radial-gradient(circle, color-mix(in srgb, var(--yoxi-white) 55%, transparent) .7px, transparent 1.2px) 8px 6px / 23px 19px,
     var(--yoxi-navy-soft);
 }
-/* 櫻花：淡粉底上的花瓣 */
+/* 櫻花：淡粉底上的花瓣（花瓣是很淡的粉，不是品牌紅） */
 [data-frame="sakura"] {
   background:
-    radial-gradient(ellipse 3px 2px, var(--yoxi-white) 90%, transparent) 0 0 / 15px 13px,
-    radial-gradient(ellipse 2.4px 1.6px, var(--yoxi-cream-deep) 90%, transparent) 7px 6px / 19px 17px,
+    radial-gradient(ellipse 4px 2.6px, color-mix(in srgb, var(--yoxi-red) 30%, var(--yoxi-white)) 85%, transparent) 0 0 / 15px 13px,
+    radial-gradient(ellipse 3px 2px, var(--yoxi-white) 85%, transparent) 7px 6px / 19px 17px,
     var(--yoxi-red-soft);
-  box-shadow: inset 0 0 0 1.5px var(--yoxi-cream-deep);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--yoxi-red) 25%, var(--yoxi-white));
 }
 /* 角落的小裝飾：中秋的月亮、里程的「km」、春節的角花 */
 .rw-card[data-frame="moon"]::after, .rw-swatch[data-frame="moon"]::after {
@@ -130,6 +130,7 @@ button.rw-tile { cursor: pointer; }
 .rw-tile .rw-swatch { margin-bottom: var(--sp-2); }
 .rw-tile strong { font-size: var(--fs-sm); line-height: 1.3; }
 .rw-tile small { color: var(--app-muted); font-size: var(--fs-xs); line-height: 1.35; }
+.rw-tile .rw-tile__prog { color: var(--yoxi-navy); font-weight: var(--fw-bold); }
 .rw-tile.is-on { border-color: var(--yoxi-navy); box-shadow: 0 0 0 2px var(--yoxi-navy); }
 .rw-tile.is-locked { background: var(--yoxi-mist); border-style: dashed; }
 .rw-tile.is-locked .rw-swatch { filter: grayscale(1); opacity: .55; }

@@ -13,7 +13,9 @@ T.spec('rewards', function (t) {
       t.ok(el, r.key + '：在牆上');
       if (!el) return;
       t.eq(el.tagName === 'BUTTON', r.got, r.key + '：收下的才是按鈕');
-      t.includes(el.textContent, r.got ? r.rule : r.prog, r.key + '：收下的寫規則、還在路上的寫進度（' + r.prog + '）');
+      t.includes(el.textContent, r.rule, r.key + '：寫規則');
+      t.eq(!!el.querySelector('[data-prog]'), !r.got, r.key + '：還在路上的才寫進度');
+      if (!r.got) t.includes(el.querySelector('[data-prog]').textContent, r.prog, r.key + '：進度（' + r.prog + '）');
     });
     const frames = all.filter(function (r) { return r.kind === 'frame'; });
     t.includes(app.text('[data-stat="frames"]'), frames.filter(function (r) { return r.got; }).length + '/' + frames.length, '相框收下幾個＝rewards()');
