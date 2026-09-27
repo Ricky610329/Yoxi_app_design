@@ -603,6 +603,11 @@ function visitOf(cardId, ctx) {
   const list = APP.explore.visits(cardId);
   return n > 1 && list.some(function (x) { return x.v === n; }) ? n : 1;
 }
+/* 家人的回應（示意，album-family.js 畫）：沒有就不佔位 */
+function repliesHTML(cardId, v) {
+  const h = APP.family && APP.family.repliesHTML ? APP.family.repliesHTML(cardId, v) : '';
+  return h ? '<div class="alb-pad">' + h + '</div>' : '';
+}
 /* 這個地方的每一次（收過兩張以上才有）：小卡一排，點了換成那一次。整排是一片（data-gallery，可按數算一個） */
 function visitsStripHTML(P, v) {
   const list = APP.explore.visits(P.id);
@@ -719,7 +724,7 @@ APP.view('postcard', {
           '<p class="alb-sub" data-visit-sub>' + esc(date) + ' · ' + byText + ' · ' + nth + '</p>' +
         '</div>' +
         visitsStripHTML(P, v) +
-        (APP.family && APP.family.repliesHTML ? APP.family.repliesHTML(P.id, v) : '') +
+        repliesHTML(P.id, v) +
         '<div class="alb-pad"><div class="card">' +
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="steps"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">怎麼到的</span>' +

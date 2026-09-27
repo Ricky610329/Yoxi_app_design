@@ -1,0 +1,238 @@
+/* ==========================================================================
+   yoxi 城事 web app — album-family 的樣式（/line、/family/:id、明信片詳情嵌的「家人的回應」）
+   一個通用的聊天畫面：不用 LINE 的 logo 與品牌色。mist 底、白氣泡、自己的話用奶油色；
+   可以按的（喜歡、快速回覆、送出、回到媽媽的手機）才是海軍藍，紅色不用（這裡沒有品牌情緒的位置）。
+   不准 hex、不寫 rgba：顏色、字級、圓角、陰影、時間全用 tokens.css 的變數，半透明用 color-mix。
+   ========================================================================== */
+
+/* ---- 整頁：tab 為 null 的全螢幕，自己讓開狀態列 ---- */
+.fam {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-top: var(--statusbar-h);
+  background: var(--yoxi-white);
+}
+
+/* 「示意」標籤：一直在畫面最上面，不會被捲走 */
+.fam-mock {
+  flex: none;
+  padding: var(--sp-1) var(--gutter);
+  background: var(--yoxi-cream);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* 聊天室頁首 */
+.fam-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 56px;
+  padding: var(--sp-1) var(--gutter) var(--sp-1) var(--sp-1);
+  border-bottom: 1px solid var(--yoxi-line);
+  background: var(--yoxi-white);
+}
+.fam-bar__back { display: grid; place-items: center; flex: none; width: 44px; height: 44px; }
+.fam-bar__body { display: flex; flex-direction: column; min-width: 0; }
+.fam-bar__t { font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
+.fam-bar__s { margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
+
+/* ---- /line：聊天內容 ---- */
+.fam-chat {
+  position: relative;               /* 捲到指定那一次用 offsetTop */
+  padding: var(--sp-3) var(--gutter) var(--sp-5);
+  background: var(--yoxi-mist);
+}
+.fam-sys,
+.fam-day {
+  display: table;
+  margin: 0 auto var(--sp-3);
+  max-width: 100%;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--yoxi-navy) 8%, transparent);
+  color: var(--app-muted);
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+  text-align: center;
+}
+.fam-day { margin-top: var(--sp-3); font-weight: var(--fw-bold); }
+.fam-share + .fam-share { margin-top: var(--sp-4); }
+
+.fam-msg { display: flex; align-items: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
+.fam-msg--me { justify-content: flex-end; }
+.fam-msg__meta { flex: none; font-size: var(--fs-xs); color: var(--app-muted); }
+.fam-msg__col { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.fam-msg__who { margin-bottom: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
+
+.fam-bubble {
+  display: inline-block;
+  max-width: 240px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sheet);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+  box-shadow: var(--sh-card);
+}
+.fam-bubble--card { width: 200px; padding: var(--sp-2); }
+.fam-bubble--mine { background: var(--yoxi-cream); }
+.fam-bubble__cap { margin-top: var(--sp-2); font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: 1.35; }
+.fam-bubble__line { display: flex; flex-direction: column; margin-top: var(--sp-2); line-height: 1.4; }
+.fam-bubble__line b { font-size: var(--fs-body); font-weight: var(--fw-heavy); }
+.fam-bubble__line small { font-size: var(--fs-cap); color: var(--app-muted); }
+
+/* 明信片：寬度由外框決定（album.js 的 cardHTML 或這裡的退路 .fam-card 都是 100% 寬） */
+.fam-cardwrap { position: relative; }
+.fam-cardwrap--sm { width: 100%; }
+.fam-cardwrap--lg { width: 100%; max-width: 300px; margin: var(--sp-4) auto 0; }
+.fam-card { box-shadow: var(--sh-card); }
+.fam-cardwrap--lg .fam-card { box-shadow: var(--sh-lift); }
+.fam-cardwrap--lg .postcard__name { font-size: var(--fs-body); }
+
+/* 喜歡：寫名字，不寫幾個 */
+.fam-ic-heart { flex: none; width: 16px; height: 16px; fill: currentColor; }
+.fam-hearts {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+}
+.fam-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  background: var(--yoxi-cream);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+}
+
+.fam-foot {
+  flex: none;
+  padding: var(--sp-3) var(--gutter) calc(var(--sp-3) + var(--safe-bottom));
+  border-top: 1px solid var(--yoxi-line);
+  background: var(--yoxi-white);
+}
+
+/* ---- 空狀態 ---- */
+.fam-empty { padding: var(--sp-6) var(--sp-2); text-align: center; }
+.fam-empty__t { font-size: var(--fs-title); font-weight: var(--fw-heavy); line-height: 1.35; }
+.fam-empty__p { margin: var(--sp-2) 0 var(--sp-5); color: var(--app-muted); font-size: var(--fs-sm); line-height: 1.7; }
+
+/* ---- /family/:id：子女那一端 ---- */
+.fam-kid { padding: var(--sp-4) var(--gutter) var(--sp-6); background: var(--yoxi-paper); }
+.fam-kid__from { font-size: var(--fs-lead); font-weight: var(--fw-bold); line-height: 1.45; }
+.fam-kid__from b { font-weight: var(--fw-heavy); }
+.fam-kid__title { color: var(--app-muted); }
+.fam-kid__cap { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
+.fam-kid__name { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
+.fam-kid__note {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  color: var(--app-muted);
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+}
+.fam-kid__lock { display: block; flex: none; width: 14px; height: 14px; margin-top: 3px; }
+.fam-kid__react { display: flex; justify-content: center; margin-top: var(--sp-4); }
+
+.fam-heart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-width: 140px;
+  min-height: 48px;
+  padding: 0 var(--sp-5);
+  border: 1.5px solid var(--yoxi-navy);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.fam-heart .fam-ic-heart { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+.fam-heart.is-on { background: var(--yoxi-navy); color: var(--yoxi-white); }
+.fam-heart.is-on .fam-ic-heart { fill: currentColor; }
+
+.fam-quick { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-3); }
+.fam-chip {
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-pill);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.fam-form { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+.fam-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-btn);
+  background: var(--yoxi-mist);
+  color: var(--yoxi-navy);
+  font-size: var(--fs-body);
+}
+.fam-input::placeholder { color: var(--app-muted); }
+.fam-send {
+  flex: none;
+  min-width: 72px;
+  min-height: 48px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-btn);
+  background: var(--yoxi-navy);
+  color: var(--yoxi-white);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+}
+
+.fam-mine { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-1); margin-top: var(--sp-3); }
+.fam-mine__k { font-size: var(--fs-cap); color: var(--app-muted); }
+.fam-kid__go { margin-top: var(--sp-5); }
+
+/* ---- 明信片詳情頁嵌的「家人的回應」（APP.family.repliesHTML） ---- */
+.fam-replies {
+  padding: var(--sp-4);
+  border: 1px solid var(--yoxi-line);
+  border-radius: var(--r-card);
+  background: var(--yoxi-white);
+  color: var(--yoxi-navy);
+}
+.fam-replies__t { font-size: var(--fs-body); font-weight: var(--fw-heavy); }
+.fam-replies__hearts {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+.fam-replies__list { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
+.fam-replies__item { display: flex; gap: var(--sp-2); font-size: var(--fs-sm); line-height: 1.5; }
+.fam-replies__item b { flex: none; font-weight: var(--fw-heavy); }
+.fam-replies__item span { overflow-wrap: anywhere; }
+.fam-replies__note { margin-top: var(--sp-3); font-size: var(--fs-cap); color: var(--app-muted); }

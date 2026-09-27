@@ -70,8 +70,8 @@ const KEYS = {
   cardMarks:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 第一次收下時記的 { fest: 節日 key 或 '', mile: 跨過的里程 km 或 0, km: 這一趟的公里, ymd, seq: 第幾張收下的, at }（explore） */
   visits:      { def: [],    kind: 'array',   group: 'footprint' },  /* 回訪收下的明信片（第二次起；第一次在 STATE）：[{ card, v, date:'YYYY-MM-DD', by, km, style, fest, mile, note, seq, at }]（explore） */
   look:        { def: {},    kind: 'map',     group: 'pref' },       /* 選用的相框與稱號 { frame: key, title: key }；還沒收下的不算（album） */
-  shares:      { def: [],    kind: 'array',   group: 'footprint' },  /* 傳到 LINE 的紀錄（示意，沒有真的送出）：[{ id, card, v, at }]（album-family） */
-  replies:     { def: {},    kind: 'map',     group: 'footprint' },  /* 家人的回應（示意）：share id → [{ who, heart, text, at }]（album-family） */
+  shares:      { def: [],    kind: 'array',   group: 'footprint' },  /* 傳到 LINE 的紀錄（示意，沒有真的送出）：[{ id, card, v, at:ISO, cap? }]，舊的在前、最多 30 筆；只經 APP.family 寫（album-family） */
+  replies:     { def: {},    kind: 'map',     group: 'footprint' },  /* 家人的回應（示意）：share id → [{ who:'yun', heart:bool, text, at:ISO }]；heart:true 是一個喜歡（text ''），否則是一句話；只經 APP.family 寫（album-family） */
   fxMute:      { def: false, kind: 'boolean', group: 'pref' },       /* 抵達與翻卡的音效關掉（explore） */
   demoDate:    { def: null,  kind: 'string?', group: 'pref' },       /* demo：假裝今天是 'YYYY-MM-DD'（只影響明信片的款式與郵戳；explore） */
   tabPaths:    { def: { ride: '/ride', album: '/album' }, kind: 'map', group: 'footprint' },  /* 各 tab 最後停的 path */
