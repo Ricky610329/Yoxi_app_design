@@ -1,0 +1,178 @@
+/* ==========================================================================
+   yoxi 城事 web app — 相框與稱號（album-rewards.js）＋明信片頁的「每一次來」（album.js）
+   顏色、字級、圓角、間距全用 tokens，沒有色碼。紅色不當框（紅只給品牌情緒）。
+   相框是一層外框：.rw-card（套在明信片外面）與 .rw-swatch（牆上的小樣）共用 [data-frame] 的圖樣，
+   圖樣只放在框上（明信片本身蓋住中間），所以用 background 畫整片、中間被卡面擋掉。
+   ========================================================================== */
+
+/* ---------- 相框的圖樣（.rw-card 與 .rw-swatch 共用） ---------- */
+.rw-card, .rw-swatch {
+  --rw-pad: 10px;
+  position: relative;
+  display: block;
+  padding: var(--rw-pad);
+  border-radius: var(--r-card);
+}
+.rw-card:not([data-frame]) { --rw-pad: 0px; }
+.rw-swatch:not([data-frame]) { background: var(--yoxi-mist); box-shadow: inset 0 0 0 1px var(--yoxi-line); }
+
+/* 竹塹：竹籬的直條＋竹節 */
+[data-frame="bamboo"] {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 22px, color-mix(in srgb, var(--yoxi-navy) 22%, transparent) 22px 24px),
+    repeating-linear-gradient(90deg, var(--yoxi-cream-deep) 0 9px, var(--yoxi-cream) 9px 12px);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--yoxi-navy) 45%, transparent);
+}
+/* 風城：墨藍底上一圈一圈的風 */
+[data-frame="wind"] {
+  background:
+    repeating-radial-gradient(circle at 0 0, transparent 0 9px, color-mix(in srgb, var(--yoxi-white) 26%, transparent) 9px 10px),
+    repeating-radial-gradient(circle at 100% 100%, transparent 0 13px, color-mix(in srgb, var(--yoxi-white) 18%, transparent) 13px 14px),
+    var(--yoxi-navy);
+}
+/* 老朋友：雙線框（像老相簿的內框） */
+[data-frame="friend"] {
+  background: var(--yoxi-cream);
+  box-shadow: inset 0 0 0 2px var(--yoxi-navy), inset 0 0 0 5px var(--yoxi-cream), inset 0 0 0 6.5px var(--yoxi-navy);
+}
+/* 里程：車票的打孔邊＋金色 */
+[data-frame="road"] {
+  background:
+    radial-gradient(circle, var(--yoxi-paper) 2.4px, transparent 2.9px) 0 0 / 12px 12px,
+    var(--gold-lite);
+  box-shadow: inset 0 0 0 1.5px var(--gold);
+}
+/* 春節：金底上的窗花格 */
+[data-frame="spring"] {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--gold-lite) 70%, transparent) 7px 8.5px),
+    repeating-linear-gradient(-45deg, transparent 0 7px, color-mix(in srgb, var(--gold-lite) 70%, transparent) 7px 8.5px),
+    var(--gold);
+}
+/* 端午：一排一排的浪 */
+[data-frame="duanwu"] {
+  background:
+    radial-gradient(circle at 50% 0, transparent 4px, color-mix(in srgb, var(--yoxi-navy) 55%, transparent) 4.5px 6px, transparent 6.5px) 0 0 / 14px 9px,
+    var(--yoxi-mist);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--yoxi-navy) 55%, transparent);
+}
+/* 中秋：夜空的星點；月亮在右上角（::after） */
+[data-frame="moon"] {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--yoxi-white) 80%, transparent) .9px, transparent 1.4px) 0 0 / 17px 13px,
+    radial-gradient(circle, color-mix(in srgb, var(--yoxi-white) 55%, transparent) .7px, transparent 1.2px) 8px 6px / 23px 19px,
+    var(--yoxi-navy-soft);
+}
+/* 櫻花：淡粉底上的花瓣 */
+[data-frame="sakura"] {
+  background:
+    radial-gradient(ellipse 3px 2px, var(--yoxi-white) 90%, transparent) 0 0 / 15px 13px,
+    radial-gradient(ellipse 2.4px 1.6px, var(--yoxi-cream-deep) 90%, transparent) 7px 6px / 19px 17px,
+    var(--yoxi-red-soft);
+  box-shadow: inset 0 0 0 1.5px var(--yoxi-cream-deep);
+}
+/* 角落的小裝飾：中秋的月亮、里程的「km」、春節的角花 */
+.rw-card[data-frame="moon"]::after, .rw-swatch[data-frame="moon"]::after {
+  content: ''; position: absolute; top: -6px; right: -6px; z-index: 3;
+  width: 26px; height: 26px; border-radius: var(--r-pill);
+  background: radial-gradient(circle at 35% 35%, var(--gold-lite), var(--gold));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--gold-lite) 70%, transparent);
+}
+.rw-card[data-frame="road"]::after {
+  content: 'km'; position: absolute; left: 50%; bottom: -1px; z-index: 3; transform: translateX(-50%);
+  padding: 0 var(--sp-2); border-radius: var(--r-btn) var(--r-btn) 0 0;
+  background: var(--gold); color: var(--yoxi-white); font-size: var(--fs-xs); font-weight: var(--fw-heavy); line-height: 1.5;
+}
+.rw-card[data-frame="spring"]::before, .rw-card[data-frame="spring"]::after {
+  content: ''; position: absolute; z-index: 3; width: 14px; height: 14px;
+  background: var(--gold-lite); transform: rotate(45deg); box-shadow: 0 0 0 2px var(--gold);
+}
+.rw-card[data-frame="spring"]::before { top: -4px; left: -4px; }
+.rw-card[data-frame="spring"]::after { bottom: -4px; right: -4px; }
+
+/* ---------- 套上相框的明信片 ---------- */
+.rw-card__pc { position: relative; display: block; width: 100%; box-shadow: var(--sh-card); }
+.rw-card__art { position: absolute; inset: 0; display: block; }
+.rw-card__art > .postcard__art { width: 100%; height: 100%; }
+.rw-card--sm { --rw-pad: 6px; }
+.rw-card--sm .postcard__foot { padding: var(--sp-1) var(--sp-2); }
+.rw-card--sm .postcard__name { font-size: var(--fs-cap); }
+.rw-card--empty .rw-card__pc { background: var(--yoxi-mist); }
+
+/* ---------- 小樣（牆上的格子、收藏首頁的入口） ---------- */
+.rw-swatch { --rw-pad: 6px; width: 46px; height: 58px; flex: none; }
+.rw-swatch__in { display: block; width: 100%; height: 100%; border-radius: var(--r-img); background: var(--yoxi-paper); box-shadow: var(--sh-card); }
+.rw-swatch[data-frame="moon"]::after { top: -4px; right: -4px; width: 14px; height: 14px; }
+
+/* ---------- /rewards ---------- */
+.rw { background: var(--yoxi-paper); }
+.rw-preview {
+  display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: var(--sp-4); align-items: center;
+  margin: 0 var(--gutter); padding: var(--sp-4);
+  border-radius: var(--r-card); background: var(--yoxi-mist);
+}
+.rw-preview__txt { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+.rw-preview__k { color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-bold); }
+.rw-preview__t { font-size: var(--fs-body); line-height: var(--lh-tight); }
+.rw-preview__p { margin-top: var(--sp-1); color: var(--app-muted); font-size: var(--fs-cap); line-height: var(--lh-body); }
+.rw-sec { padding: var(--sp-5) var(--gutter) 0; }
+.rw-sec--end { padding-bottom: var(--sp-6); }
+
+/* 相框：三欄的牆。收下的是按鈕（白底細框＝可以按），還在路上的是灰的格子（不能按） */
+.rw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+.rw-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; min-height: 44px;
+  padding: var(--sp-3) var(--sp-2); text-align: center;
+  border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-white); color: var(--yoxi-navy); font: inherit;
+}
+button.rw-tile { cursor: pointer; }
+.rw-tile .rw-swatch { margin-bottom: var(--sp-2); }
+.rw-tile strong { font-size: var(--fs-sm); line-height: 1.3; }
+.rw-tile small { color: var(--app-muted); font-size: var(--fs-xs); line-height: 1.35; }
+.rw-tile.is-on { border-color: var(--yoxi-navy); box-shadow: 0 0 0 2px var(--yoxi-navy); }
+.rw-tile.is-locked { background: var(--yoxi-mist); border-style: dashed; }
+.rw-tile.is-locked .rw-swatch { filter: grayscale(1); opacity: .55; }
+.rw-tile.is-locked strong { color: var(--app-muted); }
+
+/* 稱號：一列一個 */
+.rw-list { display: block; padding: 0; overflow: hidden; }
+.rw-row {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 44px;
+  padding: var(--sp-3) var(--sp-4); text-align: left;
+  border: 0; border-top: 1px solid var(--yoxi-line); background: var(--yoxi-white); color: var(--yoxi-navy); font: inherit;
+}
+.rw-row:first-child { border-top: 0; }
+button.rw-row { cursor: pointer; }
+.rw-row__t { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+.rw-row__s { color: var(--app-muted); font-size: var(--fs-cap); }
+.rw-row.is-on { box-shadow: inset 4px 0 0 var(--yoxi-navy); }
+.rw-row.is-on .rw-row__t::after { content: ' · 使用中'; color: var(--app-muted); font-size: var(--fs-cap); font-weight: var(--fw-med); }
+.rw-row.is-locked { background: var(--yoxi-mist); }
+.rw-row.is-locked .rw-row__t { color: var(--app-muted); }
+
+/* ---------- 收藏首頁：稱號（頁首）與相框與稱號的入口 ---------- */
+.alb-v2--home .alb-v2__title-chip { grid-column: 2; grid-row: 2; justify-self: end; }
+.alb-v2--home .alb-v2__title-chip + p { grid-column: 1; }
+.alb-v2__title-chip {
+  display: inline-block; padding: 2px var(--sp-2); border-radius: var(--r-pill);
+  background: var(--yoxi-cream); color: var(--yoxi-navy); font-size: var(--fs-cap); font-weight: var(--fw-bold); white-space: nowrap;
+}
+.alb-v2__rw {
+  display: flex; align-items: center; gap: var(--sp-3); min-height: 44px;
+  margin: var(--sp-3) var(--gutter) 0; padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-white); box-shadow: var(--sh-card); color: var(--yoxi-navy);
+}
+.alb-v2__rw .rw-swatch { --rw-pad: 4px; width: 30px; height: 38px; }
+.alb-v2__rw strong { display: block; font-size: var(--fs-sm); }
+.alb-v2__rw small { display: block; color: var(--app-muted); font-size: var(--fs-xs); }
+
+/* ---------- 明信片頁：每一次來（album.js 的 visitsStripHTML） ---------- */
+.alb-visits { display: flex; gap: var(--sp-3); overflow-x: auto; padding-bottom: var(--sp-1); }
+.alb-visit { display: flex; flex: none; flex-direction: column; align-items: center; width: 72px; min-height: 44px; color: var(--yoxi-navy); }
+.alb-visit__art { position: relative; display: block; width: 60px; height: 80px; overflow: hidden; border-radius: var(--r-img); box-shadow: var(--sh-card); }
+.alb-visit__art > .postcard__art { width: 100%; height: 100%; }
+.alb-visit strong { margin-top: var(--sp-1); font-size: var(--fs-cap); }
+.alb-visit small { color: var(--app-muted); font-size: var(--fs-xs); }
+.alb-visit.is-on .alb-visit__art { box-shadow: 0 0 0 2px var(--yoxi-navy); }

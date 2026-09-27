@@ -494,7 +494,7 @@ T.spec('flows', function (t) {
       t.eq(S.count(), n0 + 1, tag + 'collect 連按兩次只收一張');
       A.nav.back();
       await app.at('/unlock/glass-kiln');
-      t.includes(app.text('main.view[data-view]'), '已在收藏裡', tag + 'collect 只推一筆 /album（返回回到解鎖頁）');
+      t.ok(app.$('[data-today-got]'), tag + 'collect 只推一筆 /album（返回回到解鎖頁：今天已經收下這一張）');
       t.eq(app.errors.length, 0, tag + '錯誤：' + app.errors.join('；'));
     }
   }, { timeout: 30000 });

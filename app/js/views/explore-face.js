@@ -67,7 +67,9 @@ function paintCardArt(root) {
   root.querySelectorAll('[data-card-art]:not([data-card-painted])').forEach(function (el) {
     const id = el.getAttribute('data-card-art');
     el.setAttribute('data-card-painted', '');
-    const o = APP.explore.cardOrigin(id);
+    /* data-card-visit：第幾次收下的那一張（回訪的卡款式可能不一樣）；沒寫是第一次 */
+    const v = el.getAttribute('data-card-visit');
+    const o = APP.explore.cardOrigin(id, v ? Number(v) : undefined);
     if (!o) return;
     const d = o.style;
     if (o.gold && !el.closest('[data-gold-aura]')) {

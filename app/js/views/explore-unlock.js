@@ -3,16 +3,18 @@
    契約：app/ARCHITECTURE.md §3、§7、§8。只用 APP.view() 註冊，不改 app.js。
    載入順序：explore-fx.js（APP.fx）→ explore-cards.js（款式規則、收下）→ explore.js（頁面零件）→ 這支。
 
-   回答什麼：到了。這個地方的明信片是哪一款、為什麼是這一款？收下它。
+   回答什麼：到了。這一次的明信片是哪一款、為什麼是這一款？收下它。每一次來都收一張（第一次蓋首訪紀念戳），
+             同一個地方同一天一張：今天已經收過就直接看今天那一張。
    原型：unlock.html（三幕解鎖的前身）。
    搭 yoxi 抵達是金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板，面板上先寫好會收到哪一款、為什麼。
      翻卡（data-at=2）：卡背升起 → 蓄力 → 點一下翻開 → 依款式給特效（金框最重）。
-     結果（data-at=3）：卡面（節日那一週多一層會動的插畫、遠行蓋一枚戳）＋畫風名＋為什麼、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
+     結果（data-at=3）：卡面（節日那一週多一層會動的插畫、首訪與里程各蓋一枚戳）＋畫風名＋為什麼、一句話、收進收藏。
+       今天已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。收下時司機還在等（來回的行程）就回 /trip，不然回收藏。
    特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
    鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；翻完焦點移到「收到 ○○」那一行。
-   款式照規則（explore-cards.js 的 cardRule：季節定畫風、搭 yoxi 是金框、節日版、遠行戳），render 就算得出來，
+   款式照規則（explore-cards.js 的 cardRule：季節定畫風、搭 yoxi 是金框、節日版、首訪紀念、里程紀念），render 就算得出來，
    不用等 mount、不寫 store；重整、返回都是同一款。
    結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與規則說明一起收掉。
    「回探索」與找不到、返回的保底都回叫車首頁的探索模式（/ride?mode=explore&area=<id>），不回舊的 /explore。
@@ -37,13 +39,14 @@ const esc = APP.esc;
 const fmt = APP.fmt;
 const E = APP.explore;
 const CARD_STYLES = E.CARD_STYLES;
-const cardStyleOf = E.cardStyleOf;
 const cardOrigin = E.cardOrigin;
 const ruleLines = E.ruleLines;
 const cardFace = E.cardFace;
 const cardPhoto = E.cardPhoto;
 const openRules = E.openRules;
 const collect = E.collect;
+const canCollect = E.canCollect;
+const visitsOf = E.visits;
 const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
 const styleOf = K.styleOf, arrivalAt = K.arrivalAt, today = K.today, marksHTML = K.marksHTML;
@@ -131,15 +134,17 @@ function renderUnlock(params) {
   /* 搭車還是走路、幾公里、照規則是哪一款：跟收下時（APP.explore.collect）同一個答案 */
   const arr = arrivalAt(p);
   const isRide = !!arr.trip;
-  const got = collected(p);
-  /* 已收過的地方：顯示當初收下的那一款與它的郵戳（cardOrigin）；還沒收：照今天的規則 */
-  const origin = got && p.card ? cardOrigin(p.card) : null;
-  const style = got ? cardStyleOf(p.card) : arr.style;
+  /* got＝今天已經收過這個地方（一天一張）：直接看今天收下的那一張（cardOrigin 的最後一次）；
+     沒收過、或以前收過今天還沒：照今天的規則收這一次（arr.v 是第幾次） */
+  const got = collected(p) && !canCollect(p.card);
+  const origin = got && p.card ? cardOrigin(p.card, visitsOf(p.card).length) : null;
+  const style = origin ? origin.style : arr.style;
   const lines = origin ? origin.lines : ruleLines(arr.rule);
   const marks = origin ? origin.marks : marksHTML(arr.rule);
-  /* 金框看款式（搭 yoxi 抵達就是金框）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
+  const v = origin ? origin.v : arr.v;
+  /* 金框看款式（搭 yoxi 抵達就是金框）；限定版與 +50 點只給第一次搭 yoxi 去走不到的地方（ride.js 的 limitedPlace） */
   const gold = !got && !!style && !!style.gold;
-  const bonus = isRide && limitedPlace(p);
+  const bonus = isRide && limitedPlace(p) && arr.v === 1;
   const name = cardName(p);
   const day = today();
   const km = arr.km;
@@ -156,6 +161,7 @@ function renderUnlock(params) {
       '<div class="ex-arrive__head">' +
         '<span class="ex-arrive__chip"><span data-icon="' + (isRide ? 'hail' : 'steps') + '" class="ex-ic16"></span>' +
           (isRide ? '搭 yoxi 抵達' : '走路抵達') + '</span>' +
+          (v > 1 ? '<span class="ex-arrive__chip ex-arrive__chip--again" data-visit-n>第 ' + num(v) + ' 次來</span>' : '') +
         '<h1 class="unlock__title">你到了<br>' + esc(name) + '</h1>' +
         '<p class="unlock__sub">' + arriveBy + '</p>' +
       '</div>' +
@@ -204,9 +210,9 @@ function renderUnlock(params) {
     : '';
 
   const act3Acts = got
-    ? '<p class="ex-unlock__have">已在收藏裡</p>' +
+    ? '<p class="ex-unlock__have" data-today-got>今天已經收下這一張，明天再來會再收一張</p>' +
       '<div class="ex-unlock__acts">' +
-        (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看這張明信片</a>' : '') +
+        (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + (v > 1 ? '?v=' + v : '') + '" data-act="open-postcard">看這張明信片</a>' : '') +
         '<a class="btn-link ex-center ex-unlock__link" href="#' + esc(exploreHome(p.id)) + '" data-act="go-explore">回探索</a>' +
       '</div>'
     : (isRide
@@ -224,7 +230,7 @@ function renderUnlock(params) {
 
   const mute = !!APP.store.get('fxMute');
 
-  return '<div class="unlock ex-unlock" data-unlock data-at="' + (got ? '3' : '1') + '"' + (isRide ? ' data-ride' : '') +
+  return '<div class="unlock ex-unlock" data-unlock data-at="' + (got ? '3' : '1') + '" data-visit="' + v + '"' + (isRide ? ' data-ride' : '') +
       (style ? ' data-style="' + esc(style.key) + '" data-tier="' + tier + '"' : '') + '>' +
       (got ? '' : '<div class="ex-unlock__map" data-arrive-map aria-hidden="true"></div>' +
                   (key === 'ink' ? '<div class="ex-paper" aria-hidden="true"><svg class="ex-face__paper" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg></div>' : '') +
@@ -241,13 +247,13 @@ function renderUnlock(params) {
                 '</div>') +
               '<div class="postcard ex-flip__front' + (gold ? ' postcard--gold' : '') + '" data-final-card' +
                   (style ? ' data-style="' + esc(style.key) + '"' : '') + '>' +
-                (gold ? '<span class="postcard__ribbon" data-ribbon-new>yoxi 限定版</span>' : '') +
+                (gold ? '<span class="postcard__ribbon" data-ribbon-new>' + (v > 1 ? 'yoxi 金框' : 'yoxi 限定版') + '</span>' : '') +
                 faceHTML(p, style) +
                 '<span class="ai-mark">AI 生成示意</span>' +
                 marks +
                 '<span class="postcard__foot">' +
                   '<span class="postcard__name">' + esc(name) + '</span>' +
-                  '<span class="postcard__date">' + day.getFullYear() + '.' + esc(fmt.todayMMDD(day)) + ' · ' + esc(p.area || '新竹市') + '</span>' +
+                  '<span class="postcard__date">' + esc(origin ? origin.dateText : day.getFullYear() + '.' + fmt.todayMMDD(day)) + ' · ' + esc(p.area || '新竹市') + '</span>' +
                 '</span>' +
               '</div>' +
             '</div>' +
@@ -305,7 +311,7 @@ function mountUnlock(root, params) {
   if (!p) { APP.ui.setStatus('dark'); return; }
   const F = APP.fx;
   const isRide = !!APP.ride.trip.arrivedAt(p.id);
-  const got = collected(p);
+  const got = collected(p) && !canCollect(p.card);      /* 跟 render 同一個判斷：今天已經收過 */
   const box = root.querySelector('[data-unlock]');
   const style = styleOf(box.getAttribute('data-style'));
   const tier = Number(box.getAttribute('data-tier')) || 1;
@@ -775,7 +781,9 @@ function mountUnlock(root, params) {
          搭車收下會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
       collect(p.id, { note: note });
       APP.ui.toast('收進收藏了');
-      APP.nav.go('/album', { dir: 'push' });
+      /* 來回的行程：司機還在附近等（APP.ride.trip.waiting），收好就回行程頁叫回程；不然回收藏 */
+      const wait = APP.ride.trip.waiting ? APP.ride.trip.waiting() : null;
+      APP.nav.go(wait ? '/trip' : '/album', { dir: 'push' });
     };
   }
 

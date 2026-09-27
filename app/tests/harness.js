@@ -690,6 +690,7 @@
     { path: '/lookback', area: 'album' },
     { path: '/week', area: 'album' },
     { path: '/elder', area: 'album' },
+    { path: '/rewards', area: 'album' },
     { path: '/settings', area: 'system' },
   ];
 
