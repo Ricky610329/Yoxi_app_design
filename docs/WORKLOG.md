@@ -163,3 +163,15 @@
 | `495c4a0` | 只牽涉一個區塊的回歸測試從 flows.spec 搬回各區塊 |
 
 驗收：`python app/tests/run.py` node 77/77、瀏覽器 280/280；check-sw 63 筆 PASS。
+
+## 2026-09-27 明信片款式改成透明規則（分支 `feat/transparent-card-rules`）
+
+使用者貼來長輩視角的回饋：抽卡的機率像賭博。四點裡選了「做 1＋4，2、3 只記錄」。細節見 `docs/HANDOFF.md` §17。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `abdf3d7` | 拿掉 `DRAW_STYLES` 的機率：走路看季節定畫風、搭 yoxi 是金框、三節多蓋節慶郵戳、搭 yoxi 20 km 以上多蓋遠行紀念戳；面板先寫會收到哪一款與為什麼，「?」換成規則說明；郵戳記在 `store.cardMarks`；demo 面板「模擬日期」；VERSION v19 |
+
+沒做的：圖鑑進度條換獎勵（=刻意拿掉的集點卡）、每週目標（會有「沒達到」）——週回顧維持只寫「這一週你去了 N 個地方」。
+
+驗收：`python app/tests/run.py` node 80/80、瀏覽器 282/282；check-sw PASS；`verify-quiet.py` 在這台 Mac 只跑得了 ②（PASS、與基準相同）。
