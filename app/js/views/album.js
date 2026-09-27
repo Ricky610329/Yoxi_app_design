@@ -240,6 +240,17 @@ function photoCreditHTML(cardId) {
     (ph.source ? ' <a class="alb-credit__a" href="' + esc(ph.source) + '" target="_blank" rel="noopener" data-act="open-credit">出處</a>' : '') + '</p>';
 }
 
+/* 這一張的那一句（explore-verse.js 的 verseOf，跟 /unlock 翻開之後的是同一句）：接在標題底下。
+   「為什麼是這一款」不再寫在明信片頁：畫風、金框、節日插畫、郵戳卡面上都看得到，規則在 /unlock 的面板與「?」 */
+function verseHTML(cardId, origin) {
+  const v = APP.explore && APP.explore.verseOf ? APP.explore.verseOf(cardId, origin) : null;
+  if (!v) return '';
+  return '<p class="alb-verse" data-verse>' +
+    '<span class="alb-verse__t">' + esc(v.text) + '</span>' +
+    (v.by ? '<span class="alb-verse__by">' + esc(v.by) + (v.title ? '〈' + esc(v.title) + '〉' : '') + '</span>' : '') +
+  '</p>';
+}
+
 function storyOf(cardId) {
   if (STORY[cardId]) return STORY[cardId];
   const pid = APP.footprintPlace(cardId);
@@ -725,6 +736,7 @@ APP.view('postcard', {
         '<div class="alb-pad">' +
           '<h1 class="alb-h1">' + esc(P.name) + '</h1>' +
           '<p class="alb-sub" data-visit-sub>' + esc(date) + ' · ' + byText + ' · ' + nth + '</p>' +
+          verseHTML(P.id, origin) +
         '</div>' +
         visitsStripHTML(P, v) +
         repliesHTML(P.id, v) +
@@ -735,12 +747,6 @@ APP.view('postcard', {
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="place"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">地點</span>' +
             '<span class="row-nav__title">' + esc(pl && pl.area ? pl.area : '新竹') + '</span></span></div>' +
-          /* 為什麼是這一款：規則寫在 explore-cards.js（季節定畫風、搭 yoxi 是金框、節日版、遠行戳），這裡只念 */
-          '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="postcard"></span></span>' +
-            '<span class="row-nav__body"><span class="row-nav__sub">為什麼是這一款</span>' +
-            '<span class="row-nav__title alb-why" data-why>' +
-              origin.lines.map(function (t) { return '<span class="alb-why__l">' + esc(t) + '</span>'; }).join('') +
-            '</span></span></div>' +
         '</div></div>' +
         '<div class="alb-pad">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
         '<div class="alb-pad alb-pad--end">' +

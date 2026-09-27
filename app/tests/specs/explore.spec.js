@@ -491,7 +491,8 @@ T.spec('explore', function (t) {
     const pf = app.$('.alb-big__card .fest[data-fest="moon"]');
     t.ok(pf, '明信片頁也是節日版');
     t.ok(pf && pf.classList.contains('is-live'), '打開明信片頁就動一次');
-    t.includes(app.text('[data-why]'), moon.deco, '明信片頁寫為什麼');
+    t.eq(app.text('[data-verse] .alb-verse__t'), app.APP.explore.VERSES.p11.moon, '明信片頁寫收下那天（中秋）的那一句，跟翻開時一樣');
+    t.ok(!app.$('[data-why]'), '明信片頁不再列規則');
     t.ok(!app.$('.postcard--gold'), '走路收的不是金框');
     /* 翻到背面：插畫跟著藏起來；翻回正面再演一次 */
     const card = app.$('.alb-big__card');
