@@ -149,6 +149,8 @@ function setDropoff(id, via) {
 /* ---------------------------------------------------------------- APP.explore */
 
 Object.assign(APP.explore, {
+  /* 抵達的範圍（公尺）：ride 的候車頁「在 100 m 內走走」也讀它，全 app 只有這一個數 */
+  ARRIVE_RADIUS_M: ARRIVE_RADIUS_M,
   /* 給別的區塊與測試用的純計算（沒有副作用） */
   gap: gapPick,
   breakpoint: function (routeId) {
@@ -608,8 +610,15 @@ function renderGoing(params) {
     return backFabBar(exploreHome(p.id)) +
       '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-trip>' +
         '<p class="app-empty__eyebrow">行程進行中</p>' +
-        '<h1 class="app-empty__t">你正在搭車前往 ' + esc(dest ? dest.name : '目的地') + '</h1>' +
-        '<p class="app-empty__p">先抵達或取消這一趟，再走路去' + esc(p.name) + '。</p>' +
+        /* 來回：到了之後司機在附近等（waiting）、回程中（returning）說的不一樣 */
+        (trip.phase === 'waiting'
+          ? '<h1 class="app-empty__t">司機在' + esc(dest ? dest.name : '目的地') + '附近等你</h1>' +
+            '<p class="app-empty__p">先回到行程搭回程、或取消回程，再走路去' + esc(p.name) + '。</p>'
+          : trip.phase === 'returning'
+            ? '<h1 class="app-empty__t">你正在搭車回家</h1>' +
+              '<p class="app-empty__p">到家之後，再走路去' + esc(p.name) + '。</p>'
+            : '<h1 class="app-empty__t">你正在搭車前往 ' + esc(dest ? dest.name : '目的地') + '</h1>' +
+              '<p class="app-empty__p">先抵達或取消這一趟，再走路去' + esc(p.name) + '。</p>') +
         '<a class="btn-primary" href="#/trip" data-act="go-trip">回到行程</a>' +
       '</div></div>';
   }

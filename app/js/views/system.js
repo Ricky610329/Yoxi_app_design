@@ -598,6 +598,9 @@ function demoArrive(id, by) {
   const p = APP.place(id);
   if (!p) { APP.ui.toast('先選一個地方'); return false; }
   if (by !== 'ride') {
+    /* 來回的司機正在這裡等：人就在這個地方附近走走，收的是這一趟（搭車）的那一張 */
+    const w = APP.ride.trip.waiting ? APP.ride.trip.waiting() : null;
+    if (w && w.placeId === p.id) { APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1'); return true; }
     if (APP.ride.trip.active()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
     APP.nav.go('/unlock/' + encodeURIComponent(p.id));
     return true;

@@ -29,6 +29,7 @@
 
 app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈）：
 - 叫車真的會「叫」：下車點填好 → 叫車 → 配對中 → 行程中（含「這條路上」內容卡）→ 行程完成 → 評分後金色橫幅 → 限定版解鎖 → 點數 +50。
+- 來回（2026-09-27）：選好下車點可選「來回 · 司機等你」→ 去程 → 司機候車（在 100 m 內走走、收下這一次的明信片）→ 回程 → 到家結算（去程＋候車費＋回程）。司機最多等幾分鐘、候車費是 ride.js 的常數，標「假設」（yoxi 沒有公開的來回產品與價格）；畫面上沒有計時器、沒有倒數。
 - 設定下車地點頁（`#/dropoff`）：清單＋搜尋，資料全部來自 `MOCK`。
 - 第一次開的 onboarding（三張，可略過）。
 - 推播是 app 內的浮層（早／晚各一則，一天最多兩則），由 demo 工具觸發。
@@ -180,7 +181,7 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   |---|---|---|
   | `onboarded` | bool | 看過 onboarding（pref） |
   | `dropoff` | `{ id, name, km, setAt, via:'k1'|'e'|'search'|'route' }` 或 null | 下車點。km 從 MOCK 的距離算（距離不明時是 null，畫面寫「距離待確認」、不顯示車資與分鐘），車資與分鐘不存，畫面用 `APP.fmt` 現算 |
-  | `trip` | `{ placeId, phase:'matching'|'riding'|'done', startedAt, rated:bool, km, via, stars? }` 或 null | 進行中的叫車。**只有 `APP.ride.trip`（§7）讀寫**；km 距離不明是 null；via＝下車點從哪個入口設的（轉換歸因）；stars 評分後才有 |
+  | `trip` | `{ placeId, phase:'matching'|'riding'|'waiting'|'returning'|'done', startedAt, rated:bool, km, via, stars?, round?:true, collected?:true, backAt? }` 或 null | 進行中的叫車。**只有 `APP.ride.trip`（§7）讀寫**；km 是單程（去程）的公里、距離不明是 null；via＝下車點從哪個入口設的（轉換歸因）；stars 評分後才有；round＝來回（單程沒有這個欄位）；waiting（抵達、司機候車）／returning（回程）只有來回；collected＝來回在這一趟已收下明信片（行程留著）；backAt＝按下回程的時間 |
   | `pushes` | `[{ when:'am'|'pm', at:ISO }]` | 今天發過的推播（最多兩則） |
   | `cardStyle` | `{ 明信片 id: 款式 key }` | 收下時照規則定下的款式（金框的明信片在收藏裡也是金框；之後換季也不改） |
   | `cardMarks` | `{ 明信片 id: { fest, mile, km, ymd, seq, at } }` | 第一次收下時記的：`fest` 節日 key（`FESTIVALS`）或 `''`，`mile` 這一趟跨過的里程（`MILE_STEPS` 的一個）或 `0`，`km` 這一趟的公里，`ymd` 那一天（一天一張要看），`seq` 第幾張收下的（排先後）。要在收下的當下記：卡片日期沒有年份、STATE 的卡片沒有公里數，事後推不回來（舊版的 `far` 不再讀） |
@@ -191,14 +192,15 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   | `fxMute` | bool | 抵達與翻卡的音效關掉（pref） |
   | `demoDate` | `'YYYY-MM-DD'` 或 null | demo 面板的「模擬日期」：假裝今天是別天，只影響明信片的款式、郵戳與收下的日期（pref） |
   | `rideSpots` | bool | 叫車地圖上要不要疊城事的景點（設定頁可關；pref） |
-  | `rideVia` | `{ 明信片 id: 'k1'|'e'|'route'|'search' }` | 搭車收下的那一趟是從哪個入口叫的（行程紀錄的小標；`APP.ride.trip.consume` 寫） |
+  | `rideVia` | `{ 明信片 id: 'k1'|'e'|'route'|'search' }` | 第一次搭車收下的那一趟是從哪個入口叫的（行程紀錄的小標；`APP.ride.trip.consume` 寫；回訪的歸因記在 `visits` 那一筆的 `via`，不蓋掉這裡） |
+  | `rideRound` | `{ '<明信片 id>#<第幾次>': true }` | 搭來回收下、而且到家了的那一次（行程紀錄寫「來回」、回程多一列搭車回饋；ride 寫） |
   | `tabPaths` | `{ ride, album }` | 各 tab 最後停的 path（由 nav 維護；`remember:false` 的不記） |
   | `version` | number | store 的結構版本（目前 2；meta）；load 時每個鍵照 `KEYS` 的型別檢查，型別不對退回預設，不認得的鍵原樣保留 |
   沒標類別的都是 footprint。
 - 事件：`APP.on('store:change'|'state:change'|'route:change', fn)`／`APP.emit(...)`。
   `state:change` 由 `APP.state` 自己發（見上），統計、設定開關、demo 面板靠它更新（底欄不聽這些事件，也沒有小紅點）。
 - id 認不得的 `trip`／`dropoff`（舊版資料、手改）：`APP.ride.trip` 讀的時候一律當作沒有行程（任何畫面都一樣）；`/ride`、`/trip`、`/trip/done` 的 mount 與 `arrive()` 再真的清掉，不會卡住叫車。
-- 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`rideVia`、`cardStyle`、`cardMarks`、`visits`、`shares`、`replies`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`、`demoDate`、`look`）與 `STATE.settings`。
+- 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`rideVia`、`rideRound`、`cardStyle`、`cardMarks`、`visits`、`shares`、`replies`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`、`demoDate`、`look`）與 `STATE.settings`。
 - 每日回顧結束時用 `APP.state.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情與照片。
 
 ### 3.4 格式與公式（不准手寫數字）
@@ -385,7 +387,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 - `APP.explore.collect(placeId, { note })`：收下這一次的明信片（explore 提供；/unlock 用）。**每一次來都收一張**：還沒收過寫進 STATE（圖鑑、獎章、去過的地方都認它），收過的（別天）記進 `store.visits`（第 N 次）；同一個地方同一天只收一張（`APP.explore.canCollect(地點或卡片 id)`，今天看 `store.demoDate`）；回傳有沒有收到一張。呼叫的人只給那一句話，其餘由它判斷：有搭 yoxi 抵達這裡的那一趟（`APP.ride.trip.arrivedAt`）就是搭車——公里用這一趟的、收下時 `APP.ride.trip.consume` 用掉它（連同 rideVia 歸因）；否則走路——公里用地方的距離，行程不碰（還沒領的限定版不會消失）。哪一款、蓋哪些郵戳照 `cardRule`（今天的日期，demo 可用 `store.demoDate` 撥）。經 `APP.state.collect` 寫進 STATE（日期也是 `cardRule` 的那一天；跟 app store 的寫入包成一次 state:change，寫完才發）；第一次的款式記進 `store.cardStyle[卡片 id]`、節日與里程記進 `store.cardMarks[卡片 id]`，回訪的全部記在那一筆 `store.visits`。測試要準備「收過了」的狀態用 `T.helpers.collect(app, placeId, { by, style, note })`（`style` 是四季的一款，會暫時撥 `demoDate`）或 `app.reset({ cards })`
 - `APP.explore.cardOrigin(cardId, v)`（explore 提供）：收下的那一張是怎麼來的（v 是第幾次，省略是第一次），還沒收或沒有這一次是 null：`{ id, v, visits, first, date:'MM.DD', ymd, dateText:'YYYY.MM.DD', note, km, by:'walk'|'ride', style, gold, limited, via, festival, mile, lines, marks }`。`gold`＝金框那一款或限定版；`limited` 只給第一次（回訪不再給限定版與 +50）；`festival`／`mile` 只認收下時記的（demo 一開始的 8 張沒有紀錄，就沒有節日版；第一次都蓋首訪戳）；
   另有 `visits(卡片或地點 id)`（這個地方收過的每一次，舊到新）、`recentVisits(n)`（全部收下的，最新的在前，照 `seq`）、`rideKm()`（搭 yoxi 去收明信片的累積公里：里程紀念與相框、稱號看它）、`totalKm()`（收藏首頁「留下的距離」＝STATE.all.km＋回訪的公里）；`lines`＝為什麼是這一款（`ruleLines`，明信片頁的「為什麼是這一款」）；`marks`＝卡面的郵戳 HTML（`.card-marks`，樣式在 explore.css）；`limited`＝`APP.ride.limitedCard`；`via`＝`store.rideVia`。收藏、叫車的浮起來小卡、探索的「已收藏」一行都問它，不各自翻 STATE 的 by、store.cardStyle、store.rideVia
-- `APP.ride.trip`（ride 提供）：**行程 module，`store.trip` 只有它讀寫**，別的區塊與畫面一律透過它。讀：`current()`（id 認得的那一趟或 null）、`active()`（配對中／行程中）、`arrivedAt(placeId)`（搭車抵達這裡、phase done 的那一趟）、`pending()`（抵達了、明信片還沒收：`{ trip, place, card, limited, href }`）、`phase(t, now)`（純函式，matching 過了 `MATCH_MS` 算 riding）。寫：`start(placeId, via)`、`toRiding()`、`arrive()`、`arriveAt(placeId)`（demo 搭 yoxi 抵達）、`cancel()`、`rate(stars)`、`consume(placeId)` → `{ via, km }`（搭車收下時用掉這一趟、記 `store.rideVia[明信片 id]`）、`clear()`、`clearBroken()`。行程的形狀只在 ride.js 的 `make()` 寫一次；km 一律從地方的距離算，距離不明是 null。node 測試在 `tests/unit/trip.test.mjs`
+- `APP.ride.trip`（ride 提供）：**行程 module，`store.trip` 只有它讀寫**，別的區塊與畫面一律透過它。讀：`current()`（id 認得的那一趟或 null）、`active()`（phase 不是 done：配對中／行程中／候車／回程）、`arrivedAt(placeId)`（搭車到了這裡、這一趟的卡還沒收：單程是 done，來回是 waiting／returning／done）、`pending()`（到了、這一次的明信片還收得到：`APP.explore.canCollect`＋還沒收；`{ trip, place, card, limited, href }`，limited 只給第一次去）、`waiting()`（候車中的來回或 null）、`phase(t, now)`（純函式，matching 過了 `MATCH_MS` 算 riding）。寫：`start(placeId, via, { round })`、`toRiding()`、`arrive()`（單程 → done；來回：去程 → waiting、回程 → done、候車中按是 demo 直接到家）、`back()`（waiting → returning）、`arriveAt(placeId)`（demo 搭 yoxi 抵達；同一個目的地的來回停在 waiting）、`cancel()`（去程：取消；候車／回程：不搭回程了，變成單程 done，卡照樣收得到）、`rate(stars)`、`consume(placeId)` → `{ via, km }`（搭車收下：單程用掉這一趟；來回記 collected、行程留著；第一次才記 `store.rideVia[明信片 id]`）、`clear()`、`clearBroken()`。到家（done）而且沒有東西要等 → /ride 的 mount 安靜清掉。`APP.ride.roundFare(km)` → `{ go, wait, back, total }` 或 null；常數 `WAIT_MAX_MIN`、`WAIT_FEE`（假設）、`FARE_PER_POINT`。`pastTrips()`／`pointsRows()` 每一次搭車收下都算（回訪也是，城事解鎖回饋只有第一次），來回的回程另一列搭車回饋。行程的形狀只在 ride.js 的 `make()` 寫一次；km 一律從地方的距離算，距離不明是 null。node 測試在 `tests/unit/trip.test.mjs`
 - `APP.ride.RIDE_BONUS`（ride 提供）：搭車抵達走不到的地方的加點，＝`MOCK.FAR_PLACE.ridePoints`（資料缺了才用 50）；全 app 唯一來源，explore 的「+50 點」也讀它。`APP.ride.pointsRows()` 每一列多一個 `place` 欄位
 - 款式規則（explore 提供）：沒有機率、沒有抽籤，什麼時候去、怎麼去就決定是哪一款，同一天同樣方式到每個人都一樣。`APP.explore.CARD_STYLES`（五款：四季的畫風各帶 `season`、`months`，加一款 `gold`）、`FESTIVALS`（節日版：春節、端午、中秋是「那一週」——節日當天所在的週一到週日，官方連假更長就延到連假最後一天，日期照人事行政總處的辦公日曆表一年一年補，表上沒有的年份沒有節日版；賞櫻是每年一樣的期間；碰在一起時排前面的算）、`festSpan(節日或 key, 年)` → `['MM-DD', 'MM-DD']` 或 null、`MILE_STEPS`（里程紀念：[30, 60, 100, 200, 300, 500] 公里）、`nextMile(km)`、`cardRule({ by, km, date, first, before })` → `{ style, season, festival, first, mile, km, total }`（純函式；date 省略是今天，會看 `store.demoDate`；first＝第一次來；before＝這一趟之前的 `rideKm()`，省略就不算里程）、`ruleLines(rule)`（一條規則一句）、`openRules()`（規則說明，掛在 `.device`，帶 `data-overlay`＋`_dismiss`）。走路抵達：畫風跟著季節；搭 yoxi 抵達：金框（是不是搭車只問 `APP.ride.trip.arrivedAt(地點 id)`，`?ride=1` 只是入口的記號）；節日那一週的卡面多一層會動的節日插畫（`explore-fest.js`）；第一次來多蓋一枚首訪紀念戳；搭 yoxi 去收明信片的公里累積跨過 `MILE_STEPS` 的那一趟多蓋一枚里程紀念戳（看累積，不看單趟；2026-09-27 取代單趟 20 km 的遠行戳）。render 就算得出款式（不等 mount、不寫 store）。`/unlock` 的收集面板與結果寫這一次適用的那幾句（`[data-why]`），完整規則在面板與成品右上角的「?」（`data-act="open-rules"`）；地方頁「到了會得到」寫現在去會是哪一款（`[data-rule-preview]`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream）、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
@@ -409,8 +411,8 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/ride` | 預設搭車；面板內 pill 切探索（`?mode=explore`），選地區再加 `&area=` | ride | `variant-f-home.html`、`variant-e-home.html`、`concept-map-home.html` | ride |
 | `/dropoff` | 設定下車地點（清單＋搜尋） | ride | 新（參考 `pickup.html` 版型） | ride |
 | `/pickup` | 設定上車地點 | ride | `pickup.html` | ride |
-| `/trip` | 配對中→行程中（「這條路上」卡） | null | `ride.html` | ride |
-| `/trip/done` | 行程完成、評分、金色橫幅 | null | `ride-done.html` | ride |
+| `/trip` | 配對中→行程中（「這條路上」卡）；來回多「司機候車」（收下這一次的明信片、回程、取消回程）與「回程」兩段 | null | `ride.html`、`variant-k5-unlock.html`（回程） | ride |
+| `/trip/done` | 行程完成、評分、金色橫幅；來回到家才有，寫去程／候車／回程三段 | null | `ride-done.html` | ride |
 | `/drawer` | 側邊抽屜（覆蓋層） | ride | `drawer.html` | ride |
 | `/points` | 和泰 Points（總數＝明細相加） | ride | `points.html` | ride |
 | `/notify` | 通知中心 | ride | `notify.html` | ride |

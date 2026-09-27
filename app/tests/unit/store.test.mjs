@@ -189,7 +189,7 @@ test('clear(group)：只把那一類鍵回到預設；偏好與不認得的鍵�
   off();
   const f = st.fresh();
   assert.deepEqual([...cleared].sort(),
-    ['cardMarks', 'cardStyle', 'dropoff', 'pushes', 'replies', 'rideVia', 'shares', 'tabPaths', 'trip', 'visits'], '足跡的鍵');
+    ['cardMarks', 'cardStyle', 'dropoff', 'pushes', 'replies', 'rideRound', 'rideVia', 'shares', 'tabPaths', 'trip', 'visits'], '足跡的鍵');
   for (const k of cleared) {
     assert.deepEqual(JSON.parse(JSON.stringify(st.get(k))), JSON.parse(JSON.stringify(f[k])), k + ' 回到預設');
   }

@@ -138,3 +138,45 @@ test('cardHTML：那一次的明信片套上相框；還沒收的卡是空字串
   assert.ok(/data-card-visit="2"/.test(h2) && !/data-frame=/.test(h2), '第 2 次、不套相框');
   assert.ok(!/data-mark/.test(A.cardHTML('p1', { size: 'sm' })), '小卡不蓋戳');
 });
+
+test('搭車回訪：行程紀錄與點數每一次都算（回訪不給城事解鎖回饋）；回訪的歸因記在那一次、不蓋掉第一次', () => {
+  const { APP } = load();
+  const E = APP.explore, T = APP.ride.trip, R = APP.ride, F = APP.fmt;
+  T.start('neiwan', 'route');
+  T.arrive();
+  E.collect('neiwan');
+  const card = APP.place('neiwan').card;
+  assert.equal(APP.store.get('rideVia')[card], 'route', '第一次的歸因');
+  const rows0 = R.pastTrips().filter((x) => x.card === card);
+  assert.equal(rows0.length, 1);
+  const total0 = R.pointsTotal();
+  APP.store.set('demoDate', '2026-10-03');
+  T.start('neiwan', 'k1');
+  T.arrive();
+  E.collect('neiwan');
+  assert.equal(APP.store.get('rideVia')[card], 'route', '回訪不蓋掉第一次的歸因');
+  assert.equal(E.cardOrigin(card, 2).via, 'k1', '回訪的歸因記在那一次');
+  const rows = R.pastTrips().filter((x) => x.card === card);
+  assert.deepEqual(plain(rows.map((x) => [x.v, x.limited, x.via])), [[2, false, 'k1'], [1, true, 'route']], '行程紀錄：兩次，新的在前；限定版只有第一次');
+  const km = F.km(APP.place('neiwan').dist);
+  assert.equal(R.pointsTotal() - total0, Math.floor(F.fare(km) / R.FARE_PER_POINT), '回訪只多一列搭車回饋，沒有城事解鎖回饋');
+  assert.equal(R.pointsTotal(), R.pointsRows().reduce((t, r) => t + r.amt, 0), '總數仍＝明細相加');
+});
+
+test('來回回訪：到家而且收了，行程紀錄記在那一次（rideRound 的 <卡>#<第幾次>）', () => {
+  const { APP } = load();
+  const E = APP.explore, T = APP.ride.trip;
+  const card = APP.place('market').card;
+  T.start('market', 'e', { round: true });
+  T.arrive();                                   /* 抵達：司機候車 */
+  assert.ok(T.waiting(), '候車中');
+  E.collect('market');                          /* 東門市場 demo 收過（p2）：這是第 2 次 */
+  assert.equal(E.visits(card).length, 2);
+  assert.ok(T.waiting(), '收下之後司機還在等');
+  T.back();
+  T.arrive();                                   /* 到家 */
+  assert.equal(APP.store.get('rideRound')[card + '#2'], true, '記在第 2 次');
+  assert.equal(APP.store.get('rideRound')[card + '#1'], undefined, '第一次（demo）不是來回');
+  const row = APP.ride.pastTrips().find((x) => x.card === card && x.v === 2);
+  assert.ok(row && row.round, '行程紀錄的那一列是來回');
+});

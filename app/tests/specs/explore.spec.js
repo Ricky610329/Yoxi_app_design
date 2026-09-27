@@ -243,6 +243,20 @@ T.spec('explore', function (t) {
     await app.at('/unlock/glass-kiln');
   });
 
+  t.test('來回：司機在別的地方等時 /going 寫「司機在 X 附近等你」；demo 走路抵達同一個地方收的是這一趟的（搭車）', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', phase: 'waiting', round: true, startedAt: new Date().toISOString(), km: 6.4 }) } });
+    await app.go('/going/glass-kiln');
+    t.includes(app.text('[data-going-trip]'), '司機在' + app.APP.place('lake').name + '附近等你', '候車中：不是「正在搭車前往」');
+    app.APP.system.demoArrive('lake', 'walk');
+    await app.at('/unlock/lake');
+    t.eq(app.route().query.get('ride'), '1', '司機在這裡等：收這一趟的（?ride=1）');
+    t.ok(app.$('[data-unlock][data-ride]'), '搭車抵達');
+    await app.click('[data-act="collect"]');
+    await app.at('/trip');
+    t.ok(app.APP.ride.trip.waiting(), '收下之後回行程頁，司機還在等');
+    await app.reset();
+  });
+
   t.test('/unlock/glass-kiln：still 直接第三幕；collect → count+1、by walk、回 /album', async function (app) {
     await app.reset();
     const n0 = app.STATE.count();

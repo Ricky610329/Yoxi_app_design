@@ -325,7 +325,7 @@ test('來回的 consume：記 collected、行程留著（司機還在等）；�
   assert.equal(R.pastTrips().filter((x) => x.card === card)[0].round, false, '回程中：也還不寫');
   T.arrive();
   assert.equal(raw(APP).phase, 'done');
-  assert.equal(APP.store.get('rideVia')._round[card], true, '到家而且收了：記進行程紀錄');
+  assert.equal(APP.store.get('rideRound')[card + '#1'], true, '到家而且收了：記進行程紀錄（第 1 次）');
   const row = R.pastTrips().filter((x) => x.card === card)[0];
   assert.equal(row.round, true, '行程紀錄：來回');
   assert.equal(row.km, km, '公里是單程的（回程一樣遠）');
@@ -341,13 +341,13 @@ test('來回到家之後才收：收下那一刻就記進行程紀錄；rideVia 
   T.start('glass-kiln', 'e', { round: true });
   T.arrive(); T.back(); T.arrive();
   assert.equal(raw(APP).phase, 'done');
-  assert.equal((APP.store.get('rideVia')._round || {})[card], undefined, '還沒收：不記');
+  assert.equal((APP.store.get('rideRound') || {})[card + '#1'], undefined, '還沒收：不記');
   assert.ok(T.pending(), '到家了還收得到');
   APP.explore.collect('glass-kiln');
   assert.deepEqual([raw(APP).phase, raw(APP).collected], ['done', true], '收下：行程留著、記 collected');
-  assert.equal(APP.store.get('rideVia')._round[card], true, '收下那一刻就記進行程紀錄');
+  assert.equal(APP.store.get('rideRound')[card + '#1'], true, '收下那一刻就記進行程紀錄');
   assert.equal(APP.store.get('rideVia')[card], 'e', '歸因也在');
-  assert.equal(APP.explore.cardOrigin(card).via, 'e', 'cardOrigin 讀得到歸因（_round 不擋路）');
+  assert.equal(APP.explore.cardOrigin(card).via, 'e', 'cardOrigin 讀得到歸因');
   assert.equal(R.pastTrips().filter((x) => x.card === card)[0].round, true);
 });
 
@@ -374,7 +374,7 @@ test('來回的 cancel：去程取消整趟；候車／回程是「不搭回程�
   T.back();
   assert.equal(T.cancel(), true, '回程中可以取消');
   assert.equal(raw(APP), null, '卡收過了：沒有東西要等，清掉');
-  assert.equal((APP.store.get('rideVia')._round || {})[APP.place('lake').card], undefined, '回程沒搭完：行程紀錄不寫來回');
+  assert.equal((APP.store.get('rideRound') || {})[APP.place('lake').card + '#1'], undefined, '回程沒搭完：行程紀錄不寫來回');
 });
 
 test('來回的 arriveAt（demo 搭 yoxi 抵達）：同一個目的地、還在去程或候車 → 候車（來回留著）；已經回程 → 當成新的一次單程抵達', () => {
@@ -394,20 +394,26 @@ test('來回的 arriveAt（demo 搭 yoxi 抵達）：同一個目的地、還在
   assert.equal(T.arriveAt('neiwan').km, APP.fmt.km(APP.place('neiwan').dist), '存的 km 是 null：重算');
 });
 
-test('pending／arrivedAt 問 APP.explore.canCollect（每一次去都有一張）；沒有才退回 STATE.has', () => {
+test('pending／arrivedAt 問 APP.explore.canCollect（每一次去都有一張、一天一張）；沒有才退回 STATE.has', () => {
   const { APP, STATE } = load();
   const T = APP.ride.trip;
   const card = APP.place('market').card;
-  assert.ok(STATE.has(card), '前提：demo 已經收過東門市場');
+  assert.ok(STATE.has(card), '前提：demo 已經收過東門市場（九月初）');
   T.arriveAt('market');
-  assert.equal(T.pending(), null, '沒有 canCollect：收過了就沒有待收（照舊）');
-  APP.explore.canCollect = (id) => id === card;
   const p = T.pending();
-  assert.equal(p && p.card, card, 'canCollect 說收得到：待收');
+  assert.equal(p && p.card, card, '收過、今天還沒收：回訪也有這一次的明信片待收');
+  assert.equal(p && p.limited, false, '回訪不是限定版');
   assert.equal(T.arrivedAt('market'), raw(APP), 'arrivedAt 不看收過沒有');
+  const real = APP.explore.canCollect;
   APP.explore.canCollect = () => false;
-  assert.equal(T.pending(), null, 'canCollect 說收不到：沒有待收');
+  assert.equal(T.pending(), null, 'canCollect 說收不到（今天收過）：沒有待收');
   delete APP.explore.canCollect;
+  assert.equal(T.pending(), null, '沒有 canCollect：收過了就沒有待收（退回 STATE.has）');
+  APP.explore.canCollect = real;
+  APP.explore.collect('market');
+  assert.equal(raw(APP), null, '收下這一次：單程的行程用掉');
+  T.arriveAt('market');
+  assert.equal(T.pending(), null, '同一天再搭車到這裡：今天收過了，沒有待收');
 });
 
 test('來回的車資＝去程＋候車費＋回程（每一段 fare(km)）；距離不明是 null', () => {

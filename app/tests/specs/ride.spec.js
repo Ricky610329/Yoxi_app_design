@@ -498,13 +498,22 @@ T.spec('ride', function (t) {
   /* 在拉把上拖 dy（正＝往下）。opt：id、init（PointerEvent 其他欄位）、hold（回傳放手函式） */
   const dragOn = T.helpers.drag;
 
-  t.test('明信片 id 用 APP.place().card：收過 p2 再搭車到東門市場，不會一直「還沒收」', async function (app) {
+  t.test('明信片 id 用 APP.place().card：收過 p2 再搭車到東門市場是回訪（這一次的待收）；收下之後就不再掛著「還沒收」', async function (app) {
     await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'market', phase: 'done', rated: true, stars: 5, km: 1.4 }) }, hash: '/trip/done' });
     const A = app.APP;
     t.eq(A.place('market').card, 'p2', "APP.place('market').card＝p2");
-    t.ok(app.STATE.has('p2'), 'demo 已經收過 p2');
-    t.eq(A.ride.trip.pending(), null, '沒有待收的明信片');
-    t.includes(app.text('[data-gold]'), '已經在收藏', '/trip/done 說已經在收藏裡');
+    t.ok(app.STATE.has('p2'), 'demo 已經收過 p2（九月初）');
+    const pend = A.ride.trip.pending();
+    t.eq(pend && pend.card, 'p2', '每一次來都收一張：這一次的明信片待收');
+    t.eq(pend && pend.limited, false, '回訪不是限定版');
+    t.includes(app.text('[data-gold]'), '收下這一次的明信片', '/trip/done 叫你收下這一次的');
+    /* 收下這一次（回訪）之後：今天收過了，不再掛著 */
+    A.explore.collect('market');
+    t.eq(A.explore.visits('p2').length, 2, '收下的是第 2 次');
+    A.store.set('trip', T.fixtures.trip({ placeId: 'market', phase: 'done', rated: true, stars: 5, km: 1.4 }));
+    await app.go('/trip/done');
+    t.eq(A.ride.trip.pending(), null, '今天收過了：沒有待收的明信片');
+    t.includes(app.text('[data-gold]'), '今天這個地方的明信片已經收下了', '/trip/done 說今天收過了');
     await app.go('/ride');
     t.ok(!app.$('[data-act="unlock-ride"]'), '/ride 沒有「明信片還沒收」入口');
     t.eq(A.store.get('trip'), null, '收過的那一趟在 /ride 安靜清掉');
@@ -514,6 +523,7 @@ T.spec('ride', function (t) {
     await app.at('/trip');
     t.ok(!app.$('.app-confirm'), '新的一趟不再問「上一趟還沒收」');
     t.eq(A.store.get('trip').placeId, 'moat', '新行程');
+    await app.reset();
   });
 
   t.test('認不得的行程／下車點不算數：/ride 不顯示「回到行程」、清掉、setDropoff 不被擋、/trip 顯示沒有行程', async function (app) {
