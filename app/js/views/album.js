@@ -741,7 +741,7 @@ APP.view('postcard', {
         '</div></div>' +
         '<div class="alb-pad">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
         '<div class="alb-pad alb-pad--end">' +
-          '<button class="btn-ghost" type="button" data-act="again">再去一次</button>' +
+          '<button class="btn-ghost" type="button" data-act="again">再來的話，可以看什麼</button>' +
           '<div class="card card--pad alb-again u-hidden" data-again>' +
             '<div class="alb-again__k">這裡的另一面</div>' +
             '<p class="alb-again__t">' + esc(AGAIN[P.id] || '再走一次，光的角度會不一樣。') + '</p>' +
