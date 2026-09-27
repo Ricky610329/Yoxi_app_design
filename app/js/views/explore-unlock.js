@@ -73,10 +73,14 @@ const limitedPlace = APP.ride.limitedPlace;
    | 2    | 油畫     | 2 拍        | 五道厚塗筆觸一筆一筆刷到卡片後面、每筆一聲刷子、筆尾甩出顏料、卡片彈一下 |
    | 3    | 木刻版畫 | 2 拍        | 套印：翻過來是白紙 → 壓紅版（停格 40ms）→ 壓最後一版（停格 70ms、震、木屑、放射刻線、木紋） |
    | 4    | 水墨     | 2 拍        | 墨滴落下、停格 80ms、夜色洗成宣紙、墨暈、圓相                   |
-   | 5    | 金框     | 4 拍＋昇格  | 閃光（整次唯一一次）、光芒、轉一圈半、停格 120ms、重震、金粉噴泉，金粉留著慢慢飄 |
+   | 5    | 金框     | 4 拍＋光軌＋昇格 | 燙金（全部裡面最精緻的一款，搭 yoxi 才有）：                     |
+   |      |          |             | 蓄力時金色光軌一拍比一拍多、像陀螺儀繞著卡片轉；昇格時光軌收進卡片 → 閃光（整次唯一一次）＋光芒；|
+   |      |          |             | 轉一圈半、兩側甩出光絲 → 停格 120ms、重震 → 夜色鍍成金、背後一圈一圈描出紋章、金箔翻著飄下來 → |
+   |      |          |             | 兩道金線沿卡片的邊描下去（燙金），在底部合起來的那一下再爆一次金光、一個大和弦；金粉與金箔留著慢慢飄 |
    蓄力每一拍換一個光色（白 → 暖橙 → 朱紅 → 墨 → 金）；翻開前停在這一款自己的光色。
-   四季的畫風各留一樣東西在結果頁（跳過、減少動態效果也停在同一個樣子，finish() 加 class，CSS 接手）：
-   水墨 .is-paper（宣紙＋圓相）、水彩 .is-wash（白紙＋顏料）、油畫 .is-paint（筆觸）、木刻 .is-print（刻線＋木紋）。 */
+   每一款各留一樣東西在結果頁（跳過、減少動態效果也停在同一個樣子，finish() 加 class，CSS 接手）：
+   水墨 .is-paper（宣紙＋圓相）、水彩 .is-wash（白紙＋顏料）、油畫 .is-paint（筆觸）、木刻 .is-print（刻線＋木紋）、
+   金框 .is-gilt（鍍金的夜色＋紋章＋燙金的邊，卡名掃兩次光）。 */
 function tierOf(d) {
   const i = d ? CARD_STYLES.indexOf(d) : -1;
   return i < 0 ? 1 : i + 1;
@@ -92,6 +96,36 @@ function auraColor(i) {
   return F.color('--gold');
 }
 const CHARGE_CAPS = ['正在畫下今天的這裡', '讀取今天的天氣與光線', '鎖定畫風', '收筆'];
+
+/* 金框的紋章：翻開落地時在卡片背後一圈一圈描出來（.is-gilt），留在結果頁。
+   外圈、一圈點、36 道刻度（每三道一長）、內圈、8 顆菱形；圓從正上方開始描（rotate(-90)） */
+function sealHTML() {
+  let ticks = '', gems = '';
+  for (let i = 0; i < 36; i++) {
+    const a = i * Math.PI / 18, r1 = i % 3 ? 164 : 173;
+    ticks += '<line x1="' + (Math.cos(a) * 156).toFixed(1) + '" y1="' + (Math.sin(a) * 156).toFixed(1) +
+      '" x2="' + (Math.cos(a) * r1).toFixed(1) + '" y2="' + (Math.sin(a) * r1).toFixed(1) + '"/>';
+  }
+  for (let i = 0; i < 8; i++) gems += '<path d="M0 -200 L5.5 -192 L0 -184 L-5.5 -192 Z" transform="rotate(' + (i * 45) + ')"/>';
+  return '<svg class="ex-seal" viewBox="-206 -206 412 412" focusable="false">' +
+    '<g class="ex-seal__spin">' +
+      '<circle class="ex-seal__l" r="192" transform="rotate(-90)" pathLength="1"/>' +
+      '<circle class="ex-seal__dots" r="181"/>' +
+      '<g class="ex-seal__ticks">' + ticks + '</g>' +
+      '<circle class="ex-seal__l ex-seal__l--2" r="150" transform="rotate(-90)" pathLength="1"/>' +
+      '<g class="ex-seal__gems">' + gems + '</g>' +
+    '</g></svg>';
+}
+/* 燙金：兩道金線從卡片頂端正中間往左右出發，沿著邊（圓角）描到底部正中間合起來。
+   線（__line）描出來留著；頭（__head）是一小段白熱的光，跟線同一條路、同一個時間走。卡片 220×293 */
+const FOIL_L = 'M110 3 H10 Q3 3 3 10 V283 Q3 290 10 290 H110';
+const FOIL_R = 'M110 3 H210 Q217 3 217 10 V283 Q217 290 210 290 H110';
+function foilHTML() {
+  return '<svg class="ex-foil" viewBox="0 0 220 293" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+    '<path class="ex-foil__line" d="' + FOIL_L + '" pathLength="1"/><path class="ex-foil__line" d="' + FOIL_R + '" pathLength="1"/>' +
+    '<path class="ex-foil__head" d="' + FOIL_L + '" pathLength="1"/><path class="ex-foil__head" d="' + FOIL_R + '" pathLength="1"/>' +
+  '</svg>';
+}
 
 /* 卡面：疊法跟收藏裡的卡一樣（explore-face.js 的 cardFace）——生成好的成品 → 實景照片（PHOTOS，授權一定要露出）
    ＋畫風的 SVG 濾鏡（explore-fx.js）→ 插圖 */
@@ -193,7 +227,7 @@ function renderUnlock(params) {
   const key = style ? style.key : '';
   const stageFx = got ? '' :
     '<div class="ex-stage__fx" aria-hidden="true">' +
-      (key === 'gold' ? '<span class="ex-rays"><i></i></span>' : '') +
+      (key === 'gold' ? '<span class="ex-rays"><i></i></span>' + sealHTML() : '') +
       '<span class="ex-aura"></span>' +
       (key === 'watercolor' ? '<span class="ex-wet"></span><span class="ex-blots"><i></i><i></i><i></i><i></i><i></i></span>' : '') +
       (key === 'oil' ? '<span class="ex-strokes"><i></i><i></i><i></i><i></i><i></i></span>' : '') +
@@ -238,6 +272,7 @@ function renderUnlock(params) {
       (got ? '' : '<div class="ex-unlock__map" data-arrive-map aria-hidden="true"></div>' +
                   (key === 'ink' || key === 'watercolor' ? '<div class="ex-paper" aria-hidden="true"><svg class="ex-face__paper" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg></div>' : '') +
                   (key === 'woodcut' ? '<div class="ex-grain" aria-hidden="true"><svg class="ex-grain__svg" focusable="false"><rect width="100%" height="100%" filter="url(#exf-grain)"/></svg></div>' : '') +
+                  (key === 'gold' ? '<div class="ex-gilt" aria-hidden="true"></div>' : '') +
                   '<canvas class="ex-fx ex-fx--back" data-fx-back aria-hidden="true"></canvas>') +
       scene1 +
       '<div class="unlock__scene ex-stage' + (got ? ' is-on' : '') + '" data-scene="3">' +
@@ -253,6 +288,7 @@ function renderUnlock(params) {
                   (style ? ' data-style="' + esc(style.key) + '"' : '') + '>' +
                 (gold ? '<span class="postcard__ribbon" data-ribbon-new>' + (v > 1 ? 'yoxi 金框' : 'yoxi 限定版') + '</span>' : '') +
                 faceHTML(p, style) +
+                (gold ? foilHTML() : '') +
                 '<span class="ai-mark">AI 生成示意</span>' +
                 marks +
                 '<span class="postcard__foot">' +
@@ -312,6 +348,16 @@ const STROKE_GAP = 120;
 
 /* 金框結果頁的金粉飄多久（毫秒，跟著 --t-scene 縮放）：之後停下來，頁面回到靜止，不再每秒 60 幀耗電 */
 const DUST_MS = 5600;
+
+/* 燙金的兩道金線：鍍金（is-gilt）之後多久開始描、描多久（毫秒，跟著 --t-scene 縮放）。
+   CSS 的 .ex-foil 動畫用同一組數字（calc(var(--t-scene) * .17)、* .75），兩道線合起來的那一下 JS 接著爆金光 */
+const FOIL_DELAY = 204;
+const FOIL_MS = 900;
+
+/* 金箔的顏色：金、淡金、帶一點紅的赤金、偏白的亮金（翻到正面時再亮一點，見 explore-fx.js 的 leaf） */
+function leafColors(F) {
+  return [F.color('--gold'), F.color('--gold-lite'), F.mix(F.color('--gold'), F.color('--yoxi-red'), .18), F.mix(F.color('--gold'), F.color('--yoxi-white'), .45)];
+}
 
 function mountUnlock(root, params) {
   const p = APP.place(params.id);
@@ -386,7 +432,7 @@ function mountUnlock(root, params) {
     if (end === 'is-paper' || end === 'is-wash') APP.ui.setStatus('dark');
     /* 木刻翻到一半被跳過：卡面還停在白紙或紅版，換回印好的樣子 */
     box.querySelectorAll('[data-print]').forEach(function (el) { el.removeAttribute('data-print'); });
-    if (style && style.gold && !got) box.classList.add('is-gold-up');
+    if (style && style.gold && !got) box.classList.add('is-gold-up', 'is-gilt');
     /* 翻開以後才標：金框的邊開始散金粉（explore-gold.js），跟收藏裡看到它時一樣；翻開前標會先洩底 */
     const finalCard = q('[data-final-card].postcard--gold');
     if (finalCard) finalCard.setAttribute('data-gold-aura', '');
@@ -397,10 +443,17 @@ function mountUnlock(root, params) {
     /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見），DUST_MS 之後、或開始寫那一句話時停下來；其他款式安靜收尾 */
     if (!quiet && front && style && style.gold && !F.calm() && !dust) {
       const gc = [F.color('--gold'), F.color('--gold-lite')];
+      const lc = leafColors(F);
       const W0 = front.at(box).W;
       dust = front.stream({
-        rate: 11,
+        rate: 12,
         one: function () {
+          /* 四顆裡一片是金箔：翻著、左右飄著落下來；其他是金粉 */
+          if (Math.random() < .25) {
+            return { x: F.rnd(0, W0), y: -10, vx: F.rnd(-8, 8), vy: F.rnd(40, 70), life: [4, 6], size: [2.4, 4.2],
+                     kinds: ['leaf'], colors: lc, spin: [.6, 2.2], flip: [4, 9], sway: [20, 50], drag: .4,
+                     blend: 'source-over', alpha: [.8, 1], fin: .1, fout: .3 };
+          }
           return { x: F.rnd(0, W0), y: -8, vx: F.rnd(-12, 12), vy: F.rnd(34, 80), life: [3.2, 5.2],
                    size: [1, 2.6], kinds: ['star', 'glow'], colors: gc, tw: [4, 9], alpha: [.35, .85], fin: .1, fout: .45 };
         },
@@ -525,6 +578,11 @@ function mountUnlock(root, params) {
       const at = front.at(cardBox);
       front.converge({ x: at.x, y: at.y, n: 14 + i * 10, radius: [150, 280], life: [.42, .66], size: [.9, 2.2],
                        kinds: ['spark', 'glow'], colors: [c, white], len: .06 });
+      /* 金框：金色光軌繞著卡片轉，一拍比一拍多（像陀螺儀），每一條慢慢往卡片收；畫在後景，經過卡片時從卡片背後過去 */
+      if (style && style.gold) {
+        back.orbit({ x: at.x, y: at.y, n: 2 + i, r0: [196, 240], r1: [124, 152], w: [3.4, 5], len: [1.4, 2.3],
+                     ky: [.2, .42], tilt: [-.75, .75], life: [1.2, 1.7], size: [1.6, 2.8], colors: [gold, goldLite] });
+      }
       A(aura, [{ opacity: .3 + i * .1, transform: 'scale(.86)' },
                { opacity: .8, transform: 'scale(' + (1.08 + i * .05) + ')', offset: .35 },
                { opacity: .5 + i * .1, transform: 'scale(1)' }], { duration: 520, easing: F.ease.out });
@@ -539,6 +597,10 @@ function mountUnlock(root, params) {
     /* 金框的昇格：光收進去 → 停格 → 閃白、轉金、光芒展開 */
     const upgrade = function () {
       if (cap) cap.textContent = '';
+      /* 光軌越轉越快、一起收進卡片裡（接著停格、閃光） */
+      const c = back.at(cardBox);
+      back.orbit({ x: c.x, y: c.y, n: 8, r0: [150, 200], r1: [0, 6], w: [8, 11.5], len: [1.8, 2.8], ky: [.2, .5], tilt: [-.8, .8],
+                   life: .38 * u, size: [1.6, 2.8], colors: [gold, goldLite, white], ease: 'in', fout: .1 });
       A(aura, [{ transform: 'scale(1)', opacity: .9 }, { transform: 'scale(.55)', opacity: 1 }], { duration: 380, easing: F.ease.in });
       return A(flip, [{ transform: 'none' }, { transform: 'scale(.93)' }], { duration: 380, easing: F.ease.in })
         .then(function () { return alive() ? F.hitstop(box, engs, 140) : null; })
@@ -697,35 +759,83 @@ function mountUnlock(root, params) {
                             { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 640, easing: F.ease.out });
           });
       },
+      /* 燙金（全部裡面最精緻的一款，搭 yoxi 才有）：轉一圈半、兩側甩出光絲 → 停格 120ms、重震 →
+         夜色鍍成金、背後一圈一圈描出紋章、金箔翻著飄下來 → 兩道金線沿著卡片的邊描下去（燙金），
+         在底部合起來的那一下再爆一次金光、蓋上「yoxi 限定版」、一個大和弦。
+         鍍金、紋章、金線都交給 .is-gilt 的 CSS：跳過、減少動態效果都停在同一個樣子 */
       gold: function (at) {
         const spin = A(flip, [{ transform: PRE + ' rotateY(0deg)' },
                               { transform: 'translateY(0) scale(1.22) rotateY(420deg)', offset: .62 },
                               { transform: 'translateY(0) scale(1.14) rotateY(540deg)' }], { duration: 980, easing: F.ease.out });
+        const gc = [gold, goldLite, white];
+        const lc = leafColors(F);
+        /* 限定版的緞帶：轉過來的時候先藏著，等兩道金線合起來才蓋上去（停格時一起停，時間還是對得上） */
+        A(q('[data-ribbon-new]'), [{ transform: 'scale(2.4) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.9) rotate(0deg)', opacity: 1, offset: .7 },
+                                   { transform: 'none', opacity: 1 }], { duration: 480, delay: 560 + FOIL_DELAY + FOIL_MS, easing: F.ease.back, fill: 'both' });
+        /* 轉的時候卡片左右兩邊甩出光絲（像轉起來的金幣） */
+        const c0 = front.at(cardBox);
+        const threads = front.stream({
+          rate: 70,
+          one: function () {
+            const side = Math.random() < .5 ? -1 : 1;
+            return { x: c0.x + side * c0.w * F.rnd(.3, .55), y: c0.y + F.rnd(-.45, .45) * c0.h, vx: side * F.rnd(220, 480), vy: F.rnd(-40, 40),
+                     life: [.3, .6], size: [.8, 1.6], kinds: ['spark'], colors: gc, drag: 3, len: .06 };
+          },
+        });
+        later(threads.stop, 520);
+        let crowned = null;
         return W(560).then(function () {
           if (!alive()) return null;
+          threads.stop();
           F.sfx.thud(true);
           F.sfx.reveal(5);
           return F.hitstop(box, engs, 120);
         }).then(function () {
           if (!alive()) return null;
           shake.add(.62);
+          box.classList.add('is-gilt');
           const c = front.at(cardBox);
-          const gc = [gold, goldLite, white];
           front.ring({ x: c.x, y: c.y, size: c.w * .5, grow: 3.2, life: .7, colors: [goldLite], lw: 5 });
           front.ring({ x: c.x, y: c.y, size: c.w * .4, grow: 4.4, life: 1, colors: [gold], lw: 3 });
+          back.ring({ x: c.x, y: c.y, size: c.w * .6, grow: 3.8, life: 1.6, colors: [gold], lw: 1.4 });
           back.burst({ x: c.x, y: c.y, n: 90, r0: [c.w * .35, c.w * .55], speed: [260, 720], life: [.5, 1.1], size: [1, 2.8],
                        kinds: ['spark'], colors: gc, drag: 2, g: 260, len: .045 });
           front.burst({ x: c.x, y: c.y - c.h * .3, n: 70, r0: [c.w * .3, c.w * .5], speed: [300, 680], angle: [-Math.PI * .92, -Math.PI * .08],
                         life: [1.2, 2], size: [1.6, 4], kinds: ['star', 'glow'], colors: gc, g: 720, drag: .9, tw: [8, 16] });
           back.burst({ x: c.x, y: c.y, n: 18, speed: [40, 140], life: [1, 1.8], size: [18, 34], grow: 1.6, kinds: ['glow'],
                        colors: [gold], alpha: [.25, .45], drag: 1.4 });
-          A(q('[data-ribbon-new]'), [{ transform: 'scale(2.4) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.9) rotate(0deg)', opacity: 1, offset: .7 },
-                                     { transform: 'none', opacity: 1 }], { duration: 480, delay: 260, easing: F.ease.back });
+          /* 金箔：往上噴開，然後一片片翻著、閃著、左右飄著落下來（前後兩層，後面那層小一點） */
+          front.burst({ x: c.x, y: c.y - c.h * .1, n: 40, r0: [c.w * .15, c.w * .5], speed: [140, 420], angle: [-Math.PI * .95, -Math.PI * .05],
+                        life: [2.4, 3.6], size: [3, 6.5], kinds: ['leaf'], colors: lc, g: 150, drag: 1.5, spin: [.8, 3], flip: [5, 11],
+                        sway: [30, 70], blend: 'source-over', alpha: [.9, 1], fin: .02, fout: .25 });
+          back.burst({ x: c.x, y: c.y, n: 24, r0: [c.w * .2, c.w * .45], speed: [80, 300], life: [2.2, 3.4], size: [2, 4.5],
+                       kinds: ['leaf'], colors: lc, g: 120, drag: 1.4, spin: [.8, 3], flip: [5, 11], sway: [20, 50],
+                       blend: 'source-over', alpha: [.7, .95], fin: .02, fout: .3 });
+          later(function () { if (alive()) F.sfx.foil(FOIL_MS * u / 1000); }, FOIL_DELAY);
+          /* 兩道金線在底部合起來（跟 CSS 的 .ex-foil 同一個時間）：再爆一次金光、光暈脹一下、大和弦 */
+          crowned = new Promise(function (res) {
+            later(function () {
+              res();
+              if (!alive()) return;
+              const b = front.at(cardBox);
+              const bx = b.x, by = b.y + b.h / 2 - 3;
+              F.sfx.crown();
+              shake.add(.22);
+              front.burst({ x: bx, y: by, n: 34, speed: [160, 460], angle: [-Math.PI, 0], life: [.5, 1], size: [1, 2.4],
+                            kinds: ['spark'], colors: gc, drag: 2.2, len: .05 });
+              front.burst({ x: bx, y: by, n: 14, speed: [40, 160], life: [.8, 1.4], size: [1.6, 3.4], kinds: ['star'], colors: gc, drag: 1.6, tw: [8, 14] });
+              front.ring({ x: bx, y: by, size: 8, grow: 9, life: .6, colors: [goldLite], lw: 3 });
+              back.ring({ x: b.x, y: b.y, size: b.w * .55, grow: 2.2, life: 1, colors: [gold], lw: 2 });
+              A(aura, [{ transform: 'scale(1)', opacity: .9 }, { transform: 'scale(1.25)', opacity: 1, offset: .3 }, { transform: 'scale(1)', opacity: .85 }],
+                { duration: 700, easing: F.ease.out });
+            }, FOIL_DELAY + FOIL_MS);
+          });
           return spin;
         }).then(function () {
+          if (!alive()) return null;
           return A(flip, [{ transform: 'translateY(0) scale(1.14) rotateY(540deg)' }, { transform: 'translateY(0) scale(1) rotateY(540deg)' }],
                    { duration: 620, easing: F.ease.elastic });
-        });
+        }).then(function () { return alive() && crowned ? crowned : null; });
       },
     };
 

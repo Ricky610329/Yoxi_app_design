@@ -325,6 +325,40 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
+  /* 金框是全部裡面最精緻的一款：結果停在 .is-gilt（鍍金的夜色、紋章、燙金的邊），跳過與 still 也是；走路收的沒有 */
+  t.test('/unlock 金框：停在鍍金（.is-gilt）＋紋章＋燙金的邊；走路收的沒有；APP.fx 有光軌（orbit）與金箔（leaf）', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ phase: 'done', startedAt: new Date().toISOString(), rated: true }),
+                               dropoff: T.fixtures.dropoff({ setAt: new Date().toISOString() }) } });
+    await app.go('/unlock/neiwan?ride=1');
+    const box = app.$('[data-unlock]');
+    t.ok(box && box.classList.contains('is-gilt'), '結果停在 .is-gilt');
+    t.eq(app.$$('.ex-seal .ex-seal__ticks line').length, 36, '紋章：36 道刻度');
+    t.eq(app.$$('.ex-seal .ex-seal__gems path').length, 8, '紋章：8 顆菱形');
+    t.eq(app.$$('.postcard--gold .ex-foil path').length, 4, '燙金：兩道線＋兩個光頭');
+    await app.waitFor(function () {
+      return Number(app.win.getComputedStyle(app.$('.ex-gilt')).opacity) > .9;
+    }, 2000, '鍍金的背景看得到');
+    const off = parseFloat(app.win.getComputedStyle(app.$('.ex-foil__line')).strokeDashoffset);
+    t.ok(Math.abs(off) < .01, '燙金的線描完了（stroke-dashoffset ' + off + '）');
+    await app.reset();
+    await app.go('/unlock/glass-kiln');
+    t.ok(!app.$('.ex-gilt, .ex-seal, .ex-foil'), '走路收的：沒有鍍金、紋章、燙金');
+    t.ok(!app.$('[data-unlock]').classList.contains('is-gilt'), '走路收的：沒有 .is-gilt');
+    const cv = app.doc.createElement('canvas');
+    app.doc.body.appendChild(cv);
+    const eng = app.APP.fx.engine(cv);
+    try {
+      eng.orbit({ x: 10, y: 10, n: 5 });
+      t.eq(eng.count(), 5, 'orbit：5 條光軌');
+      eng.burst({ x: 10, y: 10, n: 7, kinds: ['leaf'], flip: [4, 8], sway: 20 });
+      t.eq(eng.count(), 12, 'leaf：再 7 片金箔');
+    } finally {
+      eng.destroy();
+      cv.remove();
+    }
+    await app.reset();
+  });
+
   /* 審查 1：已抵達（phase done）的那一趟還沒收，不論從哪個入口進 /unlock 都是搭車抵達；走路收下不清 trip */
   t.test('搭車抵達還沒收：沒帶 ?ride=1 也是金框、by ride、+點數，trip 用掉', async function (app) {
     const trip = T.fixtures.trip({ phase: 'done', startedAt: new Date().toISOString(), rated: true });

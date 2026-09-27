@@ -6,15 +6,17 @@
    而這裡要的東西不多——Web Animations API 做時間軸，一張 <canvas> 做粒子，Web Audio 合成音效。
 
    設計原則（game juice：特效是回饋，不是裝飾）：
-   - 分級給：四季的畫風一樣重（款式照規則，只看什麼時候去），各有自己媒材的動作；搭 yoxi 的金框最重，
-     全螢幕閃光、光芒、最長的停格（120ms）只留給它。
+   - 分級給：四季的畫風一樣重（款式照規則，只看什麼時候去），各有自己媒材的動作；搭 yoxi 的金框最重、也最精緻：
+     全螢幕閃光、光芒、最長的停格（120ms）、繞著卡片的光軌（orbit）、會翻面閃光的金箔（leaf）、燙金與紋章只留給它。
    - 三拍：蓄力（anticipation）→ 動作 → 餘韻；沒有蓄力的特效只是「突然冒出來」。
    - 只動 transform／opacity；粒子上百顆一律畫在 canvas，不塞 DOM。
    - 減少動態效果：不震、不閃、不噴粒子，改成短淡入（APP.fx.calm()）。全螢幕閃光一次翻卡最多一次。
    - 顏色全部從 tokens.css 讀，這支檔案不寫任何色碼。
 
    提供：
-     APP.fx.engine(canvas)      粒子引擎：burst／converge／stream／ring／clear／destroy
+     APP.fx.engine(canvas)      粒子引擎：burst／converge／stream／ring／orbit／clear／destroy
+                                粒子的樣子（kinds）：glow、soft、star、spark（拖尾的線）、shard（碎片）、
+                                leaf（金箔：翻面時變窄、正對著你時閃一下）、orbit（繞一個中心轉的光軌，只由 orbit() 生）
      APP.fx.shaker(el)          以 trauma 計的震動（trauma² 決定幅度，會自己衰減）
      APP.fx.hitstop(root, eng, ms)  停格：root 底下的動畫與粒子一起停 ms 毫秒
      APP.fx.flash(el, color)    全螢幕閃一下（只給金框）
@@ -179,6 +181,39 @@ function engine(canvas) {
       ctx.strokeStyle = rgba(p.color, 1);
       ctx.lineWidth = Math.max(.5, p.lw * (1 - k));
       ctx.beginPath(); ctx.arc(p.x, p.y, s, 0, Math.PI * 2); ctx.stroke();
+    } else if (p.kind === 'leaf') {
+      /* 金箔：繞著自己翻（x 方向的寬度跟著 cos 變），正對著你的那一下最亮 */
+      const f = Math.cos(p.t * p.flip + p.ph);
+      const glint = Math.pow(Math.abs(f), 8);
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(Math.max(.06, Math.abs(f)), 1);
+      ctx.fillStyle = rgba(mix(p.color, [255, 255, 255], glint * .75), 1);
+      ctx.beginPath();
+      ctx.moveTo(-s, -s * .7); ctx.lineTo(s * .9, -s * .85); ctx.lineTo(s, s * .6); ctx.lineTo(-s * .75, s * .8);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    } else if (p.kind === 'orbit') {
+      /* 光軌：在傾斜的橢圓上繞中心轉，半徑從 r0 收到 r1；尾巴分三段越來越淡越細，頭上一顆光點 */
+      const o = p.orb;
+      const e = o.ease === 'in' ? k * k : k * k * (3 - 2 * k);
+      const r = o.r0 + (o.r1 - o.r0) * e;
+      const th = o.th + o.w * p.t;
+      const dir = o.w >= 0 ? 1 : -1;
+      ctx.strokeStyle = rgba(mix(p.color, [255, 255, 255], .3), 1);
+      ctx.lineCap = 'round';
+      for (let j = 0; j < 3; j++) {
+        const a1 = th - dir * o.len * j / 3, a0 = th - dir * o.len * (j + 1) / 3;
+        ctx.globalAlpha = a * (1 - j * .3);
+        ctx.lineWidth = Math.max(.5, s * (1 - j * .28));
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, Math.max(.1, r), Math.max(.1, r * o.ky), o.tilt, Math.min(a0, a1), Math.max(a0, a1));
+        ctx.stroke();
+      }
+      const cx = r * Math.cos(th), cy = r * o.ky * Math.sin(th);
+      const hx = p.x + cx * Math.cos(o.tilt) - cy * Math.sin(o.tilt);
+      const hy = p.y + cx * Math.sin(o.tilt) + cy * Math.cos(o.tilt);
+      ctx.globalAlpha = a;
+      ctx.drawImage(sprite(p.color, 'glow'), hx - s * 3.2, hy - s * 3.2, s * 6.4, s * 6.4);
     } else {
       const img = sprite(p.color, p.kind === 'star' ? 'star' : (p.kind === 'soft' ? 'soft' : 'glow'));
       if (p.kind === 'star') {
@@ -208,7 +243,7 @@ function engine(canvas) {
       p.t += dt;
       if (p.t >= p.life) { list.splice(i, 1); continue; }
       const f = Math.exp(-p.drag * dt);
-      p.vx = (p.vx + p.ax * dt) * f;
+      p.vx = (p.vx + (p.ax + (p.sway ? Math.cos(p.t * 2.3 + p.ph) * p.sway : 0)) * dt) * f;
       p.vy = (p.vy + (p.ay + p.g) * dt) * f;
       p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
       draw(p, p.t / p.life);
@@ -219,7 +254,7 @@ function engine(canvas) {
   }
   function add(o, x, y, vx, vy) {
     const size = range(o.size, 3);
-    list.push({
+    const p = {
       x: x, y: y, vx: vx, vy: vy, ax: o.ax || 0, ay: o.ay || 0, g: o.g || 0, drag: o.drag || 0,
       size: size, size1: size * (o.grow == null ? 1 : range(o.grow, 1)),
       rot: Math.random() * Math.PI * 2, vr: range(o.spin, 0) * (Math.random() < .5 ? -1 : 1),
@@ -227,7 +262,10 @@ function engine(canvas) {
       blend: o.blend || 'lighter', alpha: o.alpha == null ? 1 : range(o.alpha, 1),
       fin: o.fin == null ? .08 : o.fin, fout: o.fout == null ? .5 : o.fout,
       tw: o.tw ? range(o.tw, 0) : 0, ph: Math.random() * 6.28, len: o.len || .035, lw: o.lw || 2,
-    });
+      flip: range(o.flip, 0), sway: range(o.sway, 0),
+    };
+    list.push(p);
+    return p;
   }
 
   /* 從一點往外噴：angle 用弧度區間（預設 360°），speed 是 px/s，r0 是起點離中心多遠 */
@@ -269,6 +307,23 @@ function engine(canvas) {
     const q = Object.assign({ kinds: ['ring'], blend: 'lighter', fin: .02, fout: .8 }, o);
     q.kinds = ['ring'];
     add(q, o.x, o.y, 0, 0);
+    kick();
+    return api;
+  };
+  /* 繞著 (x, y) 轉的光軌（金框的蓄力）：每一條在自己傾斜的橢圓上轉，半徑 r0 → r1（ease:'in' 越轉越快收進去）。
+     w＝每秒幾弧度（正負隨機，除非給 dir）、len＝尾巴幾弧度、ky＝橢圓扁的程度、tilt＝橢圓斜幾度（弧度） */
+  api.orbit = function (o) {
+    if (dead) return api;
+    fitIfNeeded();
+    const n = Math.round(o.n || 3);
+    for (let i = 0; i < n; i++) {
+      const p = add(Object.assign({ blend: 'lighter', fin: .15, fout: .35 }, o, { kinds: ['orbit'], g: 0, drag: 0 }), o.x, o.y, 0, 0);
+      p.orb = {
+        r0: range(o.r0, 180), r1: range(o.r1, 120), th: rnd(0, Math.PI * 2),
+        w: range(o.w, 4) * (o.dir || (Math.random() < .5 ? -1 : 1)),
+        len: range(o.len, 1.4), ky: range(o.ky, .35), tilt: range(o.tilt, 0), ease: o.ease || '',
+      };
+    }
     kick();
     return api;
   };
@@ -495,6 +550,18 @@ const sfx = (function () {
       tone({ f: big ? 150 : 190, f1: 55, glide: .18, dur: big ? .45 : .3, vol: big ? .34 : .24 });
       tone({ f: big ? 420 : 520, dur: .07, vol: big ? .14 : .1, type: 'triangle' });
       noise({ dur: .12, vol: big ? .16 : .1, type: 'lowpass', f: 700 });
+    },
+    /* 燙金：兩道金線沿著卡片的邊描下去——高頻的沙沙聲往上掃，底下一串很輕的豎琴音往上爬 */
+    foil: function (dur) {
+      const d = dur || .9;
+      noise({ dur: d, vol: .05, type: 'highpass', f: 3200, f1: 9000, q: .6, attack: .2 });
+      [N.C5, N.E5, N.G5, N.A5, N.C6, N.E6, N.G6, N.C7].forEach(function (f, i) { tone({ f: f, at: i * d / 8, dur: .5, vol: .045 }); });
+    },
+    /* 兩道金線在底部合起來：一個亮的大三和弦，低音慢慢墊上來，上面灑一把碎鈴 */
+    crown: function () {
+      [N.C6, N.E6, N.G6, N.C7].forEach(function (f, i) { bell(f, i * .012, .1, 2.2); });
+      [N.C5 / 2, N.G5 / 2].forEach(function (f) { tone({ f: f, dur: 2.8, vol: .07, attack: .5 }); });
+      for (let i = 0; i < 16; i++) tone({ f: rnd(3000, 5200), at: rnd(.05, 1.4), dur: .3, vol: .02 });
     },
     reveal: function (tier) {
       if (tier <= 1) { bell(N.E5, 0, .12, 1.1); bell(N.G5, .08, .08, 1); return; }

@@ -683,6 +683,112 @@
 .ex-unlock.is-gold-up .ex-rays i { animation: ex-rays-settle calc(var(--t-scene) * 12) var(--ease) both; }
 @keyframes ex-rays-settle { to { transform: rotate(100deg); } }
 
+/* ---- 金框的燙金（.is-gilt：落地那一刻加上，跳過、減少動態效果也停在這個樣子）----
+   金框是全部裡面最精緻的一款：夜色鍍成金、背後描出紋章、兩道金線沿卡片的邊描下去、卡名掃兩次光。
+   時間都跟著 --t-scene；燙金那兩道線的 .17／.75 跟 explore-unlock.js 的 FOIL_DELAY／FOIL_MS 是同一組數字。 */
+/* 鍍金的夜色：卡片那一段是暖金的光，往下退回深藍（畫風名、寫一句話、收進收藏那一塊保持深色，字才看得清楚） */
+.ex-gilt {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 90% 34% at 50% 30%, color-mix(in srgb, var(--gold) 72%, transparent), color-mix(in srgb, var(--gold) 34%, transparent) 42%, color-mix(in srgb, var(--gold) 10%, transparent) 70%, transparent 92%),
+    linear-gradient(var(--yoxi-navy-soft), var(--yoxi-navy) 70%);
+  transition: opacity calc(var(--t-slow) * 1.4) var(--ease-out);
+}
+.ex-unlock.is-gilt .ex-gilt { opacity: 1; }
+/* 紋章：外圈、一圈點、刻度、內圈、菱形，一層一層描出來；落定之後跟光芒反著方向慢慢轉，十幾秒內停住 */
+.ex-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 460px;
+  max-width: none;                /* base.css 的 svg { max-width: 100% } 會把它縮成卡片寬 */
+  height: 460px;
+  margin: -230px 0 0 -230px;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(.78) rotate(-40deg);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 75%, transparent));
+  /* 下半圈往卡片底部淡掉：結果頁卡片底下就是畫風名與說明，紋章不從字上穿過去 */
+  -webkit-mask-image: linear-gradient(black 52%, transparent 80%);
+  mask-image: linear-gradient(black 52%, transparent 80%);
+}
+.ex-seal circle, .ex-seal line { fill: none; stroke: var(--gold-lite); }
+.ex-seal__l { stroke-width: 1.6; stroke-dasharray: 1 2; stroke-dashoffset: 1; }
+.ex-seal__l--2 { stroke-width: 2.6; }
+.ex-seal__dots { stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0 9.48; opacity: 0; }
+.ex-seal__ticks { opacity: 0; transform: scale(.88); }
+.ex-seal__ticks line { stroke-width: 1.4; stroke-linecap: round; }
+.ex-seal__gems { opacity: 0; transform: scale(.7); }
+.ex-seal__gems path { fill: var(--gold); stroke: var(--gold-lite); stroke-width: 1; }
+.ex-unlock.is-gilt .ex-seal {
+  opacity: .9;
+  transform: none;
+  transition: opacity var(--t-slow) var(--ease-out), transform calc(var(--t-scene) * 1.5) var(--ease-out);
+}
+.ex-unlock.is-gilt .ex-seal__l { stroke-dashoffset: 0; transition: stroke-dashoffset calc(var(--t-scene) * 1.1) var(--ease-out); }
+.ex-unlock.is-gilt .ex-seal__l--2 { transition-delay: calc(var(--t-scene) * .15); }
+.ex-unlock.is-gilt .ex-seal__dots { opacity: 1; transition: opacity var(--t-slow) var(--ease-out) calc(var(--t-scene) * .35); }
+.ex-unlock.is-gilt .ex-seal__ticks {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--t-slow) var(--ease-out) calc(var(--t-scene) * .25), transform var(--t-slow) var(--ease-out) calc(var(--t-scene) * .25);
+}
+.ex-unlock.is-gilt .ex-seal__gems {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--t-base) var(--ease-out) calc(var(--t-scene) * .6), transform calc(var(--t-scene) * .5) var(--ease-bump) calc(var(--t-scene) * .6);
+}
+.ex-unlock.is-gilt .ex-seal__spin { animation: ex-seal-settle calc(var(--t-scene) * 12) var(--ease) both; }
+@keyframes ex-seal-settle { to { transform: rotate(-45deg); } }   /* 菱形每 45° 一顆，停在哪都一樣 */
+/* 燙金：兩道金線沿卡片的邊描下去，頭上一小段白熱的光；描完線留著、光熄掉 */
+.ex-foil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.ex-foil path { fill: none; stroke-linecap: round; }
+.ex-foil__line { stroke: var(--gold-lite); stroke-width: 2; stroke-dasharray: 1 2; stroke-dashoffset: 1; }
+.ex-foil__head {
+  stroke: var(--yoxi-white);
+  stroke-width: 4;
+  stroke-dasharray: .05 2;
+  stroke-dashoffset: .05;
+  opacity: 0;
+  filter: drop-shadow(0 0 3px var(--gold-lite)) drop-shadow(0 0 8px var(--gold));
+}
+.ex-unlock.is-gilt .ex-foil__line {
+  stroke-dashoffset: 0;
+  animation: ex-foil-line calc(var(--t-scene) * .75) var(--ease) calc(var(--t-scene) * .17) both;
+}
+.ex-unlock.is-gilt .ex-foil__head { animation: ex-foil-head calc(var(--t-scene) * .75) var(--ease) calc(var(--t-scene) * .17) both; }
+@keyframes ex-foil-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ex-foil-head {
+  0%   { stroke-dashoffset: .05; opacity: 0; }
+  6%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { stroke-dashoffset: -.95; opacity: 0; }
+}
+/* 卡名「yoxi 金框」掃兩次光（金 → 白 → 金），之後停在淡金 */
+.ex-unlock.is-gilt .ex-unlock__sname {
+  background: linear-gradient(100deg, var(--gold-lite) 42%, var(--yoxi-white) 50%, var(--gold-lite) 58%) 100% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ex-sname-shine calc(var(--t-scene) * 1.6) var(--ease) calc(var(--t-scene) * .5) 2;
+}
+@keyframes ex-sname-shine {
+  from { background-position: 100% 0; }
+  to   { background-position: 0 0; }
+}
+
 .ex-blots i {
   position: absolute;
   left: 50%;
@@ -982,7 +1088,10 @@
 
 /* ?still=1：base.css 把動畫壓成 1ms，還在跑的每次拍到的角度不一樣；這兩個直接關掉，停在起點，縮圖每次一樣 */
 html[data-still] .ex-unlock .ex-rays i,
-html[data-still] .ex-unlock .ex-face__holo { animation: none; }
+html[data-still] .ex-unlock .ex-face__holo,
+html[data-still] .ex-unlock .ex-seal__spin,
+html[data-still] .ex-unlock .ex-foil path,
+html[data-still] .ex-unlock .ex-unlock__sname { animation: none; }
 
 /* 只給報讀器念的字（例：結果那一行的「收到」） */
 .ex-sr {
@@ -1033,7 +1142,10 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
   .ex-unlock.is-lit .ex-arrive__hint,
   .ex-unlock.is-ready .ex-unlock__card,
   .ex-unlock.is-gold-up .ex-rays i,
-  .ex-unlock.is-done .ex-face__holo { animation: none; }
+  .ex-unlock.is-done .ex-face__holo,
+  .ex-unlock.is-gilt .ex-seal__spin,
+  .ex-unlock.is-gilt .ex-foil path,
+  .ex-unlock.is-gilt .ex-unlock__sname { animation: none; }
   .ex-unlock.is-lit .ex-spot__pin,
   .ex-unlock.is-lit .ex-arrive__head,
   .ex-unlock.is-lit .ex-arrive__hint { opacity: 1; }
@@ -1044,7 +1156,10 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
   .ex-unlock.is-wash .ex-wet { animation: none; }
   .ex-unlock.is-wash .ex-blots i,
   .ex-unlock.is-paint .ex-strokes i,
-  .ex-unlock.is-print .ex-gouge { transition: none; }
+  .ex-unlock.is-print .ex-gouge,
+  .ex-unlock.is-gilt .ex-gilt,
+  .ex-unlock.is-gilt .ex-seal,
+  .ex-unlock.is-gilt .ex-seal * { transition: none; }
 }
 
 /* 規則說明（「?」打開） */
