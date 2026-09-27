@@ -20,7 +20,7 @@
 (function () {
 'use strict';
 
-const VERSION = 'chengshi-app-v17';
+const VERSION = window.APP_VERSION || '';     /* 唯一來源：js/version.js（sw.js 的快取名字也用它） */
 const PUSH_TIME = { am: '8:10', pm: '21:30' };       /* 推播浮層上的鎖定畫面時間（demo 設定，不是真實時間） */
 const PUSH_KEY = { am: 'pushAm', pm: 'pushPm' };
 const PUSH_MAX = 2;                                  /* 一天最多兩則 */
@@ -69,15 +69,14 @@ function lastWorkPath() {
 /* 模擬抵達：回傳 null 表示現在沒有可以抵達的東西 */
 function arriveTarget(cur) {
   cur = cur || lastWorkPath();
-  const t0 = APP.store.get('trip');
-  const riding = t0 && t0.phase !== 'done';
+  const riding = !!APP.ride.trip.active();
   /* 行程進行中的 /going 顯示的是「你正在搭車」卡，模擬抵達要抵達的是那一趟 */
   if (cur && cur.pattern === '/going/:id' && cur.params && cur.params.id && !riding) {
     const id = cur.params.id;
-    return function () { APP.store.set('arrivedDemo', id); APP.nav.go('/unlock/' + encodeURIComponent(id)); };
+    return function () { APP.nav.go('/unlock/' + encodeURIComponent(id)); };
   }
   const onTrip = cur && cur.pattern === '/trip';
-  if (onTrip || APP.store.get('trip')) {
+  if (onTrip || APP.ride.trip.current()) {
     return function () {
       if (APP.ride && typeof APP.ride.arrive === 'function') APP.ride.arrive();
       else APP.nav.go('/trip/done');
@@ -86,66 +85,35 @@ function arriveTarget(cur) {
   return null;
 }
 
-/* 浮層一律從這裡拆：順便還焦點、拿掉 Esc 的 listener（重複呼叫沒事：remove 與 _release 都是冪等的） */
+/* 推播、分享面板都是 APP.ui.overlay 掛上去的浮層（data-overlay、el._dismiss、a11yDialog；導覽時 core 收）。
+   從這裡拆：拆掉自己、還焦點、拿掉 Esc（重複呼叫沒事） */
 function dropOverlay(el) {
   if (!el) return;
-  el.remove();
-  if (typeof el._release === 'function') el._release();
+  if (typeof el._dismiss === 'function') el._dismiss();
+  else el.remove();
 }
 
-/* 浮層約定：掛在 .device（main.view 之外）、換頁就該消失的東西加 data-overlay，
-   並提供 el._dismiss()（拆掉自己、還焦點、拿掉 listener；可重複呼叫）。core 每次導覽開頭呼叫 APP.ui.dismissOverlays()。
-   _navSeq 給還沒有 dismissOverlays 的 core 用（見下面 route:change）：導覽進行中（data-view-ready 拿掉了）才開的浮層屬於下一頁。 */
-let navSeq = 0;
-function markOverlay(el) {
-  el.setAttribute('data-overlay', '');
-  el._dismiss = function () { dropOverlay(el); };
-  el._navSeq = document.documentElement.hasAttribute('data-view-ready') ? navSeq : navSeq + 1;
-  return el;
-}
-function closeOverlays() {
-  document.querySelectorAll('.device > [data-overlay], .device > .pushmock, .device > .sys-share').forEach(function (el) {
-    if (typeof el._dismiss === 'function') el._dismiss(); else dropOverlay(el);
-  });
-}
-function dismissAll() {
-  if (typeof APP.ui.dismissOverlays === 'function') APP.ui.dismissOverlays();
-  else closeOverlays();
-}
-
-/* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。
-   state.js 沒有清空的 API；STATE.all 回傳的是活物件，改完用 setToday() 觸發 save。
-   app store 裡跟「你去過哪、做過什麼」有關的也一起清：下車點、行程、抵達暫存、
-   叫車歸因（rideVia）、抽到的款式（cardStyle、draws）、各 tab 停在哪（tabPaths 回預設）、今天發過的推播。
+/* 清除我的足跡：真的清空（不是回到 demo 初始的 8 張）。哪些東西算足跡不寫在這裡：
+   STATE 那一半在 APP.state.wipe()（明信片、公里、日誌），app store 那一半是 app.js 的 KEYS 裡 group 為
+   footprint 的鍵（下車點、行程、抵達暫存、叫車歸因、抽到的款式、各 tab 停在哪、今天發過的推播）。
    留著的是偏好：onboarded、fxMute、rideSpots 與 STATE.settings 的開關。 */
 function wipeFootprint() {
-  if (window.STATE) {
-    const A = STATE.all;
-    A.cards = {};
-    A.km = 0;
-    A.lastCard = null;
-    A.lastSeen = null;
-    A.today = { photo: null, mood: null, done: false };
-    STATE.setToday({ photo: null, mood: null, done: false });
-  }
-  const fresh = APP.store.fresh ? APP.store.fresh() : {};
-  APP.store.patch({
-    dropoff: null, trip: null, arrivedDemo: null,
-    rideVia: {}, cardStyle: {}, draws: {}, pushes: [],
-    tabPaths: fresh.tabPaths || { ride: '/ride', explore: '/explore', album: '/album' },
+  APP.state.batch(function () {
+    APP.state.wipe();
+    APP.store.clear('footprint');
   });
-  emitState();
 }
 
 function resetDemo() {
   return APP.ui.confirm({ text: '回到 demo 初始狀態（8 張明信片、原本的點數與設定）？', yes: '重設', no: '先不要', danger: true })
     .then(function (yes) {
       if (!yes) return false;
-      dismissAll();
-      if (window.STATE) STATE.reset();
-      APP.store.reset();
-      APP.store.set('onboarded', true);       /* 重設不該再看一次 onboarding */
-      emitState();
+      APP.ui.dismissOverlays();
+      APP.state.batch(function () {
+        APP.state.reset();
+        APP.store.reset();
+        APP.store.set('onboarded', true);     /* 重設不該再看一次 onboarding */
+      });
       APP.nav.go('/ride', { replace: true });
       APP.ui.toast('demo 已重設');
       return true;
@@ -212,10 +180,7 @@ function push(opt) {
   };
   el.querySelector('[data-act="close-push"]').onclick = function () { dropOverlay(el); };
 
-  const host = $('.device') || document.body;
-  markOverlay(el);
-  host.appendChild(el);
-  el._release = APP.ui.a11yDialog(el, { label: '推播通知：' + title, onEsc: function () { dropOverlay(el); } });
+  APP.ui.overlay(el, { label: '推播通知：' + title });
 
   if (!sent) {
     APP.store.set('pushes', todayPushes().concat([{ when: when, at: new Date().toISOString() }]).slice(-PUSH_MAX));
@@ -294,9 +259,7 @@ function share(opt) {
   };
 
   if (window.SHELL) SHELL.injectIcons(scrim);
-  markOverlay(scrim);
-  host.appendChild(scrim);
-  scrim._release = APP.ui.a11yDialog(scrim.querySelector('.sharesheet'), { label: title, onEsc: close });
+  APP.ui.overlay(scrim, { dialog: scrim.querySelector('.sharesheet'), label: title });
   return scrim;
 }
 
@@ -532,11 +495,11 @@ APP.view('settings', {
       el.onclick = function () {
         const k = el.getAttribute('data-switch');
         const on = !switchOn(k);
-        if (STORE_SWITCH[k]) APP.store.set(k, on);
-        else if (window.STATE) STATE.setSetting(k, on);
         el.classList.toggle('is-on', on);
         el.setAttribute('aria-checked', on ? 'true' : 'false');
-        emitState();
+        /* 別處靠 state:change 同步開關：STATE 的開關由 APP.state 發；存在 app store 的開關也發同一個事件 */
+        if (STORE_SWITCH[k]) { APP.store.set(k, on); emitState(); }
+        else APP.state.setSetting(k, on);
       };
     });
 
@@ -594,62 +557,31 @@ function demoPlaces() {
 }
 function placeGot(p) { return !!(p && p.card && window.STATE && STATE.has(p.card)); }
 
-/* 地點 id（也可能是明信片 id、路線站 id）→ 下拉選單裡的哪一個。
-   先認選單裡本來就有的；再把明信片換成它所在的地方：CARD_TO_PLACE（p19 → moat）→ 景點的 card 欄位
-   → 選單裡 card 相同的地方（p1 → 新竹車站 station）。都對不上（p3 護城河親水公園、p14 玻璃工藝博物館這種
-   只在路線上的站）就回它自己，updatePanel 會為它多加一個選項——不然選單是空白、「走路抵達」只會說先選一個地方。 */
-function pickFor(id, list) {
-  const p = APP.place(id);
-  if (!p) return null;
-  const inList = function (x) { return !!x && list.some(function (q) { return q.id === x; }); };
-  if (inList(p.id)) return p.id;
-  const M = window.MOCK || {};
-  const card = p.card || id;
-  const map = M.CARD_TO_PLACE || {};
-  if (Object.prototype.hasOwnProperty.call(map, card) && inList(map[card])) return map[card];
-  const spot = (M.SPOTS || []).filter(function (s) { return s.card && s.card === card; })[0];
-  if (spot && inList(spot.id)) return spot.id;
-  const same = list.filter(function (q) { return q.card && q.card === card; })[0];
-  return same ? same.id : p.id;
-}
-
 /* 這一頁在講哪個地方：地方詳情／前往中／抵達頁的 :id → 進行中行程的目的地 → 下車點 */
 function contextPlace(cur) {
   const id = cur && cur.params && cur.params.id;
   if (cur && /^\/(place|going|unlock)\//.test(cur.pattern || '') && APP.place(id)) return APP.place(id).id;
-  const t = APP.store.get('trip');
-  if (t && t.phase !== 'done' && APP.place(t.placeId)) return APP.place(t.placeId).id;
+  const t = APP.ride.trip.active();
+  if (t) return APP.place(t.placeId).id;
   const d = APP.store.get('dropoff');
   if (d && APP.place(d.id)) return APP.place(d.id).id;
   return null;
 }
 
 /* demo 面板的模擬抵達（任何一頁都能用，地點從下拉選單挑）：
-   走路     → 記下 arrivedDemo，進 /unlock/:id；行程進行中不行（人在車上）。
-   搭 yoxi → 這一趟直接在這裡結束（store.trip phase done；原本是別的目的地就被這一趟取代，契約 §3.3 只有一筆 trip），
-             進 /unlock/:id?ride=1。抵達頁會再驗一次 trip，所以手打網址拿不到金框。 */
+   走路     → 進 /unlock/:id；行程進行中不行（人在車上）。
+   搭 yoxi → 這一趟直接在這裡結束（APP.ride.trip.arriveAt：phase done；原本是別的目的地就被這一趟取代，
+             契約 §3.3 只有一筆 trip），進 /unlock/:id?ride=1。抵達頁會再驗一次行程，所以手打網址拿不到金框。 */
 function demoArrive(id, by) {
   const p = APP.place(id);
   if (!p) { APP.ui.toast('先選一個地方'); return false; }
-  const t = APP.store.get('trip');
   if (by !== 'ride') {
-    if (t && t.phase !== 'done') { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
-    APP.store.set('arrivedDemo', p.id);
+    if (APP.ride.trip.active()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
     APP.nav.go('/unlock/' + encodeURIComponent(p.id));
     return true;
   }
-  const same = !!(t && t.placeId === p.id);
-  APP.store.patch({
-    trip: {
-      placeId: p.id, phase: 'done',
-      startedAt: same && t.startedAt ? t.startedAt : new Date().toISOString(),
-      rated: same && !!t.rated,
-      km: same && t.km != null ? t.km : APP.fmt.km(p.dist),
-      via: same ? (t.via || null) : null,
-    },
-    dropoff: null,
-    arrivedDemo: p.id,
-  });
+  APP.ride.trip.arriveAt(p.id);
+  APP.store.set('dropoff', null);
   APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1');
   return true;
 }
@@ -690,7 +622,8 @@ function updatePanel(cur) {
   const sel = panel.querySelector('[data-demo-place]');
   let list = demoPlaces();
   const here = contextPlace(cur);
-  if (here) panelPick = pickFor(here, list);
+  /* contextPlace 已經是 APP.place 正規化過的地點 id（p19 → moat、p1 → station）；選單外的站（p3、p14）下面會補一個選項 */
+  if (here) panelPick = here;
   else if (panelPick && placeGot(APP.place(panelPick))) panelPick = null;
   if (!panelPick || !APP.place(panelPick)) {
     const first = list.filter(function (p) { return !placeGot(p); })[0] || list[0];
@@ -707,15 +640,8 @@ function updatePanel(cur) {
 /* --------------------------------------------------------------------------
    訂閱（載入時，不在 view 內）
    -------------------------------------------------------------------------- */
+/* 換頁收掉上一頁開的推播與分享面板：core 在導覽開頭呼叫 APP.ui.dismissOverlays() 就收了，這裡不用管 */
 APP.on('route:change', function (cur) {
-  navSeq++;
-  /* 換頁收掉上一頁開的推播與分享面板。有 APP.ui.dismissOverlays 的 core 在導覽開頭就收了；
-     還沒有的版本由這裡收（只收這一頁之前開的，mount 裡或轉場中才開的留著） */
-  if (typeof APP.ui.dismissOverlays !== 'function') {
-    document.querySelectorAll('.device > .pushmock[data-overlay], .device > .sys-share[data-overlay]').forEach(function (el) {
-      if ((el._navSeq || 0) < navSeq && typeof el._dismiss === 'function') el._dismiss();
-    });
-  }
   if (cur) {
     recent.push({ path: cur.path, pattern: cur.pattern, params: cur.params });
     if (recent.length > 8) recent.shift();

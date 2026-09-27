@@ -5,7 +5,7 @@
 
    回答什麼：到了。這個地方的明信片是哪一款？收下它。
    原型：unlock.html（三幕解鎖的前身）。
-   搭 yoxi 抵達必得金框。是不是搭車看 store.trip（這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
+   搭 yoxi 抵達必得金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板。
      抽卡（data-at=2）：卡背升起 → 蓄力（拍數＝稀有度）→ 點一下翻開 → 依款式給特效（金框最重）。
@@ -29,24 +29,22 @@
 
 const APP = window.APP;
 const K = APP && APP.explore && APP.explore._;
-/* explore-cards.js 與 explore.js 要先載入（K.notFound 是 explore.js 掛上的） */
-if (!K || !K.notFound) return;
+/* explore-cards.js 與 explore.js 要先載入（K.notFound 是 explore.js 掛上的）；順序錯了直接丟錯，不要安靜 return */
+if (!K || !K.notFound) throw new Error('explore-unlock.js 要在 explore-cards.js、explore.js 之後載入（index.html 的順序）');
 
 const esc = APP.esc;
 const fmt = APP.fmt;
 const E = APP.explore;
 const DRAW_STYLES = E.DRAW_STYLES;
-const drawStyle = E.drawStyle;
 const cardStyleOf = E.cardStyleOf;
-const postcardSrc = E.postcardSrc;
+const cardFace = E.cardFace;
 const cardPhoto = E.cardPhoto;
 const openOdds = E.openOdds;
 const collect = E.collect;
 const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
-const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw;
+const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw, arrivalAt = K.arrivalAt;
 const closeOdds = K.closeOdds;
-const rideTripFor = K.rideTripFor;
 const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar, distHTML = K.distHTML;
 
 /* 收下時寫的一句話最多幾個字：輸入框的 maxlength、提示文字、收下時的截斷都讀這一個 */
@@ -60,9 +58,7 @@ function cardName(p) {
 }
 
 /* 點數只給走不到的地方：判斷在 ride.js（APP.ride.limitedPlace），這裡不另寫一份 */
-function limitedPlace(p) {
-  return !!(APP.ride && APP.ride.limitedPlace && APP.ride.limitedPlace(p));
-}
+const limitedPlace = APP.ride.limitedPlace;
 
 /* 稀有度 1–5 就是 DRAW_STYLES 的順序（越後面越難抽）。特效照稀有度分級給，常見的輕、稀有的重：
    | 稀有度 | 款式     | 蓄力        | 翻開之後                                                        |
@@ -87,17 +83,13 @@ function auraColor(i) {
 }
 const CHARGE_CAPS = ['正在畫下今天的這裡', '讀取今天的天氣與光線', '鎖定畫風', '收筆'];
 
-/* 卡面：有實景照片就用照片（PHOTOS，授權一定要露出），沒有就用插圖；畫風是 explore-fx.js 的 SVG 濾鏡 */
-function photoOf(p) {
-  if (!p) return null;
-  const P = window.PHOTOS;
-  return cardPhoto(p.card) || (P && P.get ? P.get(p.id, 0) : null);
-}
+/* 卡面：疊法跟收藏裡的卡一樣（explore-face.js 的 cardFace）——生成好的成品 → 實景照片（PHOTOS，授權一定要露出）
+   ＋畫風的 SVG 濾鏡（explore-fx.js）→ 插圖 */
 function faceHTML(p, d) {
   const key = d ? d.key : '';
-  const ph = photoOf(p);
-  const photo = ph ? window.PHOTOS.base + ph.file : '';
-  const gen = postcardSrc(p.card, key);
+  const face = cardFace(p.card, key);
+  const photo = face.photo;
+  const gen = face.gen;
   /* 生成好的成品優先；載不到（data-fallback）就退回「照片＋SVG 濾鏡」的示意，再沒有就是插圖 */
   const base = gen
     ? '<img class="ex-face__img" src="' + esc(gen) + '" alt="" draggable="false"' +
@@ -113,7 +105,7 @@ function faceHTML(p, d) {
     '</div>';
 }
 function creditHTML(p) {
-  const ph = photoOf(p);
+  const ph = cardPhoto(p.card);
   if (!ph) return '';
   return '<p class="ex-credit" data-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') +
     ' <a class="ex-credit__a" href="' + esc(ph.source) + '" target="_blank" rel="noopener" data-act="open-credit">出處</a></p>';
@@ -131,18 +123,19 @@ function renderUnlock(params) {
   if (!p) {
     return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  const trip = rideTripFor(p);
-  const isRide = !!trip;
+  /* 搭車還是走路、幾公里、這次的款式：跟收下時（APP.explore.collect）同一個答案 */
+  const arr = arrivalAt(p);
+  const isRide = !!arr.trip;
   const got = collected(p);
   /* 已收過的地方不重抽：顯示當初收下的那一款。走路抵達還沒抽的是 null（卡背；mount 抽完重畫） */
-  const draw = got ? cardStyleOf(p.card) : storedDraw(p, isRide);
+  const draw = got ? cardStyleOf(p.card) : arr.draw;
   /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
   const gold = !got && !!draw && !!draw.gold;
   const bonus = isRide && limitedPlace(p);
   const name = cardName(p);
   const today = fmt.todayMMDD();
   const year = new Date().getFullYear();
-  const km = isRide && trip.km != null ? trip.km : fmt.km(p.dist);
+  const km = arr.km;
   const arriveBy = isRide
     ? '搭 yoxi 抵達 · ' + num(km) + ' 公里'
     : (p.dist != null ? '走了 ' + distHTML(p.dist) + ' 抵達' : '走路抵達');
@@ -301,7 +294,7 @@ function mountUnlock(root, params) {
   const p = APP.place(params.id);
   if (!p) { APP.ui.setStatus('dark'); return; }
   const F = APP.fx;
-  const isRide = !!rideTripFor(p);
+  const isRide = !!APP.ride.trip.arrivedAt(p.id);
   const got = collected(p);
   /* 走路抵達還沒抽：在這裡抽（render 是純函式，不寫 store），抽完照新的款式重畫這一頁。
      mount 在第一次繪製之前，看不到卡背閃一下；之後重整、返回都讀 store.draws，不會重抽 */
@@ -771,18 +764,9 @@ function mountUnlock(root, params) {
       collecting = true;
       btn.disabled = true;
       const note = noteInput ? String(noteInput.value || '').trim().slice(0, NOTE_MAX) : '';
-      /* 收的當下再判一次（畫面開著的時候行程可能被取消或換掉了） */
-      const trip = rideTripFor(p);
-      const ride = isRide && !!trip;
-      const km = ride && trip.km != null ? trip.km : fmt.km(p.dist);
-      /* 轉換歸因：這趟車是從哪個入口叫的，記在 app store（行程紀錄的小標），collect 會清掉 trip 所以先記 */
-      if (ride && trip.via && p.card) {
-        const rv = Object.assign({}, APP.store.get('rideVia') || {});
-        rv[p.card] = trip.via;
-        APP.store.set('rideVia', rv);
-      }
-      const drawn = ride ? drawStyle('ride', 0) : rollDraw(p);
-      collect(p.id, { by: ride ? 'ride' : 'walk', note: note, km: km, style: drawn.key });
+      /* 搭車還是走路、哪一款、幾公里由 collect 在收的當下判斷（畫面開著的時候行程可能被取消或換掉了）；
+         搭車收下會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
+      collect(p.id, { note: note });
       APP.ui.toast('收進收藏了');
       APP.nav.go('/album', { dir: 'push' });
     };

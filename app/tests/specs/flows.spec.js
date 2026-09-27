@@ -6,6 +6,9 @@
    2. 縫合：叫車小卡→地方→返回、E 小卡走 APP.ride.setDropoff、深連結重整、tab 記憶、
       非 still 模式每條 route 無例外、連點不重複寫入、APP.ride.arrive() 在 /trip 之外。
    3. 全站掃描：§8 每條 route × 兩種狀態（初始／收了 3 張＋有下車點＋有行程）。
+   4–6. 審查、亂按 QA、評估回報裡「跨區塊」的那幾條（例：同一個地方的車資在五個畫面相同）。
+      只牽涉一個區塊的回歸測試放在那個區塊的 spec 最後（「回歸測試（從 flows.spec 搬來）」），名稱保留原編號。
+   7. 無障礙：對比、焦點、live region、命中區（跨全站）。
    ========================================================================== */
 T.spec('flows', function (t) {
 
@@ -16,25 +19,12 @@ T.spec('flows', function (t) {
     return app.$$('.device .toast').map(function (x) { return x.textContent; }).join('｜');
   }
 
-  /* 目前畫面裡看得到的返回鍵（<a data-back>） */
-  async function clickBack(app) {
-    await app.click('main.view[data-view] a[data-back]');
-  }
+  /* 目前畫面裡看得到的返回鍵（<a data-back>）、非 still 的抽卡：harness 的 T.helpers */
+  const clickBack = T.helpers.clickBack;
+  const drawThrough = T.helpers.drawThrough;
 
   /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
-  /* 非 still 的抵達：點發光的地方 → 收集明信片 → 一路點畫面（蓄力快轉 → 翻開 → 看結果） */
-  async function drawThrough(app) {
-    await app.click('[data-act="open-spot"]');
-    await app.click('[data-act="draw"]');
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') !== '1'; }, 2000, '進入抽卡');
-    for (let i = 0; i < 16 && app.$('[data-unlock]').getAttribute('data-at') !== '3'; i++) {
-      await app.click('[data-unlock]');
-      await app.tick(300);
-    }
-    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 6000, '抽卡結果');
-  }
-
   async function walkAndCollect(app, note) {
     const A = app.APP;
     const T0 = app.MOCK.TODAY;
@@ -49,7 +39,6 @@ T.spec('flows', function (t) {
     t.eq(app.$('#demo-panel [data-demo-place]').value, T0.id, 'demo 面板的地點跟著前往中的目的地');
     await app.click('#demo-panel [data-act="arrive-walk"]');
     await app.at('/unlock/' + T0.id);
-    t.eq(A.store.get('arrivedDemo'), T0.id, 'demo 面板寫了 store.arrivedDemo');
     if (!app.still) {
       t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先是抵達（這個地方亮起來）');
       await drawThrough(app);
@@ -59,7 +48,6 @@ T.spec('flows', function (t) {
     inp.value = note;
     await app.click('[data-act="collect"]');
     await app.at('/album');
-    t.eq(A.store.get('arrivedDemo'), null, '收下之後 arrivedDemo 清掉');
   }
 
   /* ============================================================ 1. 三條流程 */
@@ -237,7 +225,7 @@ T.spec('flows', function (t) {
   }, { timeout: 25000 });
 
   t.test('流程 B′：評分後按「回首頁」→ /ride 金色入口 → 解鎖收卡 → 入口消失', async function (app) {
-    await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣老街', km: 28, setAt: now(), via: 'route' } } });
+    await app.reset({ store: { dropoff: T.fixtures.dropoff({ setAt: now(), via: 'route' }) } });
     const A = app.APP, S = app.STATE;
     const pts0 = S.points;
     await app.go('/ride');
@@ -279,8 +267,8 @@ T.spec('flows', function (t) {
   }, { timeout: 20000 });
 
   t.test('限定版還沒收時叫車：先問一次 —— 先去解鎖／直接叫車兩條路', async function (app) {
-    const done = { placeId: 'neiwan', phase: 'done', startedAt: now(), rated: true, km: 28 };
-    const drop = { id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: now(), via: 'e' };
+    const done = T.fixtures.trip({ phase: 'done', startedAt: now(), rated: true });
+    const drop = T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, setAt: now(), via: 'e' });
 
     /* 先去解鎖：不建新 trip，到 /unlock/neiwan?ride=1 */
     await app.reset({ store: { trip: done, dropoff: drop } });
@@ -303,7 +291,7 @@ T.spec('flows', function (t) {
     await app.click('.app-confirm [data-act="confirm-no"]');
     await app.at('/trip');
     t.eq(A.store.get('trip').placeId, 'lake', '新 trip 覆蓋');
-    t.ok(!A.ride.pendingUnlock(), '覆蓋後沒有待解鎖');
+    t.ok(!A.ride.trip.pending(), '覆蓋後沒有待解鎖');
 
     /* 沒有待解鎖：不問 */
     await app.reset({ store: { dropoff: drop } });
@@ -314,7 +302,7 @@ T.spec('flows', function (t) {
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   });
 
-  /* ============================================================ QA-visual 的四項 */
+  /* ============================================================ QA-visual（跨區塊的兩項；視覺 3 在 album.spec、視覺 4 在 explore.spec） */
 
   t.test('視覺 1／2：/going 按鈕文案與收藏頁獎章數字', async function (app) {
     await app.reset();
@@ -325,53 +313,6 @@ T.spec('flows', function (t) {
     t.eq(app.text('.alb-v2__medals h2'), '獎章', '獎章區標題');
     const bc = app.MOCK.BADGES.filter(function (x) { return app.STATE.badge(x.id).got; }).length;
     t.eq(app.text('[data-stat="badges"]'), bc + '/' + app.MOCK.BADGES.length, '第三格數字仍是 n/m');
-  });
-
-  t.test('視覺 3：/footprint 覆蓋率用固定範圍算，平移地圖後不變', async function (app) {
-    await app.reset();
-    await app.go('/footprint');
-    const c0 = app.text('[data-coverage]');
-    t.eq(c0, String(app.APP.album.coverage()), '覆蓋率＝固定範圍公式');
-    const map = app.$('main.view .map[data-pan]');
-    const W = app.win;
-    const r = map.getBoundingClientRect();
-    const ev = function (type, x, y) { return new W.PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }); };
-    map.dispatchEvent(ev('pointerdown', r.left + 150, r.top + 300));
-    W.dispatchEvent(ev('pointermove', r.left + 190, r.top + 330));
-    W.dispatchEvent(ev('pointerup', r.left + 190, r.top + 330));
-    const layer = app.$('main.view .map__pan');
-    t.ok(layer && /translate/.test(layer.style.transform), '地圖真的平移了：' + (layer && layer.style.transform));
-    await app.tick(60);
-    t.eq(app.text('[data-coverage]'), c0, '平移後覆蓋率不變');
-    /* 換版面（iframe 變窄）重畫也不變 */
-    const fr = app.win.frameElement;
-    const w0 = fr.style.width;
-    fr.style.width = '340px';
-    await app.go('/album');
-    await app.go('/footprint');
-    t.eq(app.text('[data-coverage]'), c0, '版面寬度改變後覆蓋率不變');
-    fr.style.width = w0;
-  });
-
-  t.test('視覺 4：/explore/map 任兩顆景點縮圖重疊 < 30%', async function (app) {
-    await app.reset();
-    await app.go('/explore/map');
-    await app.tick(60);
-    const rs = app.$$('main.view .spot').map(function (el) { return el.getBoundingClientRect(); });
-    t.ok(rs.length >= 8, '景點數 ' + rs.length);
-    const bad = [];
-    for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) {
-      const a = rs[i], b = rs[j];
-      const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-      const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-      if (w <= 0 || h <= 0) continue;
-      const f = (w * h) / Math.min(a.width * a.height, b.width * b.height);
-      if (f >= 0.3) bad.push(i + '×' + j + '=' + Math.round(f * 100) + '%');
-    }
-    t.eq(bad.length, 0, '重疊 ≥ 30%：' + bad.join('、'));
-    /* 推開之後小卡還是點得到 */
-    await app.click('.spot[data-spot="brick"]');
-    t.eq(app.text('[data-peek-name]'), app.APP.place('brick').name, '點得到推開後的景點');
   });
 
   /* ============================================================ 2. 縫合 */
@@ -444,7 +385,7 @@ T.spec('flows', function (t) {
   });
 
   t.test('縫合 c：深連結重整 —— /trip 有行程不被導走；/trip/done 沒行程顯示空卡', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'neiwan', phase: 'riding', startedAt: now(), rated: false, km: 28 } }, hash: '/trip' });
+    await app.reset({ store: { trip: T.fixtures.trip({ startedAt: now() }) }, hash: '/trip' });
     t.eq(app.route().path, '/trip', '停在 /trip');
     t.ok(!app.$('[data-phase="riding"]').hidden, '行程中區塊顯示');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
@@ -479,7 +420,7 @@ T.spec('flows', function (t) {
   t.test('縫合 e：非 still 模式每條 route 載入後 #app-errors 仍為空', async function (app) {
     await app.reset({ still: false });
     t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
-    const list = sweepRoutes(app);
+    const list = sweepRoutes();
     const bad = [];
     for (let i = 0; i < list.length; i++) {
       await app.go(list[i].path, { redirectOk: true, ms: 5000 });
@@ -497,12 +438,12 @@ T.spec('flows', function (t) {
     await drawThrough(app);
     t.ok(app.$('[data-act="collect"]'), '結果有「收進收藏」');
     /* 行程：配對 → 行程中由計時器切換 */
-    await app.reset({ still: false, store: { dropoff: { id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' } } });
+    await app.reset({ still: false, store: { dropoff: T.fixtures.dropoff({ id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' }) } });
     await app.go('/ride');
     await app.click('[data-act="call-ride"]');
     await app.at('/trip');
     /* 不斷言「剛載入一定是 matching」：virtual time 下轉場＋畫地圖可能就吃掉 1.2 s（時間競賽）。
-       phase 由 trip.startedAt 推導（APP.ride.phaseOf），這裡只要求：現在是配對中或行程中、畫面跟 phase 一致、最後會到行程中。
+       phase 由 trip.startedAt 推導（APP.ride.trip.phase），這裡只要求：現在是配對中或行程中、畫面跟 phase 一致、最後會到行程中。
        「剛叫車是配對中、過了 MATCH_MS 才是行程中」由「審查 1」用注入的時間驗。 */
     const ph0 = app.APP.store.get('trip').phase;
     t.includes(['matching', 'riding'], ph0, '叫車後是配對中或行程中');
@@ -568,8 +509,8 @@ T.spec('flows', function (t) {
     t.eq(app.route().path, '/explore', '沒有行程不導走');
     t.includes(toastText(app), '目前沒有行程', 'toast 目前沒有行程');
 
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 },
-                               dropoff: { id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
+                               dropoff: T.fixtures.dropoff({ id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' }) } });
     A = app.APP;     /* 重載後 iframe 的 APP 換了一個 */
     await app.go('/explore');
     t.eq(A.ride.arrive(), true, '有行程 → 回 true');
@@ -581,7 +522,7 @@ T.spec('flows', function (t) {
     t.ok(true, '從別頁呼叫是 push，返回回到原頁');
 
     /* 設定頁的模擬抵達（手機的 demo 工具）：有行程 → 行程完成 */
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
     A = app.APP;
     await app.go('/settings');
     await app.click('[data-act="more"]');
@@ -616,23 +557,20 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 3. 全站掃描 */
 
-  function sweepRoutes(app) {
-    return [
-      '/welcome', '/ride', '/dropoff', '/pickup', '/trip', '/trip/done', '/drawer', '/points', '/notify', '/trips',
-      '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/lake', '/place/brick',
-      '/going/glass-kiln', '/going/lake', '/unlock/glass-kiln', '/unlock/neiwan?ride=1', '/unlock/lake?ride=1',
-      '/routes', '/route/rail', '/route/glass', '/route/water',
-      '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
-      '/postcard/p1', '/postcard/p9', '/postcard/p11', '/badge/b1', '/badge/b5',
-      '/footprint', '/lookback', '/week', '/elder', '/settings',
-    ].map(function (p) { return { path: p }; });
+  /* 共用的路由表（T.ROUTES，'/' 不算）再加幾個有代表性的：走不到的地方、?tab= 舊連結、金框卡、另一枚章 */
+  function sweepRoutes() {
+    return T.routes({ root: false, extra: [
+      '/place/lake', '/place/brick', '/going/lake', '/unlock/lake?ride=1',
+      '/album?tab=badges', '/album?tab=journal', '/album?tab=week',
+      '/postcard/p9', '/postcard/p11', '/badge/b5',
+      '/route/glass', '/route/water',
+    ] });
   }
 
-  const TAP_MAX = { '/explore': 12, '/album': 12 };
   const BAD_TEXT = /undefined|NaN|null|\[object/;
 
   async function sweep(app, label) {
-    const list = sweepRoutes(app);
+    const list = sweepRoutes();
     const probs = [];
     for (let i = 0; i < list.length; i++) {
       const path = list[i].path;
@@ -643,7 +581,7 @@ T.spec('flows', function (t) {
       t.noDeadButtons(app, label + path);
       t.noBannedWords(app, { msg: label + path });
       const n = t.countTappables(app);
-      const max = TAP_MAX[landed] || 10;
+      const max = T.tapMax(landed);
       if (n > max) probs.push(path + '：可按數 ' + n + ' > ' + max);
       if (app.errors.length) probs.push(path + '：' + app.errors.join('；').slice(0, 160));
       if (app.$('[data-app-error]')) probs.push(path + '：錯誤卡');
@@ -667,122 +605,22 @@ T.spec('flows', function (t) {
   }, { timeout: 30000 });
 
   t.test('全站掃描：收了 3 張、有下車點、有行程', async function (app) {
-    await app.reset({ store: {
-      dropoff: { id: 'brick', name: '新竹州廳', km: 2.4, setAt: now(), via: 'k1' },
-      trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 },
-    } });
+    /* 搭車收的那張直接種進 STATE（走 APP.explore.collect 要先有一趟抵達內灣的行程，會取代下面這趟進行中的） */
+    await app.reset({
+      cards: [{ id: 'p11', by: 'walk', note: '第一張' }, { id: 'p19', by: 'walk' }, { id: 'p9', by: 'ride', km: 28 }],
+      store: {
+        dropoff: T.fixtures.dropoff({ id: 'brick', name: '新竹州廳', km: 2.4, setAt: now() }),
+        trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }),
+      },
+    });
     const A = app.APP;
-    A.explore.collect('glass-kiln', { by: 'walk', note: '第一張' });
-    A.explore.collect('moat', { by: 'walk' });
-    A.explore.collect('neiwan', { by: 'ride', km: 28 });
     t.eq(app.STATE.count(), 11, '收了 3 張');
     t.ok(A.store.get('dropoff') && A.store.get('trip'), '下車點與行程都在');
     await sweep(app, '有狀態 ');
     t.ok(A.store.get('trip'), '掃完行程還在（沒有哪一頁偷清）');
   }, { timeout: 30000 });
 
-  /* ============================================================ 4. 審查（code review 修掉的 bug：一條 bug 一條 test） */
-
-  t.test('審查 1：trip 的 phase 由 startedAt 推導（注入時間，不靠 setTimeout 的時序）', async function (app) {
-    await app.reset();
-    const R = app.APP.ride;
-    const t0 = Date.parse('2026-09-21T13:18:00.000Z');
-    const trip = { placeId: 'lake', phase: 'matching', startedAt: new Date(t0).toISOString(), rated: false, km: 6.4 };
-    t.eq(R.phaseOf(trip, t0), 'matching', '剛叫車：配對中');
-    t.eq(R.phaseOf(trip, t0 + R.MATCH_MS - 1), 'matching', 'MATCH_MS 之前：配對中');
-    t.eq(R.phaseOf(trip, t0 + R.MATCH_MS), 'riding', 'MATCH_MS 之後：行程中');
-    t.eq(R.phaseOf(Object.assign({}, trip, { phase: 'done' }), t0), 'done', 'done 不受時間影響');
-    t.eq(R.phaseOf(Object.assign({}, trip, { startedAt: 'x' }), t0), 'riding', '壞掉的 startedAt 不會永遠卡在配對中');
-    t.eq(R.phaseOf(null), null, '沒有行程');
-
-    /* 非 still：配對中離開 /trip（計時器被清掉）很久之後再回來 → 一進來就是行程中，不必再等 */
-    const old = Object.assign({}, trip, { startedAt: new Date(Date.now() - 60000).toISOString() });
-    await app.reset({ still: false, store: { trip: old }, hash: '/trip' });
-    await app.at('/trip');
-    t.eq(app.APP.store.get('trip').phase, 'riding', '重進 /trip：store 馬上寫成 riding');
-    t.ok(!app.$('[data-phase="riding"]').hidden, '重進 /trip：行程中區塊直接顯示');
-    t.ok(app.$('[data-phase="matching"]').hidden, '重進 /trip：配對中區塊藏起來');
-    t.includes(app.doc.title, '行程中', '標題也是行程中');
-    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
-    await app.reset();
-  });
-
-  t.test('審查 2：/trip/done 在「有行程、還沒抵達」時給回到行程的路；舊資料的壞日期不出現 NaN', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 } } });
-    await app.go('/trip/done');
-    t.includes(app.text('main.view[data-view]'), '還在前往', '不是「目前沒有行程」');
-    const back = app.$('main.view [data-act="go-trip"]');
-    t.eq(back && back.getAttribute('href'), '#/trip', '回到行程 → #/trip');
-    t.noDeadButtons(app, '/trip/done（riding）');
-    t.noBannedWords(app, { msg: '/trip/done（riding）' });
-    await app.click('main.view [data-act="go-trip"]');
-    await app.at('/trip');
-
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'done', startedAt: 'not-a-date', rated: true } } });
-    await app.go('/trip/done');
-    t.ok(!/NaN|undefined/.test(app.text('main.view[data-view]')), '沒有 NaN／undefined：' + app.text('.ride-done__meta'));
-    t.eq(app.text('.ride-done__sum [data-fare]'), String(app.APP.fmt.fare(app.APP.fmt.km(app.APP.place('lake').dist))), '沒有 trip.km 時車資用 fmt.km(dist)');
-  });
-
-  t.test('審查 3：/unlock/:id?ride=1 沒有「已抵達的這一趟」就不給限定版（不能手打網址拿 +50）', async function (app) {
-    const cases = [
-      { label: '沒有行程', store: {} },
-      { label: '行程是別的地方', store: { trip: { placeId: 'lake', phase: 'done', startedAt: now(), rated: true, km: 6.4 } }, keep: true },
-      { label: '這一趟還沒抵達', store: { trip: { placeId: 'neiwan', phase: 'riding', startedAt: now(), rated: false, km: 28 } } },
-    ];
-    for (const c of cases) {
-      /* 走路抽卡有極低機率抽到金框：先把這次抵達的抽卡定成水彩，這條只驗「不是 ride 版」 */
-      await app.reset({ store: Object.assign({ draws: { neiwan: 'watercolor' } }, c.store) });
-      const pts0 = app.STATE.points;
-      await app.go('/unlock/neiwan?ride=1');
-      t.ok(!app.$('[data-final-card].postcard--gold'), c.label + '：沒有金框');
-      t.ok(!app.$('[data-gold-note]'), c.label + '：沒有司機同行紀念／+50');
-      t.ok(!app.$('[data-unlock][data-ride]'), c.label + '：不是 ride 版');
-      await app.click('[data-act="collect"]');
-      await app.at('/album');
-      t.eq(app.STATE.card('p9') && app.STATE.card('p9').by, 'walk', c.label + '：by walk');
-      t.eq(app.STATE.points, pts0, c.label + '：點數不變');
-      if (c.keep) t.ok(app.APP.store.get('trip') && app.APP.store.get('trip').placeId === 'lake', c.label + '：別的行程不被清掉');
-    }
-    /* 對照組：真的抵達的那一趟照樣是限定版 */
-    await app.reset({ store: { trip: { placeId: 'neiwan', phase: 'done', startedAt: now(), rated: true, km: 28 } } });
-    await app.go('/unlock/neiwan?ride=1');
-    t.ok(app.$('[data-final-card].postcard--gold'), '已抵達的這一趟：金框');
-    await app.reset();
-  }, { timeout: 15000 });
-
-  t.test('審查 4：返回鍵連按兩下只退一格（不會多退、不會退出 app）', async function (app) {
-    await app.reset();
-    await app.go('/explore');
-    await app.go('/place/glass-kiln');
-    const b = app.$('main.view[data-view] a[data-back]');
-    b.click(); b.click();
-    await app.at('/explore');
-    await app.tick(300);
-    t.eq(app.route().path, '/explore', '停在 /explore（不是再退一格的 /ride）');
-    /* 放開之後返回照常可用 */
-    await app.go('/routes');
-    app.APP.nav.back('/ride');
-    await app.at('/explore');
-  });
-
-  t.test('審查 5：確認框同一時間只有一個；連按「取消行程」不會疊兩層', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 } } });
-    await app.go('/trip');
-    const c = app.$('[data-act="cancel-trip"]');
-    c.click(); c.click();
-    await app.tick(30);
-    t.eq(app.$$('.app-confirm').length, 1, '只有一個確認框');
-    let second = 'pending';
-    app.APP.ui.confirm({ text: 'x' }).then(function (v) { second = v; });
-    await app.tick(30);
-    t.eq(second, null, '已經開著時，新的 confirm 直接回 null（沒有回答）');
-    t.eq(app.$$('.app-confirm').length, 1, '還是一個');
-    await app.click('.app-confirm [data-act="confirm-yes"]');
-    await app.at('/ride');
-    t.eq(app.APP.store.get('trip'), null, '取消一次');
-    t.eq(app.$$('.app-confirm').length, 0, '確認框收掉');
-  });
+  /* ============================================================ 4. 審查（code review 修掉的 bug：一條 bug 一條 test；這裡只留跨區塊的） */
 
   t.test('審查 6：使用者輸入（明信片那一句話）與網址不會變成 HTML', async function (app) {
     await app.reset();
@@ -822,22 +660,6 @@ T.spec('flows', function (t) {
     await app.reset();
   }, { timeout: 15000 });
 
-  t.test('審查 7：id 是 Object 原型上的名字（constructor、toString）不會被當成今天的地方', async function (app) {
-    await app.reset();
-    ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'valueOf'].forEach(function (id) {
-      t.eq(app.APP.place(id), null, "APP.place('" + id + "') → null");
-    });
-    t.eq(app.APP.place(null), null, 'APP.place(null) → null');
-    t.eq(app.APP.place(undefined), null, 'APP.place(undefined) → null');
-    await app.go('/place/constructor');
-    t.ok(app.$('[data-ex-missing]'), '/place/constructor 顯示找不到');
-    await app.go('/going/toString');
-    t.ok(app.$('[data-ex-missing]'), '/going/toString 顯示找不到');
-    await app.go('/unlock/constructor');
-    t.ok(app.$('[data-ex-missing]') && !app.$('[data-act="collect"]'), '/unlock/constructor 不能收');
-    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
-  });
-
   t.test('審查 8：同一個地方的車資在地方詳情、下車點卡、行程中、行程結算、路線斷點相同', async function (app) {
     for (const id of ['neiwan', 'lake', 'hill']) {
       await app.reset();
@@ -866,231 +688,7 @@ T.spec('flows', function (t) {
     t.eq(bm && bm[1], String(app.APP.fmt.fare(app.APP.fmt.km(app.APP.place(brk.pid).dist))), '路線斷點車資＝地方詳情');
   }, { timeout: 20000 });
 
-  /* ============================================================ 5. 亂按 QA 回報（一項一條） */
-
-  t.test('QA 1：/place/neiwan 同一頁的分鐘數、公里數只有一種，而且等於公式', async function (app) {
-    await app.reset();
-    const A = app.APP, F = A.fmt;
-    const P = A.place('neiwan');
-    const km = F.km(P.dist);
-    await app.go('/place/neiwan');
-    const txt = app.text('main.view[data-view]');
-    const mins = (txt.match(/(\d+)\s*分鐘/g) || []).map(function (x) { return x.replace(/\D/g, ''); });
-    const kms = (txt.match(/(\d+(?:\.\d+)?)\s*公里/g) || []).map(function (x) { return Number(x.replace(/[^\d.]/g, '')); });
-    t.ok(mins.length >= 2, '頁面上有「N 分鐘」：' + mins.join(','));
-    t.eq(Array.from(new Set(mins)).join(','), String(F.rideMin(km)), '分鐘只有一種＝rideMin(km)');
-    t.ok(kms.length >= 1 && kms.every(function (k) { return k === km; }), '公里都＝fmt.km(dist)：' + kms.join(','));
-    t.ok(txt.indexOf('搭車 42 分鐘') < 0, 'MOCK 手寫的 42 分鐘不見了');
-  });
-
-  t.test('QA 2：清除我的足跡真的清空；重設 demo 的文案寫清楚是回到初始', async function (app) {
-    await app.reset({ store: { dropoff: { id: 'neiwan', name: '內灣', km: 28, setAt: now(), via: 'k1' },
-                               trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 },
-                               arrivedDemo: 'moat' } });
-    await app.go('/settings');
-    await app.click('[data-act="more"]');
-    await app.click('[data-act="wipe"]');
-    await app.click('[data-act="confirm-yes"]');
-    const S = app.STATE, A = app.APP;
-    t.eq(S.count(), 0, 'STATE.count() === 0');
-    t.eq(S.points, 0, 'STATE.points === 0');
-    t.eq(S.all.km, 0, 'km 0');
-    t.eq(S.all.lastCard, null, 'lastCard null');
-    t.eq(S.all.today.done, false, 'today 歸零');
-    t.eq(A.store.get('dropoff'), null, 'dropoff 清掉');
-    t.eq(A.store.get('trip'), null, 'trip 清掉');
-    t.eq(A.store.get('arrivedDemo'), null, 'arrivedDemo 清掉');
-    t.includes(app.text('.toast') || '', '足跡已清除', 'toast');
-    const saved = app.storage('state');
-    t.ok(saved && Object.keys(saved.cards).length === 0, '寫進 localStorage');
-    await app.go('/album');
-    t.eq(app.text('[data-stat="places"]'), '0', '收藏頁：去過的地方 0');
-    t.eq(app.text('[data-stat="km"]'), '0', '收藏頁：公里 0');
-    t.eq(app.$$('main.view .postcard--locked').length, app.$$('main.view [data-card]').length, '書架全部是灰的');
-    await app.reload();
-    t.eq(app.STATE.count(), 0, '重載之後還是 0');
-    await app.go('/points');
-    t.eq(app.$$('[data-points-row][data-city="1"]').length, 0, '點數沒有城事解鎖列');
-    /* 重設 demo 的文案 */
-    await app.go('/settings');
-    await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="reset-demo"]');
-    t.includes(app.text('.app-confirm'), '回到 demo 初始狀態', '重設 demo 文案');
-    await app.click('[data-act="confirm-yes"]');
-    await app.at('/ride');
-    t.eq(app.STATE.count(), 8, '重設 demo 回到 8 張');
-  });
-
-  t.test('QA 3：桌機 1280×720／1366×768 整支手機縮小，tab bar 看得到；手機模式不縮', async function (app) {
-    await app.reset();
-    await app.go('/ride');
-    const fr = app.win.frameElement;
-    const w0 = fr.style.width, h0 = fr.style.height;
-    try {
-      for (const sz of [[1280, 720], [1366, 768], [1440, 900]]) {
-        fr.style.width = sz[0] + 'px'; fr.style.height = sz[1] + 'px';
-        await app.waitFor(function () { return app.win.innerHeight === sz[1]; }, 2000, 'iframe 變成 ' + sz.join('×'));
-        /* headless 下畫面外的 iframe 只會派第一次 resize 事件（沒有 rendering step）；
-           真的瀏覽器每次都會派。這裡補派一次，驗的是 app 的 resize 處理（節流後重算）。 */
-        app.win.dispatchEvent(new app.win.Event('resize'));
-        await app.tick(200);
-        const W = app.win;
-        const scale = Number(W.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale'));
-        /* 外框上下留 .stage 的 padding（量出來的，不寫死） */
-        const cs = W.getComputedStyle(app.$('.stage'));
-        const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-        t.eq(scale, Math.round(Math.min(1, (sz[1] - pad) / 844) * 1000) / 1000, sz.join('×') + ' 的 --device-scale');
-        t.ok(app.doc.documentElement.scrollHeight <= sz[1] + 1, sz.join('×') + '：整頁不用捲');
-        const tb = app.$('#tabbar').getBoundingClientRect();
-        t.ok(tb.height > 0 && tb.bottom <= W.innerHeight, sz.join('×') + '：tab bar 底 ' + Math.round(tb.bottom) + ' ≤ ' + W.innerHeight);
-        const dv = app.$('.device').getBoundingClientRect();
-        t.ok(dv.top >= 0, sz.join('×') + '：手機頂端 ' + Math.round(dv.top) + ' ≥ 0');
-        const dp = app.$('#demo-panel').getBoundingClientRect();
-        const overlap = !(dp.left >= dv.right || dp.right <= dv.left || dp.top >= dv.bottom || dp.bottom <= dv.top);
-        t.ok(!overlap, sz.join('×') + '：demo 面板不壓在手機上');
-      }
-      fr.style.width = '390px'; fr.style.height = '844px';
-      await app.waitFor(function () { return app.win.innerWidth === 390; }, 2000, '回到手機寬');
-      app.win.dispatchEvent(new app.win.Event('resize'));
-      await app.tick(200);
-      t.eq(app.win.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale').trim(), '1', '手機模式 --device-scale 1');
-      t.eq(app.win.getComputedStyle(app.$('.device')).transform, 'none', '手機模式不縮放');
-    } finally {
-      fr.style.width = w0; fr.style.height = h0;
-    }
-  });
-
-  t.test('QA 4a：行程進行中 setDropoff 一律擋下（K1、E、路線、搜尋）', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 },
-                               dropoff: { id: 'lake', name: '青草湖', km: 6.4, setAt: now(), via: 'e' } } });
-    const A = app.APP;
-    t.eq(A.ride.setDropoff('neiwan', 'k1'), false, 'setDropoff 回 false');
-    t.includes(app.text('.toast') || '', '行程進行中，先抵達或取消行程', 'toast');
-    t.eq(A.store.get('dropoff').id, 'lake', 'dropoff 沒被改');
-    await app.go('/place/neiwan');
-    await app.click('[data-place-foot] [data-act="set-dropoff"]');
-    await app.tick(60);
-    t.eq(app.route().path, '/place/neiwan', 'K1：不導走');
-    await app.go('/route/rail');
-    await app.click('[data-breakpoint] [data-act="set-dropoff"]');
-    await app.tick(60);
-    t.eq(app.route().path, '/route/rail', '路線斷點：不導走');
-    await app.go('/dropoff');
-    await app.click('[data-act="choose-dropoff"]');
-    await app.tick(60);
-    t.eq(app.route().path, '/dropoff', '搜尋清單：不導走');
-    await app.go('/ride?mode=explore');
-    await app.click('.spot[data-spot="moat"]');
-    await app.click('[data-area-intro] [data-act="use-yoxi"]');
-    await app.tick(60);
-    t.eq(A.store.get('dropoff').id, 'lake', '四個入口都沒改到 dropoff');
-    /* 抵達之後就可以再設 */
-    A.store.set('trip', Object.assign({}, A.store.get('trip'), { phase: 'done' }));
-    t.eq(A.ride.setDropoff('moat', 'e'), true, '抵達後可以設');
-  });
-
-  t.test('QA 4b：行程進行中 /going/:id 顯示「你正在搭車前往」＋回到行程', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 } } });
-    await app.go('/going/glass-kiln');
-    t.ok(app.$('[data-going-trip]'), '搭車中的卡');
-    t.includes(app.text('main.view[data-view]'), '你正在搭車前往 ' + app.APP.place('lake').name, '目的地是這一趟的');
-    t.ok(!app.$('main.view [data-going-map]'), '不畫前往中地圖');
-    t.ok(!app.$('main.view [data-act="arrive"]'), '沒有走路的模擬抵達');
-    t.noDeadButtons(app, '/going（行程中）');
-    t.noBannedWords(app, { msg: '/going（行程中）' });
-    await app.click('main.view [data-act="go-trip"]');
-    await app.at('/trip');
-    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
-  });
-
-  t.test('QA 4c：行程進行中 /ride 的下車點卡是這一趟的目的地，不是 store.dropoff', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 },
-                               dropoff: { id: 'moat', name: '護城河', km: 1.8, setAt: now(), via: 'e' } } });
-    const A = app.APP, F = A.fmt;
-    await app.go('/ride');
-    t.eq(app.text('[data-drop-name]'), A.place('lake').name, '下車點＝行程目的地');
-    t.eq(app.text('[data-fare]'), String(F.fare(6.4)), '車資用 trip.km');
-    t.ok(app.$('.ride-drop a[href="#/trip"]'), '點下車點卡回行程');
-    t.ok(!app.$('[data-act="clear-dropoff"]'), '行程中沒有「清除」');
-    t.includes(app.text('[data-act="call-ride"]'), '回到行程', '叫車鈕是回到行程');
-    t.noDeadButtons(app, '/ride（行程中）');
-  });
-
-  /* 今天（'MM.DD'）落在週回顧的哪一段：now（本週 7 天內）／prev（上週）／after（本週之後）／before */
-  function weekSlot(w, mmdd) {
-    const k = Number(mmdd.slice(0, 2)) * 100 + Number(mmdd.slice(3, 5));
-    const at = function (d) { return w.month * 100 + d; };
-    if (k >= at(w.now.from) && k <= at(w.now.to)) return 'now';
-    if (k > at(w.now.to)) return 'after';
-    if (k >= at(w.prev.from) && k <= at(w.prev.to)) return 'prev';
-    return 'before';
-  }
-
-  t.test('QA 5：/week 收一張卡之後：只有日期落在本週的才算進本週，公里與步數不減', async function (app) {
-    await app.reset();
-    await app.go('/week');
-    const before = app.APP.album.weekStats();
-    const range0 = app.text('.alb-cover__range');
-    const km0 = app.text('[data-cmp="km"] [data-now]'), st0 = app.text('[data-cmp="steps"] [data-now]');
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
-    await app.go('/album');
-    await app.go('/week');
-    const after = app.APP.album.weekStats();
-    const slot = weekSlot(before, app.APP.fmt.todayMMDD());
-    t.eq(after.now.places, before.now.places + (slot === 'now' ? 1 : 0), '本週地方數（今天在 ' + slot + '）');
-    t.ok(after.now.km >= before.now.km, '公里不減 ' + before.now.km + ' → ' + after.now.km);
-    t.ok(after.now.steps >= before.now.steps, '步數不減');
-    if (slot !== 'prev') {
-      t.eq(JSON.stringify([after.prev.places, after.prev.km, after.prev.steps]), JSON.stringify([before.prev.places, before.prev.km, before.prev.steps]), '上週不變');
-    }
-    t.eq(app.text('.alb-cover__range'), range0, '標題就是圖表那 7 天，收卡不會拉長（見評估 5）');
-    t.eq(app.text('[data-cmp="km"] [data-now]'), km0, '畫面公里不變');
-    t.eq(app.text('[data-cmp="steps"] [data-now]'), st0, '畫面步數不變');
-    t.eq(app.text('[data-week-places]'), String(after.now.places), '畫面地方數＝weekStats');
-    t.eq(!!app.$('.alb-weekcard[data-card="p11"]'), slot === 'now', '今天收的卡只在今天落在本週時列在這一週');
-    if (slot === 'after') t.includes(app.text('[data-week-after]'), '1', '本週之後收的另寫一行，照實說還沒算進這一週');
-  });
-
-  t.test('QA 6：已收藏的地方頁不再推薦、寫清楚怎麼收的', async function (app) {
-    await app.reset();
-    for (const id of ['station', 'p1', 'market', 'harbour']) {
-      await app.go('/place/' + id);
-      const P = app.APP.place(id);
-      const c = app.STATE.card(P.card);
-      t.ok(!app.$('main.view .why'), id + '：沒有「為什麼推薦給你」');
-      const txt = app.text('main.view[data-view]');
-      t.ok(txt.indexOf('你從沒進去過') < 0 && txt.indexOf('圖鑑裡還沒有') < 0, id + '：沒有通用佔位句');
-      t.eq(app.text('[data-got-line]'), '已收藏 · ' + c.date + ' · ' + (c.by === 'ride' ? '搭車抵達' : '走路抵達'), id + '：已收藏那一行');
-      t.ok(app.$('[data-place-foot] [data-act="open-postcard"]'), id + '：看明信片');
-    }
-    await app.go('/place/lake');
-    t.ok(app.$('main.view .why'), '沒收過的地方照樣有推薦理由');
-  });
-
-  t.test('QA 7：不屬於任何路線的地方，次鈕寫「看這個月的路線」', async function (app) {
-    await app.reset();
-    for (const id of ['hill', 'lake']) {
-      await app.go('/place/' + id);
-      const b = app.$('[data-place-foot] [data-act="open-route"]');
-      t.eq(b && b.textContent.trim(), '看這個月的路線', id + ' 文字');
-      t.eq(b && b.getAttribute('href'), '#/routes', id + ' → /routes');
-    }
-    await app.go('/place/neiwan');
-    const n = app.$('[data-place-foot] [data-act="open-route"]');
-    t.eq(n && n.textContent.trim(), '先看看路線', '有路線的照舊');
-  });
-
-  t.test('QA 8：減少動態效果（APP.reduceMotion）時解鎖直接第三幕', async function (app) {
-    await app.reset();
-    t.eq(app.APP.reduceMotion(), true, 'still 模式 reduceMotion() 為 true');
-    await app.reset({ still: false });
-    t.eq(app.APP.reduceMotion(), false, '一般模式為 false');
-    app.win.matchMedia = function (q) { return { matches: /reduce/.test(q), media: q, addListener: function () {}, removeListener: function () {} }; };
-    t.eq(app.APP.reduceMotion(), true, '系統要求減少動態效果 → true');
-    await app.go('/unlock/moat');
-    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '/unlock 直接第三幕');
-    await app.reset();
-  });
+  /* ============================================================ 5. 亂按 QA 回報（一項一條；這裡只留跨區塊的） */
 
   t.test('QA 9／10：回顧的公里寫「移動的」；/trip/done 沒行程頁首寫「行程」、評過分的星數重整還在', async function (app) {
     await app.reset();
@@ -1101,7 +699,7 @@ T.spec('flows', function (t) {
     t.eq(app.text('.hdr-red__title'), '行程', '沒行程：頁首「行程」');
     t.includes(app.text('main.view[data-view]'), '目前沒有行程', '內文維持');
     t.ok(app.doc.title.indexOf('行程完成') < 0, 'document.title 也不是行程完成');
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'done', startedAt: now(), rated: true, stars: 3, km: 6.4 } }, hash: '/trip/done' });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: now(), rated: true, stars: 3, km: 6.4 }) }, hash: '/trip/done' });
     await app.at('/trip/done');
     t.eq(app.text('.hdr-red__title'), '行程完成', '有行程：頁首「行程完成」');
     t.eq(app.$$('.ride-star.is-on').length, 3, '重整後三顆星');
@@ -1150,10 +748,10 @@ T.spec('flows', function (t) {
     t.eq(app.route().path, '/ride', '之後回 / 不會再被帶去 onboarding');
   }, { timeout: 15000 });
 
-  /* ============================================================ 6. 評估回報（最後一輪） */
+  /* ============================================================ 6. 評估回報（最後一輪；這裡只留跨區塊的） */
 
   t.test('評估 1：+50 點只給走不到的地方 —— 搭車去 moat（1.8 km）照樣必得金框，但不加點', async function (app) {
-    const moat = { placeId: 'moat', phase: 'done', startedAt: now(), rated: true, km: 1.8, via: 'e' };
+    const moat = T.fixtures.trip({ placeId: 'moat', phase: 'done', startedAt: now(), rated: true, km: 1.8, via: 'e' });
     await app.reset({ store: { trip: moat } });
     const A = app.APP, F = A.fmt;
     const km = A.fmt.km(A.place('moat').dist);
@@ -1191,80 +789,6 @@ T.spec('flows', function (t) {
     t.ok(!app.$('.ex-ride__tag'), '走得到的 brick 沒有限定版小標');
     await app.reset();
   }, { timeout: 15000 });
-
-  t.test('評估 2：轉換歸因 —— trip 帶 dropoff.via，行程紀錄顯示是從哪裡叫的', async function (app) {
-    await app.reset();
-    const A = app.APP;
-    await app.go('/place/neiwan');
-    await app.click('[data-place-foot] [data-act="set-dropoff"]');
-    await app.at('/ride');
-    await app.click('[data-act="call-ride"]');
-    await app.at('/trip');
-    t.eq(A.store.get('trip').via, 'k1', 'trip.via＝dropoff.via');
-    await app.click('main.view [data-act="arrive"]');
-    await app.at('/trip/done');
-    await app.click('[data-act="rate"][data-star="5"]');
-    await app.click('.banner--gold');
-    await app.at('/unlock/neiwan');
-    await app.click('[data-act="collect"]');
-    await app.at('/album');
-    t.eq((A.store.get('rideVia') || {}).p9, 'k1', 'store.rideVia.p9＝k1');
-    await app.go('/trips');
-    const row = app.$('[data-trip-row][href="#/postcard/p9"]');
-    t.ok(row && row.querySelector('[data-via="k1"]'), '/trips 的內灣那一列有歸因');
-    t.includes(row && row.textContent, '從地方詳情', '小標文字');
-    t.ok(app.$$('[data-trip-row] [data-via]').length === 1, '沒有歸因資料的舊卡不硬寫');
-    t.noDeadButtons(app, '/trips');
-    await app.reset();
-  }, { timeout: 15000 });
-
-  t.test('評估 3：設定頁可以關掉探索地圖上的景點；可按數仍 ≤ 10', async function (app) {
-    await app.reset();
-    await app.go('/ride?mode=explore');
-    t.eq(app.$$('main.view .spot').length, 4, '預設 4 顆');
-    await app.go('/settings');
-    t.ok(t.countTappables(app) <= 10, '設定頁可按數 ' + t.countTappables(app));
-    const sw = app.$('main.view [data-switch="rideSpots"]');
-    t.ok(sw && sw.classList.contains('is-on'), '預設開著');
-    await app.click(sw);
-    t.eq(app.APP.store.get('rideSpots'), false, 'store.rideSpots=false');
-    t.eq(sw.getAttribute('aria-checked'), 'false', '開關外觀');
-    await app.go('/ride?mode=explore');
-    t.eq(app.$$('main.view .spot').length, 0, '關掉之後 0 顆');
-    t.ok(app.$('main.view .map__svg'), '地圖照畫');
-    t.noDeadButtons(app, '/ride（景點關掉）');
-    await app.reload('/ride?mode=explore');
-    t.eq(app.$$('main.view .spot').length, 0, '重載後還是關的');
-    await app.go('/settings');
-    await app.click('main.view [data-switch="rideSpots"]');
-    await app.go('/ride?mode=explore');
-    t.eq(app.$$('main.view .spot').length, 4, '開回來 4 顆');
-    t.eq(app.STATE.all.settings.rideSpots, undefined, '不寫進 STATE.settings');
-  });
-
-  /* 評估 5 改過一次：以前收卡後標題終點延到今天（9月15日 – 9月25日，11 天），但長條圖與步數只有 7 天。
-     現在標題永遠是圖表那 7 天；範圍之後收的卡另寫一行，不算進本週。 */
-  t.test('評估 5：/week 標題永遠是圖表那 7 天，收卡後也不拉長', async function (app) {
-    await app.reset();
-    await app.go('/week');
-    const w0 = app.APP.album.weekStats();
-    const r0 = app.text('.alb-cover__range');
-    const lab = function (d) { return w0.month + '月' + d + '日'; };
-    t.eq(r0, lab(w0.now.from) + ' – ' + lab(w0.now.to), '收卡前：' + r0);
-    t.eq(w0.now.to, 21, '固定範圍終點是 21 日（HEALTH_STEPS 最後一個有步數的日子）');
-    t.eq(w0.now.to - w0.now.from + 1, app.$$('.alb-days__col').length, '標題的天數＝長條圖的天數');
-    app.APP.explore.collect('glass-kiln', { by: 'walk', km: 1 });
-    await app.go('/album');
-    await app.go('/week');
-    t.eq(app.text('.alb-cover__range'), r0, '收卡後標題不變：' + app.text('.alb-cover__range'));
-    const w1 = app.APP.album.weekStats();
-    t.eq(w1.now.from, w0.now.from, '起點不變');
-    t.eq(w1.now.to, w0.now.to, '終點不變');
-    t.eq(w1.now.steps, w0.now.steps, '步數只算有資料的日子（不變）');
-    await app.go('/album');
-    t.ok(app.$('[data-act="go-week"]'), '收藏首頁「回顧」一列有「這一週」入口（週回顧不再是孤兒頁）');
-    await app.reset();
-  });
 
   /* ============================================================ 7. 無障礙 */
 
@@ -1318,7 +842,7 @@ T.spec('flows', function (t) {
   });
 
   t.test('無障礙 3：confirm／share／push 打開時焦點進框、Esc 關、焦點回原處', async function (app) {
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
     const d = app.doc, W = app.win;
     const esc = function () { d.dispatchEvent(new W.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); };
     await app.go('/trip');
@@ -1381,10 +905,10 @@ T.spec('flows', function (t) {
   });
 
   /* 可按元素：命中區（含 ::after 撐大的）至少 40×40；每個都有名字 */
-  const A11Y_ROUTES = ['/ride', '/dropoff', '/pickup', '/drawer', '/points', '/notify', '/trips',
-    '/explore', '/explore/map', '/place/glass-kiln', '/place/neiwan', '/place/p1', '/going/glass-kiln', '/unlock/glass-kiln',
-    '/routes', '/route/rail', '/album', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/badges', '/postcards',
-    '/postcard/p1', '/postcard/p11', '/badge/b1', '/footprint', '/lookback', '/week', '/elder', '/settings', '/welcome'];
+  /* 共用的路由表，少了要行程才有內容的兩頁與搭車抵達，多了明信片 id 的地方頁、?tab= 舊連結與金框卡 */
+  const A11Y_ROUTES = T.routes({ root: false, skip: ['/trip', '/trip/done', '/unlock/neiwan?ride=1'],
+    extra: ['/place/p1', '/album?tab=badges', '/album?tab=journal', '/album?tab=week', '/postcard/p11'] })
+    .map(function (r) { return r.path; });
   /* 例外（原型就如此、而且不是單一的點擊目標）：地圖景點（本身 38px，周圍是可平移的地圖） */
   const HIT_EXEMPT = '.spot';
 
@@ -1429,10 +953,10 @@ T.spec('flows', function (t) {
       scan(p);
     }
     /* 有狀態才出現的畫面：行程中、行程完成（評過分）、叫車首頁小卡打開、推播與分享浮層 */
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'riding', startedAt: now(), rated: false, km: 6.4 } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
     await app.go('/trip'); await app.tick(40); scan('/trip');
     await app.go('/going/moat'); await app.tick(40); scan('/going（行程中）');
-    await app.reset({ store: { trip: { placeId: 'lake', phase: 'done', startedAt: now(), rated: true, stars: 4, km: 6.4 } } });
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: now(), rated: true, stars: 4, km: 6.4 }) } });
     await app.go('/trip/done'); await app.tick(40); scan('/trip/done');
     await app.go('/ride?mode=explore'); await app.click('.spot[data-spot="moat"]'); scan('/ride 探索選點');
     app.APP.ui.share({ kind: 'week' });

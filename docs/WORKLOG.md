@@ -144,3 +144,22 @@
 | `0779b58` | 使用者：「防空洞有實體圖片，總覽還是示意圖」。p12–p22 沒有生成成品，paintCardArt 沒有退回照片那一步；改成跟 /unlock 一樣：成品 → 照片＋畫風濾鏡 → 插圖；週回顧補 data-card-art；詳情寫照片出處；叫車面板角標拉長的 bug |
 
 驗收：`python app/tests/run.py` node 47/47、瀏覽器 277/277；Playwright 看過捲動、換頁、翻面、蓋住、still。
+
+## 2026-09-26 架構整理：散掉的概念收成 deep module（分支 `refactor/app-deepening`）
+
+使用者要「看看這個網站有沒有可以改進的」→ 架構審查（8 個候選）→「全修，不動到任何功能」。每一步都要 app 測試全綠、golden master（496 個畫面與流程）0 差異才 commit。細節見 `docs/HANDOFF.md` §16 與 `app/ARCHITECTURE.md`。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `bc68b87` | 測試接縫：node 的 `loadApp` 載得動 views、specs 共用路由表／fixtures／小工具 |
+| `ebae4ca` | 明信片 → 地點只剩 `APP.place` 與 `APP.footprintPlace`（兩種答案保留，產品待決） |
+| `c7eaeb1` | `APP.ride.trip`：`store.trip` 只有它讀寫；demo 搭車抵達距離不明不再算成 0（使用者核可） |
+| `5668d34` | `collect(placeId, { note })` 自己判斷搭車或走路、款式、公里；`cardOrigin` 當唯一的讀法 |
+| `2001136` | store 的 `KEYS` 表（型別＋類別）、`APP.store.clear('footprint')`、`APP.state`（寫 STATE 一定發 state:change） |
+| `bb53366` | 返回規則收回 router：`history.state` 記來歷、`APP.nav.prev／up`；刪掉 ride 與 album 各自的歷史簿記 |
+| `e3f5e78` | 拆出 `explore-face.js`：`cardFace` 唯一的卡面疊法、監看整台 `.device`；VERSION v18 |
+| `f5b0c65` | 地圖 destroy 自己拆拖曳 listener；拉面板換段抽成純函式 `snapTarget` |
+| `fc0cafc` | 版本只在 `js/version.js`、`APP.ui.overlay`、拿掉 `arrivedDemo` 與舊 core 的相容死碼 |
+| `495c4a0` | 只牽涉一個區塊的回歸測試從 flows.spec 搬回各區塊 |
+
+驗收：`python app/tests/run.py` node 77/77、瀏覽器 280/280；check-sw 63 筆 PASS。

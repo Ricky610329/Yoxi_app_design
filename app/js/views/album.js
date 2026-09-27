@@ -53,22 +53,9 @@ function stepsPerKm() {
   return L.km ? L.steps / L.km : 0;
 }
 
-/* 明信片 → 地圖認得的地點 id。
-   依序：CARD_TO_PLACE → SPOTS 同名 → hs-places 名稱含卡名（護城河親水公園、十八尖山、青草湖）。
-   都對不上就回 null（城市足跡略過這張）。 */
-function placeOfCard(cardId) {
-  const m = M();
-  if (m.CARD_TO_PLACE && m.CARD_TO_PLACE[cardId]) return m.CARD_TO_PLACE[cardId];
-  const c = cardById(cardId);
-  if (!c) return null;
-  const spot = (m.SPOTS || []).filter(function (s) { return s.name === c.name; })[0];
-  if (spot) return spot.id;
-  const geo = window.HSINCHU_PLACES || {};
-  const hit = Object.keys(geo).filter(function (k) {
-    return geo[k] && geo[k].name && geo[k].name.indexOf(c.name) === 0;
-  })[0];
-  return hit || null;
-}
+/* 明信片 → 城市足跡上的地點一律問 APP.footprintPlace（app.js；它跟 APP.place 刻意不同，理由寫在那裡）。
+   「去過的地方」的鍵：對得到地點就用地點，對不到的卡自己算一個地方。 */
+function visitKey(cardId) { return APP.footprintPlace(cardId) || cardId; }
 
 /* 已收的卡 → 足跡地圖上的點；回傳 { seen:[placeId], missing:[cardId] } */
 function footprintSeen() {
@@ -77,7 +64,7 @@ function footprintSeen() {
   const missing = [];
   M().POSTCARDS.forEach(function (p) {
     if (!STATE.has(p.id)) return;
-    const pid = placeOfCard(p.id);
+    const pid = APP.footprintPlace(p.id);
     if (pid && geo[pid]) { if (seen.indexOf(pid) < 0) seen.push(pid); }
     else missing.push(p.id);
   });
@@ -90,7 +77,7 @@ function visitedPlaces() {
   const out = [];
   M().POSTCARDS.forEach(function (p) {
     if (!STATE.has(p.id)) return;
-    const k = placeOfCard(p.id) || p.id;
+    const k = visitKey(p.id);
     if (out.indexOf(k) < 0) out.push(k);
   });
   return out;
@@ -100,22 +87,12 @@ function badgeOfCard(cardId) {
   return (M().BADGES || []).filter(function (b) { return b.ids.indexOf(cardId) >= 0; })[0] || null;
 }
 
-/* 金框：收下的是金框那一款（explore.js 的 cardStyleOf：抽到的，或 demo 一開始就有的搭車卡）。
-   契約：「金框的明信片在收藏裡也是金框」。explore.js 沒載到時退回 store.cardStyle。 */
-function goldCard(cardId) {
-  if (!STATE.card(cardId)) return false;
-  if (APP.explore && APP.explore.cardStyleOf) {
-    const d = APP.explore.cardStyleOf(cardId);
-    return !!(d && d.gold);
-  }
-  return (APP.store.get('cardStyle') || {})[cardId] === 'gold';
-}
-/* yoxi 限定版（金框＋和泰 Points +50）：只看 ride.js 的判斷（搭 yoxi 去走不到的地方）。
-   搭車收的卡一定是金框，所以不能拿「金框」回推「限定版」—— 搭車去 900 m 外的玻璃窯是金框、不是限定版。 */
-function limitedCard(cardId) {
-  if (!STATE.card(cardId)) return false;
-  return !!(APP.ride && APP.ride.limitedCard && APP.ride.limitedCard(cardId));
-}
+/* 收下的那一張是怎麼來的：一律問 explore-cards.js 的 cardOrigin（契約 §7），這裡不另外判斷。
+   金框＝抽到金框那一款（或 demo 一開始就有的搭車卡），契約：「金框的明信片在收藏裡也是金框」。
+   yoxi 限定版（金框＋和泰 Points +50）＝ride.js 的判斷（搭 yoxi 去走不到的地方）。限定版一定是金框，
+   金框不一定是限定版——搭車去 900 m 外的玻璃窯是金框、不是限定版，所以不能拿「金框」回推「限定版」。 */
+function goldCard(cardId) { const o = APP.explore.cardOrigin(cardId); return !!(o && o.gold); }
+function limitedCard(cardId) { const o = APP.explore.cardOrigin(cardId); return !!(o && o.limited); }
 
 function badgeProg(r) { return '收集 ' + r.done + '/' + r.total; }
 
@@ -263,7 +240,7 @@ function photoCreditHTML(cardId) {
 
 function storyOf(cardId) {
   if (STORY[cardId]) return STORY[cardId];
-  const pid = placeOfCard(cardId);
+  const pid = APP.footprintPlace(cardId);
   const pl = pid ? APP.place(pid) : null;
   const past = pl && (pl.story || []).filter(function (s) { return s.label === '以前的它'; })[0];
   return past ? past.text : '在這裡停了一下。';
@@ -318,7 +295,7 @@ function weekStats() {
     const steps = days.reduce(function (s, x) { return s + x.steps; }, 0);
     const cards = inKeys(mm * 100 + a, mm * 100 + b);
     /* 地方數跟收藏首頁同一個算法：同一個地方的兩張卡算一個 */
-    const places = cards.map(function (p) { return placeOfCard(p.id) || p.id; })
+    const places = cards.map(function (p) { return visitKey(p.id); })
       .filter(function (k, i, arr) { return arr.indexOf(k) === i; }).length;
     return { from: a, to: b, days: days, steps: steps,
              km: spk ? Math.round(steps / spk * 10) / 10 : 0, cards: cards, places: places };
@@ -368,87 +345,19 @@ function notFound(o) {
 /* ---------------------------------------------------------------- 子頁的返回鍵
    收藏的子頁有兩種來法：
    1. 從上一層點進來（/album → /badges → /badge/b3、/trips → /postcard/p8、分享 → /elder）：返回＝照歷史退一格。
-   2. 切到叫車再點「收藏」停回這一頁（這一筆的上一筆是叫車）、重新整理、直接開網址、從流程頁（/unlock…）過來：
-      照歷史退一格會跑錯頁（退回叫車、退回抽卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）。
-   做法：每一筆歷史（history.state.i）停的是哪一頁記在 sessionStorage（路由每換一頁就記，見下面的 route:change）。
-   按返回時看「退一格會落在哪一頁」：是一般的頁（有 tab 的 view、不是自己）→ APP.nav.back()；不然 → 上一層。
-   有兩種「上一筆不是來處」的要另外標 up：切 tab 停回來的（上一筆可能是 /trips —— 本來就會連到明信片的頁 ——
-   但使用者不是從那裡點進來的），以及返回時 replace 出來的上一層（上一筆是叫車，那一層的返回也要再往上走）。
-   之前只看 ctx.from：從更深的一頁返回時 ctx.from 是那一頁，會被當成「不是從上一層來」而多疊一筆 /album。 */
+   2. 切到叫車再點「收藏」停回這一頁、重新整理、直接開網址、從流程頁（/unlock…）過來：照歷史退一格會跑錯頁
+      （退回叫車、退回抽卡），所以直接換成邏輯上的上一層（replace，不多一筆歷史）；換上來的那一層再按返回也往上走。
+   這個判斷是 router 的 APP.nav.up（它在 history.state 記了每一筆從哪裡來、怎麼來的）；這裡只標返回鍵：
+   data-back＝上一層、data-up＝用 nav.up 的預設規則（上一筆是有底欄的一般頁、而且不是這一頁才退）。 */
 const PARENT = { postcards: '/album', badges: '/album', postcard: '/postcards', badge: '/badges',
                  week: '/album', elder: '/week', footprint: '/album' };
-const NAV_KEY = 'yoxi-album-nav';
 
-function histI() {
-  try { const st = history.state; return st && typeof st.i === 'number' ? st.i : null; }
-  catch (e) { return null; }
-}
-function navLoad() {
-  try { const o = JSON.parse(sessionStorage.getItem(NAV_KEY)); if (o && typeof o === 'object') return o; }
-  catch (e) { /* 私密視窗、被擋 */ }
-  return {};
-}
-function navSave(H) {
-  try { sessionStorage.setItem(NAV_KEY, JSON.stringify(H)); } catch (e) { /* ignore */ }
-}
-/* 新開的一頁（history.state 還沒有序號：不是重新整理、也不是上一頁／下一頁回來的）：上一次留下的紀錄對不上現在的歷史，清掉 */
-try { if (!history.state || typeof history.state.i !== 'number') sessionStorage.removeItem(NAV_KEY); }
-catch (e) { /* ignore */ }
-function pathOnly(p) { return String(p || '').split('?')[0]; }
-function tabOfPath(p) {
-  if (!p) return null;
-  const r = APP.resolve(pathOnly(p));
-  const def = APP.views && APP.views[r.name];
-  return def && r.name !== '_404' && r.name !== '_placeholder' ? (def.tab || null) : null;
-}
-
-/* 收藏 tab 上一次停的頁（切 tab 回來會回到這一頁）：每換一頁之後記一次，所以子頁 mount 時它還是「進來之前」的值。
-   一開始用 store 裡存的（重新整理之後切 tab 回來也認得）。 */
-let albumTabBefore = pathOnly(((APP.store && APP.store.get('tabPaths')) || {}).album) || '/album';
-
-APP.on('route:change', function (cur) {
-  if (!cur) return;
-  const i = histI();
-  /* 路由的 route:change 可能晚到（轉場中又點了別的，網址已經換了）：那時的序號不是這一頁的，不記 */
-  const hashPath = pathOnly(String(location.hash).replace(/^#/, '')).replace(/(.)\/+$/, '$1') || '/';
-  if (i != null && hashPath === cur.path) {
-    const H = navLoad();
-    const rec = H[i];
-    if (!rec || rec.p !== cur.path) { H[i] = { p: cur.path }; navSave(H); }
-  }
-  const tp = APP.store.get('tabPaths') || {};
-  albumTabBefore = pathOnly(tp.album) || '/album';
-});
-
-/* 每個子頁的 mount 都呼叫：記下這一筆歷史、把返回鍵（第一個 a[data-back]）換成上面的規則 */
+/* 每個子頁的 mount 都呼叫：把返回鍵（第一個 a[data-back]）指向上一層，交給 router 的 nav.up */
 function subMount(root, ctx, name) {
-  const here = ctx.path;
-  const parent = PARENT[name] || '/album';
-  const i = histI();
-  if (i != null) {
-    const H = navLoad();
-    const rec = H[i];
-    const from = ctx.from ? pathOnly(ctx.from) : null;
-    let up;
-    if (rec && rec.p === here && rec.pend) up = true;          /* 自己的返回 replace 出來的這一層 */
-    else if (rec && rec.p === here && from && H[i + 1] && H[i + 1].p === from) up = !!rec.up;   /* 從更深的一頁退回來：沿用 */
-    else up = !!(from && tabOfPath(from) !== 'album' && albumTabBefore === here);           /* 新的一筆：是不是切 tab 停回來的 */
-    H[i] = up ? { p: here, up: 1 } : { p: here };
-    navSave(H);
-  }
   const a = root.querySelector('a[data-back]');
   if (!a) return;
-  a.setAttribute('data-back', parent);
-  a.onclick = function (e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    const n = histI();
-    const H = navLoad();
-    const rec = n != null ? H[n] : null;
-    const prev = n ? H[n - 1] : null;
-    if (prev && !(rec && rec.up) && pathOnly(prev.p) !== here && tabOfPath(prev.p)) { APP.nav.back(parent); return; }
-    if (n != null) { H[n] = { p: parent, up: 1, pend: 1 }; navSave(H); }
-    APP.nav.go(parent, { replace: true, dir: 'back' });
-  };
+  a.setAttribute('data-back', PARENT[name] || '/album');
+  a.setAttribute('data-up', '');
 }
 
 /* 雙主頁第一版：明信片主卡（點進去看全部）、統計、回顧一列、獎章精選卡。 */
@@ -582,7 +491,7 @@ const LAND = { journal: '[data-look-tile="journal"]', week: '[data-look-tile="we
                badges: '.alb-v2__medals', cards: '.alb-v2__hero' };
 function albumV2Mount(root, params, ctx) {
   /* 「新」只標一次；lastCard 留給每日回顧用（寫了 STATE 就 emit，契約 §3.3） */
-  if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+  if (STATE.lastIsNew) APP.state.markLastSeen();
   const q = ctx && ctx.query;
   if (!q || !q.has('tab')) return;
   const el = LAND[q.get('tab')] ? root.querySelector(LAND[q.get('tab')]) : null;
@@ -634,7 +543,7 @@ APP.view('postcards', {
     '</div></div>';
   },
   mount: function (root, params, ctx) {
-    if (STATE.lastIsNew) { STATE.markLastSeen(); APP.emit('state:change'); }
+    if (STATE.lastIsNew) APP.state.markLastSeen();
     subMount(root, ctx, 'postcards');
   },
 });
@@ -687,10 +596,10 @@ APP.view('postcard', {
            '<span class="alb-row__s">單獨收藏也算數</span></span></div>';
 
     if (!got) {
-      const pid = placeOfCard(P.id) || P.id;
+      const pid = visitKey(P.id);
       const canGo = !!APP.place(pid);
       /* 搭車抵達了、評分後直接回首頁的那一趟：這張卡就是它的限定版 → 回去解鎖的入口 */
-      const pu = APP.ride && APP.ride.pendingUnlock ? APP.ride.pendingUnlock() : null;
+      const pu = APP.ride.trip.pending();
       const pend = pu && pu.card === P.id ? pu : null;
       return header({ title: '明信片', back: '/postcards' }) +
         '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
@@ -716,13 +625,13 @@ APP.view('postcard', {
         '</div>';
     }
 
-    const ride = got.by === 'ride';
-    /* 金框＝收下的是金框那一款；限定版＝ride.js 的判斷（搭 yoxi 去走不到的地方，+50 點）。
-       限定版一定是金框（搭 yoxi 抵達必得金框），金框不一定是限定版（走路抽到的、搭車去走得到的地方）。
+    /* 搭車還是走路、金框、限定版都問 cardOrigin（限定版一定是金框，金框不一定是限定版）。
        框用 ::after 畫在插圖上面（album.css 的 .alb-big__card.postcard--gold）：chengshi.css 的 inset 陰影會被滿版插圖蓋住。 */
-    const limited = limitedCard(P.id);
-    const gold = limited || goldCard(P.id);
-    const pid = placeOfCard(P.id);
+    const origin = APP.explore.cardOrigin(P.id);
+    const ride = origin.by === 'ride';
+    const limited = origin.limited;
+    const gold = origin.gold;
+    const pid = APP.footprintPlace(P.id);
     const pl = pid ? APP.place(pid) : APP.place(P.id);
     const dist = pl && pl.dist != null ? pl.dist : null;
     const how = ride
@@ -858,7 +767,7 @@ function cityColors() {
   const places = {};
   const bands = [];
   recentCards(M().POSTCARDS.length).reverse().forEach(function (p) {
-    const k = placeOfCard(p.id) || p.id;
+    const k = visitKey(p.id);
     if (places[k]) return;
     places[k] = 1;
     const sky = (ART[p.art] || {}).sky || [];
@@ -1163,8 +1072,7 @@ APP.view('lookback', {
       /* 「先不選」：今天稍早選過的心情留著；別天留下來的清掉，不然它會被當成今天的 */
       if (mood) patch.mood = mood;
       else if ((STATE.all.today || {}).date !== day) patch.mood = null;
-      STATE.setToday(patch);
-      APP.emit('state:change');
+      APP.state.setToday(patch);
       APP.nav.go('/album?tab=journal', { replace: true });
     }
 
@@ -1394,7 +1302,7 @@ APP.view('elder', {
 });
 
 /* 給別的區塊／測試用 */
-APP.album = { placeOfCard: placeOfCard, footprintSeen: footprintSeen, weekStats: weekStats,
+APP.album = { footprintSeen: footprintSeen, weekStats: weekStats,
               visitedPlaces: visitedPlaces, recentCards: recentCards, cityColors: cityColors,
               coverage: function () { return fixedCoverage({ seen: footprintSeen().seen, fade: [] }); } };
 

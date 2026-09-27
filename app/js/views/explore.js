@@ -2,10 +2,12 @@
    yoxi 城事 web app — explore 區塊（探索分頁）
    契約：app/ARCHITECTURE.md §3、§4、§5、§7、§8。只用 APP.view() 註冊，不改 app.js。
 
-   explore 區塊分四支（依載入順序）：
+   explore 區塊分六支（依載入順序）：
      explore-fx.js      特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）
-     explore-cards.js   明信片與抽卡的共用零件：APP.explore.collect／DRAW_STYLES／drawStyle／openOdds／
-                        cardStyleOf／postcardSrc／cardPhoto／paintCardArt（album、ride 也用）
+     explore-cards.js   明信片怎麼拿到的：APP.explore.collect／cardOrigin／DRAW_STYLES／drawStyle／openOdds／
+                        cardStyleOf（album、ride 也用）
+     explore-face.js    明信片長什麼樣：APP.explore.cardFace／postcardSrc／cardPhoto／paintCardArt
+     explore-gold.js    金框卡的金粉 APP.fx.gold（data-gold-aura）
      explore.js         這支：六個畫面＋APP.explore.gap／breakpoint
      explore-unlock.js  /unlock/:id 抵達 → 收集 → 抽卡
 
@@ -45,14 +47,14 @@
 
 const APP = window.APP;
 const K = APP && APP.explore && APP.explore._;
-/* explore-cards.js 要先載入（APP.explore 的明信片、抽卡、收下都在那裡） */
-if (!K) return;
+/* explore-cards.js 要先載入（APP.explore 的明信片、抽卡、收下都在那裡）。順序錯了直接丟錯（寫進 #app-errors），
+   不要安靜 return——那樣路由全部變成「尚未建檔」，看不出是載入順序的問題 */
+if (!K) throw new Error('explore.js 要在 explore-cards.js 之後載入（index.html 的順序）');
 
 const esc = APP.esc;
 const fmt = APP.fmt;
 const M = K.M, S = K.S, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
-const rideTripFor = K.rideTripFor;
 
 /* 抵達驗證的兩個數字：契約 §5 的文案規定（80 公尺內停 1 分鐘），全頁只寫在這裡 */
 const ARRIVE_RADIUS_M = 80;
@@ -492,7 +494,8 @@ function renderPlace(params) {
     foot =
       '<button class="btn-primary ex-ride" type="button" data-act="set-dropoff">' +
         '<span class="ex-ride__t">用 yoxi 前往 · 約 $' + num(r.fare) + ' · ' + num(r.min) + ' 分</span>' +
-        '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' +
+        /* 限定版（+點數）只給走不到的地方：判斷在 ride.js 的 limitedPlace，不在這裡用距離另算一次 */
+        (APP.ride.limitedPlace(p) ? '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' : '') +
       '</button>' +
       (R ? '<a class="btn-ghost" href="#/route/' + esc(R.id) + '" data-act="open-route">先看看路線</a>'
          : '<a class="btn-ghost" href="#/routes" data-act="open-route">看這個月的路線</a>') +
@@ -541,7 +544,7 @@ function renderPlace(params) {
 
 /* 已收藏那一行：日期 · 走路／搭車 */
 function gotLine(p) {
-  const c = p.card ? S().card(p.card) : null;
+  const c = p.card ? APP.explore.cardOrigin(p.card) : null;
   const bits = ['已收藏'];
   if (c && c.date) bits.push(esc(c.date));
   if (c) bits.push(c.by === 'ride' ? '搭車抵達' : '走路抵達');
@@ -566,11 +569,7 @@ function mountPlace(root, params) {
 /* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義。
    已抵達（phase done）的那一趟不算「進行中」：人已經下車了，可以走去別的地方；
    但如果它就是這個地方、明信片還沒收（rodeHere），就不必再走一趟，直接去收那一張。 */
-function activeTrip() {
-  const t = APP.store.get('trip');
-  return t && t.phase !== 'done' ? t : null;
-}
-function rodeHere(p) { return !!rideTripFor(p) && !collected(p); }
+function rodeHere(p) { return !!APP.ride.trip.arrivedAt(p.id) && !collected(p); }
 
 function renderGoing(params) {
   const p = APP.place(params.id);
@@ -586,7 +585,7 @@ function renderGoing(params) {
         '<a class="btn-primary" href="#/unlock/' + encodeURIComponent(p.id) + '?ride=1" data-act="unlock-ride">收下這張明信片</a>' +
       '</div></div>';
   }
-  const trip = activeTrip();
+  const trip = APP.ride.trip.active();
   if (trip) {
     const dest = APP.place(trip.placeId);
     return backFabBar(exploreHome(p.id)) +
@@ -627,7 +626,7 @@ function renderGoing(params) {
 
 function mountGoing(root, params) {
   const p = APP.place(params.id);
-  if (!p || rodeHere(p) || activeTrip()) { APP.ui.setStatus('dark'); return; }
+  if (!p || rodeHere(p) || APP.ride.trip.active()) { APP.ui.setStatus('dark'); return; }
   const host = root.querySelector('[data-going-map]');
   let m = null;
   const geo = window.HSINCHU_PLACES && HSINCHU_PLACES[p.id];
@@ -689,21 +688,14 @@ function renderRoutes() {
 
 /* ---------------------------------------------------------------- /route/:id */
 
-function stopPlaceId(st) {
-  const c2p = M().CARD_TO_PLACE || {};
-  if (st.card && c2p[st.card]) return c2p[st.card];
-  const p = APP.place(st.card || st.id);
-  return p ? p.id : null;
-}
-
 /* 一條路線的畫面模型：每站的狀態、下一站、斷點 */
 function routeModel(R) {
   /* 下一站：路線有 feature（先去這裡）且還沒收就是它，否則第一個還沒收的（route.html 的規則） */
   const nx = R.stops.filter(function (st) { return R.feature && st.card === R.feature && !S().has(st.card); })[0] ||
              R.stops.filter(function (st) { return !S().has(st.card); })[0] || null;
   const stops = R.stops.map(function (st) {
-    const pid = stopPlaceId(st);
-    const p = pid ? APP.place(pid) : null;
+    const p = APP.place(st.card || st.id);   /* 站 → 地點（CARD_TO_PLACE 也在 APP.place 裡） */
+    const pid = p ? p.id : null;
     const dist = p && p.dist != null ? p.dist : st.dist;
     return { st: st, pid: pid, place: p, dist: dist,
              done: S().has(st.card), next: st === nx, walk: fmt.canWalk(dist) };

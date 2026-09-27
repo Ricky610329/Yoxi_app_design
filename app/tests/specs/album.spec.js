@@ -5,12 +5,12 @@
    ========================================================================== */
 T.spec('album', function (t) {
 
-  const ROUTES = ['/album', '/badges', '/postcards',
-                  '/postcard/p1', '/postcard/p4', '/postcard/p11', '/postcard/nope',
-                  '/badge/b1', '/badge/b4', '/badge/nope',
-                  '/footprint', '/lookback', '/week', '/elder', '/elder?card=p1'];
-  const back = function (app) { return app.click('main.view[data-view] a[data-back]'); };
-  const histI = function (app) { const s = app.win.history.state; return s && s.i; };
+  /* 共用路由表的 album 那幾條，加上搭車卡、金框卡、找不到的 id、長輩圖帶卡 */
+  const ROUTES = T.routes({ area: 'album', extra: ['/postcard/p4', '/postcard/p11', '/postcard/nope',
+                                                   '/badge/b4', '/badge/nope', '/elder?card=p1'] })
+    .map(function (r) { return r.path; });
+  const back = T.helpers.clickBack;
+  const histI = T.helpers.histI;
 
   /* 1. 每條 route 都能 render、沒有死按鈕、沒有禁用詞、可按數在上限內 */
   t.test('每條 album route 都能 render（無死按鈕／禁用詞、可按數在上限內）', async function (app) {
@@ -24,7 +24,7 @@ T.spec('album', function (t) {
       t.noDeadButtons(app, path);
       t.noBannedWords(app, { msg: path });
       const n = t.countTappables(app);
-      const max = /^\/album/.test(path) ? 12 : 10;
+      const max = T.tapMax(path);
       t.ok(n <= max, path + '：可按數 ' + n + ' ≤ ' + max);
     }
   }, { timeout: 30000 });
@@ -46,9 +46,8 @@ T.spec('album', function (t) {
     const S = app.STATE, A = app.APP;
     const n0 = A.album.visitedPlaces().length;
     t.eq(n0, A.album.footprintSeen().seen.length + A.album.footprintSeen().missing.length, '一開始＝足跡上的點');
-    S.collect('moat', { date: A.fmt.todayMMDD() });           /* p19：護城河的第二張 */
-    S.collect('hill', { date: A.fmt.todayMMDD() });           /* p21：十八尖山的第二張 */
-    A.emit('state:change');
+    A.state.collect('moat', { date: A.fmt.todayMMDD() });     /* p19：護城河的第二張 */
+    A.state.collect('hill', { date: A.fmt.todayMMDD() });     /* p21：十八尖山的第二張 */
     t.ok(S.has('p19') && S.has('p21'), '收下 p19、p21');
     await app.go('/album');
     t.eq(app.text('[data-stat="cards"]'), String(S.count()), '明信片張數 +2');
@@ -62,8 +61,7 @@ T.spec('album', function (t) {
     await app.go('/album');
     t.eq(app.$$('.postcard__new').length, 0, '一開始沒有「新」');
     const before = app.STATE.count();
-    t.ok(app.STATE.collect('glass-kiln', { date: app.APP.fmt.todayMMDD() }), 'collect 成功');
-    app.APP.emit('state:change');
+    t.ok(app.APP.state.collect('glass-kiln', { date: app.APP.fmt.todayMMDD() }), 'collect 成功');
     t.ok(app.STATE.lastIsNew, 'collect 後 lastIsNew');
     await app.go('/ride');
     await app.go('/album');
@@ -99,10 +97,8 @@ T.spec('album', function (t) {
 
   /* 4. p19–p22 收了之後要打得開：/postcards 收下的每一格連到詳情，整片網格算一個可按的東西 */
   t.test('/postcards 收下的格子連到明信片詳情（p19 也打得開）；網格是 data-gallery、可按數仍 ≤ 10', async function (app) {
-    await app.reset();
+    await app.reset({ cards: [{ id: 'moat' }] });              /* p19：不屬於任何獎章 */
     const S = app.STATE, A = app.APP;
-    S.collect('moat', { date: A.fmt.todayMMDD() });           /* p19：不屬於任何獎章 */
-    A.emit('state:change');
     await app.go('/postcards');
     const got = app.$$('[data-group="got"] [data-card]');
     t.eq(got.length, S.count(), '收下的每一張都在');
@@ -287,8 +283,7 @@ T.spec('album', function (t) {
     await app.click('[data-act="go-badges"]');
     await app.at('/badges');
     /* 收一張讓〈水路〉收齊：它變成最近收下的一枚 */
-    S.collect('p18', { date: app.APP.fmt.todayMMDD() });
-    app.APP.emit('state:change');
+    app.APP.state.collect('p18', { date: app.APP.fmt.todayMMDD() });
     await app.go('/album');
     t.eq(app.$('.alb-v2__medal-top').getAttribute('data-badge'), 'b2', '收齊〈水路〉後換它放大');
     t.eq(app.text('[data-stat="badges"]'), (got.length + 1) + '/' + B.length, '獎章數 +1');
@@ -555,14 +550,12 @@ T.spec('album', function (t) {
     await app.reset();
     const A = app.APP;
     const today = A.fmt.todayMMDD();
-    app.STATE.collect('glass-kiln', { date: today === '09.01' ? '09.02' : '09.01' });
-    A.emit('state:change');
+    A.state.collect('glass-kiln', { date: today === '09.01' ? '09.02' : '09.01' });
     t.eq(app.STATE.all.lastCard, 'p11', 'lastCard 是 p11（但不是今天收的）');
     await app.go('/lookback');
     t.ok(app.text('[data-lb-act="1"]').indexOf('今天多了一張') < 0, '不說今天多了一張');
     t.includes(app.text('[data-lb-act="1"]'), '今天沒有新的卡', '照實說今天沒有新的卡');
-    app.STATE.collect('neiwan', { date: today });
-    A.emit('state:change');
+    A.state.collect('neiwan', { date: today });
     await app.go('/ride');
     await app.go('/lookback');
     t.includes(app.text('[data-lb-act="1"]'), '今天多了一張', '今天收的才說');
@@ -600,10 +593,11 @@ T.spec('album', function (t) {
     const S = app.STATE, A = app.APP;
     const w0 = A.album.weekStats();
     const dd = function (d) { return String(w0.month).padStart(2, '0') + '.' + String(d).padStart(2, '0'); };
-    S.collect('glass-kiln', { date: dd(w0.now.from + 1) });   /* p11：範圍裡 */
-    S.collect('neiwan', { date: dd(w0.now.to + 3) });         /* p9：範圍之後、同一個月 */
-    S.collect('p10', { date: String(w0.month + 1).padStart(2, '0') + '.03' });   /* 下個月 */
-    A.emit('state:change');
+    A.state.batch(function () {
+      A.state.collect('glass-kiln', { date: dd(w0.now.from + 1) });   /* p11：範圍裡 */
+      A.state.collect('neiwan', { date: dd(w0.now.to + 3) });         /* p9：範圍之後、同一個月 */
+      A.state.collect('p10', { date: String(w0.month + 1).padStart(2, '0') + '.03' });   /* 下個月 */
+    });
     await app.go('/week');
     const w = A.album.weekStats();
     const lab = function (d) { return w.month + '月' + d + '日'; };
@@ -623,11 +617,8 @@ T.spec('album', function (t) {
   /* 11. 同一天收的卡 */
   t.test('同一天收的卡：最後收的（lastCard）排最前面，主卡疊卡與長輩圖預設都跟著', async function (app) {
     for (const order of [['glass-kiln', 'neiwan', 'p9'], ['neiwan', 'glass-kiln', 'p11']]) {
-      await app.reset();
-      const S = app.STATE, A = app.APP, today = A.fmt.todayMMDD();
-      S.collect(order[0], { date: today });
-      S.collect(order[1], { date: today });
-      A.emit('state:change');
+      await app.reset({ cards: [{ id: order[0] }, { id: order[1] }] });   /* 同一天（今天）連收兩張 */
+      const S = app.STATE, A = app.APP;
       t.eq(S.all.lastCard, order[2], 'lastCard 是 ' + order[2]);
       t.eq(A.album.recentCards(3)[0].id, order[2], 'recentCards 第一張是 ' + order[2]);
       await app.go('/album');
@@ -639,10 +630,8 @@ T.spec('album', function (t) {
 
   /* 6. 限定版只看 ride.js */
   t.test('搭 yoxi 去走得到的玻璃窯（900 m）：金框，但角標寫「yoxi 金框」不是「yoxi 限定版」', async function (app) {
-    await app.reset();
+    await app.reset({ cards: [{ id: 'glass-kiln', by: 'ride', km: 1 }] });
     const A = app.APP;
-    app.STATE.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
-    A.emit('state:change');
     t.eq(A.ride.limitedCard('p11'), false, 'ride.js：p11 不是限定版（走得到、沒有 +50）');
     await app.go('/postcard/p11');
     const card = app.$('[data-flip]');
@@ -680,16 +669,16 @@ T.spec('album', function (t) {
     const S = app.STATE, A = app.APP, today = A.fmt.todayMMDD();
     const ids = function (els) { return els.map(function (el) { return el.getAttribute('data-card'); }).join(','); };
     /* 之前同一天只把 lastCard 提前、其餘照編號倒序：這一組會排成 p10,p11,p9 */
-    ['glass-kiln', 'neiwan', 'p10'].forEach(function (id) { S.collect(id, { date: today }); });
-    A.emit('state:change');
+    A.state.batch(function () {
+      ['glass-kiln', 'neiwan', 'p10'].forEach(function (id) { A.state.collect(id, { date: today }); });
+    });
     t.eq(A.album.recentCards(3).map(function (p) { return p.id; }).join(','), 'p10,p9,p11', 'recentCards：最後收的在前');
     await app.go('/album');
     t.eq(ids(app.$$('.alb-v2__stack [data-card]')), 'p10,p9,p11', '疊卡由上到下 p10、p9、p11');
     await app.go('/postcards');
     t.eq(ids(app.$$('[data-group="got"] [data-card]').slice(0, 3)), 'p10,p9,p11', '/postcards 前三格也是');
     /* 跨年：01.05 比 demo 的 09.xx「小」，只比日期會排到最後 */
-    S.collect('p12', { date: '01.05' });
-    A.emit('state:change');
+    A.state.collect('p12', { date: '01.05' });
     await app.go('/album');
     t.eq(app.$('.alb-v2__stack-art--0').getAttribute('data-card'), 'p12', '跨年新收的在最上面');
   });
@@ -698,7 +687,7 @@ T.spec('album', function (t) {
   t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋抽到的畫風，詳情寫照片出處', async function (app) {
     await app.reset();
     const A = app.APP;
-    A.explore.collect('hill', { by: 'walk', style: 'oil', km: 1 });
+    T.helpers.collect(app, 'hill', { style: 'oil' });
     const ph = A.explore.cardPhoto('p21');
     t.eq(A.explore.postcardSrc('p21', 'oil'), '', '前提：p21 沒有生成成品');
     t.ok(ph && ph.file === 'p21-1.jpg', '前提：p21 有自己的實景照片');
@@ -779,8 +768,7 @@ T.spec('album', function (t) {
       if (g) t.ok(goldFrame(app, pic), '獎章的組成卡 ' + id + '：框看得到');
     });
     /* 今天搭車收的 p11：每日回顧「今天多了一張」、週回顧（在範圍裡的話）也是金框 */
-    S.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
-    A.emit('state:change');
+    A.state.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
     await app.go('/lookback');
     const lb = app.$('.alb-lb__card .postcard');
     t.ok(lb && lb.hasAttribute('data-gold-aura') && goldFrame(app, lb), '每日回顧：今天收的金框卡有框和金粉');
@@ -799,8 +787,7 @@ T.spec('album', function (t) {
     await app.reset();
     const A0 = app.STATE.all;
     A0.cards = {}; A0.km = 0; A0.lastCard = null; A0.lastSeen = null;
-    app.STATE.setToday({ photo: null, mood: null, done: false });
-    app.APP.emit('state:change');
+    app.APP.state.setToday({ photo: null, mood: null, done: false });
     await app.go('/album');
     t.ok(app.$('[data-medal-empty]'), '獎章卡是空的章位');
     t.ok(!app.$('.alb-v2__medal-top[data-badge]'), '沒有放大一枚還沒收的章');
@@ -834,5 +821,91 @@ T.spec('album', function (t) {
     t.ok(big(size('main.view .alb-fp__back')), '足跡返回 ' + size('main.view .alb-fp__back'));
     await app.go('/lookback');
     t.ok(big(size('main.view .alb-lb__exit')), '先離開 ' + size('main.view .alb-lb__exit'));
+  });
+
+  /* ============================================================ 回歸測試（從 flows.spec 搬來）
+     code review 與亂按 QA 找到的 bug，一條 bug 一條 test；只牽涉這個區塊的放這裡，名稱保留審查／QA／評估的編號
+     （對得上 docs/WORKLOG.md 與 flows.spec 裡跨區塊的那幾條）。 */
+  /* 今天（'MM.DD'）落在週回顧的哪一段：now（本週 7 天內）／prev（上週）／after（本週之後）／before */
+  function weekSlot(w, mmdd) {
+    const k = Number(mmdd.slice(0, 2)) * 100 + Number(mmdd.slice(3, 5));
+    const at = function (d) { return w.month * 100 + d; };
+    if (k >= at(w.now.from) && k <= at(w.now.to)) return 'now';
+    if (k > at(w.now.to)) return 'after';
+    if (k >= at(w.prev.from) && k <= at(w.prev.to)) return 'prev';
+    return 'before';
+  }
+
+  t.test('視覺 3：/footprint 覆蓋率用固定範圍算，平移地圖後不變', async function (app) {
+    await app.reset();
+    await app.go('/footprint');
+    const c0 = app.text('[data-coverage]');
+    t.eq(c0, String(app.APP.album.coverage()), '覆蓋率＝固定範圍公式');
+    const map = app.$('main.view .map[data-pan]');
+    const W = app.win;
+    const r = map.getBoundingClientRect();
+    const ev = function (type, x, y) { return new W.PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }); };
+    map.dispatchEvent(ev('pointerdown', r.left + 150, r.top + 300));
+    W.dispatchEvent(ev('pointermove', r.left + 190, r.top + 330));
+    W.dispatchEvent(ev('pointerup', r.left + 190, r.top + 330));
+    const layer = app.$('main.view .map__pan');
+    t.ok(layer && /translate/.test(layer.style.transform), '地圖真的平移了：' + (layer && layer.style.transform));
+    await app.tick(60);
+    t.eq(app.text('[data-coverage]'), c0, '平移後覆蓋率不變');
+    /* 換版面（iframe 變窄）重畫也不變 */
+    const fr = app.win.frameElement;
+    const w0 = fr.style.width;
+    fr.style.width = '340px';
+    await app.go('/album');
+    await app.go('/footprint');
+    t.eq(app.text('[data-coverage]'), c0, '版面寬度改變後覆蓋率不變');
+    fr.style.width = w0;
+  });
+
+  t.test('QA 5：/week 收一張卡之後：只有日期落在本週的才算進本週，公里與步數不減', async function (app) {
+    await app.reset();
+    await app.go('/week');
+    const before = app.APP.album.weekStats();
+    const range0 = app.text('.alb-cover__range');
+    const km0 = app.text('[data-cmp="km"] [data-now]'), st0 = app.text('[data-cmp="steps"] [data-now]');
+    T.helpers.collect(app, 'glass-kiln');
+    await app.go('/album');
+    await app.go('/week');
+    const after = app.APP.album.weekStats();
+    const slot = weekSlot(before, app.APP.fmt.todayMMDD());
+    t.eq(after.now.places, before.now.places + (slot === 'now' ? 1 : 0), '本週地方數（今天在 ' + slot + '）');
+    t.ok(after.now.km >= before.now.km, '公里不減 ' + before.now.km + ' → ' + after.now.km);
+    t.ok(after.now.steps >= before.now.steps, '步數不減');
+    if (slot !== 'prev') {
+      t.eq(JSON.stringify([after.prev.places, after.prev.km, after.prev.steps]), JSON.stringify([before.prev.places, before.prev.km, before.prev.steps]), '上週不變');
+    }
+    t.eq(app.text('.alb-cover__range'), range0, '標題就是圖表那 7 天，收卡不會拉長（見評估 5）');
+    t.eq(app.text('[data-cmp="km"] [data-now]'), km0, '畫面公里不變');
+    t.eq(app.text('[data-cmp="steps"] [data-now]'), st0, '畫面步數不變');
+    t.eq(app.text('[data-week-places]'), String(after.now.places), '畫面地方數＝weekStats');
+    t.eq(!!app.$('.alb-weekcard[data-card="p11"]'), slot === 'now', '今天收的卡只在今天落在本週時列在這一週');
+    if (slot === 'after') t.includes(app.text('[data-week-after]'), '1', '本週之後收的另寫一行，照實說還沒算進這一週');
+  });
+
+  t.test('評估 5：/week 標題永遠是圖表那 7 天，收卡後也不拉長', async function (app) {
+    await app.reset();
+    await app.go('/week');
+    const w0 = app.APP.album.weekStats();
+    const r0 = app.text('.alb-cover__range');
+    const lab = function (d) { return w0.month + '月' + d + '日'; };
+    t.eq(r0, lab(w0.now.from) + ' – ' + lab(w0.now.to), '收卡前：' + r0);
+    t.eq(w0.now.to, 21, '固定範圍終點是 21 日（HEALTH_STEPS 最後一個有步數的日子）');
+    t.eq(w0.now.to - w0.now.from + 1, app.$$('.alb-days__col').length, '標題的天數＝長條圖的天數');
+    T.helpers.collect(app, 'glass-kiln');
+    await app.go('/album');
+    await app.go('/week');
+    t.eq(app.text('.alb-cover__range'), r0, '收卡後標題不變：' + app.text('.alb-cover__range'));
+    const w1 = app.APP.album.weekStats();
+    t.eq(w1.now.from, w0.now.from, '起點不變');
+    t.eq(w1.now.to, w0.now.to, '終點不變');
+    t.eq(w1.now.steps, w0.now.steps, '步數只算有資料的日子（不變）');
+    await app.go('/album');
+    t.ok(app.$('[data-act="go-week"]'), '收藏首頁「回顧」一列有「這一週」入口（週回顧不再是孤兒頁）');
+    await app.reset();
   });
 });

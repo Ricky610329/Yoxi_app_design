@@ -40,12 +40,12 @@
 
 - **契約在 `app/ARCHITECTURE.md`**：API、DOM、測試、分工、路由總表都在那裡；改契約先改那份。人看的在 `app/README.md`。
 - **改 app 不動 `prototype/`**：app 只從 `../prototype` 讀共用檔；需要的新邏輯寫在 `app/`。
-- **四個區塊各自一支檔**：`js/views/{ride,explore,album,system}.js`＋同名的 `css/views/X.css`＋`tests/specs/X.spec.js`；跨區塊的動作走 `APP.ride.setDropoff`、`APP.explore.collect`、`APP.ui.push`、`APP.ui.share`，不改 `js/app.js`。
+- **四個區塊各自一支檔**：`js/views/{ride,explore,album,system}.js`＋同名的 `css/views/X.css`＋`tests/specs/X.spec.js`；跨區塊的動作走 `APP.ride.setDropoff`、`APP.explore.collect`、`APP.ui.push`、`APP.ui.share`，不改 `js/app.js`。行程只透過 `APP.ride.trip`（`store.trip` 不要直接讀寫）、寫 `STATE` 只透過 `APP.state`（它會發 `state:change`）。
 - **按鈕用 `element.onclick`＋`data-act="動詞-名詞"`**：測試靠 `data-act` 點；返回鍵是 `<a href="#" data-back="/x">`。
 - **新 CSS 不寫 hex**：顏色、字級、圓角、動畫時間全用 `tokens.css` 的變數（測試會掃）。數字一律走 `APP.fmt`／`STATE`／`MOCK`。
 - **每條 route 要有 spec**：render、死按鈕、禁用詞、可按數（一般 ≤ 10，`/explore`、`/album` ≤ 12）、數字對公式、返回鍵。
 - **收工前**：`python app/tests/run.py` 全綠，而且 `python prototype/tools/verify-quiet.py` 八段 PASS、六條承諾數字與基準相同。
-- **新增檔案**：加進 `app/sw.js` 的 `PRECACHE`、`VERSION` 加一，跑 `python app/tools/check-sw.py`（清單與檔案對不上就 exit 1；`cache.addAll` 全有全無，一個 404 整個安裝失敗）。
+- **新增檔案**：加進 `app/sw.js` 的 `PRECACHE`、`app/js/version.js` 的版本加一（唯一來源），跑 `python app/tools/check-sw.py`（清單與檔案對不上就 exit 1；`cache.addAll` 全有全無，一個 404 整個安裝失敗）。
 
 ## `site/`（介紹網站）的規矩
 

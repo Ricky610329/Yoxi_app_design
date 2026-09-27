@@ -6,50 +6,14 @@
    ========================================================================== */
 T.spec('app', function (t) {
 
-  /* 路由表（§8）。flow：有狀態前提的流程頁，允許被導走（例：沒有行程時 /trip 可能回 /ride）。 */
-  function routes(app) {
-    const M = app.MOCK || {};
-    const rid = (M.ROUTES && M.ROUTES[0] && M.ROUTES[0].id) || 'rail';
-    return [
-      { path: '/', expect: '/ride' },
-      { path: '/welcome', flow: true },
-      { path: '/ride' },
-      { path: '/dropoff' },
-      { path: '/pickup' },
-      { path: '/trip', flow: true },
-      { path: '/trip/done', flow: true },
-      { path: '/drawer' },
-      { path: '/points' },
-      { path: '/notify' },
-      { path: '/trips' },
-      { path: '/explore' },
-      { path: '/explore/map' },
-      { path: '/place/glass-kiln' },
-      { path: '/place/neiwan' },
-      { path: '/going/glass-kiln', flow: true },
-      { path: '/unlock/glass-kiln', flow: true },
-      { path: '/unlock/neiwan?ride=1', flow: true },
-      { path: '/routes' },
-      { path: '/route/' + rid },
-      { path: '/album' },
-      { path: '/badges' },
-      { path: '/postcards' },
-      { path: '/postcard/p1' },
-      { path: '/badge/b1' },
-      { path: '/footprint' },
-      { path: '/lookback' },
-      { path: '/week' },
-      { path: '/elder' },
-      { path: '/settings' },
-      { path: '/no-such-page', notFound: true },
-    ];
-  }
-  /* 路由表的 path 清單要在登記時就知道（一條一個 test），MOCK 還沒載，路線 id 在跑的時候再換 */
-  const TABLE = routes({ MOCK: null });
+  /* 路由表（§8）：harness 的 T.ROUTES（每條 route 一個範例網址）＋一條 404。
+     flow：有狀態前提的流程頁，允許被導走（例：沒有行程時 /trip 可能回 /ride）。 */
+  const TABLE = T.routes().concat([{ path: '/no-such-page', notFound: true }]);
+  function routes() { return TABLE; }
 
   TABLE.forEach(function (r, i) {
     t.test('route ' + (r.path.indexOf('/route/') === 0 ? '/route/:ROUTES[0]' : r.path), async function (app) {
-      const cur = routes(app)[i];
+      const cur = routes()[i];
       /* 每條從叫車首頁出發，避免上一條留下的覆蓋層影響 */
       if (app.route().path !== '/ride') await app.go('/ride');
       const landed = await app.go(cur.path, { expect: cur.expect, redirectOk: !!cur.flow || !!cur.notFound });
@@ -71,7 +35,7 @@ T.spec('app', function (t) {
   });
 
   t.test('沒有任何 placeholder view', async function (app) {
-    const list = routes(app);
+    const list = routes();
     const left = [];
     for (let i = 0; i < list.length; i++) {
       await app.go(list[i].path, { expect: list[i].expect, redirectOk: true });
@@ -80,16 +44,29 @@ T.spec('app', function (t) {
     t.eq(left.length, 0, '還是 placeholder 的 route：' + left.join('、'));
   }, 30000);
 
-  /* §6.3-4：/explore 與 /album 兩個索引頁 ≤ 12，其餘 ≤ 10 */
-  const TAP_MAX = { '/explore': 12, '/album': 12 };
+  /* T.ROUTES 是各 spec 共用的路由表：每一條註冊的 route 都要有範例網址，
+     不然新加的 route 在 app／flows／各區塊的 render 掃描裡全部缺席 */
+  t.test('T.ROUTES 對得上 APP.routes()：每條註冊的 route 都有範例網址', async function (app) {
+    const A = app.APP;
+    const covered = {};
+    T.ROUTES.forEach(function (r) {
+      const m = A.resolve(r.expect || r.path);
+      t.ok(m.name !== '_404' && m.name !== '_placeholder', r.path + ' 是註冊的 route（' + m.name + '）');
+      covered[m.pattern] = true;
+    });
+    const left = A.routes().filter(function (r) { return !covered[r.pattern]; }).map(function (r) { return r.pattern; });
+    t.eq(left.length, 0, '沒有範例網址的 route：' + left.join('、'));
+  });
+
+  /* §6.3-4：/explore 與 /album 兩個索引頁 ≤ 12，其餘 ≤ 10（T.tapMax） */
   t.test('每個 route 可按數 ≤ 10（索引頁 ≤ 12；景點與 tab bar 不算）', async function (app) {
-    const list = routes(app);
+    const list = routes();
     const over = [];
     for (let i = 0; i < list.length; i++) {
       const landed = await app.go(list[i].path, { expect: list[i].expect, redirectOk: true });
       await app.tick(40);
       const n = t.countTappables(app);
-      const max = TAP_MAX[landed] || 10;
+      const max = T.tapMax(landed);
       if (n > max) over.push(landed + '=' + n + '（上限 ' + max + '）');
     }
     t.eq(over.length, 0, '超過 10：' + over.join('、'));
@@ -172,6 +149,57 @@ T.spec('app', function (t) {
     await app.at('/explore');
   });
 
+  t.test('nav.prev／nav.up：history.state 記著每一筆從哪裡來、怎麼來的', async function (app) {
+    await app.reset();
+    let N = app.APP.nav;
+    await app.go('/album');
+    await app.go('/postcards');
+    const prev = N.prev();
+    t.eq(prev && prev.path, '/album', 'prev：上一筆是 /album');
+    t.eq(prev && prev.tab, 'album', 'prev.tab：那一頁的底欄');
+    t.eq(app.win.history.state.via, 'push', 'nav.go 疊上來的是 push');
+    t.eq(N.upAction(), 'back', '從上一層點進來：退一格');
+    t.eq(N.upAction({ backIf: function (p) { return p.path === '/ride'; } }), 'replace', 'backIf 不要：就地換');
+    /* 真的重新整理（app.reload() 是換一份新文件、歷史從頭來；這裡要的是瀏覽器的重新整理）：來處還在 history.state 裡 */
+    const d0 = app.doc;
+    app.win.location.reload();
+    await app.waitFor(function () {
+      const d = app.doc;
+      return d && d !== d0 && d.documentElement.getAttribute('data-view-ready') === '1';
+    }, 4000, '重新整理完成');
+    N = app.APP.nav;                          /* 重新整理之後是新的一份 APP */
+    t.eq(N.prev() && N.prev().path, '/album', '重新整理之後 prev 還在');
+    t.eq(N.upAction(), 'back', '重新整理之後照樣退一格');
+    /* 流程頁（沒有底欄）來的：不退回去 */
+    await app.go('/unlock/glass-kiln');
+    await app.go('/postcard/p1');
+    t.eq(N.prev() && N.prev().tab, null, '/unlock 沒有底欄');
+    t.eq(N.upAction(), 'replace', '從流程頁來：換成上一層');
+    t.eq(N.up('/postcards'), 'replace', 'nav.up 回報它怎麼走');
+    await app.at('/postcards');
+    t.eq(app.win.history.state.via, 'up', '換上來的那一層記成 up');
+    t.eq(N.upAction(), 'replace', '換上來的那一層再往上也是換（它的上一筆不是來處）');
+    /* 切底欄停回來：上一筆是別的 tab，不是來處 */
+    await app.click('#tabbar [data-tab-id="ride"]');
+    await app.at('/ride');
+    await app.click('#tabbar [data-tab-id="album"]');
+    await app.at('/postcards');
+    t.eq(app.win.history.state.via, 'tab', '切底欄疊上來的是 tab');
+    t.eq(N.upAction(), 'replace', '切底欄停回來：換成上一層');
+    /* 點連結（<a href="#/…">）疊上來的 */
+    await app.go('/album');
+    await app.click('main.view [data-act="go-badges"]');
+    await app.at('/badges');
+    t.eq(app.win.history.state.via, 'link', '點連結疊上來的是 link');
+    t.eq(N.prev() && N.prev().path, '/album', 'link 的來處也記著');
+    /* 深連結：沒有上一筆 */
+    await app.reset({ hash: '/postcard/p1' });
+    await app.at('/postcard/p1');
+    N = app.APP.nav;
+    t.eq(N.prev(), null, '深連結沒有上一筆');
+    t.eq(N.upAction(), 'replace', '深連結：換成上一層');
+  });
+
   t.test('404：未知 path 有畫面且能回叫車', async function (app) {
     await app.go('/definitely/not/here', { redirectOk: true });
     t.ok(app.view(), '有 main.view');
@@ -185,8 +213,7 @@ T.spec('app', function (t) {
     t.ok(!S.has(card), '初始沒有 ' + card);
     const n0 = S.count();
     const A = app.APP;
-    if (A.explore && typeof A.explore.collect === 'function') A.explore.collect('glass-kiln', { by: 'walk', km: 1 });
-    else { S.collect('glass-kiln', { by: 'walk', date: A.fmt.todayMMDD() }); A.emit && A.emit('state:change'); }
+    T.helpers.collect(app, 'glass-kiln');
     t.eq(S.count(), n0 + 1, 'count +1');
     await app.reload();
     t.ok(app.STATE.has(card), 'reload 之後 ' + card + ' 還在');
@@ -197,7 +224,7 @@ T.spec('app', function (t) {
   t.test('store 與 STATE 互不覆蓋', async function (app) {
     await app.reset();
     const A = app.APP;
-    A.store.set('dropoff', { id: 'neiwan', name: '內灣', km: 28, setAt: 1, via: 'k1' });
+    A.store.set('dropoff', T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }));
     app.STATE.collect('glass-kiln', { by: 'walk' });
     const st = app.storage('state');
     const so = app.storage('store');
@@ -617,6 +644,29 @@ T.spec('app', function (t) {
     }
   });
 
+  t.test('APP.map.mount({ pan:true }).destroy()：連同 initPan 掛在 window 上的 listener 一起拆（同一頁重畫地圖不會越疊越多）', async function (app) {
+    await app.go('/album');
+    const W = app.win, A = app.APP;
+    const host = app.doc.createElement('div');
+    host.style.cssText = 'position:absolute;left:0;top:0;width:300px;height:300px';
+    app.$('main.view').appendChild(host);
+    const added = [], removed = [];
+    const oa = W.addEventListener, or = W.removeEventListener;
+    W.addEventListener = function (type, fn, o) { added.push(fn); return oa.call(W, type, fn, o); };
+    W.removeEventListener = function (type, fn, o) { removed.push(fn); return or.call(W, type, fn, o); };
+    try {
+      const m = A.map.mount(host, { style: 'paper', center: 'station', spanM: 1800, spots: false, pan: true });
+      W.addEventListener = oa;
+      t.ok(added.length >= 2, 'initPan 在 window 上掛了 listener：' + added.length);
+      m.destroy();
+      t.ok(added.length > 0 && added.every(function (fn) { return removed.indexOf(fn) >= 0; }), 'destroy 全部拆掉');
+    } finally {
+      W.addEventListener = oa;
+      W.removeEventListener = or;
+      host.remove();
+    }
+  });
+
   t.test('APP.map.mount 推開景點後 m.spots 的 px/py 跟畫的位置一致', async function (app) {
     await app.reset();
     tempView(app, '_t-map', {
@@ -639,5 +689,98 @@ T.spec('app', function (t) {
     t.ok(moved > 0, '市中心的景點有被推開（' + moved + '）');
     t.eq(spotOverlaps(app).hits.length, 0, '沒有重疊');
     m.destroy();
+  });
+
+  /* ============================================================ 回歸測試（從 flows.spec 搬來）
+     code review 與亂按 QA 找到的 bug，一條 bug 一條 test；只牽涉這個區塊的放這裡，名稱保留審查／QA／評估的編號
+     （對得上 docs/WORKLOG.md 與 flows.spec 裡跨區塊的那幾條）。 */
+  function now() { return new Date().toISOString(); }
+
+  t.test('審查 4：返回鍵連按兩下只退一格（不會多退、不會退出 app）', async function (app) {
+    await app.reset();
+    await app.go('/explore');
+    await app.go('/place/glass-kiln');
+    const b = app.$('main.view[data-view] a[data-back]');
+    b.click(); b.click();
+    await app.at('/explore');
+    await app.tick(300);
+    t.eq(app.route().path, '/explore', '停在 /explore（不是再退一格的 /ride）');
+    /* 放開之後返回照常可用 */
+    await app.go('/routes');
+    app.APP.nav.back('/ride');
+    await app.at('/explore');
+  });
+
+  t.test('審查 5：確認框同一時間只有一個；連按「取消行程」不會疊兩層', async function (app) {
+    await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
+    await app.go('/trip');
+    const c = app.$('[data-act="cancel-trip"]');
+    c.click(); c.click();
+    await app.tick(30);
+    t.eq(app.$$('.app-confirm').length, 1, '只有一個確認框');
+    let second = 'pending';
+    app.APP.ui.confirm({ text: 'x' }).then(function (v) { second = v; });
+    await app.tick(30);
+    t.eq(second, null, '已經開著時，新的 confirm 直接回 null（沒有回答）');
+    t.eq(app.$$('.app-confirm').length, 1, '還是一個');
+    await app.click('.app-confirm [data-act="confirm-yes"]');
+    await app.at('/ride');
+    t.eq(app.APP.store.get('trip'), null, '取消一次');
+    t.eq(app.$$('.app-confirm').length, 0, '確認框收掉');
+  });
+
+  t.test('審查 7：id 是 Object 原型上的名字（constructor、toString）不會被當成今天的地方', async function (app) {
+    await app.reset();
+    ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'valueOf'].forEach(function (id) {
+      t.eq(app.APP.place(id), null, "APP.place('" + id + "') → null");
+    });
+    t.eq(app.APP.place(null), null, 'APP.place(null) → null');
+    t.eq(app.APP.place(undefined), null, 'APP.place(undefined) → null');
+    await app.go('/place/constructor');
+    t.ok(app.$('[data-ex-missing]'), '/place/constructor 顯示找不到');
+    await app.go('/going/toString');
+    t.ok(app.$('[data-ex-missing]'), '/going/toString 顯示找不到');
+    await app.go('/unlock/constructor');
+    t.ok(app.$('[data-ex-missing]') && !app.$('[data-act="collect"]'), '/unlock/constructor 不能收');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+  });
+
+  t.test('QA 3：桌機 1280×720／1366×768 整支手機縮小，tab bar 看得到；手機模式不縮', async function (app) {
+    await app.reset();
+    await app.go('/ride');
+    const fr = app.win.frameElement;
+    const w0 = fr.style.width, h0 = fr.style.height;
+    try {
+      for (const sz of [[1280, 720], [1366, 768], [1440, 900]]) {
+        fr.style.width = sz[0] + 'px'; fr.style.height = sz[1] + 'px';
+        await app.waitFor(function () { return app.win.innerHeight === sz[1]; }, 2000, 'iframe 變成 ' + sz.join('×'));
+        /* headless 下畫面外的 iframe 只會派第一次 resize 事件（沒有 rendering step）；
+           真的瀏覽器每次都會派。這裡補派一次，驗的是 app 的 resize 處理（節流後重算）。 */
+        app.win.dispatchEvent(new app.win.Event('resize'));
+        await app.tick(200);
+        const W = app.win;
+        const scale = Number(W.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale'));
+        /* 外框上下留 .stage 的 padding（量出來的，不寫死） */
+        const cs = W.getComputedStyle(app.$('.stage'));
+        const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        t.eq(scale, Math.round(Math.min(1, (sz[1] - pad) / 844) * 1000) / 1000, sz.join('×') + ' 的 --device-scale');
+        t.ok(app.doc.documentElement.scrollHeight <= sz[1] + 1, sz.join('×') + '：整頁不用捲');
+        const tb = app.$('#tabbar').getBoundingClientRect();
+        t.ok(tb.height > 0 && tb.bottom <= W.innerHeight, sz.join('×') + '：tab bar 底 ' + Math.round(tb.bottom) + ' ≤ ' + W.innerHeight);
+        const dv = app.$('.device').getBoundingClientRect();
+        t.ok(dv.top >= 0, sz.join('×') + '：手機頂端 ' + Math.round(dv.top) + ' ≥ 0');
+        const dp = app.$('#demo-panel').getBoundingClientRect();
+        const overlap = !(dp.left >= dv.right || dp.right <= dv.left || dp.top >= dv.bottom || dp.bottom <= dv.top);
+        t.ok(!overlap, sz.join('×') + '：demo 面板不壓在手機上');
+      }
+      fr.style.width = '390px'; fr.style.height = '844px';
+      await app.waitFor(function () { return app.win.innerWidth === 390; }, 2000, '回到手機寬');
+      app.win.dispatchEvent(new app.win.Event('resize'));
+      await app.tick(200);
+      t.eq(app.win.getComputedStyle(app.doc.documentElement).getPropertyValue('--device-scale').trim(), '1', '手機模式 --device-scale 1');
+      t.eq(app.win.getComputedStyle(app.$('.device')).transform, 'none', '手機模式不縮放');
+    } finally {
+      fr.style.width = w0; fr.style.height = h0;
+    }
   });
 });

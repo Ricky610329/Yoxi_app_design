@@ -54,29 +54,33 @@ function emit(name, data) {
    讀進來一律跟 fresh() 對過型別，版本只是讓下一次改結構時知道要不要搬資料。 */
 const STORE_VERSION = 2;
 
+/* store 的每一把鍵：預設值、型別、類別。新增一把鍵只要在這裡加一行（契約 §3.3 的表跟著寫）。
+   型別：'?' 結尾＝也可以是 null；map＝一般物件（不是陣列）。預設是 null 的鍵光看預設值看不出型別，所以寫在這裡。
+   類別：footprint＝「你去過哪、做過什麼」，清除我的足跡（store.clear('footprint')）回到預設；
+        pref＝偏好，清除足跡時留著；meta＝存檔結構本身。 */
+const KEYS = {
+  version:     { def: STORE_VERSION, kind: 'number', group: 'meta' },
+  onboarded:   { def: false, kind: 'boolean', group: 'pref' },
+  dropoff:     { def: null,  kind: 'object?', group: 'footprint' },  /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
+  trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km, via, stars? }；只有 APP.ride.trip 讀寫 */
+  pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
+  rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
+  rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
+  draws:       { def: {},    kind: 'map',     group: 'footprint' },  /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
+  cardStyle:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時抽到的款式 key（explore） */
+  fxMute:      { def: false, kind: 'boolean', group: 'pref' },       /* 抵達與抽卡的音效關掉（explore） */
+  tabPaths:    { def: { ride: '/ride', album: '/album' }, kind: 'map', group: 'footprint' },  /* 各 tab 最後停的 path */
+};
+
 function fresh() {
-  return {
-    version: STORE_VERSION,
-    onboarded: false,
-    dropoff: null,        /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
-    trip: null,           /* { placeId, phase:'matching'|'riding'|'done', startedAt, rated, km } */
-    pushes: [],           /* [{ when:'am'|'pm', at:ISO }] */
-    arrivedDemo: null,    /* placeId */
-    rideSpots: true,      /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
-    rideVia: {},          /* 明信片 id → 這趟車是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因 */
-    draws: {},            /* 地點 id → 走路抵達抽到、還沒收的款式 key（explore） */
-    cardStyle: {},        /* 明信片 id → 收下時抽到的款式 key（explore） */
-    fxMute: false,        /* 抵達與抽卡的音效關掉（explore） */
-    tabPaths: { ride: '/ride', album: '/album' },
-  };
+  const o = {};
+  Object.keys(KEYS).forEach(function (k) {
+    const d = KEYS[k].def;
+    o[k] = d && typeof d === 'object' ? JSON.parse(JSON.stringify(d)) : d;
+  });
+  return o;
 }
 
-/* 每個鍵收什麼型別（預設是 null 的鍵光看 fresh() 看不出來）。'?' 結尾＝也可以是 null；map＝一般物件（不是陣列） */
-const KIND = {
-  version: 'number', onboarded: 'boolean', dropoff: 'object?', trip: 'object?', pushes: 'array',
-  arrivedDemo: 'string?', rideSpots: 'boolean', rideVia: 'map', draws: 'map', cardStyle: 'map',
-  fxMute: 'boolean', tabPaths: 'map',
-};
 function kindOk(kind, v) {
   if (!kind) return true;
   const nullable = kind.slice(-1) === '?';
@@ -108,7 +112,7 @@ function load() {
       s[k] = got[k];
     });
     Object.keys(base).forEach(function (k) {
-      if (!Object.prototype.hasOwnProperty.call(got, k) || !kindOk(KIND[k], got[k])) s[k] = base[k];
+      if (!Object.prototype.hasOwnProperty.call(got, k) || !kindOk(KEYS[k].kind, got[k])) s[k] = base[k];
     });
     /* tabPaths 只收「/ 開頭的字串」：舊版或手改過的值（null、數字、整串字串）不能讓 nav.tab 導到怪地方。
        第 1 版的 tabPaths.explore 不再用（探索歸在叫車底下），順手丟掉 */
@@ -143,8 +147,59 @@ const store = {
     Object.keys(obj || {}).forEach(function (k) { emit('store:change', { key: k }); });
   },
   reset: function () { S = fresh(); save(); emit('store:change', { key: null }); },
+  /* 一類鍵回到預設（KEYS 的 group；清除我的足跡＝clear('footprint')）。別類的鍵、不認得的鍵不動。回傳清了哪些鍵 */
+  clear: function (group) {
+    const f = fresh();
+    const keys = Object.keys(KEYS).filter(function (k) { return KEYS[k].group === group; });
+    keys.forEach(function (k) { S[k] = f[k]; });
+    save();
+    keys.forEach(function (k) { emit('store:change', { key: k }); });
+    return keys;
+  },
   /* 重新從 localStorage 讀（測試換了 localStorage 之後用） */
   reload: function () { S = load(); },
+};
+
+/* --------------------------------------------------------------------------
+   state：寫 STATE（prototype/js/state.js，app 不改它）的唯一入口
+   每一次寫都跟著 emit('state:change')——統計、設定開關、demo 面板靠它更新，不用每個呼叫的人記得配對。
+   batch(fn) 把一串寫入（可以夾著 APP.store 的寫入）包成一次 state:change，寫完才發：listener 看到的一定是
+   寫完的樣子。讀照舊直接讀 STATE（has、card、count、all…）。
+   -------------------------------------------------------------------------- */
+let stateDepth = 0;
+let stateDirty = false;
+function stateChanged() {
+  if (stateDepth) stateDirty = true;
+  else emit('state:change');
+}
+const state = {
+  batch: function (fn) {
+    stateDepth++;
+    try { return fn(); }
+    finally {
+      stateDepth--;
+      if (!stateDepth && stateDirty) { stateDirty = false; emit('state:change'); }
+    }
+  },
+  /* 收下一張明信片（只有 APP.explore.collect 用；它決定搭車或走路、款式、公里）。回傳是否新收 */
+  collect: function (id, opt) { const r = W.STATE.collect(id, opt); stateChanged(); return r; },
+  setToday: function (patch) { W.STATE.setToday(patch); stateChanged(); },
+  setSetting: function (k, v) { W.STATE.setSetting(k, v); stateChanged(); },
+  markLastSeen: function () { W.STATE.markLastSeen(); stateChanged(); },
+  /* 回到 demo 初始（8 張明信片、原本的點數與設定） */
+  reset: function () { W.STATE.reset(); stateChanged(); },
+  /* 清除我的足跡在 STATE 的那一半：真的清空（不是回到 demo 的 8 張）。哪些欄位算足跡只寫在這裡；
+     STATE.settings 的開關是偏好，留著。state.js 沒有清空的 API：STATE.all 是活物件，改完用 setToday() 觸發存檔 */
+  wipe: function () {
+    const A = W.STATE.all;
+    A.cards = {};
+    A.km = 0;
+    A.lastCard = null;
+    A.lastSeen = null;
+    A.today = { photo: null, mood: null, done: false };
+    W.STATE.setToday({ photo: null, mood: null, done: false });
+    stateChanged();
+  },
 };
 
 /* --------------------------------------------------------------------------
@@ -255,6 +310,28 @@ function canonId(id) {
   if (!isCard) return id;
   const hit = basePlaces().filter(function (p) { return cardOf(p) === id; })[0];
   return hit ? hit.id : id;
+}
+
+/* 明信片 id → 城市足跡上的地點 id（地圖認得的地方）；對不到就 null。
+   依序：CARD_TO_PLACE → 景點同名 → hs-places 名稱以卡名開頭（護城河親水公園、十八尖山、青草湖）。
+   跟 APP.place(id).id 刻意不同：足跡的「地方」以地圖上認得的地點為準，所以路線站的卡會落到同名的地點
+   （p3 → moat、p6 → hill、p8 → lake）；APP.place 把它們當成只在路線上的站（id 就是明信片 id）。
+   地圖上沒有的站（p10、p12–p18）這裡是 null，APP.place 則是明信片 id。
+   兩種答案都是現行行為，產品決定之前不合併；要合併時改這裡跟 tests/unit/place.test.mjs 的對照表。 */
+function footprintPlace(cardId) {
+  const m = M();
+  if (m.CARD_TO_PLACE && Object.prototype.hasOwnProperty.call(m.CARD_TO_PLACE, cardId) && m.CARD_TO_PLACE[cardId]) {
+    return m.CARD_TO_PLACE[cardId];
+  }
+  const c = (m.POSTCARDS || []).filter(function (x) { return x.id === cardId; })[0];
+  if (!c) return null;
+  const spot = (m.SPOTS || []).filter(function (s) { return s.name === c.name; })[0];
+  if (spot) return spot.id;
+  const geo = W.HSINCHU_PLACES || {};
+  const hit = Object.keys(geo).filter(function (k) {
+    return geo[k] && geo[k].name && geo[k].name.indexOf(c.name) === 0;
+  })[0];
+  return hit || null;
 }
 
 function place(id) {
@@ -457,9 +534,12 @@ function durationMs() {
   return 240;
 }
 
-function stamp(i, replaceUrl) {
+/* history.state 是這一筆歷史的來歷：{ yoxiApp, i（序號）, prev（上一筆的網址）, via }。
+   via＝這一筆怎麼來的：push（nav.go）、link（點 <a href="#/…">）、tab（切底欄）、up（nav.up 換上來的上一層）。
+   換掉這一筆（replace）不動 prev 與 via：上一筆還是同一筆。 */
+function stamp(i, replaceUrl, extra) {
   try {
-    const st = Object.assign({}, history.state || {}, { yoxiApp: 1, i: i });
+    const st = Object.assign({}, history.state || {}, { yoxiApp: 1, i: i }, extra || {});
     if (replaceUrl != null) history.replaceState(st, '', replaceUrl);
     else history.replaceState(st, '');
   } catch (e) { /* ignore */ }
@@ -481,11 +561,12 @@ const nav = {
     const replace = !!opt.replace || sameHash(url, location.hash);
     try {
       if (replace) {
-        history.replaceState({ yoxiApp: 1, i: curIdx }, '', url);
+        history.replaceState(Object.assign({}, history.state || {}, { yoxiApp: 1, i: curIdx }, opt.via ? { via: opt.via } : {}), '', url);
         if (!opt.dir) dir = 'none';
       } else {
+        const prev = location.hash;
         curIdx += 1;
-        history.pushState({ yoxiApp: 1, i: curIdx }, '', url);
+        history.pushState({ yoxiApp: 1, i: curIdx, prev: prev, via: opt.via || (dir === 'tab' ? 'tab' : 'push') }, '', url);
       }
     } catch (e) {
       /* 萬一 pushState 被擋（某些 file:// 環境）：退回改 hash，讓 hashchange 接手 */
@@ -506,6 +587,37 @@ const nav = {
       return;
     }
     nav.go(fallback || '/ride', { replace: true, dir: 'back' });
+  },
+  /* 上一筆歷史（這一筆是從哪一頁來的）：{ hash, path, pattern, name, tab }，沒有（第一筆、深連結）就 null。
+     tab 是那一頁的底欄（找不到頁、尚未建檔是 null） */
+  prev: function () {
+    const st = history.state;
+    if (!(curIdx > 0) || !st || typeof st.prev !== 'string') return null;
+    const p = parse(st.prev);
+    const r = resolve(p.path);
+    const real = r.name !== '_404' && r.name !== '_placeholder';
+    return { hash: st.prev, path: p.path, pattern: r.pattern, name: r.name, tab: real && r.def ? (r.def.tab || null) : null };
+  },
+  /* 回到邏輯上的上一層（子頁、下車點頁的返回）：上一筆就是來處、而且 backIf(上一筆) 說好 → 照歷史退一格
+     （歷史裡不會疊兩層、返回鍵不會回到剛離開的頁）；不然 → 就地換成 parent（不多一筆歷史）。
+     「上一筆不是來處」：深連結與重新整理後的第一筆、切底欄停回來的（via tab）、nav.up 換上來的（via up，
+     它的上一筆是更早的來處）、上一筆跟這一頁同一個網址。
+     backIf 預設：上一筆是有底欄的一般頁、而且不是這一頁（流程頁、找不到頁不退回去）。opt.dir：換上去時的轉場（預設 back） */
+  up: function (parent, opt) {
+    opt = opt || {};
+    if (nav.upAction(opt) === 'back') { nav.back(parent); return 'back'; }
+    nav.go(parent, { replace: true, dir: opt.dir || 'back', via: 'up' });
+    return 'replace';
+  },
+  /* nav.up 會怎麼走（'back' | 'replace'），不導覽：給測試與想先知道的人 */
+  upAction: function (opt) {
+    opt = opt || {};
+    const st = history.state;
+    if (!st || st.via === 'tab' || st.via === 'up') return 'replace';
+    const prev = nav.prev();
+    if (!prev || sameHash(prev.hash, location.hash)) return 'replace';
+    const ok = opt.backIf ? !!opt.backIf(prev) : (!!prev.tab && prev.path !== parse(location.hash).path);
+    return ok ? 'back' : 'replace';
   },
   tab: function (id) {
     id = tabGroup(id);
@@ -566,9 +678,9 @@ function onHashChange() {
     if (!dir) dir = st.i < curIdx ? 'back' : (st.i > curIdx ? 'push' : 'none');
     curIdx = st.i;
   } else {
-    /* 點 <a href="#/…"> 產生的新紀錄：蓋上序號 */
+    /* 點 <a href="#/…"> 產生的新紀錄：蓋上序號與來處（上一筆畫的是 routedHash） */
     curIdx += 1;
-    stamp(curIdx);
+    stamp(curIdx, null, { prev: routedHash, via: 'link' });
     if (!dir) dir = 'push';
   }
   route(dir);
@@ -1006,10 +1118,8 @@ const ui = {
        已經有一個開著時，新的這次直接回 null（第一個照常等使用者回答）。 */
     if (document.querySelector('.app-confirm')) return Promise.resolve(null);
     return new Promise(function (resolve) {
-      const host = $('.device') || document.body;
       const scrim = document.createElement('div');
       scrim.className = 'scrim app-confirm';
-      scrim.setAttribute('data-overlay', '');
       scrim.innerHTML =
         '<div class="modal app-modal" role="dialog" aria-modal="true">' +
           '<p class="modal__text">' + esc(o.text || '確定嗎？') + '</p>' +
@@ -1017,29 +1127,40 @@ const ui = {
             '<button class="btn-primary" type="button" data-act="confirm-yes">' + esc(o.yes || '好') + '</button>' +
             '<button class="btn-ghost" type="button" data-act="confirm-no">' + esc(o.no || '先不要') + '</button>' +
           '</div></div>';
-      let release = null;
-      let settled = false;
-      const end = function (v) {
-        if (settled) return;
-        settled = true;
-        scrim.remove();
-        if (release) release();
-        resolve(v);
-      };
+      /* 沒有回答就被關掉（Esc、點遮罩、導覽時 dismissOverlays）：null，動作不會落在新的一頁上 */
+      let answer = null;
       const yesB = scrim.querySelector('[data-act="confirm-yes"]');
       const noB = scrim.querySelector('[data-act="confirm-no"]');
-      yesB.onclick = function () { end(true); };
-      noB.onclick = function () { end(false); };
-      scrim.onclick = function (e) { if (e.target === scrim) end(null); };
-      /* 導覽時（APP.ui.dismissOverlays）：沒有回答，動作不會落在新的一頁上 */
-      scrim._dismiss = function () { end(null); };
-      host.appendChild(scrim);
-      release = a11yDialog(scrim.querySelector('.modal'), {
+      const close = ui.overlay(scrim, {
+        dialog: scrim.querySelector('.modal'),
         label: o.text || '確定嗎？',
-        onEsc: function () { end(null); },
         focus: o.danger ? noB : yesB,
+        onClose: function () { resolve(answer); },
       });
+      yesB.onclick = function () { answer = true; close(); };
+      noB.onclick = function () { answer = false; close(); };
+      scrim.onclick = function (e) { if (e.target === scrim) close(); };
     });
+  },
+  /* 掛一個浮層（契約 §3.5 的浮層約定）：標 data-overlay、掛到 .device（main.view 外面）、交給 a11yDialog。
+     回傳 close()：拆掉自己、還焦點、拿掉 Esc，可以重複呼叫；Esc 與導覽時的 dismissOverlays（el._dismiss）也是叫它。
+     opt：dialog（套 a11yDialog 的那一塊，預設 el）、label、focus、onClose()（真的關掉的那一次叫） */
+  overlay: function (el, opt) {
+    opt = opt || {};
+    let open = true;
+    let release = null;
+    const close = function () {
+      if (!open) return;
+      open = false;
+      el.remove();
+      if (release) { const r = release; release = null; r(); }
+      if (opt.onClose) opt.onClose();
+    };
+    el.setAttribute('data-overlay', '');
+    el._dismiss = close;
+    ($('.device') || document.body).appendChild(el);
+    release = a11yDialog(opt.dialog || el, { label: opt.label, onEsc: close, focus: opt.focus });
+    return close;
   },
   /* 預設實作：system.js 會覆寫這兩個 */
   share: function () { ui.toast('分享尚未接上'); },
@@ -1183,15 +1304,22 @@ const map = {
       }
     }
 
+    /* INTERACT.initPan 在 window 上掛 pointermove／pointerup、自己不拆：記下來，destroy 時拆掉。
+       同一頁重畫地圖（例：叫車首頁視窗改大小）不會越疊越多；mount 期間 router 也記得到（離頁照樣拆） */
+    let panListeners = null;
     if (opt.pan) {
       el.setAttribute('data-pan', '');
-      if (W.INTERACT) INTERACT.initPan(el);
+      if (W.INTERACT) {
+        panListeners = trackListeners();
+        try { INTERACT.initPan(el); } finally { panListeners.stop(); }
+      }
     }
 
     return {
       el: el, svg: svg, spotsEl: spotsEl, spots: placed, handle: handle,
       destroy: function () {
         try { handle.destroy(); } catch (e) { /* ignore */ }
+        if (panListeners) { panListeners.remove(); panListeners = null; }
         el.remove();
       },
     };
@@ -1257,12 +1385,15 @@ function start() {
   W.addEventListener('error', function (e) { reportError(e.error || e.message, 'window.onerror'); });
   W.addEventListener('unhandledrejection', function (e) { reportError(e.reason, 'unhandledrejection'); });
 
-  /* 返回鍵：<a href="#" data-back="/explore"> */
+  /* 返回鍵：<a href="#" data-back="/explore">＝照歷史退一格（沒有就去 fallback）；
+     再加 data-up＝回邏輯上的上一層（nav.up，預設規則：上一筆是有底欄的一般頁才退，不然就地換成它） */
   document.addEventListener('click', function (e) {
     const a = e.target.closest && e.target.closest('a[data-back]');
     if (!a) return;
     e.preventDefault();
-    nav.back(a.getAttribute('data-back') || '/ride');
+    const to = a.getAttribute('data-back') || '/ride';
+    if (a.hasAttribute('data-up')) nav.up(to);
+    else nav.back(to);
   });
 
   W.addEventListener('popstate', onPopState);
@@ -1310,12 +1441,14 @@ W.APP = {
   parse: parse,
   nav: nav,
   store: store,
+  state: state,
   on: on,
   emit: emit,
   fmt: fmt,
   esc: esc,
   place: place,
   places: places,
+  footprintPlace: footprintPlace,
   ui: ui,
   map: map,
   start: start,

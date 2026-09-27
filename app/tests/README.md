@@ -28,10 +28,10 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | `run.py` | 總入口，解析 `<pre id="result">` 印表格 |
 | `runner.html` | 載 harness 與各 spec；spec 檔不存在會列在「找不到的 spec 檔」，而且算 FAIL（run.py exit 1） |
 | `harness.js` | `T`、`app`、`t` |
-| `specs/app.spec.js` | 跨區塊：§8 每條 route、tab bar、返回、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder |
-| `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫 |
-| `specs/flows.spec.js` | QA：三條 demo 流程端到端、跨區塊縫合、全站兩種狀態掃描、非 still 模式 |
-| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined） |
+| `specs/app.spec.js` | core：§8 每條 route、tab bar、返回與 `nav.prev／nav.up`、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder、地圖 |
+| `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫；最後一段是「回歸測試（從 flows.spec 搬來）」：只牽涉這個區塊的審查／QA／評估，名稱保留原編號 |
+| `specs/flows.spec.js` | 跨區塊：三條 demo 流程端到端、縫合、全站兩種狀態掃描、非 still 模式、跨區塊的審查／QA／評估、無障礙 |
+| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、抽卡機率、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors、`APP.state`、`cardFace`）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id）、`collect` 怎麼判斷搭車或走路、`cardOrigin`、拉面板的 `snapTarget`；`store.test.mjs` 含 `store.clear('footprint')`；`place.test.mjs` 含 22 張明信片的 `APP.place`／`footprintPlace` 對照表 |
 | `fixtures/mini-app.html`、`fixtures/selftest.html` | 驗 harness 本身 |
 
 ## 寫新 spec
@@ -61,8 +61,12 @@ T.spec('ride', function (t) {
 - 每個 test 預設 8 秒逾時；長的用 `t.test(name, fn, { timeout: 20000 })`。
 - harness 在**每個 spec 開頭** reset 一次；test 之間不會自動 reset，要乾淨狀態就自己 `await app.reset()`。
 - 不要 `await` 一個自己不會結束的東西；等畫面用 `app.at()`／`app.waitFor()`，不要 `tick(2000)` 硬等。
-- 流程頁（`/trip`、`/unlock/:id`…）若沒有前提狀態會被導走：先用 `app.reset({ store: { trip: {...} } })` 布置好，
+- 流程頁（`/trip`、`/unlock/:id`…）若沒有前提狀態會被導走：先用 `app.reset({ store: { trip: T.fixtures.trip({ phase: 'done' }) } })` 布置好，
   或 `app.go(path, { redirectOk: true })` 接受任何落點（回傳落地 path）。
+- 行程、下車點的初值一律用 `T.fixtures.trip(overrides)`／`T.fixtures.dropoff(overrides)`，不要自己寫物件字面量（形狀只在 harness 一處）；
+  要多收幾張卡就 `app.reset({ cards: [{ id, date, by, km }] })`，不要 `STATE.collect` 再手動 `emit`。
+- 掃 route 用 `T.routes({ area, extra, skip, root })`（共用路由表 `T.ROUTES`，app.spec 會跟 `APP.routes()` 對帳），可按數上限用 `T.tapMax(path)`。
+- 純計算（不碰 DOM 的公式、排序、機率）寫在 `unit/*.test.mjs`：`loadApp({ views: [...], now })` 載真的 views，時間可注入。
 - 按鈕一律 `element.onclick` 綁、加 `data-act`，測試用 `[data-act="…"]` 點。返回鍵要是 `<a href="#" data-back="/x">`。
 - 讀 app 內的全域用 `app.APP`／`app.STATE`／`app.MOCK`（iframe 重載後物件會換，不要存在 spec 的變數裡跨 reset 用）。
 
@@ -82,7 +86,7 @@ T.spec('ride', function (t) {
 | `click(sel \| el, ms \| {ms, hit})` | 等元素出現（預設 2 s）後 `el.click()`，再等 30 ms；`hit:true` 先用 `elementFromPoint` 做命中測試，點不到（被蓋住、display:none）就丟例外 |
 | `waitFor(fn, ms, label)` | 每 20 ms 輪詢到 truthy，逾時丟 `等待逾時 …：label` |
 | `tick(ms)` | 等一下（預設 50 ms，virtual time） |
-| `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁；`opt.still:false` 不帶 `?still=1`（動畫與 setTimeout 照真的跑，之後的 reload 也沿用，直到下一次 reset） |
+| `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁；`opt.still:false` 不帶 `?still=1`（動畫與 setTimeout 照真的跑，之後的 reload 也沿用，直到下一次 reset）；`opt.cards:[{id, date, by, note, km}]` 在 demo 的 8 張之外照順序多收幾張（`date` 預設今天、`by` 預設 walk；收不下來就丟例外），收完再重載一次 |
 | `reload(hash, opt)` | 不清狀態重載（測持久化）；`opt.still` 可切換 still 模式 |
 | `storage('state' \| 'store')` | 直接讀 localStorage 的 JSON |
 | `errors` | iframe 的 `window.onerror`／`unhandledrejection`／資源載入失敗＋app 自己的 `#app-errors`；每次 `go`／`reset` 清空 |
@@ -101,4 +105,23 @@ T.spec('ride', function (t) {
 
 ### `T`
 
-`T.spec(name, fn(t))`、`T.run({only})`、`T.missing(src)`、`T.app`、`T.t`、`T.BANNED`、`T.WORD_OK`、`T.KEYS`。
+`T.spec(name, fn(t))`、`T.run({only})`、`T.missing(src)`、`T.app`、`T.t`、`T.BANNED`、`T.WORD_OK`、`T.KEYS`，以及各 spec 共用的：
+
+| 成員 | 說明 |
+|---|---|
+| `T.ROUTES` | §8 每條 route 一個範例網址：`{ path, area, flow?, expect? }`（`area`＝誰做；`flow`＝沒有前提狀態會被導走）。新增 route 要在 harness.js 加一筆，app.spec 會跟 `APP.routes()` 對帳 |
+| `T.routes({ area, extra, skip, root })` | 從 `T.ROUTES` 挑：`area:'album'` 或陣列、`extra` 這支 spec 另外要測的網址（接在後面）、`skip` 拿掉、`root:false` 不要 `'/'`。每次回新的物件 |
+| `T.TAP_MAX`、`T.tapMax(path)` | 可按數上限：`/explore`、`/album` 12，其餘 10（query 不算） |
+| `T.fixtures.trip(o)`、`T.fixtures.dropoff(o)`、`T.fixtures.T0` | store 的行程／下車點初值（預設內灣、`startedAt`／`setAt`＝`T0`），`o` 覆寫欄位；某欄位要「沒有」就給 `undefined` |
+| `T.helpers.clickBack(app)` | 點目前畫面的 `a[data-back]` |
+| `T.helpers.histI(app)` | router 蓋在 `history.state` 上的序號 |
+| `T.helpers.drag(app, grip, dy, { id, init, hold })` | 在拉把上拖 `dy`（正＝往下）：down 在拉把、move／up 在 window；`hold` 回傳放手函式 |
+| `T.helpers.drawThrough(app)` | 非 still 的 `/unlock`：點發光的地方 → 收集 → 一路點到 `data-at="3"` |
+| `T.helpers.collect(app, placeId, { by, style, note })` | 收下一張，走跟 `/unlock` 一樣的路：`by:'ride'` 先 `APP.ride.trip.arriveAt`（會取代原本的行程）；走路先把款式寫進 `store.draws`（預設水彩，免得隨機抽到金框）。回傳是否新收。要「收過了、但不動行程」就用 `app.reset({ cards })` |
+
+### node：`unit/helpers.mjs`
+
+`loadApp({ storage, noStorage, realMock, realState, views, session, now })` → `{ APP, ctx, storage, STATE, MOCK }`。
+`views` 給 `['ride', 'album', …]` 或 `'all'`（照 index.html 的順序載；有給就自動載真的 mock／state／hs-places／photos）；
+`now`（毫秒或 ISO）固定 `new Date()`／`Date.now()`。只跑到「註冊畫面＋匯出 `APP.<區塊>`」，render／mount 不在 node 測。
+`system` 的 demo 面板在 `state:change` 時會畫 DOM，會 `emit` 的測試不要載它。`memoryStorage(init, opt)`、`fixedDate(at)` 也可單獨用。

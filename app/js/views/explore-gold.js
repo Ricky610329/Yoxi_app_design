@@ -7,7 +7,7 @@
              在收藏、明信片詳情、獎章、回顧、叫車面板看到它，框的邊緣也一直散出細細的金粉。
              捲動、拖面板、換頁的時候，金粉帶著慣性，跟著畫面往上或往下飄。
    怎麼用：在「畫金框的那個元素」加 data-gold-aura：框畫在哪裡，金粉就從那裡的邊緣冒出來。
-           [data-card-art] 的金框卡沒有人標的話，explore-cards.js 的 paintCardArt 會自己補上
+           [data-card-art] 的金框卡沒有人標的話，explore-face.js 的 paintCardArt 會自己補上
            data-gold-aura＋.card-gold（通用的框，樣式在 explore.css）。
    提供（APP.fx.gold）：
      refresh()           重新掃一次畫面（一般不用叫：body 上有 MutationObserver）
