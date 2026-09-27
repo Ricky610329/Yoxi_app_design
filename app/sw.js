@@ -80,6 +80,7 @@ const PRECACHE = [
   './js/views/explore-fx.js',
   './js/views/explore-fest.js',
   './js/views/explore-cards.js',
+  './js/views/explore-verse.js',
   './js/views/explore-face.js',
   './js/views/explore-gold.js',
   './js/views/explore.js',

@@ -1,7 +1,7 @@
 /* ==========================================================================
    yoxi 城事 web app — explore 區塊：/unlock/:id 抵達 → 收集 → 翻卡
    契約：app/ARCHITECTURE.md §3、§7、§8。只用 APP.view() 註冊，不改 app.js。
-   載入順序：explore-fx.js（APP.fx）→ explore-cards.js（款式規則、收下）→ explore.js（頁面零件）→ 這支。
+   載入順序：explore-fx.js（APP.fx）→ explore-cards.js（款式規則、收下）→ explore-verse.js（翻開之後的那一句）→ explore.js（頁面零件）→ 這支。
 
    回答什麼：到了。這一次的明信片是哪一款、為什麼是這一款？收下它。每一次來都收一張（第一次蓋首訪紀念戳），
              同一個地方同一天一張：今天已經收過就直接看今天那一張。
@@ -10,7 +10,8 @@
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板，面板上先寫好會收到哪一款、為什麼。
      翻卡（data-at=2）：卡背升起 → 蓄力 → 點一下翻開 → 依款式給特效（金框最重）。
-     結果（data-at=3）：卡面（節日那一週多一層會動的插畫、首訪與里程各蓋一枚戳）＋畫風名＋為什麼、一句話、收進收藏。
+     結果（data-at=3）：卡面（節日那一週多一層會動的插畫、首訪與里程各蓋一枚戳）＋畫風名＋跟這個地方、這個時節有關的一句話
+       （explore-verse.js；為什麼是這一款只寫在面板與「?」，這裡不再重複）、寫一句話、收進收藏。
        今天已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。收下時司機還在等（來回的行程）就回 /trip，不然回收藏。
    特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
    鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；翻完焦點移到「收到 ○○」那一行。
@@ -18,7 +19,7 @@
    不用等 mount、不寫 store；重整、返回都是同一款。
    結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與規則說明一起收掉。
    「回探索」與找不到、返回的保底都回叫車首頁的探索模式（/ride?mode=explore&area=<id>），不回舊的 /explore。
-   規則說明收在收集面板與成品右上角的「?」裡（data-act="open-rules"），面板與結果只寫這一次適用的那幾條。
+   規則說明收在收集面板與成品右上角的「?」裡（data-act="open-rules"），面板只寫這一次適用的那幾條（結果換成那一句話）。
    刻意沒有：機率、抽籤、「越稀有越華麗」的暗示（蓄力拍數只分金框與其他，四季的畫風一樣重）；
              分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
    每款翻開的反應（REVEAL）刻意寫成五段程式而不是資料表：停格、震動、粒子、音效的先後各款不同，
@@ -33,7 +34,7 @@
 const APP = window.APP;
 const K = APP && APP.explore && APP.explore._;
 /* explore-cards.js 與 explore.js 要先載入（K.notFound 是 explore.js 掛上的）；順序錯了直接丟錯，不要安靜 return */
-if (!K || !K.notFound) throw new Error('explore-unlock.js 要在 explore-cards.js、explore.js 之後載入（index.html 的順序）');
+if (!K || !K.notFound || !APP.explore.verseOf) throw new Error('explore-unlock.js 要在 explore-cards.js、explore-verse.js、explore.js 之後載入（index.html 的順序）');
 
 const esc = APP.esc;
 const fmt = APP.fmt;
@@ -190,6 +191,8 @@ function renderUnlock(params) {
   const tier = tierOf(style);
   const rulesBtn = '<button class="ex-rules-btn" type="button" data-act="open-rules" aria-label="明信片怎麼決定"><span class="ex-rules-btn__i">?</span></button>';
   const why = lines.map(function (t) { return '<span class="ex-why__l">' + esc(t) + '</span>'; }).join('');
+  /* 翻開之後卡片底下的那一句（explore-verse.js）：為什麼是這一款已經寫在面板上，這裡換成跟這個地方、這個時節有關的一句話 */
+  const verse = E.verseOf(p.card, origin || arr.rule);
 
   /* ---- 幕一：抵達。夜色地圖上，這個地方亮起來；點它拉出「收集明信片」 ---- */
   const scene1 = got ? '' :
@@ -237,12 +240,17 @@ function renderUnlock(params) {
         : '') +
     '</div>';
 
-  /* 翻完焦點移到這裡（tabindex=-1），報讀器念一次「收到 ○○」和為什麼 */
+  /* 翻完焦點移到這裡（tabindex=-1），報讀器念一次「收到 ○○」和那一句話 */
   const label = style
     ? '<p class="ex-unlock__style" data-result-style="' + esc(style.key) + '" tabindex="-1">' +
         (got ? '' : '<span class="ex-sr">收到</span>') +
         '<b class="ex-unlock__sname">' + esc(style.name) + '</b>' +
-        '<span class="ex-why ex-unlock__why" data-why>' + why + '</span>' +
+        (verse
+          ? '<span class="ex-verse" data-verse>' +
+              '<span class="ex-verse__t">' + esc(verse.text) + '</span>' +
+              (verse.by ? '<span class="ex-verse__by">' + esc(verse.by) + (verse.title ? '〈' + esc(verse.title) + '〉' : '') + '</span>' : '') +
+            '</span>'
+          : '') +
       '</p>'
     : '';
 

@@ -55,7 +55,8 @@ function ridePoints() { return APP.ride.RIDE_BONUS; }
 /* ---------------------------------------------------------------- 款式規則
    明信片是哪一款全部照規則，沒有機率、沒有抽籤：什麼時候去、怎麼去，就決定你收到哪一款，
    按「收集明信片」之前就寫在面板上。同一天用同樣方式到，每個人收到的都一樣。
-   這一段是全 app 唯一來源：/unlock 的面板與結果、「?」的規則說明、收藏的「為什麼是這一款」都從這裡組字，不另外手寫。
+   這一段是全 app 唯一來源：/unlock 的收集面板、「?」的規則說明都從這裡組字，不另外手寫
+   （翻開之後的結果與收藏的明信片頁不念規則，改念 explore-verse.js 的那一句）。
      - 常態款：走路抵達，畫風跟著季節（months）；搭 yoxi 抵達，金框，不分季節；
      - 節慶限定：節日那一週（FESTIVALS：三節與櫻花季）去的，卡面多一層會動的節日插畫（explore-fest.js）；
      - 首訪紀念：第一次來這個地方的那一張，多蓋一枚首訪紀念戳；
@@ -170,7 +171,7 @@ function nextMile(km) {
   return MILE_STEPS.filter(function (m) { return m > km; })[0] || null;
 }
 
-/* 為什麼是這一款：一條規則一句（面板、結果、收藏的明信片頁都念這幾句） */
+/* 為什麼是這一款：一條規則一句（/unlock 的收集面板念這幾句） */
 function ruleLines(r) {
   if (!r || !r.style) return [];
   const out = [r.style.gold ? '搭 yoxi 抵達是金框' : r.season.season + '的畫風是' + r.style.name];
