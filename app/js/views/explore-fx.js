@@ -482,6 +482,19 @@ const sfx = (function () {
       noise({ dur: .18, vol: big ? .2 : .12, type: 'lowpass', f: 900 });
     },
     plip: function () { tone({ f: 1400, f1: 380, glide: .12, dur: .22, vol: .16 }); },
+    /* 水彩：水滴落在紙上（音高往上滑，像水聲而不是墨滴的往下掉） */
+    drip: function () { tone({ f: 700, f1: 1500, glide: .07, dur: .14, vol: .09 }); },
+    /* 油畫：刷子刷過畫布，一筆比一筆高一點 */
+    brush: function (i) {
+      const k = 1 + (i || 0) * .08;
+      noise({ dur: .26, vol: .09, type: 'bandpass', f: 700 * k, f1: 2300 * k, q: .9, attack: .03 });
+    },
+    /* 木刻版畫：版子壓在紙上。低沉的一聲加一下木頭的叩；big 是最後一版 */
+    press: function (big) {
+      tone({ f: big ? 150 : 190, f1: 55, glide: .18, dur: big ? .45 : .3, vol: big ? .34 : .24 });
+      tone({ f: big ? 420 : 520, dur: .07, vol: big ? .14 : .1, type: 'triangle' });
+      noise({ dur: .12, vol: big ? .16 : .1, type: 'lowpass', f: 700 });
+    },
     reveal: function (tier) {
       if (tier <= 1) { bell(N.E5, 0, .12, 1.1); bell(N.G5, .08, .08, 1); return; }
       if (tier === 2) { [N.C5, N.E5, N.G5].forEach(function (f, i) { bell(f, i * .07, .12, 1.1); }); return; }
@@ -578,6 +591,57 @@ const FILTERS =
   '<filter id="exf-gold" color-interpolation-filters="sRGB">' +
     '<feColorMatrix type="matrix" values="1.1 0.06 0 0 0.02  0.03 1.02 0 0 0.01  0 0.02 0.86 0 0  0 0 0 1 0" result="w"/>' +
     '<feColorMatrix in="w" type="saturate" values="1.18"/>' +
+  '</filter>' +
+  /* 木刻版畫的第一版（套印）：只印紅色——暗的是紅、中間是淡紅，亮的留紙色；帶一點直向木紋。
+     翻卡時先印這一版、再印整張（最後一版就是卡面本身） */
+  '<filter id="exf-print" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">' +
+    '<feColorMatrix type="matrix" values="0.3 0.59 0.11 0 0  0.3 0.59 0.11 0 0  0.3 0.59 0.11 0 0  0 0 0 1 0" result="g0"/>' +
+    '<feComponentTransfer in="g0" result="g">' +
+      '<feFuncR type="gamma" exponent="0.65"/><feFuncG type="gamma" exponent="0.65"/><feFuncB type="gamma" exponent="0.65"/>' +
+    '</feComponentTransfer>' +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.16 0.006" numOctaves="2" seed="2" result="noise"/>' +
+    '<feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="grain"/>' +
+    '<feDisplacementMap in="g" in2="grain" scale="5" xChannelSelector="R" yChannelSelector="G" result="gd"/>' +
+    '<feComposite in="gd" in2="grain" operator="arithmetic" k1="0" k2="1" k3="0.3" k4="-0.15" result="mix"/>' +
+    '<feComponentTransfer in="mix">' +
+      '<feFuncR type="discrete" tableValues="1 1 0.99 0.98 0.98"/>' +
+      '<feFuncG type="discrete" tableValues="0.18 0.18 0.55 0.92 0.92"/>' +
+      '<feFuncB type="discrete" tableValues="0.1 0.1 0.48 0.87 0.87"/>' +
+    '</feComponentTransfer>' +
+  '</filter>' +
+  /* 刻刀的邊：木刻版畫翻開時背後那一圈放射刻線，邊緣粗糙、寬窄不一 */
+  '<filter id="exf-gouge" x="-5%" y="-5%" width="110%" height="110%">' +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.14" numOctaves="2" seed="6" result="n"/>' +
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>' +
+  '</filter>' +
+  /* 木紋：木刻版畫翻開後，夜色的背景浮出一層直向的木紋（只取紋路的亮處，其他透明） */
+  '<filter id="exf-grain" x="0" y="0" width="100%" height="100%">' +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.035 0.003" numOctaves="2" seed="13" result="t"/>' +
+    '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0.98  0 0 0 0 0.92  0 0 0 0 0.87  1.8 0 0 0 -0.86"/>' +
+  '</filter>' +
+  /* 水彩的暈：邊緣被水推得不規則，顏料積在邊上比中間深一圈（水痕） */
+  '<filter id="exf-bloom" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">' +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="9" result="n"/>' +
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G" result="d"/>' +
+    '<feMorphology in="d" operator="erode" radius="4" result="core"/>' +
+    '<feComposite in="d" in2="core" operator="out" result="rim"/>' +
+    '<feColorMatrix in="rim" type="matrix" values="0.8 0 0 0 0  0 0.8 0 0 0  0 0 0.8 0 0  0 0 0 0.9 0" result="tide"/>' +
+    '<feGaussianBlur in="tide" stdDeviation="1.2" result="tb"/>' +
+    '<feMerge><feMergeNode in="d"/><feMergeNode in="tb"/></feMerge>' +
+  '</filter>' +
+  /* 油畫的一筆：邊緣被刷毛拖得不齊；順著筆的方向有寬窄不一的刷毛凹凸，打光看得出顏料的厚度，亮面帶一點濕亮 */
+  '<filter id="exf-impasto" x="-6%" y="-30%" width="112%" height="160%" color-interpolation-filters="sRGB">' +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.006 0.07" numOctaves="3" seed="12" result="n"/>' +
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G" result="d"/>' +
+    '<feDiffuseLighting in="n" surfaceScale="2" lighting-color="white" result="lit">' +
+      '<feDistantLight azimuth="235" elevation="60"/>' +
+    '</feDiffuseLighting>' +
+    '<feSpecularLighting in="n" surfaceScale="2" specularConstant="0.7" specularExponent="18" lighting-color="white" result="spec">' +
+      '<feDistantLight azimuth="235" elevation="60"/>' +
+    '</feSpecularLighting>' +
+    '<feComposite in="d" in2="lit" operator="arithmetic" k1="1.12" k2="0" k3="0" k4="0" result="shaded"/>' +
+    '<feComposite in="spec" in2="d" operator="in" result="gloss"/>' +
+    '<feComposite in="shaded" in2="gloss" operator="arithmetic" k1="0" k2="1" k3="0.45" k4="0"/>' +
   '</filter>' +
   /* 毛筆邊：水墨的圓相用，筆畫邊緣抖一點、有飛白 */
   '<filter id="exf-brush" x="-10%" y="-10%" width="120%" height="120%">' +

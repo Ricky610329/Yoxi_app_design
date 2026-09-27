@@ -69,12 +69,14 @@ const limitedPlace = APP.ride.limitedPlace;
 /* 款式 1–5 就是 CARD_STYLES 的順序；它只決定光色與翻開的反應，不代表「稀有」：
    四季的畫風一樣常見（看你什麼時候去），只有金框（搭 yoxi 才有）多一段昇格。
    | 順序 | 款式     | 蓄力        | 翻開之後                                                        |
-   | 1    | 水彩     | 2 拍        | 水彩暈開、幾顆柔光                                              |
-   | 2    | 油畫     | 2 拍        | 筆刷掃過、暖色光點、卡片彈一下                                  |
-   | 3    | 木刻版畫 | 2 拍        | 砸下來、停格 50ms、輕震、衝擊環、木屑                           |
+   | 1    | 水彩     | 2 拍        | 紙被打濕、從卡片暈成白紙、五團顏料化開（邊上一圈水痕）、甩出水花、水滴聲 |
+   | 2    | 油畫     | 2 拍        | 五道厚塗筆觸一筆一筆刷到卡片後面、每筆一聲刷子、筆尾甩出顏料、卡片彈一下 |
+   | 3    | 木刻版畫 | 2 拍        | 套印：翻過來是白紙 → 壓紅版（停格 40ms）→ 壓最後一版（停格 70ms、震、木屑、放射刻線、木紋） |
    | 4    | 水墨     | 2 拍        | 墨滴落下、停格 80ms、夜色洗成宣紙、墨暈、圓相                   |
    | 5    | 金框     | 4 拍＋昇格  | 閃光（整次唯一一次）、光芒、轉一圈半、停格 120ms、重震、金粉噴泉，金粉留著慢慢飄 |
-   蓄力每一拍換一個光色（白 → 暖橙 → 朱紅 → 墨 → 金）；翻開前停在這一款自己的光色。 */
+   蓄力每一拍換一個光色（白 → 暖橙 → 朱紅 → 墨 → 金）；翻開前停在這一款自己的光色。
+   四季的畫風各留一樣東西在結果頁（跳過、減少動態效果也停在同一個樣子，finish() 加 class，CSS 接手）：
+   水墨 .is-paper（宣紙＋圓相）、水彩 .is-wash（白紙＋顏料）、油畫 .is-paint（筆觸）、木刻 .is-print（刻線＋木紋）。 */
 function tierOf(d) {
   const i = d ? CARD_STYLES.indexOf(d) : -1;
   return i < 0 ? 1 : i + 1;
@@ -193,8 +195,9 @@ function renderUnlock(params) {
     '<div class="ex-stage__fx" aria-hidden="true">' +
       (key === 'gold' ? '<span class="ex-rays"><i></i></span>' : '') +
       '<span class="ex-aura"></span>' +
-      (key === 'watercolor' ? '<span class="ex-blots"><i></i><i></i><i></i><i></i></span>' : '') +
-      (key === 'oil' ? '<span class="ex-stroke"></span>' : '') +
+      (key === 'watercolor' ? '<span class="ex-wet"></span><span class="ex-blots"><i></i><i></i><i></i><i></i><i></i></span>' : '') +
+      (key === 'oil' ? '<span class="ex-strokes"><i></i><i></i><i></i><i></i><i></i></span>' : '') +
+      (key === 'woodcut' ? '<span class="ex-gouge"></span>' : '') +
       (key === 'ink'
         ? '<svg class="ex-enso" viewBox="0 0 200 200" focusable="false"><path d="M142 37 A74 74 0 1 0 172 86" pathLength="1"/></svg><span class="ex-drop"></span>'
         : '') +
@@ -233,7 +236,8 @@ function renderUnlock(params) {
   return '<div class="unlock ex-unlock" data-unlock data-at="' + (got ? '3' : '1') + '" data-visit="' + v + '"' + (isRide ? ' data-ride' : '') +
       (style ? ' data-style="' + esc(style.key) + '" data-tier="' + tier + '"' : '') + '>' +
       (got ? '' : '<div class="ex-unlock__map" data-arrive-map aria-hidden="true"></div>' +
-                  (key === 'ink' ? '<div class="ex-paper" aria-hidden="true"><svg class="ex-face__paper" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg></div>' : '') +
+                  (key === 'ink' || key === 'watercolor' ? '<div class="ex-paper" aria-hidden="true"><svg class="ex-face__paper" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg></div>' : '') +
+                  (key === 'woodcut' ? '<div class="ex-grain" aria-hidden="true"><svg class="ex-grain__svg" focusable="false"><rect width="100%" height="100%" filter="url(#exf-grain)"/></svg></div>' : '') +
                   '<canvas class="ex-fx ex-fx--back" data-fx-back aria-hidden="true"></canvas>') +
       scene1 +
       '<div class="unlock__scene ex-stage' + (got ? ' is-on' : '') + '" data-scene="3">' +
@@ -302,6 +306,9 @@ function mountArriveMap(host, p) {
     return null;
   }
 }
+
+/* 油畫的筆觸一筆接一筆，間隔幾毫秒（跟著 --t-scene 縮放）：CSS 的延遲（--d）、刷子聲、筆尾的顏料都讀這一個 */
+const STROKE_GAP = 120;
 
 /* 金框結果頁的金粉飄多久（毫秒，跟著 --t-scene 縮放）：之後停下來，頁面回到靜止，不再每秒 60 幀耗電 */
 const DUST_MS = 5600;
@@ -373,7 +380,12 @@ function mountUnlock(root, params) {
     if (run) run.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* ignore */ } });
     if (shake) shake.stop();
     if (style && !got && F) box.style.setProperty('--aura', 'rgb(' + auraColor(tier - 1).join(' ') + ')');
-    if (style && style.key === 'ink' && !got) { box.classList.add('is-paper'); APP.ui.setStatus('dark'); }
+    /* 每款留下來的樣子（跳過、減少動態效果也停在這裡）：水墨洗成宣紙、水彩暈成白紙、油畫的筆觸、木刻的刻線與木紋 */
+    const end = style && !got ? ({ ink: 'is-paper', watercolor: 'is-wash', oil: 'is-paint', woodcut: 'is-print' })[style.key] : '';
+    if (end) box.classList.add(end);
+    if (end === 'is-paper' || end === 'is-wash') APP.ui.setStatus('dark');
+    /* 木刻翻到一半被跳過：卡面還停在白紙或紅版，換回印好的樣子 */
+    box.querySelectorAll('[data-print]').forEach(function (el) { el.removeAttribute('data-print'); });
     if (style && style.gold && !got) box.classList.add('is-gold-up');
     /* 翻開以後才標：金框的邊開始散金粉（explore-gold.js），跟收藏裡看到它時一樣；翻開前標會先洩底 */
     const finalCard = q('[data-final-card].postcard--gold');
@@ -503,7 +515,7 @@ function mountUnlock(root, params) {
     };
     const white = F.color('--yoxi-white'), gold = F.color('--gold'), goldLite = F.color('--gold-lite');
     const red = F.color('--yoxi-red'), cream = F.color('--yoxi-cream'), navy = F.color('--yoxi-navy');
-    const slateLite = F.color('--yoxi-slate-lite');
+    const slateLite = F.color('--yoxi-slate-lite'), creamDeep = F.color('--yoxi-cream-deep');
 
     /* 蓄力的一拍：光往卡片吸、光暈脹一下、卡片抖（越後面抖越大） */
     const beat = function (i) {
@@ -551,67 +563,103 @@ function mountUnlock(root, params) {
     /* 翻開：每一款各自的反應（earned juice：金框是搭 yoxi 才有的，最重；四季的畫風各有各的味道） */
     const PRE = 'translateY(6px) scale(.92)';
     const REVEAL = {
+      /* 水彩：紙被打濕，從卡片往外暈成白紙；顏料一團一團化開（邊上積一圈水痕），甩出幾點水花 */
       watercolor: function (at) {
         const done = A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(0) scale(1.03) rotateY(180deg)', offset: .75 },
-                              { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 560, easing: F.ease.out });
-        return W(190).then(function () {
+                              { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 620, easing: F.ease.out });
+        return W(200).then(function () {
           if (!alive()) return null;
+          /* 暈開交給 CSS（.is-wash 的 transition）：跳過、減少動態效果都停在同一個樣子 */
+          box.classList.add('is-wash');
+          APP.ui.setStatus('dark');
+          F.sfx.drip();
           F.sfx.reveal(1);
-          const pastel = [cream, F.mix(red, white, .72), F.mix(slateLite, white, .5), goldLite];
-          box.querySelectorAll('.ex-blots i').forEach(function (b, k) {
-            const ang = k * Math.PI / 2 + .6, dx = Math.cos(ang) * 100, dy = Math.sin(ang) * 128;
-            A(b, [{ transform: 'translate(' + dx * .3 + 'px,' + dy * .3 + 'px) scale(.2)', opacity: 0 },
-                  { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.15)', opacity: .75, offset: .4 },
-                  { transform: 'translate(' + dx * 1.3 + 'px,' + dy * 1.3 + 'px) scale(1.5)', opacity: 0 }],
-              { duration: 1500 + k * 140, delay: k * 70, easing: F.ease.out });
-          });
-          back.burst({ x: at.x, y: at.y, n: 14, r0: [at.w * .3, at.w * .55], speed: [30, 100], life: [1.2, 2], size: [2, 4.5], kinds: ['glow'],
-                       colors: pastel, g: -24, drag: .9, alpha: [.5, .9] });
+          later(F.sfx.drip, 300);
+          later(F.sfx.drip, 640);
+          const c = front.at(cardBox);
+          const pigment = [F.mix(red, white, .55), F.mix(F.color('--yoxi-slate'), white, .25), F.mix(gold, white, .35), creamDeep];
+          front.burst({ x: c.x, y: c.y, n: 28, r0: [c.h * .55, c.h * .72], speed: [110, 300], life: [.8, 1.3], size: [1.8, 4.6],
+                        kinds: ['soft'], colors: pigment, g: 460, drag: 1.4, blend: 'source-over', alpha: [.75, 1], fout: .35 });
           return done;
         });
       },
+      /* 油畫：五道厚塗的筆觸一筆一筆刷到卡片後面（留著當背景），每一筆一聲刷子、筆尾甩出顏料；刷完卡片彈一下 */
       oil: function (at) {
         const done = A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(0) scale(1.07) rotateY(180deg)', offset: .7 },
                               { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 520, easing: F.ease.back });
-        return W(170).then(function () {
+        const strokes = box.querySelectorAll('.ex-strokes i');
+        return W(120).then(function () {
           if (!alive()) return null;
           F.sfx.reveal(2);
-          A(q('.ex-stroke'), [{ transform: 'translate(-50%, -50%) rotate(-16deg) translateX(-70%) scaleX(.3)', opacity: 0 },
-                              { transform: 'translate(-50%, -50%) rotate(-16deg) translateX(0) scaleX(1)', opacity: .95, offset: .42 },
-                              { transform: 'translate(-50%, -50%) rotate(-16deg) translateX(18%) scaleX(1.05)', opacity: 0 }],
-            { duration: 950, easing: F.ease.out });
-          const amber = auraColor(1);
-          front.burst({ x: at.x, y: at.y, n: 20, r0: [at.w * .35, at.w * .6], speed: [80, 230], life: [.6, 1.2], size: [2, 5],
-                        kinds: ['star', 'glow'], colors: [amber, goldLite, cream], drag: 2.6, tw: [10, 18] });
-          return done;
-        });
-      },
-      woodcut: function (at) {
-        return A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: 'translateY(-4px) scale(1.24) rotateY(180deg)' }],
-                 { duration: 380, easing: F.ease.out })
-          .then(function () {
-            return A(flip, [{ transform: 'translateY(-4px) scale(1.24) rotateY(180deg)' }, { transform: 'translateY(0) scale(1) rotateY(180deg)' }],
-                     { duration: 150, easing: F.ease.heavy });
-          })
-          .then(function () {
-            if (!alive()) return null;
-            F.sfx.thud(false);
-            F.sfx.reveal(3);
-            return F.hitstop(box, engs, 50);
-          })
-          .then(function () {
-            if (!alive()) return null;
-            shake.add(.42);
-            const c = front.at(cardBox);
-            front.ring({ x: c.x, y: c.y, size: c.w * .55, grow: 2.3, life: .55, colors: [red], lw: 4 });
-            front.burst({ x: c.x, y: c.y + c.h * .3, n: 24, speed: [160, 420], angle: [-Math.PI * .95, -Math.PI * .05],
-                          life: [.6, 1], size: [3, 7], kinds: ['shard'], colors: [red, cream, slateLite], g: 900, drag: 1.2,
-                          spin: [4, 12], blend: 'source-over', fout: .3 });
-            back.burst({ x: c.x, y: c.y + c.h * .45, n: 10, speed: [20, 70], life: [.8, 1.4], size: [6, 12], grow: 2,
-                         kinds: ['soft'], colors: [cream], alpha: [.15, .3], blend: 'source-over' });
-            return A(flip, [{ transform: 'rotateY(180deg) scale(1)' }, { transform: 'rotateY(180deg) scale(1.02)', offset: .3 },
-                            { transform: 'rotateY(180deg) scale(1)' }], { duration: 320, easing: F.ease.out });
+          const c = front.at(cardBox);
+          const k = c.w / (cardBox.offsetWidth || c.w) || 1;
+          const paint = [red, F.mix(red, gold, .5), gold, creamDeep];
+          strokes.forEach(function (el, i) {
+            el.style.setProperty('--d', Math.round(i * STROKE_GAP * u) + 'ms');
+            later(function () {
+              if (!alive()) return;
+              F.sfx.brush(i);
+              /* 筆尾：筆觸從左端（transform-origin）往右刷，尾巴在 --x/--y 平移後、沿 --a 走 --w 的地方 */
+              const cs = getComputedStyle(el);
+              const w = parseFloat(cs.getPropertyValue('--w')) || 0;
+              const a = (parseFloat(cs.getPropertyValue('--a')) || 0) * Math.PI / 180;
+              const x0 = c.x + (parseFloat(cs.getPropertyValue('--x')) - w / 2) * k;
+              const y0 = c.y + parseFloat(cs.getPropertyValue('--y')) * k;
+              back.burst({ x: x0 + Math.cos(a) * w * k * .92, y: y0 + Math.sin(a) * w * k * .92, n: 7, speed: [80, 240],
+                           angle: [a - .6, a + .6], life: [.5, .9], size: [2.5, 6], kinds: ['soft'], colors: paint,
+                           g: 620, drag: 1.6, blend: 'source-over', alpha: [.85, 1], fout: .3 });
+            }, i * STROKE_GAP + 160);
           });
+          box.classList.add('is-paint');
+          return done;
+        }).then(function () { return alive() ? W(strokes.length * STROKE_GAP - 200) : null; })
+          .then(function () {
+            if (!alive()) return null;
+            return A(flip, [{ transform: 'translateY(0) scale(1) rotateY(180deg)' }, { transform: 'translateY(0) scale(1.05, .95) rotateY(180deg)', offset: .25 },
+                            { transform: 'translateY(0) scale(1) rotateY(180deg)' }], { duration: 520, easing: F.ease.elastic });
+          });
+      },
+      /* 木刻版畫（套印）：翻過來先是一張白紙 → 壓第一版（紅）→ 再舉起來壓最後一版（整張印好）。
+         每壓一下停格、震、木屑往上噴；最後一版背後爆出一圈刻線，夜色浮出木紋（都留著） */
+      woodcut: function (at) {
+        const face = q('[data-final-card] .ex-face');
+        if (face) face.setAttribute('data-print', '0');
+        const UP = 'translateY(-14px) scale(1.12) rotateY(180deg)';
+        const DOWN = 'translateY(0) scale(1) rotateY(180deg)';
+        const chips = [cream, creamDeep, F.mix(creamDeep, gold, .4)];
+        const stamp = function (last) {
+          return A(flip, [{ transform: UP }, { transform: DOWN }], { duration: 130, easing: F.ease.heavy })
+            .then(function () {
+              if (!alive()) return null;
+              if (face) { if (last) face.removeAttribute('data-print'); else face.setAttribute('data-print', '1'); }
+              F.sfx.press(last);
+              if (last) F.sfx.reveal(3);
+              return F.hitstop(box, engs, last ? 70 : 40);
+            })
+            .then(function () {
+              if (!alive()) return null;
+              shake.add(last ? .5 : .24);
+              const c = front.at(cardBox);
+              front.burst({ x: c.x, y: c.y + c.h * .42, n: last ? 30 : 12, speed: [last ? 180 : 120, last ? 470 : 300],
+                            angle: [-Math.PI * .97, -Math.PI * .03], life: [.7, 1.2], size: [last ? 4 : 3, last ? 10 : 7],
+                            kinds: ['shard'], colors: last ? chips.concat([red]) : chips, g: 1100, drag: 1, spin: [5, 14],
+                            blend: 'source-over', fout: .3 });
+              back.burst({ x: c.x, y: c.y + c.h * .48, n: last ? 12 : 6, speed: [30, 110], angle: [-Math.PI, 0], life: [.8, 1.4],
+                           size: [8, 16], grow: 2.2, kinds: ['soft'], colors: [cream], alpha: [.12, .26], blend: 'source-over' });
+              if (last) {
+                box.classList.add('is-print');
+                front.ring({ x: c.x, y: c.y, size: c.w * .55, grow: 2.6, life: .6, colors: [cream], lw: 5 });
+              }
+              return A(flip, [{ transform: 'translateY(0) scale(1.04, .95) rotateY(180deg)' }, { transform: DOWN }],
+                       { duration: last ? 360 : 240, easing: F.ease.back });
+            });
+        };
+        return A(flip, [{ transform: PRE + ' rotateY(0deg)' }, { transform: UP }], { duration: 380, easing: F.ease.out })
+          .then(function () { return alive() ? W(90) : null; })
+          .then(function () { return alive() ? stamp(false) : null; })
+          .then(function () { return alive() ? A(flip, [{ transform: DOWN }, { transform: UP }], { duration: 230, easing: F.ease.out }) : null; })
+          .then(function () { return alive() ? W(60) : null; })
+          .then(function () { return alive() ? stamp(true) : null; });
       },
       ink: function (at) {
         const drop = q('.ex-drop');
