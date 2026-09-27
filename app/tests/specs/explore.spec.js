@@ -546,6 +546,12 @@ T.spec('explore', function (t) {
       t.ok(app.$('[data-flip]').classList.contains('is-front'), c.key + '：翻到正面');
       t.eq(app.$('[data-final-card]').getAttribute('data-style'), c.key, c.key + '：卡面款式');
       t.eq(app.$('[data-unlock]').classList.contains('is-paper'), !!c.paper, c.key + '：只有水墨把背景洗成宣紙');
+      /* 四季各留一樣東西在結果頁：水彩的白紙與顏料、油畫的筆觸、木刻的刻線與木紋；卡面印完了（沒有停在白紙或紅版） */
+      [['watercolor', 'is-wash', '.ex-blots'], ['oil', 'is-paint', '.ex-strokes'], ['woodcut', 'is-print', '.ex-gouge']].forEach(function (e) {
+        t.eq(app.$('[data-unlock]').classList.contains(e[1]), c.key === e[0], c.key + '：' + e[1] + ' 只給' + e[0]);
+        t.eq(!!app.$(e[2]), c.key === e[0], c.key + '：' + e[2] + ' 只在' + e[0] + '的舞台上');
+      });
+      t.ok(!app.$('[data-final-card] [data-print]'), c.key + '：卡面印完了');
       t.eq(app.$('[data-unlock]').classList.contains('is-gold-up'), c.key === 'gold', c.key + '：只有金框有光芒');
       t.eq(!!app.$('[data-final-card].postcard--gold'), c.key === 'gold', c.key + '：只有金框是金框');
       t.ok(app.$('[data-act="collect"]'), c.key + '：結果有「收進收藏」');

@@ -298,6 +298,25 @@
   transition: opacity calc(var(--t-slow) * 1.6) var(--ease-out);
 }
 .ex-paper .ex-face__paper { opacity: .45; }
+/* 水彩：白紙（水墨是米色的宣紙） */
+.ex-unlock[data-style="watercolor"] .ex-paper {
+  background: var(--yoxi-paper);
+  transition: opacity var(--t-slow) var(--ease-out) calc(var(--t-scene) * .7);   /* 等濕紙暈開了才整片接住 */
+}
+.ex-unlock[data-style="watercolor"] .ex-paper .ex-face__paper { opacity: .3; }
+/* 木刻版畫：夜色浮出直向的木紋（最後一版壓下去時） */
+.ex-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--t-slow) var(--ease-out);
+  /* 木紋只在卡片那一段，往下淡掉：寫一句話、收進收藏那一塊保持乾淨 */
+  -webkit-mask-image: linear-gradient(black 35%, transparent 75%);
+  mask-image: linear-gradient(black 35%, transparent 75%);
+}
+.ex-grain__svg { display: block; width: 100%; height: 100%; }
+.ex-unlock.is-print .ex-grain { opacity: .3; }
 
 /* 音效開關（右上角） */
 .ex-sound {
@@ -668,33 +687,120 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 300px;
-  height: 300px;
-  margin: -150px 0 0 -150px;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
   border-radius: var(--r-pill);
   opacity: 0;
-  filter: blur(12px);
-  mix-blend-mode: screen;
+  transform: translate(var(--x), var(--y)) scale(.12);
+  background: radial-gradient(closest-side, var(--c) 0 52%, color-mix(in srgb, var(--c) 55%, transparent) 84%, transparent);
+  filter: url(#exf-bloom);
+  mix-blend-mode: multiply;
 }
-.ex-blots i:nth-child(1) { background: radial-gradient(closest-side, var(--yoxi-cream), transparent); }
-.ex-blots i:nth-child(2) { background: radial-gradient(closest-side, color-mix(in srgb, var(--yoxi-red) 40%, var(--yoxi-white)), transparent); }
-.ex-blots i:nth-child(3) { background: radial-gradient(closest-side, var(--yoxi-mist), transparent); }
-.ex-blots i:nth-child(4) { background: radial-gradient(closest-side, var(--gold-lite), transparent); }
-
-.ex-stroke {
+/* 春天的顏料：粉紅、灰藍、淡黃、杏色、淡墨藍。擺在卡片四周，下緣不壓到畫風名 */
+.ex-blots i:nth-child(1) { --s: 270px; --x: -118px; --y: -128px; --c: color-mix(in srgb, var(--yoxi-red) 42%, var(--yoxi-white)); --o: .8; }
+.ex-blots i:nth-child(2) { --s: 250px; --x: 132px; --y: -36px; --c: color-mix(in srgb, var(--yoxi-slate) 70%, var(--yoxi-white)); --o: .75; }
+.ex-blots i:nth-child(3) { --s: 210px; --x: 96px; --y: -168px; --c: color-mix(in srgb, var(--gold) 60%, var(--yoxi-white)); --o: .85; }
+.ex-blots i:nth-child(4) { --s: 230px; --x: -138px; --y: 70px; --c: var(--yoxi-cream-deep); --o: .9; }
+.ex-blots i:nth-child(5) { --s: 190px; --x: 118px; --y: 118px; --c: color-mix(in srgb, var(--yoxi-navy) 28%, var(--yoxi-white)); --o: .6; }
+/* 打濕的紙：從卡片往外暈開（邊緣不規則），之後由整片的 .ex-paper 接住 */
+.ex-wet {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 470px;
-  height: 118px;
+  width: 1100px;
+  height: 1100px;
+  margin: -550px 0 0 -550px;
   border-radius: var(--r-pill);
   opacity: 0;
-  transform: translate(-50%, -50%) rotate(-16deg);
-  background:
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--yoxi-navy) 24%, transparent) 0 2px, transparent 2px 7px),
-    linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 70%, var(--yoxi-red)) 16%, var(--yoxi-red) 62%, color-mix(in srgb, var(--yoxi-red) 55%, transparent) 86%, transparent);
-  background-blend-mode: multiply;
+  transform: scale(.1);
+  background: var(--yoxi-paper);
+  filter: url(#exf-bloom);
 }
+.ex-unlock.is-wash .ex-wet { animation: ex-wet calc(var(--t-scene) * 1.6) var(--ease-out) both; }
+@keyframes ex-wet {
+  0%   { opacity: 1; transform: scale(.1); }
+  70%  { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: none; }
+}
+.ex-unlock.is-wash .ex-blots i {
+  opacity: var(--o);
+  transform: translate(var(--x), var(--y)) scale(1);
+  transition: transform calc(var(--t-scene) * 1.6) var(--ease-out) var(--d), opacity var(--t-slow) var(--ease-out) var(--d);
+}
+.ex-blots i:nth-child(1) { --d: calc(var(--t-scene) * .12); }
+.ex-blots i:nth-child(2) { --d: calc(var(--t-scene) * .22); }
+.ex-blots i:nth-child(3) { --d: calc(var(--t-scene) * .32); }
+.ex-blots i:nth-child(4) { --d: calc(var(--t-scene) * .42); }
+.ex-blots i:nth-child(5) { --d: calc(var(--t-scene) * .52); }
+
+/* 油畫：五道厚塗的筆觸，從左端（transform-origin）往右刷開；顏色是夏天的紅、橙、金、杏、淡金。
+   刷毛的溝紋順著筆的方向（repeating-linear-gradient），尾巴變淡是乾筆；exf-impasto 讓邊緣不齊、打光看得出厚度。
+   刷的先後（--d）由 explore-unlock.js 照 STROKE_GAP 寫上去，跳過或減少動態效果時沒有延遲、一次到位 */
+.ex-strokes i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--w);
+  height: var(--h);
+  margin: calc(var(--h) / -2) 0 0 calc(var(--w) / -2);
+  border-radius: var(--r-pill);
+  transform-origin: 0 50%;
+  transform: translate(var(--x), var(--y)) rotate(var(--a)) scaleX(0);
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--yoxi-navy) 22%, transparent), transparent 30% 70%, color-mix(in srgb, var(--yoxi-white) 18%, transparent)),
+    var(--c);
+  /* 實的筆身 ∪（一絲一絲的刷毛 ∩ 越往尾巴越淡）：尾巴散成乾筆，不是整齊切掉 */
+  -webkit-mask-image:
+    linear-gradient(90deg, black 0 64%, transparent 86%),
+    repeating-linear-gradient(0deg, black 0 2px, transparent 2px 5px, black 5px 6px, transparent 6px 9px),
+    linear-gradient(90deg, black 60%, transparent);
+  mask-image:
+    linear-gradient(90deg, black 0 64%, transparent 86%),
+    repeating-linear-gradient(0deg, black 0 2px, transparent 2px 5px, black 5px 6px, transparent 6px 9px),
+    linear-gradient(90deg, black 60%, transparent);
+  -webkit-mask-composite: source-over, source-in;
+  mask-composite: add, intersect;
+  filter: url(#exf-impasto);
+}
+.ex-strokes i:nth-child(1) { --w: 500px; --h: 96px; --x: -30px; --y: -96px; --a: -10deg; --c: var(--yoxi-red); }
+.ex-strokes i:nth-child(2) { --w: 470px; --h: 84px; --x: 10px; --y: 20px; --a: 7deg; --c: color-mix(in srgb, var(--yoxi-red) 45%, var(--gold)); }
+.ex-strokes i:nth-child(3) { --w: 440px; --h: 76px; --x: -20px; --y: -176px; --a: 5deg; --c: var(--gold); }
+.ex-strokes i:nth-child(4) { --w: 480px; --h: 80px; --x: 20px; --y: 104px; --a: -6deg; --c: color-mix(in srgb, var(--yoxi-slate) 80%, var(--yoxi-white)); }
+.ex-strokes i:nth-child(5) { --w: 420px; --h: 60px; --x: 0px; --y: -30px; --a: -18deg; --c: color-mix(in srgb, var(--gold) 55%, var(--yoxi-cream)); }
+.ex-unlock.is-paint .ex-strokes i {
+  transform: translate(var(--x), var(--y)) rotate(var(--a)) scaleX(1);
+  transition: transform calc(var(--t-scene) * .34) var(--ease-out) var(--d, 0ms);
+}
+
+/* 木刻版畫：最後一版壓下去時，背後爆出一圈放射的刻線（紅與米白，寬窄不一、邊緣粗糙），留著不轉 */
+.ex-gouge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 860px;
+  height: 860px;
+  margin: -430px 0 0 -430px;
+  opacity: 0;
+  transform: scale(.4);
+  background:
+    repeating-conic-gradient(from 4deg, color-mix(in srgb, var(--yoxi-red) 78%, transparent) 0deg 2.6deg, transparent 2.6deg 14deg),
+    repeating-conic-gradient(from 11deg, color-mix(in srgb, var(--yoxi-cream) 42%, transparent) 0deg 1.3deg, transparent 1.3deg 19deg);
+  -webkit-mask-image: radial-gradient(closest-side, transparent 22%, black 30%, black 40%, transparent 62%);
+  mask-image: radial-gradient(closest-side, transparent 22%, black 30%, black 40%, transparent 62%);
+  filter: url(#exf-gouge);
+}
+.ex-unlock.is-print .ex-gouge {
+  opacity: 1;
+  transform: none;
+  transition: transform var(--t-slow) var(--ease-bump), opacity var(--t-fast) var(--ease-out);
+}
+.ex-unlock.is-print .ex-aura { opacity: .25; }
+/* 套印：翻過來先是白紙（data-print="0"），壓第一版只有紅（"1"），壓最後一版拿掉屬性，就是卡面本身 */
+.ex-face[data-print="0"] { background: var(--yoxi-cream); }
+.ex-face[data-print="0"] .ex-face__img { opacity: 0; }
+.ex-face[data-print="1"] { background: var(--yoxi-cream); }
+.ex-face[data-print="1"] .ex-face__img { filter: url(#exf-print); }
 
 .ex-enso {
   position: absolute;
@@ -731,18 +837,26 @@
   transform: translate(-50%, -50%);
 }
 
-/* 水墨：夜色洗成宣紙，字與按鈕換成墨色 */
-.ex-unlock.is-paper { color: var(--yoxi-navy); transition: color var(--t-slow) var(--ease-out); }
-.ex-unlock.is-paper .ex-paper { opacity: 1; }
-.ex-unlock.is-paper .ex-unlock__btn { background: var(--yoxi-navy); color: var(--yoxi-white); }
-.ex-unlock.is-paper .ex-unlock__input {
+/* 水墨洗成宣紙、水彩暈成白紙：字與按鈕換成墨色 */
+.ex-unlock.is-paper,
+.ex-unlock.is-wash { color: var(--yoxi-navy); transition: color var(--t-slow) var(--ease-out); }
+.ex-unlock.is-paper .ex-paper,
+.ex-unlock.is-wash .ex-paper { opacity: 1; }
+.ex-unlock.is-wash .ex-aura { opacity: 0; }
+.ex-unlock.is-paper .ex-unlock__btn,
+.ex-unlock.is-wash .ex-unlock__btn { background: var(--yoxi-navy); color: var(--yoxi-white); }
+.ex-unlock.is-paper .ex-unlock__input,
+.ex-unlock.is-wash .ex-unlock__input {
   border-color: color-mix(in srgb, var(--yoxi-navy) 28%, transparent);
   background: color-mix(in srgb, var(--yoxi-white) 55%, transparent);
   color: var(--yoxi-navy);
 }
-.ex-unlock.is-paper .ex-unlock__input::placeholder { color: var(--yoxi-slate); }
+.ex-unlock.is-paper .ex-unlock__input::placeholder,
+.ex-unlock.is-wash .ex-unlock__input::placeholder { color: var(--yoxi-slate); }
 .ex-unlock.is-paper .ex-rules-btn,
-.ex-unlock.is-paper .ex-sound { color: var(--yoxi-navy); }
+.ex-unlock.is-paper .ex-sound,
+.ex-unlock.is-wash .ex-rules-btn,
+.ex-unlock.is-wash .ex-sound { color: var(--yoxi-navy); }
 
 /* 結果 */
 .ex-result { width: 100%; }
@@ -927,6 +1041,10 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
   .ex-unlock.is-lit .ex-spot__beam { opacity: .8; transform: none; }
   .ex-unlock__card { transition: none; }
   .ex-unlock.is-done .ex-result { animation-duration: var(--t-fast); }
+  .ex-unlock.is-wash .ex-wet { animation: none; }
+  .ex-unlock.is-wash .ex-blots i,
+  .ex-unlock.is-paint .ex-strokes i,
+  .ex-unlock.is-print .ex-gouge { transition: none; }
 }
 
 /* 規則說明（「?」打開） */
