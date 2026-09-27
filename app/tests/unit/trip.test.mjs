@@ -136,7 +136,7 @@ test('collect：有搭 yoxi 抵達這裡的那一趟才算搭車並用掉它；�
   assert.equal(walked.note, '走過去的');
   assert.equal(STATE.all.km - km0, Math.round(APP.fmt.km(APP.place('moat').dist)), '走路的公里是地方的距離（STATE 累加到總里程）');
   assert.equal(APP.store.get('cardStyle')[APP.place('moat').card], 'woodcut', '走路收的照規則：九月是秋天 → 木刻版畫');
-  assert.deepEqual({ ...APP.store.get('cardMarks')[APP.place('moat').card] }, { fest: '', far: 0 }, '9/26 走路：沒有郵戳也記一筆');
+  assert.deepEqual({ ...APP.store.get('cardMarks')[APP.place('moat').card] }, { fest: 'moon', far: 0 }, '9/26 在 115 年中秋那一週（9/21–9/28）：記下中秋，走路沒有遠行戳');
   assert.ok(T.arrivedAt('neiwan'), '走路收別的地方：行程還在');
   const km1 = STATE.all.km;
   APP.explore.collect('neiwan');
@@ -169,7 +169,7 @@ test('collect：demoDate 撥到別天，收下的款式、郵戳、日期都跟�
   APP.explore.collect('moat');
   const card = APP.place('moat').card;
   assert.equal(APP.store.get('cardStyle')[card], 'ink', '二月是冬天 → 水墨');
-  assert.equal(APP.store.get('cardMarks')[card].fest, 'spring', '除夕到初五 → 春節');
+  assert.equal(APP.store.get('cardMarks')[card].fest, 'spring', '春節那一週 → 春節');
   assert.equal(STATE.card(card).date, '02.06', '收下的日期是 demo 的那一天');
 });
 
@@ -203,12 +203,12 @@ test('cardOrigin：搭車或走路、哪一款、金框、限定版、歸因只�
   assert.equal(far.far, true, '遠行紀念：搭 yoxi FAR_KM 公里以上');
   assert.ok(far.far && /遠行紀念戳/.test(far.lines.join()) && /data-mark="far"/.test(far.marks), '內灣 28 km：寫為什麼、卡面蓋戳');
   assert.equal(near.far, false, '玻璃窯：不到門檻');
-  assert.ok(!/data-mark/.test(near.marks), '玻璃窯：卡面沒有郵戳');
+  assert.ok(!/data-mark/.test(near.marks), '玻璃窯：卡面沒有遠行戳');
   /* 走路收的：照規則不會是金框 */
   APP.explore.collect('moat');
   const walked = O('p19');
   assert.deepEqual([walked.by, walked.gold, walked.limited, walked.via, walked.far], ['walk', false, false, null, false]);
-  assert.deepEqual([...walked.lines], ['秋天的畫風是木刻版畫'], '為什麼：一條規則一句');
+  assert.deepEqual([...walked.lines], ['秋天的畫風是木刻版畫', '中秋那一週去的，卡面有月亮和玉兔'], '為什麼：一條規則一句（9/26 在中秋那一週）');
 });
 
 test('arriveAt（demo 搭 yoxi 抵達）：距離不明是 null 不是 0；同一個目的地保留叫車時間、公里、歸因、評分', () => {

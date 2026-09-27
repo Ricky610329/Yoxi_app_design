@@ -1,0 +1,263 @@
+/* ==========================================================================
+   節日版明信片的插畫與動畫（js/views/explore-fest.js 畫形狀，這裡給位置、顏色、動作）
+   一層 .fest 蓋在卡面上、地名那一條底下；只放在四周，中間的景色留著（比例的理由寫在 explore-fest.js 檔頭）。
+   位置用卡片的百分比；底下那一條用 px 對齊地名那一條（.postcard__foot 約 62 px 高）。
+   動畫只在 .fest.is-live 時跑（festPlay 加），大約 5 秒就停在收尾的樣子；沒有 .is-live（減少動態效果、?still=1）是靜止的構圖。
+   只動 transform／opacity；顏色全用 tokens。SVG 元素的 transform-box 預設是 view-box，px 就是 viewBox 的單位。
+   ========================================================================== */
+
+.fest {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;          /* 會翻面的卡是 overflow: visible（chengshi.css），花瓣、浪不能跑出卡外 */
+  border-radius: inherit;
+  pointer-events: none;
+}
+.fest__piece { position: absolute; display: block; }
+.fest__piece svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* 照片上什麼顏色都有：主角描一圈淡淡的影子，白兔在亮的地面上也看得見 */
+.fest__rabbit svg,
+.fest__boat svg,
+.fest__string svg,
+.fest__tree svg {
+  filter: drop-shadow(0 0 .8px color-mix(in srgb, var(--yoxi-navy) 70%, transparent))
+          drop-shadow(0 2px 3px color-mix(in srgb, var(--yoxi-navy) 30%, transparent));
+}
+/* 遠行紀念戳原本在右下，節日版的兔子、浪、紙屑也在那裡：有節日插畫時挪到左上（AI 標記底下） */
+.fest ~ .card-marks { top: 38px; bottom: auto; left: var(--sp-2); right: auto; }
+
+/* ---------- 中秋：月亮＋玉兔 ---------- */
+/* 月亮後面壓一點夜色：白天的照片上月亮也要看得出來 */
+.fest__sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 15%,
+    color-mix(in srgb, var(--yoxi-navy) 55%, transparent) 0,
+    color-mix(in srgb, var(--yoxi-navy) 22%, transparent) 26%,
+    transparent 50%);
+}
+.fest__moon { top: 2%; right: 0; width: 42%; }
+.postcard--gold .fest__moon { top: 8%; }      /* 金框卡右上角有「yoxi 限定版」角標 */
+.fm-g0 { stop-color: var(--gold-lite); stop-opacity: .9; }
+.fm-g1 { stop-color: var(--gold-lite); stop-opacity: .35; }
+.fm-g2 { stop-color: var(--gold-lite); stop-opacity: 0; }
+.fm-disc { fill: color-mix(in srgb, var(--gold-lite) 70%, var(--yoxi-white)); }
+.fm-crater { fill: var(--gold); opacity: .22; }
+.fm-star { fill: var(--yoxi-white); transform-box: fill-box; transform-origin: center; }
+.fm-cloud { fill: var(--yoxi-white); opacity: .85; }
+.fm-glow, .fm-rise { transform-box: fill-box; transform-origin: center; }
+
+.fest__rabbit { right: 5%; bottom: 60px; width: 26%; }
+.fr-walk { display: block; }
+.fr-fur { fill: var(--yoxi-white); }
+.fr-ear { fill: color-mix(in srgb, var(--yoxi-red) 30%, var(--yoxi-white)); }
+.fr-eye { fill: var(--yoxi-navy); }
+.fr-nose { fill: color-mix(in srgb, var(--yoxi-red) 60%, var(--yoxi-white)); }
+.fr-cheek { fill: color-mix(in srgb, var(--yoxi-red) 40%, var(--yoxi-white)); opacity: .6; }
+.fr-shadow { fill: var(--yoxi-navy); opacity: .28; }
+.fr-hop, .fr-shadow { transform-box: fill-box; transform-origin: 50% 100%; }
+
+.fest.is-live .fm-rise { animation: fest-rise 1.1s var(--ease-out) both; }
+.fest.is-live .fm-glow { animation: fest-glow 2.4s ease-in-out 2; }
+.fest.is-live .fm-star { animation: fest-twinkle 1.2s ease-in-out var(--d) 4 both; }
+.fest.is-live .fm-cloud { animation: fest-cloud 5s ease-in-out 1 both; }
+.fest.is-live .fr-walk { animation: fest-walk 4.8s ease-in-out 1 both; }
+.fest.is-live .fr-hop { animation: fest-hop .8s ease-in-out 6 both; }
+.fest.is-live .fr-shadow { animation: fest-shadow .8s ease-in-out 6 both; }
+
+@keyframes fest-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fest-glow {
+  0%, 100% { opacity: .8; transform: scale(.94); }
+  50%      { opacity: 1; transform: scale(1.08); }
+}
+@keyframes fest-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .2; transform: scale(.55); }
+}
+@keyframes fest-cloud {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(14px); }
+}
+/* 兔子往左跳三下、轉身、跳回來 */
+@keyframes fest-walk {
+  0%   { transform: translateX(0) scaleX(1); }
+  46%  { transform: translateX(-85%) scaleX(1); }
+  50%  { transform: translateX(-85%) scaleX(-1); }
+  96%  { transform: translateX(0) scaleX(-1); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+@keyframes fest-hop {
+  0%   { transform: translateY(0) scale(1.05, .93); }
+  25%  { transform: translateY(-9px) scale(.95, 1.07); }
+  50%  { transform: translateY(-15px) scale(1); }
+  80%  { transform: translateY(-3px) scale(1); }
+  92%  { transform: translateY(0) scale(1.06, .92); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes fest-shadow {
+  0%, 100% { transform: scale(1); opacity: .28; }
+  50%      { transform: scale(.6); opacity: .12; }
+}
+
+/* ---------- 端午：龍舟＋浪 ---------- */
+/* 浪分前後兩層，船夾在中間：船身下半截泡在前面那層浪裡。
+   浪頭在地名那一條上面，往下漸淡、沒入地名那一條（沒有一道硬邊）；顏色用深一點的藍，什麼照片上都看得出是水，
+   白字壓在深藍上也清楚 */
+.fest__waves {
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  height: calc(30px + 13%);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to top, transparent, black 40px);
+  mask-image: linear-gradient(to top, transparent, black 40px);
+}
+.fest__waves svg { width: 200%; height: 100%; }
+.fw-back { fill: color-mix(in srgb, var(--yoxi-navy) 72%, var(--yoxi-white)); opacity: .85; }
+.fw-front { fill: color-mix(in srgb, var(--yoxi-navy) 55%, var(--yoxi-white)); opacity: .95; }
+.fw-foam { fill: none; stroke: var(--yoxi-white); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+
+.fest__boat { left: 10%; bottom: calc(54px + 2%); width: 66%; }
+.fb-bob { transform-box: fill-box; transform-origin: 50% 85%; }
+.fb-hull, .fb-dragon { fill: var(--yoxi-red); }
+.fb-tail, .fb-neck { fill: none; stroke: var(--yoxi-red); stroke-linecap: round; }
+.fb-tail { stroke-width: 5; }
+.fb-neck { stroke-width: 8; }
+.fb-stripe, .fb-horn, .fb-mane, .fb-whisker, .fb-scale { fill: none; stroke: var(--gold); stroke-linecap: round; }
+.fb-stripe { stroke-width: 2.4; }
+.fb-horn, .fb-mane { stroke-width: 2; }
+.fb-whisker { stroke-width: 1.3; }
+.fb-scale { stroke-width: 1.4; }
+.fb-eye { fill: var(--yoxi-white); }
+.fb-pupil { fill: var(--yoxi-navy); }
+.fb-body { fill: none; stroke: var(--yoxi-navy); stroke-width: 6; stroke-linecap: round; }
+.fb-head { fill: var(--yoxi-navy); }
+.fb-paddle line { stroke: color-mix(in srgb, var(--gold) 70%, var(--yoxi-navy)); stroke-width: 2.4; stroke-linecap: round; }
+.fb-paddle ellipse { fill: color-mix(in srgb, var(--gold) 70%, var(--yoxi-navy)); }
+.fb-paddle, .fb-stick { transform-origin: var(--o); transform: rotate(-8deg); }
+.fb-drum { fill: var(--yoxi-red); stroke: var(--gold); stroke-width: 1.6; }
+.fb-stick { stroke: var(--yoxi-navy); stroke-width: 2; stroke-linecap: round; }
+.fb-pole { stroke: var(--yoxi-navy); stroke-width: 1.6; }
+.fb-flag { fill: var(--gold); transform-box: fill-box; transform-origin: 0 50%; }
+
+.fest.is-live .fb-bob { animation: fest-bob 1.7s ease-in-out 3; }
+.fest.is-live .fb-paddle { animation: fest-row .85s ease-in-out var(--d) 6 alternate; }
+.fest.is-live .fb-stick { animation: fest-drum .425s ease-in-out 12 alternate; }
+.fest.is-live .fb-flag { animation: fest-flag .6s ease-in-out 8 alternate; }
+.fest.is-live .fest__waves--back svg { animation: fest-wave 5s linear 1; }
+.fest.is-live .fest__waves--front svg { animation: fest-wave 2.6s linear 2; }
+
+@keyframes fest-bob {
+  0%, 100% { transform: translateY(0) rotate(-1.6deg); }
+  50%      { transform: translateY(-4px) rotate(1.6deg); }
+}
+@keyframes fest-row { from { transform: rotate(-24deg); } to { transform: rotate(16deg); } }
+@keyframes fest-drum { from { transform: rotate(0deg); } to { transform: rotate(40deg); } }
+@keyframes fest-flag { from { transform: skewY(0deg); } to { transform: skewY(-10deg) scaleX(.9); } }
+/* 浪往左移一整張卡寬：svg 是兩倍寬、花紋每半張重複一次，停下來跟開始一模一樣 */
+@keyframes fest-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ---------- 賞櫻：櫻花樹＋落花 ---------- */
+.fest__tree { left: 0; top: 0; width: 64%; }
+.ft-wood { fill: none; stroke: color-mix(in srgb, var(--yoxi-navy) 60%, var(--yoxi-red)); stroke-linecap: round; }
+.ft-wood--trunk { stroke-width: 12; }
+.ft-wood--b { stroke-width: 5; }
+.ft-wood--t { stroke-width: 2.6; }
+.ft-puff { opacity: .9; }
+.ft-puff--0 { fill: color-mix(in srgb, var(--yoxi-red) 14%, var(--yoxi-white)); }
+.ft-puff--1 { fill: color-mix(in srgb, var(--yoxi-red) 24%, var(--yoxi-white)); }
+.ft-puff--2 { fill: color-mix(in srgb, var(--yoxi-red) 34%, var(--yoxi-white)); }
+.ft-petal { fill: color-mix(in srgb, var(--yoxi-red) 8%, var(--yoxi-white)); stroke: color-mix(in srgb, var(--yoxi-red) 40%, var(--yoxi-white)); stroke-width: .5; }
+.ft-heart { fill: color-mix(in srgb, var(--yoxi-red) 75%, var(--yoxi-white)); }
+.ft-sway { transform-origin: -12px 168px; }      /* 從伸進畫面的樹幹根部擺 */
+
+.fest__fall { inset: 0; }
+.fest__fall svg { width: 100%; height: 100%; }
+.fp-shape {
+  fill: color-mix(in srgb, var(--yoxi-red) 34%, var(--yoxi-white));
+  stroke: color-mix(in srgb, var(--yoxi-red) 55%, var(--yoxi-white));
+  stroke-width: .5;
+}
+/* 靜止時：花瓣停在樹冠底下的半空中 */
+.fp { transform: translate(var(--x), calc(var(--y) + 70px)) rotate(calc(var(--r) * .4)) scale(var(--s)); }
+
+.fest.is-live .ft-sway { animation: fest-sway 2.6s ease-in-out 2; }
+.fest.is-live .fp { animation: fest-petal var(--t) ease-in-out var(--d) 1 both; }
+
+@keyframes fest-sway {
+  0%, 100% { transform: rotate(0deg); }
+  40%      { transform: rotate(1.4deg); }
+  75%      { transform: rotate(-.6deg); }
+}
+/* 左右飄著往下，最後躺平在地名那一條上面 */
+@keyframes fest-petal {
+  0%   { opacity: 0; transform: translate(var(--x), var(--y)) rotate(0deg) scale(var(--s)); }
+  8%   { opacity: 1; }
+  30%  { transform: translate(calc(var(--x) + var(--dx) * .25 + 12px), calc(var(--y) + (var(--gy) - var(--y)) * .28)) rotate(calc(var(--r) * .3)) scale(var(--s)); }
+  62%  { transform: translate(calc(var(--x) + var(--dx) * .62 - 10px), calc(var(--y) + (var(--gy) - var(--y)) * .64)) rotate(calc(var(--r) * .66)) scale(var(--s)); }
+  100% { opacity: .95; transform: translate(calc(var(--x) + var(--dx)), var(--gy)) rotate(var(--r)) scale(var(--s), calc(var(--s) * .5)); }
+}
+
+/* ---------- 春節：一串鞭炮 ---------- */
+/* 位置要跟 explore-fest.js 的 STRING 一致（紙屑從串上的座標噴出來） */
+.fest__string { top: 10%; right: 3%; width: 22%; }
+.fc-knot { fill: var(--gold); }
+.fc-knot-in { fill: var(--yoxi-red); }
+.fc-rope { stroke: color-mix(in srgb, var(--yoxi-red) 70%, var(--yoxi-navy)); stroke-width: 2; }
+.fc-body { fill: var(--yoxi-red); }
+.fc-band { fill: var(--gold); }
+.fc-shine { fill: var(--yoxi-white); opacity: .35; }
+.fc-sway { transform-origin: 30px 12px; }
+.fc, .fc-burst, .fc-smoke { transform-box: fill-box; transform-origin: center; }
+.fc-burst, .fc-smoke { opacity: 0; }
+.fc-smoke { fill: color-mix(in srgb, var(--yoxi-slate-lite) 70%, var(--yoxi-white)); }
+.fc-ray { stroke: var(--gold); stroke-width: 2.4; stroke-linecap: round; }
+.fc-ray2 { stroke: var(--gold-lite); stroke-width: 1.6; stroke-linecap: round; }
+.fc-core { fill: var(--gold-lite); }
+.fc-bit { opacity: 0; }
+.fc-bit rect { fill: var(--yoxi-red); }
+.fc-bit--gold rect { fill: var(--gold); }
+
+.fest.is-live .fc-sway { animation: fest-swing 1.15s ease-in-out 4; }
+.fest.is-live .fc-pop { animation: fest-pop .5s ease-out var(--d) 1 both; }
+.fest.is-live .fc-burst { animation: fest-burst .7s ease-out var(--d) 1 both; }
+.fest.is-live .fc-smoke { animation: fest-smoke 1.4s ease-out var(--d) 1 both; }
+.fest.is-live .fc-bit { animation: fest-bit 1.5s cubic-bezier(.2, .6, .4, 1) var(--d) 1 both; }
+
+@keyframes fest-swing {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+/* 抖一下、脹大、不見（停在不見：炸過的就沒了） */
+@keyframes fest-pop {
+  0%       { transform: none; opacity: 1; }
+  30%      { transform: rotate(8deg) scale(1.08); }
+  55%      { transform: scale(1.35); opacity: 1; }
+  75%, 100% { transform: scale(1.5); opacity: 0; }
+}
+@keyframes fest-burst {
+  0%   { opacity: 0; transform: scale(.2); }
+  15%  { opacity: 1; transform: scale(.95); }
+  60%  { opacity: .9; transform: scale(1.35); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+/* 炸完留一團煙，慢慢散開往上飄 */
+@keyframes fest-smoke {
+  0%   { opacity: 0; transform: scale(.4); }
+  20%  { opacity: .55; transform: scale(1); }
+  100% { opacity: 0; transform: translateY(-14px) scale(1.9); }
+}
+/* 紙屑：先往上噴、再落到地名那一條上面，停在地上 */
+@keyframes fest-bit {
+  0%   { opacity: 0; transform: translate(var(--x), var(--y)) rotate(0deg); }
+  8%   { opacity: 1; }
+  35%  { transform: translate(calc(var(--x) + var(--dx) * .6), calc(var(--y) - var(--up))) rotate(calc(var(--r) * .4)); }
+  100% { opacity: 1; transform: translate(calc(var(--x) + var(--dx)), var(--gy)) rotate(var(--r)); }
+}
+
+/* 保險：就算有人在減少動態效果時加了 .is-live，也不動 */
+@media (prefers-reduced-motion: reduce) {
+  .fest.is-live * { animation: none !important; }
+}
+html[data-still] .fest * { animation: none !important; }

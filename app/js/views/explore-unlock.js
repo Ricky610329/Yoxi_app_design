@@ -9,10 +9,10 @@
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板，面板上先寫好會收到哪一款、為什麼。
      翻卡（data-at=2）：卡背升起 → 蓄力 → 點一下翻開 → 依款式給特效（金框最重）。
-     結果（data-at=3）：卡面（節慶、遠行的郵戳蓋在上面）＋畫風名＋為什麼、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
+     結果（data-at=3）：卡面（節日那一週多一層會動的插畫、遠行蓋一枚戳）＋畫風名＋為什麼、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
    特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
    鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；翻完焦點移到「收到 ○○」那一行。
-   款式照規則（explore-cards.js 的 cardRule：季節定畫風、搭 yoxi 是金框、三節與遠行多蓋郵戳），render 就算得出來，
+   款式照規則（explore-cards.js 的 cardRule：季節定畫風、搭 yoxi 是金框、節日版、遠行戳），render 就算得出來，
    不用等 mount、不寫 store；重整、返回都是同一款。
    結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與規則說明一起收掉。
    「回探索」與找不到、返回的保底都回叫車首頁的探索模式（/ride?mode=explore&area=<id>），不回舊的 /explore。
@@ -372,6 +372,8 @@ function mountUnlock(root, params) {
     /* 翻開以後才標：金框的邊開始散金粉（explore-gold.js），跟收藏裡看到它時一樣；翻開前標會先洩底 */
     const finalCard = q('[data-final-card].postcard--gold');
     if (finalCard) finalCard.setAttribute('data-gold-aura', '');
+    /* 節日版的插畫：翻開時已經開始動就不重來（跳過、已收過的直接在這裡開始；減少動態效果時 festPlay 不動） */
+    if (E.festPlay) E.festPlay(box, { restart: false });
     if (skipBtn) skipBtn.hidden = true;
     if (!quiet) focusEl(q('[data-result-style]') || q('[data-act="collect"]'));
     /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見），DUST_MS 之後、或開始寫那一句話時停下來；其他款式安靜收尾 */
@@ -736,6 +738,8 @@ function mountUnlock(root, params) {
         box.classList.remove('is-ready');
         if (cap) cap.textContent = '';
         F.sfx.flip();
+        /* 節日版的插畫跟著翻開一起開始（正面轉過來的時候就在動） */
+        if (E.festPlay) E.festPlay(box, { restart: false });
         const at = front.at(cardBox);
         return A(flip, [{ transform: 'none' }, { transform: PRE }], { duration: 140, easing: F.ease.in })
           .then(function () { return alive() ? (REVEAL[style ? style.key : 'watercolor'] || REVEAL.watercolor)(at) : null; });

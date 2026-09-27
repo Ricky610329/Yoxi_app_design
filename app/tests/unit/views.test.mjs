@@ -60,10 +60,11 @@ test('款式規則：五款（四季＋金框），四季的月份不重疊、�
   assert.equal(typeof E.openOdds, 'undefined', '沒有機率說明');
 });
 
-test('cardRule：走路看季節、搭 yoxi 是金框；三節（春節是除夕到初五）多蓋郵戳；FAR_KM 以上蓋遠行戳', () => {
+test('cardRule：走路看季節、搭 yoxi 是金框；節日那一週是節日版；FAR_KM 以上蓋遠行戳', () => {
   const { APP } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });
   const E = APP.explore;
   const R = (by, ymd, km) => { const [y, m, d] = ymd.split('-').map(Number); return E.cardRule({ by, km, date: new Date(y, m - 1, d, 12) }); };
+  const F = (ymd) => { const f = R('walk', ymd).festival; return f ? f.key : null; };
   assert.equal(R('walk', '2027-04-02').style.key, 'watercolor', '春天 → 水彩');
   assert.equal(R('walk', '2027-07-20').style.key, 'oil', '夏天 → 油畫');
   assert.equal(R('walk', '2026-10-01').style.key, 'woodcut', '秋天 → 木刻版畫');
@@ -72,15 +73,25 @@ test('cardRule：走路看季節、搭 yoxi 是金框；三節（春節是除夕
   assert.equal(R('walk', '2027-03-01').style.key, 'watercolor', '三月一號換季');
   assert.equal(R('ride', '2027-04-02', 3).style.key, 'gold', '搭 yoxi：不分季節是金框');
   assert.equal(R('ride', '2027-04-02', 3).season.key, 'watercolor', '搭 yoxi 也知道是哪個季節（說明用）');
-  /* 三節：表上的頭尾都算，前一天、後一天不算 */
-  assert.equal(R('walk', '2026-09-25').festival.key, 'moon', '115 年中秋');
-  assert.equal(R('walk', '2026-09-24').festival, null, '中秋前一天不算');
-  assert.equal(R('walk', '2026-09-26').festival, null, '中秋後一天不算');
-  assert.equal(R('walk', '2027-02-05').festival.key, 'spring', '116 年除夕');
-  assert.equal(R('walk', '2027-02-10').festival.key, 'spring', '116 年初五');
-  assert.equal(R('walk', '2027-02-11').festival, null, '初六不算');
-  assert.equal(R('ride', '2027-06-09', 1).festival.key, 'duanwu', '搭車也蓋節慶郵戳');
-  assert.equal(R('walk', '2030-09-25').festival, null, '表上沒有的年份：不猜');
+  /* 三節是「那一週」：節日當天所在的週一到週日，官方連假更長就延到連假最後一天 */
+  assert.deepEqual([F('2026-09-20'), F('2026-09-21'), F('2026-09-25'), F('2026-09-27'), F('2026-09-28'), F('2026-09-29')],
+    [null, 'moon', 'moon', 'moon', 'moon', null], '115 年中秋（週五）：9/21 週一到 9/28（中秋＋教師節連假的最後一天）');
+  assert.deepEqual([F('2027-09-12'), F('2027-09-13'), F('2027-09-19'), F('2027-09-20')],
+    [null, 'moon', 'moon', null], '116 年中秋（週三，沒有連假）：9/13 週一到 9/19 週日');
+  assert.deepEqual([F('2026-02-13'), F('2026-02-14'), F('2026-02-22'), F('2026-02-23')],
+    ['sakura', 'spring', 'spring', 'sakura'], '115 年春節：連假 2/14 比那一週的週一 2/16 早，從連假算起；前後是櫻花季');
+  assert.deepEqual([F('2027-01-31'), F('2027-02-01'), F('2027-02-10'), F('2027-02-11')],
+    ['sakura', 'spring', 'spring', 'sakura'], '116 年春節：2/1 週一到 2/10 連假最後一天；前後是櫻花季');
+  assert.deepEqual([F('2026-06-14'), F('2026-06-15'), F('2026-06-21'), F('2026-06-22')],
+    [null, 'duanwu', 'duanwu', null], '115 年端午：6/15–6/21');
+  assert.equal(R('ride', '2027-06-09', 1).festival.key, 'duanwu', '搭車也是節日版');
+  /* 賞櫻：每年一樣的期間，不用查日曆表；碰上三節以三節為主 */
+  assert.deepEqual([F('2030-01-24'), F('2030-01-25'), F('2030-03-15'), F('2030-03-16')], [null, 'sakura', 'sakura', null], '櫻花季 1/25–3/15');
+  assert.equal(F('2030-09-25'), null, '三節表上沒有的年份：不猜');
+  assert.deepEqual([...E.festSpan('moon', 2026)], ['09-21', '09-28'], 'festSpan：115 年中秋');
+  assert.deepEqual([...E.festSpan('duanwu', 2027)], ['06-07', '06-13'], 'festSpan：116 年端午（週三）');
+  assert.equal(E.festSpan('moon', 2030), null, 'festSpan：表上沒有的年份是 null');
+  assert.deepEqual([...E.festSpan('sakura', 2030)], ['01-25', '03-15'], 'festSpan：賞櫻每年一樣');
   /* 遠行：搭 yoxi FAR_KM 公里以上（含）；走路再遠也不算 */
   assert.equal(R('ride', '2027-04-02', E.FAR_KM).far, true, '剛好 FAR_KM：算');
   assert.equal(R('ride', '2027-04-02', E.FAR_KM - 0.1).far, false, '差一點：不算');
@@ -89,18 +100,27 @@ test('cardRule：走路看季節、搭 yoxi 是金框；三節（春節是除夕
   assert.deepEqual(JSON.stringify(R('walk', '2026-09-25')), JSON.stringify(R('walk', '2026-09-25')));
 });
 
-test('ruleLines：一條規則一句；郵戳 HTML 只在有節慶或遠行時出現', () => {
-  const { APP } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });
+test('ruleLines：一條規則一句；marksHTML：節日版是會動的插畫、遠行是一枚戳', () => {
+  const { APP } = loadApp({ views: ['ride', 'explore-fx', 'explore-fest', 'explore-cards'] });
   const E = APP.explore;
   const K = E._;
   const R = (by, ymd, km) => { const [y, m, d] = ymd.split('-').map(Number); return E.cardRule({ by, km, date: new Date(y, m - 1, d, 12) }); };
   assert.deepEqual([...E.ruleLines(R('walk', '2026-10-01'))], ['秋天的畫風是木刻版畫']);
-  assert.deepEqual([...E.ruleLines(R('walk', '2026-09-25'))], ['秋天的畫風是木刻版畫', '中秋節當天，多蓋一枚中秋郵戳']);
-  assert.deepEqual([...E.ruleLines(R('ride', '2027-02-06', 28))],
-    ['搭 yoxi 抵達是金框', '除夕到初五，多蓋一枚春節郵戳', '搭 yoxi 28 公里，多蓋一枚遠行紀念戳']);
-  assert.equal(K.marksHTML(R('walk', '2026-10-01')), '', '沒有郵戳就沒有 HTML');
+  assert.deepEqual([...E.ruleLines(R('walk', '2026-09-23'))], ['秋天的畫風是木刻版畫', '中秋那一週去的，卡面有月亮和玉兔']);
+  assert.deepEqual([...E.ruleLines(R('ride', '2027-02-08', 28))],
+    ['搭 yoxi 抵達是金框', '春節那一週去的，卡面有鞭炮', '搭 yoxi 28 公里，多蓋一枚遠行紀念戳']);
+  assert.deepEqual([...E.ruleLines(R('walk', '2027-03-01'))], ['春天的畫風是水彩', '櫻花季去的，卡面有櫻花樹']);
+  assert.equal(K.marksHTML(R('walk', '2026-10-01')), '', '都沒有就沒有 HTML');
   const m = K.marksHTML(R('ride', '2026-09-25', 28));
-  assert.ok(/data-mark="moon"/.test(m) && /data-mark="far"/.test(m) && /28 km/.test(m), '中秋＋遠行兩枚：' + m);
+  assert.ok(/data-fest="moon"/.test(m) && /data-mark="far"/.test(m) && /28 km/.test(m), '中秋插畫＋遠行戳：' + m.slice(0, 80));
+  assert.ok(m.indexOf('data-fest') < m.indexOf('data-mark="far"'), '插畫在戳前面（戳壓在插畫上）');
+  for (const f of E.FESTIVALS) {
+    const h = E.festHTML(f.key);
+    assert.ok(new RegExp('data-fest="' + f.key + '"').test(h) && /aria-hidden="true"/.test(h) && /data-fest-part/.test(h), f.key + '：有插畫、報讀器略過、有主角');
+    assert.ok(!/#[0-9a-f]{3,6}\b/i.test(h.replace(/href="#[^"]+"|url\(#[^)]+\)/g, '')), f.key + '：SVG 裡沒有寫死的顏色（顏色在 explore-fest.css）');
+  }
+  assert.equal(E.festHTML('nope'), '', '不認得的節日：沒有插畫');
+  assert.notEqual(E.festHTML('moon').match(/id="(fest\d+)g"/)[1], E.festHTML('moon').match(/id="(fest\d+)g"/)[1], '每一張的漸層 id 不一樣（同一頁兩張不會互相搶）');
   assert.deepEqual([...E.ruleLines(null)], [], '沒有規則：沒有句子');
 });
 

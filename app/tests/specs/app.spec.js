@@ -260,7 +260,7 @@ T.spec('app', function (t) {
   t.test('app/css/**/*.css 沒有 hex 色碼', async function (app) {
     const base = new URL('../', location.href);            /* app/ */
     const set = {};
-    ['css/app.css', 'css/views/system.css', 'css/views/ride.css', 'css/views/explore.css', 'css/views/album.css']
+    ['css/app.css', 'css/views/system.css', 'css/views/ride.css', 'css/views/explore.css', 'css/views/explore-fest.css', 'css/views/album.css']
       .forEach(function (p) { set[new URL(p, base).href] = p; });
     app.$$('link[rel="stylesheet"]').forEach(function (l) {
       const u = new URL(l.getAttribute('href'), app.doc.baseURI).href;

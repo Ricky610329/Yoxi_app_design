@@ -1,7 +1,7 @@
 /* ==========================================================================
    yoxi 城事 web app — explore 區塊：明信片怎麼拿到的共用零件（不註冊畫面）
    契約：app/ARCHITECTURE.md §3、§7。
-   載入順序：explore-fx.js → explore-cards.js → explore-face.js → explore-gold.js → explore.js → explore-unlock.js（都在 album.js 之前）。
+   載入順序：explore-fx.js → explore-fest.js → explore-cards.js → explore-face.js → explore-gold.js → explore.js → explore-unlock.js（都在 album.js 之前）。
 
    回答什麼：一張明信片怎麼拿到的——照規則是哪一款、為什麼、怎麼收下、收下的是搭車還是走路、是不是金框或限定版。
              收藏（album）、叫車首頁（ride）、探索的各畫面、/unlock 都讀這裡，所以獨立成一支，不跟著任何一個畫面走。
@@ -17,7 +17,7 @@
    APP.ride.trip.consume 用掉那一趟（連同 rideVia 歸因）。「是不是金框、是不是限定版」一律問 cardOrigin。
    內部零件 APP.explore._（不可列舉；只給 explore.js 與 explore-unlock.js 共用，別的區塊不要依賴）：
      這一次抵達（arrivalAt：搭車還是走路、幾公里、照規則的款式）、今天（today：demo 可以假裝別天）、
-     卡面郵戳（marksHTML）、關掉規則說明（closeRules）、點數（ridePoints）與幾個小工具；explore.js 再掛上頁面零件
+     卡面多的那幾層（marksHTML：節日插畫＋遠行戳）、關掉規則說明（closeRules）、點數（ridePoints）與幾個小工具；explore.js 再掛上頁面零件
      （exploreHome、notFound、backFabBar、distHTML）。
    刻意沒有：機率、抽籤、保底（明信片是哪一款只看規則，長輩知道「為什麼」）；畫面（/unlock 在 explore-unlock.js）、
              卡面（explore-face.js）、特效（explore-fx.js 的 APP.fx）。
@@ -53,10 +53,10 @@ function ridePoints() { return APP.ride.RIDE_BONUS; }
    這一段是全 app 唯一來源：/unlock 的面板與結果、「?」的規則說明、收藏的「為什麼是這一款」都從這裡組字，不另外手寫。
      - 走路抵達：畫風跟著季節（months）；
      - 搭 yoxi 抵達：金框，不分季節；
-     - 三節（FESTIVALS）那幾天：多蓋一枚節慶郵戳；
+     - 節日那一週（FESTIVALS：三節與櫻花季）：卡面多一層會動的節日插畫（explore-fest.js）；
      - 搭 yoxi FAR_KM 公里以上：多蓋一枚遠行紀念戳（獎勵已經走過的路，不是加機率）。
    畫風之後會以該地的景點照片為底、用 diffusion 生成（pitch/docs/ai-architecture.md 的「四季」變體）；
-   郵戳與金框是程式疊上去的，不另外生圖。 */
+   節日插畫、郵戳與金框是程式疊上去的，不另外生圖。 */
 const CARD_STYLES = [
   { key: 'watercolor', name: '水彩',     season: '春天', months: [3, 4, 5] },
   { key: 'oil',        name: '油畫',     season: '夏天', months: [6, 7, 8] },
@@ -65,13 +65,21 @@ const CARD_STYLES = [
   { key: 'gold',       name: 'yoxi 金框', gold: true },
 ];
 
-/* 三節的日期（'MM-DD'，含頭尾）。農曆不在程式裡換算：照行政院人事行政總處公布的「政府行政機關辦公日曆表」
-   一年一年補（115 年、116 年查於 2026-09-27）。表上沒有的年份就不蓋郵戳，不猜。
-   春節是除夕到初五（不是政府的連假範圍）；端午、中秋是當天。 */
+/* 節日版：那段時間去的，卡面多一層會動的節日插畫（explore-fest.js 畫）。碰在一起時排前面的算（三節先於賞櫻）。
+   三節是「那一週」：節日當天所在的週一到週日，官方連假超出那一週的話一起算（festSpan）。
+     days  節日當天（'MM-DD'）。農曆不在程式裡換算：照行政院人事行政總處的「政府行政機關辦公日曆表」一年一年補
+           （115、116 年查於 2026-09-27）。表上沒有的年份就沒有節日版，不猜。
+     off   官方連假（含頭尾）：115 年春節 2/14–2/22、端午 6/19–6/21、中秋＋教師節 9/25–9/28；116 年春節 2/4–2/10，
+           端午（週三）、中秋（週三）沒有連假。
+     every 每年一樣的期間（賞櫻）：新竹公園的河津櫻一月底開到二月中，其他品種接著開；三月中為止是假設，拿到當年花況再調。 */
 const FESTIVALS = [
-  { key: 'spring', name: '春節', when: '除夕到初五', days: { 2026: ['02-16', '02-21'], 2027: ['02-05', '02-10'] } },
-  { key: 'duanwu', name: '端午', when: '端午節當天', days: { 2026: ['06-19', '06-19'], 2027: ['06-09', '06-09'] } },
-  { key: 'moon',   name: '中秋', when: '中秋節當天', days: { 2026: ['09-25', '09-25'], 2027: ['09-15', '09-15'] } },
+  { key: 'spring', name: '春節', when: '春節那一週', deco: '鞭炮',
+    days: { 2026: '02-17', 2027: '02-06' }, off: { 2026: ['02-14', '02-22'], 2027: ['02-04', '02-10'] } },
+  { key: 'duanwu', name: '端午', when: '端午那一週', deco: '龍舟',
+    days: { 2026: '06-19', 2027: '06-09' }, off: { 2026: ['06-19', '06-21'] } },
+  { key: 'moon',   name: '中秋', when: '中秋那一週', deco: '月亮和玉兔',
+    days: { 2026: '09-25', 2027: '09-15' }, off: { 2026: ['09-25', '09-28'] } },
+  { key: 'sakura', name: '賞櫻', when: '櫻花季', deco: '櫻花樹', every: ['01-25', '03-15'] },
 ];
 
 /* 搭 yoxi 多遠算「遠行」（公里，含）：新竹市區裡的地方都在 12 km 內，內灣線的站（九讚頭 21 km 起）才算。
@@ -85,16 +93,34 @@ function seasonOf(month) {
   return CARD_STYLES.filter(function (d) { return d.months && d.months.indexOf(month) >= 0; })[0] || CARD_STYLES[0];
 }
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function mdOf(d) { return pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+/* 某個節日在某一年的期間 ['MM-DD', 'MM-DD']（含頭尾），表上沒有那一年是 null。
+   三節：節日當天所在的週一到週日，再跟官方連假取聯集。春節最早在 1/21，那一週的週一不會跨到去年，所以只比月日 */
+function festSpan(f, year) {
+  if (typeof f === 'string') f = FESTIVALS.filter(function (x) { return x.key === f; })[0];
+  if (!f) return null;
+  if (f.every) return f.every.slice();
+  const day = f.days && f.days[year];
+  if (!day) return null;
+  const p = day.split('-');
+  const d = new Date(year, Number(p[0]) - 1, Number(p[1]), 12);
+  const mon = new Date(year, d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12);
+  const sun = new Date(year, mon.getMonth(), mon.getDate() + 6, 12);
+  let a = mdOf(mon), b = mdOf(sun);
+  const off = f.off && f.off[year];
+  if (off) { if (off[0] < a) a = off[0]; if (off[1] > b) b = off[1]; }
+  return [a, b];
+}
 function festivalOn(date) {
-  const md = pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+  const md = mdOf(date);
   return FESTIVALS.filter(function (f) {
-    const r = f.days[date.getFullYear()];
+    const r = festSpan(f, date.getFullYear());
     return !!r && md >= r[0] && md <= r[1];
   })[0] || null;
 }
 
 /* 今天是哪一天。demo 工具可以假裝是別天（store.demoDate，'YYYY-MM-DD'），現場才看得到冬天、中秋的明信片；
-   只影響明信片（款式、郵戳、收下的日期），收藏的回顧照舊用真的今天。 */
+   只影響明信片（款式、節日版、郵戳、收下的日期），收藏的回顧照舊用真的今天。 */
 function today() {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(APP.store.get('demoDate') || '');
   return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : new Date();
@@ -126,18 +152,18 @@ function cardRule(arrival) {
 function ruleLines(r) {
   if (!r || !r.style) return [];
   const out = [r.style.gold ? '搭 yoxi 抵達是金框' : r.season.season + '的畫風是' + r.style.name];
-  if (r.festival) out.push(r.festival.when + '，多蓋一枚' + r.festival.name + '郵戳');
+  if (r.festival) out.push(r.festival.when + '去的，卡面有' + r.festival.deco);
   if (r.far) out.push('搭 yoxi ' + r.km + ' 公里，多蓋一枚遠行紀念戳');
   return out;
 }
 
-/* 蓋在卡面上的郵戳（樣式在 explore.css 的 .card-marks）。/unlock 的卡面與收藏的明信片頁都用這個 */
+/* 卡面上多的那幾層：節日版的插畫（explore-fest.js 的 festHTML，會動）＋遠行紀念戳（樣式在 explore.css 的 .card-marks）。
+   /unlock 的卡面與收藏的明信片頁都用這個；插畫要放在地名那一條（.postcard__foot）前面，字才壓在圖上面 */
 function marksHTML(r) {
   if (!r) return '';
-  const m = [];
-  if (r.festival) m.push('<span class="card-mark" data-mark="' + esc(r.festival.key) + '">' + esc(r.festival.name) + '</span>');
-  if (r.far) m.push('<span class="card-mark" data-mark="far">遠行<small>' + esc(r.km) + ' km</small></span>');
-  return m.length ? '<span class="card-marks">' + m.join('') + '</span>' : '';
+  const fest = r.festival && APP.explore.festHTML ? APP.explore.festHTML(r.festival.key) : '';
+  const far = r.far ? '<span class="card-marks"><span class="card-mark" data-mark="far">遠行<small>' + esc(r.km) + ' km</small></span></span>' : '';
+  return fest + far;
 }
 
 /* 月份表 [3, 4, 5] →「3–5 月」；三節今年的日期 ['09-25', '09-25'] →「9/25」 */
@@ -183,9 +209,9 @@ function openRules() {
     return row(d.key, esc(d.season) + '（' + esc(monthsText(d.months)) + '）', esc(d.name), d === here);
   }).join('');
   const fests = FESTIVALS.map(function (f) {
-    const r = f.days[now.getFullYear()];
-    const days = r ? '（今年 ' + esc(dayText(r[0])) + (r[1] !== r[0] ? '–' + esc(dayText(r[1])) : '') + '）' : '';
-    return row(f.key, esc(f.name) + days, esc(f.when));
+    const r = festSpan(f, now.getFullYear());
+    const days = r ? '（' + (f.every ? '每年 ' : '今年 ') + esc(dayText(r[0])) + (r[1] !== r[0] ? '–' + esc(dayText(r[1])) : '') + '）' : '';
+    return row(f.key, esc(f.name) + days, esc(f.deco));
   }).join('');
   const scrim = document.createElement('div');
   scrim.className = 'scrim ex-rules';
@@ -198,8 +224,9 @@ function openRules() {
         row('gold', '不分季節', esc(styleOf('gold').name)) +
         row('far', num(FAR_KM) + ' 公里以上', '多蓋一枚遠行紀念戳') +
       '</ul>' +
-      '<h3 class="ex-rules__h">三節那幾天：多蓋一枚郵戳</h3><ul class="ex-rules__list" data-rules="festival">' + fests + '</ul>' +
-      '<p class="ex-rules__note">每個地方收一張，記下你第一次來的那一天；再去一次不會換掉。畫風以該地景點照片為底，由 AI 生成。</p>' +
+      '<h3 class="ex-rules__h">節日那一週：卡面多一層會動的插畫</h3><ul class="ex-rules__list" data-rules="festival">' + fests + '</ul>' +
+      '<p class="ex-rules__note">三節是節日那一週（週一到週日，連假更長就算到連假最後一天）；碰上櫻花季時以三節為主。' +
+        '每個地方收一張，記下你第一次來的那一天；再去一次不會換掉。畫風以該地景點照片為底，由 AI 生成。</p>' +
       '<button class="btn-primary" type="button" data-act="close-rules">知道了</button>' +
     '</div>';
   const end = APP.ui.overlay(scrim, {
@@ -223,7 +250,7 @@ function closeRules() {
  * 收下一張明信片（契約 §7）。placeId 可以是地點 id 或明信片 id；回傳是否為新收。
  * 呼叫的人只給那一句話（note），其餘都在這裡判斷，跟 /unlock 畫面上看到的是同一個答案：
  *   - 搭車還是走路：行程 module 說這一趟搭 yoxi 抵達這裡（APP.ride.trip.arrivedAt）就是搭車，否則走路；
- *   - 哪一款、有沒有節慶郵戳：照 cardRule（今天的日期、搭車還是走路、幾公里）；
+ *   - 哪一款、是不是節日版、有沒有遠行戳：照 cardRule（今天的日期、搭車還是走路、幾公里）；
  *   - 幾公里：搭車用這一趟的公里數，走路用地方的距離（距離不明是 0，跟以前一樣）。
  * 搭車收下才用掉這一趟（行程 module 順便記下 rideVia 歸因）；走路收別的地方不碰行程——還沒領的限定版
  * （金框＋點數）不會跟著消失。同一個地方有搭車抵達的那一趟時一律算搭車（/unlock 也是這樣畫的）。
@@ -242,9 +269,9 @@ function collect(placeId, opt) {
       km: a.km,
       date: fmt.todayMMDD(today()),
     });
-    /* 款式與郵戳記在 app store（STATE 的卡片結構不動）。郵戳要在收下的當下記，不能事後回推：
+    /* 款式、節日版與遠行戳記在 app store（STATE 的卡片結構不動）。要在收下的當下記，不能事後回推：
        卡片日期沒有年份（明年的中秋不是同一天），STATE 的卡片也沒有公里數。
-       沒有郵戳也記一筆（fest ''、far 0），表示「查過了，沒有」 */
+       都沒有也記一筆（fest ''、far 0），表示「查過了，沒有」 */
     if (isNew && a.rule) {
       APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle') || {}, { [target]: a.rule.style.key }));
       APP.store.set('cardMarks', Object.assign({}, APP.store.get('cardMarks') || {}, {
@@ -265,7 +292,7 @@ function collect(placeId, opt) {
  *     limited（yoxi 限定版：ride.js 的判斷，搭 yoxi 去走不到的地方、+50 點）,
  *     gold（畫金框：金框那一款，或是限定版——限定版一定是金框，金框不一定是限定版）,
  *     festival（收下那天的節慶，FESTIVALS 的一筆或 null）, far（遠行紀念）,
- *     lines（為什麼是這一款，ruleLines）, marks（卡面上的郵戳 HTML） }
+ *     lines（為什麼是這一款，ruleLines）, marks（卡面多的那幾層：節日插畫＋遠行戳的 HTML） }
  */
 function cardOrigin(cardId) {
   const c = S() && S().card(cardId);
@@ -274,7 +301,7 @@ function cardOrigin(cardId) {
   const limited = !!(APP.ride && APP.ride.limitedCard && APP.ride.limitedCard(cardId));
   const by = c.by === 'ride' ? 'ride' : 'walk';
   const month = Number(String(c.date || '').split('.')[0]);
-  /* 郵戳只認收下時記的（store.cardMarks）；demo 一開始就有的 8 張沒有紀錄，就沒有郵戳 */
+  /* 節日版與遠行戳只認收下時記的（store.cardMarks）；demo 一開始就有的 8 張沒有紀錄，就都沒有 */
   const mk = (APP.store.get('cardMarks') || {})[cardId] || {};
   const farKm = Number(mk.far) || 0;
   const rule = {
@@ -304,6 +331,7 @@ APP.explore = Object.assign(APP.explore || {}, {
   /* 款式規則：規則表、純函式、規則說明（契約 §7） */
   CARD_STYLES: CARD_STYLES,
   FESTIVALS: FESTIVALS,
+  festSpan: festSpan,
   FAR_KM: FAR_KM,
   cardRule: cardRule,
   ruleLines: ruleLines,

@@ -587,7 +587,7 @@ function demoArrive(id, by) {
 }
 
 /* demo 面板的模擬日期：假裝今天是別天（store.demoDate），現場才看得到四季的畫風與三節的郵戳。
-   選項從 explore-cards.js 的規則表長出來（季節取中間那個月的 15 號、三節取第一天），不另外手寫日期；
+   選項從 explore-cards.js 的規則表長出來（季節取中間那個月的 15 號、三節取節日當天、賞櫻取第一天），不另外手寫日期；
    三節今年不在表上就用表上最早的那一年。只影響明信片，收藏的回顧照舊用真的今天。 */
 function demoDates() {
   const E = APP.explore || {};
@@ -598,9 +598,10 @@ function demoDates() {
     if (d.months) out.push({ v: y + '-' + p2(d.months[1]) + '-15', t: d.season + '（' + d.name + '）' });
   });
   (E.FESTIVALS || []).forEach(function (f) {
-    const yy = f.days[y] ? y : Number(Object.keys(f.days)[0]);
-    const r = f.days[yy];
-    if (r) out.push({ v: yy + '-' + r[0], t: f.name + '（' + yy + '/' + r[0].replace('-', '/') + '）' });
+    /* 三節取節日當天；賞櫻（每年一樣的期間）取第一天 */
+    const yy = f.every || f.days[y] ? y : Number(Object.keys(f.days)[0]);
+    const md = f.every ? f.every[0] : f.days[yy];
+    if (md) out.push({ v: yy + '-' + md, t: f.name + '（' + yy + '/' + md.replace('-', '/') + '）' });
   });
   return out;
 }

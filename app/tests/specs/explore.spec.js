@@ -342,7 +342,7 @@ T.spec('explore', function (t) {
     t.includes(app.text('[data-result-style]'), '水墨', '寫出畫風名');
     t.includes(app.text('[data-result-style] [data-why]'), '冬天的畫風是水墨', '寫出為什麼');
     t.ok(!app.$('[data-final-card].postcard--gold'), '水墨不是金框');
-    t.ok(!app.$('[data-final-card] .card-marks'), '不是三節、不是搭車：沒有郵戳');
+    t.ok(!app.$('[data-final-card] .card-marks') && !app.$('[data-final-card] .fest'), '不是節日、不是搭車：沒有插畫、沒有戳');
     await app.go('/explore');
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '重進還是同一款');
@@ -403,34 +403,87 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  t.test('三節當天走路抵達：季節的畫風＋節慶郵戳，面板先寫；收下記 cardMarks，明信片頁也蓋、也寫為什麼；不加點', async function (app) {
+  t.test('節日那一週走路抵達：季節的畫風＋會動的節日插畫，面板先寫；翻開才開始動；收下記 cardMarks，明信片頁也有、也寫為什麼；不加點', async function (app) {
     await app.reset();
     const E = app.APP.explore;
     const moon = E.FESTIVALS.filter(function (f) { return f.key === 'moon'; })[0];
     const y = Object.keys(moon.days)[0];
-    await app.reset({ still: false, store: { demoDate: y + '-' + moon.days[y][0] } });
+    const span = E.festSpan(moon, Number(y));
+    t.ok(span[0] !== moon.days[y], '前提：那一週的第一天不是中秋當天（' + span[0] + '）');
+    await app.reset({ still: false, store: { demoDate: y + '-' + span[0] } });
     const pts0 = app.STATE.points;
     await app.go('/unlock/glass-kiln');
     await app.click('[data-act="open-spot"]');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), moon.when + '，多蓋一枚中秋郵戳', '面板先寫會多一枚郵戳');
+    t.includes(app.text('[data-arrive-sheet] [data-why]'), moon.when + '去的，卡面有' + moon.deco, '面板先寫節日版與為什麼');
+    const fest = app.$('[data-final-card] .fest[data-fest="moon"]');
+    t.ok(fest, '卡面有中秋的插畫（那一週的第一天也算）');
+    t.eq(fest && fest.getAttribute('aria-hidden'), 'true', '插畫報讀器略過（意思在「為什麼」那幾句）');
+    t.ok(fest && !fest.classList.contains('is-live'), '還沒翻開：插畫不動');
+    t.ok(app.$('[data-final-card] .fest [data-fest-part="moon"]') && app.$('[data-final-card] .fest [data-fest-part="rabbit"]'), '月亮與玉兔');
     await T.helpers.revealThrough(app);
+    t.ok(app.$('[data-final-card] .fest').classList.contains('is-live'), '翻開之後：插畫開始動');
+    const rabbit = app.$('[data-final-card] .fr-hop');
+    t.ok(rabbit && app.win.getComputedStyle(rabbit).animationName === 'fest-hop', '兔子在跳');
+    t.ok(/^\d/.test(app.win.getComputedStyle(rabbit).animationIterationCount), '有限次（不會一直動）：' + app.win.getComputedStyle(rabbit).animationIterationCount);
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'woodcut', '中秋在秋天：木刻版畫');
-    t.ok(app.$('[data-final-card] .card-mark[data-mark="moon"]'), '卡面蓋中秋郵戳');
-    t.ok(!app.$('[data-final-card] .card-mark[data-mark="far"]'), '走路沒有遠行戳');
+    t.ok(!app.$('[data-final-card] .card-mark'), '走路沒有遠行戳');
     t.includes(app.text('[data-result-style] [data-why]'), '秋天的畫風是木刻版畫', '結果寫為什麼（畫風）');
-    t.includes(app.text('[data-result-style] [data-why]'), '中秋郵戳', '結果寫為什麼（郵戳）');
+    t.includes(app.text('[data-result-style] [data-why]'), moon.deco, '結果寫為什麼（節日版）');
     t.ok(!app.$('[data-points]'), '走路沒有 +50');
+    t.noDeadButtons(app, '/unlock 節日版');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.APP.store.get('cardMarks').p11.fest, 'moon', 'store.cardMarks 記下中秋');
     t.eq(app.STATE.points, pts0, '點數不變');
-    /* 過了中秋再看：郵戳是收下那天記的，不跟著今天變 */
+    /* 過了那一週再看：節日版是收下那天記的，不跟著今天變 */
     app.APP.store.set('demoDate', null);
     await app.go('/postcard/p11');
-    t.ok(app.$('.alb-big__card .card-mark[data-mark="moon"]'), '明信片頁也蓋中秋郵戳');
-    t.includes(app.text('[data-why]'), '中秋郵戳', '明信片頁寫為什麼');
+    const pf = app.$('.alb-big__card .fest[data-fest="moon"]');
+    t.ok(pf, '明信片頁也是節日版');
+    t.ok(pf && pf.classList.contains('is-live'), '打開明信片頁就動一次');
+    t.includes(app.text('[data-why]'), moon.deco, '明信片頁寫為什麼');
     t.ok(!app.$('.postcard--gold'), '走路收的不是金框');
+    /* 翻到背面：插畫跟著藏起來；翻回正面再演一次 */
+    const card = app.$('.alb-big__card');
+    await app.click(card);
+    t.eq(app.win.getComputedStyle(pf).backfaceVisibility, 'hidden', '翻到背面時插畫藏起來（backface-visibility）');
+    pf.classList.remove('is-live');
+    await app.click(card);
+    t.ok(pf.classList.contains('is-live'), '翻回正面再演一次');
     t.noBannedWords(app, { msg: '/postcard/p11 中秋' });
+    await app.reset();
+  }, { timeout: 20000 });
+
+  /* 使用者：「動畫特效只是輔助，景色不能全部被擋掉，但也不能太小導致看不出來」——每一種都量一次 */
+  t.test('節日版的比例：主角至少五分之一卡寬、卡片正中央不被擋、主角加起來不超過卡片一半；still 不動', async function (app) {
+    await app.reset();
+    const E = app.APP.explore;
+    for (const f of E.FESTIVALS) {
+      const y = f.every ? new Date().getFullYear() : Number(Object.keys(f.days)[0]);
+      const day = f.every ? f.every[0] : f.days[y];
+      await app.reset({ store: { demoDate: y + '-' + day } });
+      await app.go('/unlock/glass-kiln');
+      const card = app.$('[data-final-card]').getBoundingClientRect();
+      const fest = app.$('[data-final-card] .fest[data-fest="' + f.key + '"]');
+      t.ok(fest, f.key + '：有插畫');
+      if (!fest) continue;
+      t.ok(!fest.classList.contains('is-live'), f.key + '：still 不動');
+      const parts = app.$$('[data-final-card] [data-fest-part]').map(function (el) { return { k: el.getAttribute('data-fest-part'), r: el.getBoundingClientRect() }; });
+      const widest = Math.max.apply(null, parts.map(function (p) { return p.r.width; }));
+      t.ok(widest >= card.width / 5, f.key + '：主角夠大（' + Math.round(widest / card.width * 100) + '% 卡寬）');
+      const cx = card.left + card.width / 2, cy = card.top + card.height * .47;
+      const cover = parts.filter(function (p) { return cx > p.r.left && cx < p.r.right && cy > p.r.top && cy < p.r.bottom; });
+      t.eq(cover.map(function (p) { return p.k; }).join(','), '', f.key + '：卡片正中央沒有被擋');
+      const area = parts.reduce(function (a, p) {
+        const w = Math.min(p.r.right, card.right) - Math.max(p.r.left, card.left);
+        const h = Math.min(p.r.bottom, card.bottom) - Math.max(p.r.top, card.top);
+        return a + Math.max(0, w) * Math.max(0, h);
+      }, 0) / (card.width * card.height);
+      t.ok(area <= .5, f.key + '：主角的範圍加起來 ' + Math.round(area * 100) + '% 卡片（≤ 50%）');
+      const foot = app.$('[data-final-card] .postcard__foot');
+      t.ok(foot && fest.compareDocumentPosition(foot) & 4, f.key + '：地名那一條在插畫後面（字壓在圖上）');
+    }
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
     await app.reset();
   }, { timeout: 20000 });
 

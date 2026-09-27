@@ -674,7 +674,7 @@ APP.view('postcard', {
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="place"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">地點</span>' +
             '<span class="row-nav__title">' + esc(pl && pl.area ? pl.area : '新竹') + '</span></span></div>' +
-          /* 為什麼是這一款：規則寫在 explore-cards.js（季節定畫風、搭 yoxi 是金框、三節與遠行多蓋郵戳），這裡只念 */
+          /* 為什麼是這一款：規則寫在 explore-cards.js（季節定畫風、搭 yoxi 是金框、節日版、遠行戳），這裡只念 */
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="postcard"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">為什麼是這一款</span>' +
             '<span class="row-nav__title alb-why" data-why>' +
@@ -702,7 +702,11 @@ APP.view('postcard', {
     if (card) card.onclick = function (e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
       card.classList.toggle('is-flipped');
+      /* 節日版的插畫：翻回正面再演一次 */
+      if (!card.classList.contains('is-flipped')) APP.explore.festPlay(card);
     };
+    /* 節日版的插畫（explore-fest.js）：打開明信片頁就動一次，五秒左右停下來 */
+    if (card) APP.explore.festPlay(card);
     const share = root.querySelector('[data-act="share"]');
     /* card：system 的「傳給家人」帶著它去 #/elder?card=<id>，長輩圖先用這一張 */
     if (share) share.onclick = function () { APP.ui.share({ title: '分享這張', kind: 'postcard', id: P.id, card: P.id }); };
