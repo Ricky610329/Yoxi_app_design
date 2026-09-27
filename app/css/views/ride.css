@@ -260,6 +260,7 @@
   text-overflow: ellipsis;
 }
 .ride-map--trip { flex: none; height: 46%; min-height: 160px; }
+.ride-map--trip.ride-map--wait { height: 30%; }   /* 候車：面板是主角（收下明信片、回程），地圖矮一點 */
 /* 地圖高度固定、sheet 吃剩下的：配對中 → 行程中、展開「這條路上」時 sheet 變高，
    地圖若跟著縮，hsmap 的 viewBox 是 slice，署名與兩顆 pin 會被裁掉或偏移 */
 .ride-trip-sheet { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; }

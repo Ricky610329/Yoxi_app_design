@@ -1076,4 +1076,312 @@ T.spec('ride', function (t) {
     t.noDeadButtons(app, '/trips');
     await app.reset();
   }, { timeout: 15000 });
+
+  /* ================================================================ 7. 來回（去程 → 司機候車 → 回程）
+     狀態機與公式的各種情況在 tests/unit/trip.test.mjs（node）；這裡驗畫面、流程、可按數與返回。 */
+  function roundTrip(phase, extra) {
+    return T.fixtures.trip(Object.assign({ phase: phase, round: true, via: 'e' }, extra || {}));
+  }
+  const LAKE = function () { return T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' }); };
+  function money(app, sel) { return Number(app.text(sel)); }
+
+  t.test('來回：選好下車點才有「單程／來回」（預設單程、掃碼讓位）；選來回 → 車資、叫車鈕跟著換；叫了車就回到單程', async function (app) {
+    await app.reset();
+    const A = app.APP, R = A.ride, F = A.fmt;
+    await app.go('/ride');
+    t.ok(!app.$('[data-round-pick]'), '還沒選下車點：沒有單程／來回');
+    t.ok(app.$('main.view .ride-fab--scan'), '掃碼還在');
+    R.setDropoff('lake', 'e');
+    await app.waitFor(function () { return app.$('[data-round-pick]'); }, 3000, '單程／來回出現');
+    const km = F.km(A.place('lake').dist), f = R.roundFare(km);
+    t.eq(app.text('.ride-round__on'), '單程', '預設單程');
+    t.ok(app.$('[data-act="pick-round"]') && !app.$('[data-act="pick-oneway"]'), '可按的只有「來回」那一格');
+    t.ok(!app.$('main.view .ride-fab--scan'), '這一刻掃碼讓位');
+    t.eq(money(app, '[data-fare]'), F.fare(km), '單程車資＝fare(km)');
+    t.includes(app.text('[data-act="call-ride"]'), '叫車前往', '單程的叫車鈕文字不變');
+    checkPage(app, '/ride 單程／來回（單程）');
+
+    await app.click('[data-act="pick-round"]');
+    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '換成來回');
+    t.includes(app.text('.ride-round__on'), '來回', '選中來回');
+    t.eq(money(app, '[data-fare]'), f.total, '來回預估＝去程＋候車＋回程');
+    t.eq(money(app, '[data-fare-go]'), F.fare(km), '去程＝fare(km)');
+    t.eq(money(app, '[data-fare-back]'), F.fare(km), '回程＝fare(km)（一樣遠）');
+    t.eq(money(app, '[data-fare-wait]'), R.WAIT_FEE, '候車費＝常數');
+    t.eq(money(app, '[data-wait-max]'), R.WAIT_MAX_MIN, '司機最多等多久＝常數');
+    t.includes(app.text('[data-act="call-ride"]'), '來回', '叫車鈕寫來回');
+    t.eq(app.doc.activeElement, app.$('[data-act="call-ride"]'), '換完焦點在叫車鈕上');
+    checkPage(app, '/ride 單程／來回（來回）');
+
+    await app.click('[data-act="pick-oneway"]');
+    await app.waitFor(function () { return app.$('[data-act="pick-round"]'); }, 3000, '換回單程');
+    t.eq(money(app, '[data-fare]'), F.fare(km), '換回單程：車資回到 fare(km)');
+    t.ok(!app.$('[data-round-note]'), '單程沒有三段車資那一行');
+
+    await app.click('[data-act="pick-round"]');
+    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '再選來回');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    const tr = A.store.get('trip');
+    t.ok(tr && tr.round === true && tr.placeId === 'lake' && tr.via === 'e', '叫的是來回（歸因照舊）');
+    await app.click('[data-act="cancel-trip"]');
+    await app.click('[data-act="confirm-yes"]');
+    await app.at('/ride');
+    t.eq(app.text('.ride-round__on'), '單程', '叫了車之後回到預設的單程');
+    await app.click('[data-act="clear-dropoff"]');
+    await app.waitFor(function () { return !app.$('[data-round-pick]'); }, 3000, '清掉下車點');
+    t.ok(app.$('main.view .ride-fab--scan'), '清掉下車點：掃碼回來');
+  }, { timeout: 15000 });
+
+  t.test('單程不變：不碰「來回」就叫車 → 行程沒有 round、去程沒有來回那一行、抵達直接到結算', async function (app) {
+    await app.reset({ store: { dropoff: LAKE() } });
+    const A = app.APP;
+    await app.go('/ride');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    t.eq('round' in A.store.get('trip'), false, '單程的行程沒有 round');
+    t.ok(!app.$('[data-round-note]') && !app.$('[data-round-fare]'), '去程沒有來回的車資與說明');
+    await app.click('main.view [data-act="arrive"]');
+    await app.at('/trip/done');
+    t.eq(A.store.get('trip').phase, 'done', '單程抵達就是 done');
+    t.ok(!app.$('[data-legs]'), '結算頁沒有三段');
+  });
+
+  t.test('/trip 來回的每一段：render、死按鈕、禁用詞、可按數、車資與分鐘＝公式；候車沒有會跑的數字', async function (app) {
+    await app.reset({ store: { trip: roundTrip('riding'), dropoff: T.fixtures.dropoff() } });
+    const A = app.APP, R = A.ride, F = A.fmt;
+    const km = 28, f = R.roundFare(km);
+    await app.go('/trip');
+    await app.tick(60);
+    checkPage(app, '/trip 來回去程');
+    t.eq(money(app, '[data-phase="riding"] [data-fare]'), f.total, '去程：來回預估＝總數');
+    t.eq(money(app, '[data-phase="riding"] [data-fare-go]') + money(app, '[data-phase="riding"] [data-fare-wait]') +
+      money(app, '[data-phase="riding"] [data-fare-back]'), f.total, '三段相加＝總數');
+    t.eq(money(app, '[data-phase="riding"] [data-min]'), F.rideMin(km), '去程分鐘＝rideMin');
+    t.eq(money(app, '[data-round-note] [data-wait-max]'), R.WAIT_MAX_MIN, '去程就先說司機會等多久');
+
+    await app.click('main.view [data-act="arrive"]');
+    await app.waitFor(function () { return app.$('[data-phase="waiting"]'); }, 3000, '候車那一段');
+    t.eq(app.route().path, '/trip', '去程到了還在 /trip');
+    t.eq(A.store.get('trip').phase, 'waiting', 'phase=waiting');
+    t.eq(A.store.get('dropoff'), null, '抵達後清掉下車點');
+    t.includes(app.doc.title, '司機在附近等你', '標題');
+    checkPage(app, '/trip 候車');
+    t.eq(money(app, '[data-phase="waiting"] [data-wait-max]'), R.WAIT_MAX_MIN, '司機最多等 N 分鐘（常數）');
+    const gold = app.$('[data-phase="waiting"] [data-act="unlock-ride"]');
+    t.ok(gold && gold.getAttribute('href') === '#/unlock/neiwan?ride=1', '主要動作：收下這一次的明信片 → /unlock/neiwan?ride=1');
+    t.ok(app.$('[data-act="ride-back"]'), '回程，載我回家');
+    t.eq(money(app, '[data-phase="waiting"] [data-fare]'), f.total, '候車：來回總數');
+    t.includes(app.text('[data-act="cancel-trip"]'), '取消回程', '取消的是回程');
+    const w0 = app.text('[data-phase="waiting"]');
+    t.ok(!/倒數|\d+:\d\d/.test(w0), '候車沒有倒數、沒有時鐘：' + w0);
+    await app.tick(1100);
+    t.eq(app.text('[data-phase="waiting"]'), w0, '一秒之後字一樣（沒有計時器）');
+
+    await app.click('[data-act="ride-back"]');
+    await app.waitFor(function () { return app.$('[data-phase="returning"]'); }, 3000, '回程那一段');
+    t.eq(A.store.get('trip').phase, 'returning', 'phase=returning');
+    t.includes(app.doc.title, '回家的路上', '標題');
+    checkPage(app, '/trip 回程');
+    t.eq(money(app, '[data-phase="returning"] [data-min]'), F.rideMin(km), '回程分鐘＝rideMin（一樣遠）');
+    t.ok(app.$('[data-back-pending]'), '還沒收：說到家之後也收得到');
+
+    await app.click('main.view [data-act="arrive"]');
+    await app.at('/trip/done');
+    t.eq(A.store.get('trip').phase, 'done', '到家');
+    checkPage(app, '/trip/done 來回');
+    t.eq(money(app, '.ride-done__sum [data-fare]'), f.total, '結算：總數');
+    t.eq(money(app, '[data-legs] [data-fare-go]'), F.fare(km), '去程');
+    t.eq(money(app, '[data-legs] [data-fare-wait]'), R.WAIT_FEE, '候車');
+    t.eq(money(app, '[data-legs] [data-fare-back]'), F.fare(km), '回程');
+    t.eq(money(app, '[data-legs] [data-min]'), F.rideMin(km), '去程分鐘');
+    t.eq(money(app, '.ride-done__meta [data-km]'), km, '來回各 N 公里');
+    await app.click('[data-act="rate"][data-star="5"]');
+    const g = app.$('[data-gold] .banner--gold');
+    t.ok(!app.$('[data-gold]').hidden && g.getAttribute('href') === '#/unlock/neiwan?ride=1', '還沒收：評分後金色橫幅去收');
+    checkPage(app, '/trip/done 來回（評分後）');
+  }, { timeout: 20000 });
+
+  t.test('來回全程：候車時收下（搭車、金框）→ 回程 → 到家 → 行程紀錄寫來回、點數多一列回程；返回鍵與歷史', async function (app) {
+    await app.reset();
+    const A = app.APP, R = A.ride, F = A.fmt;
+    const km = F.km(A.place('neiwan').dist), card = A.place('neiwan').card;
+    const pts0 = R.pointsTotal();
+    await app.go('/ride');
+    const i0 = hist(app);
+    R.setDropoff('neiwan', 'k1');
+    await app.waitFor(function () { return app.$('[data-act="pick-round"]'); }, 3000, '單程／來回');
+    await app.click('[data-act="pick-round"]');
+    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '來回');
+    await app.click('[data-act="call-ride"]');
+    await app.at('/trip');
+    t.eq(hist(app), i0 + 1, '/trip 在下一格');
+    R.arrive();
+    await app.waitFor(function () { return app.$('[data-phase="waiting"]'); }, 3000, '候車');
+    t.eq(hist(app), i0 + 1, '去程到了：換掉同一格（返回不會回到去程）');
+    t.eq(R.trip.waiting() && R.trip.waiting().placeId, 'neiwan', 'waiting() 是這一趟');
+
+    /* /ride 在候車中：回到行程＋待收的金色入口，可按數 ≤ 10 */
+    await app.go('/ride');
+    t.includes(app.text('[data-act="call-ride"]'), '回到行程', '回到行程');
+    t.includes(app.text('.ride-drop .route-input__label'), '來回', '這一趟是來回');
+    t.ok(app.$('.ride-unlock[data-act="unlock-ride"]'), '待收的入口');
+    t.ok(!app.$('[data-round-pick]'), '行程中不再選單程／來回');
+    checkPage(app, '/ride 來回候車中');
+    await app.go('/trip');
+
+    await app.click('[data-phase="waiting"] [data-act="unlock-ride"]');
+    await app.at('/unlock/neiwan');
+    await app.click('[data-act="collect"]');
+    /* explore 收完：現在去收藏；之後（APP.ride.trip.waiting() 非 null）回 /trip。兩種都接受 */
+    await app.waitFor(function () { const p = app.route().path; return p === '/album' || p === '/trip'; }, 4000, '收下之後');
+    t.eq(app.STATE.card(card) && app.STATE.card(card).by, 'ride', '候車時收下：算搭車');
+    t.eq(A.store.get('cardStyle')[card], 'gold', '金框');
+    const tr = A.store.get('trip');
+    t.ok(tr && tr.phase === 'waiting' && tr.collected === true, '行程還在候車、記下收過了');
+    t.eq(A.store.get('rideVia')[card], 'k1', '歸因');
+
+    if (app.route().path !== '/trip') await app.go('/trip');
+    t.includes(app.text('[data-wait-got]'), '收下了', '候車頁：這一次的明信片收下了');
+    t.ok(!app.$('[data-phase="waiting"] [data-act="unlock-ride"]'), '收過了：沒有收下的入口');
+    t.ok(app.$('[data-act="ride-back"]').classList.contains('btn-primary'), '收過了：回程是主要動作');
+    checkPage(app, '/trip 候車（收過了）');
+    await app.click('[data-act="ride-back"]');
+    await app.waitFor(function () { return app.$('[data-phase="returning"]'); }, 3000, '回程');
+    t.ok(!app.$('[data-back-pending]'), '收過了：回程不再提醒');
+    await app.click('main.view [data-act="arrive"]');
+    await app.at('/trip/done');
+    await app.click('[data-act="rate"][data-star="4"]');
+    const g = app.$('[data-gold] .banner--gold');
+    t.eq(g && g.getAttribute('href'), '#/postcard/' + card, '收過了：金色橫幅去看收下的那一張');
+    t.eq(g && g.getAttribute('data-act'), 'open-postcard', 'data-act');
+    t.includes(app.text('[data-gold]'), '收下了', '寫收下了');
+    t.noDeadButtons(app, '/trip/done 來回（收過了）');
+    await app.click('[data-act="go-home"]');
+    await app.at('/ride');
+    t.eq(A.store.get('trip'), null, '到家、評了分、收過了：/ride 安靜清掉這一趟');
+    t.ok(!app.$('[data-act="unlock-ride"]'), '沒有待收的入口');
+
+    await app.go('/trips');
+    const row = app.$('[data-trip-row][href="#/postcard/' + card + '"]');
+    t.ok(row && row.hasAttribute('data-round'), '行程紀錄：來回那一列');
+    t.includes(row && row.textContent, '來回', '寫來回');
+    t.eq(row && Number(row.querySelector('[data-fare]').textContent), R.roundFare(km).total, '車資＝來回總數');
+    t.eq(row && Number(row.querySelector('[data-km]').textContent), km, '來回各 N 公里');
+    t.noDeadButtons(app, '/trips 來回');
+    await app.go('/points');
+    const amt = Math.floor(F.fare(km) / R.FARE_PER_POINT);
+    t.eq(Number(app.text('[data-points-total]')) - pts0, amt * 2 + R.RIDE_BONUS, '點數：去程＋回程的搭車回饋＋城事解鎖回饋');
+    const sum = app.$$('[data-amt]').reduce(function (a, e) { return a + Number(e.getAttribute('data-amt')); }, 0);
+    t.eq(Number(app.text('[data-points-total]')), sum, '總數＝明細相加');
+    t.ok(app.$$('[data-points-row]').some(function (r) { return r.textContent.indexOf('回程') >= 0; }), '有一列回程');
+  }, { timeout: 25000 });
+
+  t.test('來回：候車中「取消回程」→ 退回單程的已抵達，還沒收的卡還在 /ride；回程中的 /trip/done 給回到行程的路', async function (app) {
+    await app.reset({ store: { trip: roundTrip('waiting') } });
+    const A = app.APP;
+    await app.go('/trip/done');
+    t.includes(app.text('main.view'), '附近等你', '/trip/done 在候車中：司機在附近等你');
+    t.includes(app.text('main.view'), '到家之後', '來回到家才結算');
+    t.eq(app.$('main.view [data-act="go-trip"]').getAttribute('href'), '#/trip', '回到行程');
+    checkPage(app, '/trip/done（候車中）');
+    await app.go('/trip');
+    await app.click('[data-act="cancel-trip"]');
+    t.includes(app.text('.app-confirm'), '回程', '確認框問的是回程');
+    await app.click('[data-act="confirm-yes"]');
+    await app.at('/ride');
+    const tr = A.store.get('trip');
+    t.ok(tr && tr.phase === 'done' && !('round' in tr), '退回單程的已抵達');
+    t.ok(app.$('[data-act="unlock-ride"]'), '還沒收的卡：/ride 有收下的入口');
+    await app.reset({ store: { trip: roundTrip('returning') } });
+    await app.go('/trip/done');
+    t.includes(app.text('main.view'), '回家的路上', '/trip/done 在回程中：還在回家的路上');
+    t.noDeadButtons(app, '/trip/done（回程中）');
+  });
+
+  t.test('來回結算：回程的起訖只在去程抵達之後才寫（demo 把時間壓在一起時不寫一個更早的回程）', async function (app) {
+    const t0 = Date.parse(T.fixtures.T0);
+    const clocks = function () { return (app.text('[data-legs]').match(/\d+:\d\d – \d+:\d\d/g) || []).length; };
+    await app.reset({ store: { trip: roundTrip('done', { rated: true, backAt: new Date(t0 + 3 * 3600000).toISOString() }) } });
+    await app.go('/trip/done');
+    t.eq(clocks(), 2, '回程在去程之後：去程、回程都寫起訖');
+    await app.reset({ store: { trip: roundTrip('done', { rated: true, backAt: T.fixtures.T0 }) } });
+    await app.go('/trip/done');
+    t.eq(clocks(), 1, '回程比去程抵達還早（demo）：只寫去程的起訖');
+    t.eq(Number(app.text('[data-legs] [data-min]')), app.APP.fmt.rideMin(28), '分鐘照樣寫');
+  });
+
+  t.test('來回的 demo：demo 面板「搭 yoxi 抵達」同一個目的地 → 候車（來回留著）；收下之後 waiting() 還是這一趟', async function (app) {
+    await app.reset({ store: { trip: roundTrip('riding') } });
+    const A = app.APP;
+    if (!(A.system && A.system.demoArrive)) { t.ok(true, 'system 沒有 demoArrive：略過'); return; }
+    await app.go('/trip');
+    A.system.demoArrive('neiwan', 'ride');
+    await app.at('/unlock/neiwan');
+    const tr = A.store.get('trip');
+    t.ok(tr && tr.round === true && tr.phase === 'waiting', 'demo 搭 yoxi 抵達：來回的候車');
+    await app.click('[data-act="collect"]');
+    await app.waitFor(function () { const p = app.route().path; return p === '/album' || p === '/trip'; }, 4000, '收下之後');
+    t.ok(A.ride.trip.waiting() && A.store.get('trip').collected === true, '收下之後司機還在等');
+  }, { timeout: 15000 });
+
+  t.test('距離不明的來回：不寫車資與分鐘，寫「距離待確認」', async function (app) {
+    await app.reset();
+    const A = app.APP, orig = A.place;
+    A.place = function () {
+      const p = orig.apply(this, arguments);
+      if (p && p.id === 'moat') p.dist = null;
+      return p;
+    };
+    try {
+      A.store.set('dropoff', T.fixtures.dropoff({ id: 'moat', name: '護城河的舊碼頭階梯', km: null, via: 'e' }));
+      await app.go('/ride');
+      await app.click('[data-act="pick-round"]');
+      await app.waitFor(function () { return app.$('[data-round-note]'); }, 3000, '來回');
+      t.includes(app.text('[data-round-note]'), '距離待確認', '/ride 來回：距離待確認');
+      t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-fare-go]'), '/ride 沒有車資');
+      await app.click('[data-act="pick-oneway"]');
+      await app.waitFor(function () { return app.$('[data-act="pick-round"]'); }, 3000, '換回單程');
+      A.store.set('trip', roundTrip('riding', { placeId: 'moat', km: null }));
+      await app.go('/trip');
+      t.includes(app.text('[data-phase="riding"]'), '距離待確認', '/trip 去程');
+      t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-min]'), '/trip 去程沒有車資與分鐘');
+      A.store.set('trip', roundTrip('waiting', { placeId: 'moat', km: null }));
+      await app.go('/trip');
+      t.includes(app.text('[data-phase="waiting"]'), '距離待確認', '/trip 候車');
+      t.ok(!app.$('main.view [data-fare]'), '/trip 候車沒有車資');
+      A.store.set('trip', roundTrip('done', { placeId: 'moat', km: null, rated: true }));
+      await app.go('/trip/done');
+      t.includes(app.text('.ride-done__meta'), '距離待確認', '/trip/done');
+      t.ok(!app.$('main.view [data-fare]') && !app.$('[data-legs]'), '/trip/done 沒有車資與三段');
+      t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    } finally {
+      A.place = orig;
+    }
+  }, { timeout: 15000 });
+
+  t.test('/ride 可按數 ≤ 10：來回候車中＋待收、下車點＋待收＋單程／來回', async function (app) {
+    const drop = LAKE();
+    const cases = [
+      ['來回去程', { trip: roundTrip('riding') }],
+      ['來回候車＋待收', { trip: roundTrip('waiting') }],
+      ['來回回程＋待收', { trip: roundTrip('returning') }],
+      ['來回到家＋待收', { trip: roundTrip('done', { rated: true }) }],
+      ['來回到家＋待收＋下車點', { trip: roundTrip('done', { rated: true }), dropoff: drop }],
+    ];
+    for (const c of cases) {
+      await app.reset({ store: c[1] });
+      await app.go('/ride');
+      await app.tick(40);
+      const n = t.countTappables(app);
+      t.ok(n <= 10, '/ride ' + c[0] + ' 可按數 ' + n + ' ≤ 10');
+      t.noDeadButtons(app, '/ride ' + c[0]);
+    }
+    await app.reset({ store: { trip: T.fixtures.trip({ phase: 'done', rated: true }), dropoff: drop } });
+    await app.go('/ride');
+    await app.click('[data-act="pick-round"]');
+    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '來回');
+    const n = t.countTappables(app);
+    t.ok(n <= 10, '/ride 下車點＋待收＋選了來回 可按數 ' + n + ' ≤ 10');
+  }, { timeout: 15000 });
 });

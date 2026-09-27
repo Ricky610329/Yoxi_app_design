@@ -1517,11 +1517,12 @@ APP.view('trip', {
     const km = t.km != null ? t.km : kmOf(p);
     const min = km == null ? null : F.rideMin(km);
     const leg = legOf(TRIP.phase(t));
+    /* 候車那一段的主角是面板（收下明信片、回程），地圖矮一點，整段不用捲就看得到 */
     const hdr = function (title) {
       return '<header class="hdr-red hdr-red--compact ride-trip-hdr">' +
         '<div class="hdr-red__bar"><h1 class="hdr-red__title">' + title + '</h1></div>' +
       '</header>' +
-      '<div class="ride-map ride-map--trip" data-trip-map></div>';
+      '<div class="ride-map ride-map--trip' + (leg === 'wait' ? ' ride-map--wait' : '') + '" data-trip-map></div>';
     };
 
     /* 來回的候車與回程 */
@@ -1681,12 +1682,14 @@ APP.view('trip', {
    ========================================================================== */
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9Z"/></svg>';
 
-/* 來回的結算：總數＋三段（去程、候車、回程；每一段都是公式）。回程的起訖要有按下「回程」的時間才寫 */
+/* 來回的結算：總數＋三段（去程、候車、回程；每一段都是公式）。回程的起訖要有按下「回程」的時間、
+   而且在去程抵達之後才寫（demo 把時間壓在一起時不寫一個比去程還早的回程） */
 function roundDoneHTML(t, p, km, start) {
   const f = roundFare(km);
   const min = km == null ? null : F.rideMin(km);
   const span = function (d) { return esc(F.clock(d)) + ' – ' + esc(F.clock(new Date(d.getTime() + min * 60000))) + ' · '; };
-  const back0 = validDate(t.backAt);
+  const b = validDate(t.backAt);
+  const back0 = b && min != null && b.getTime() >= start.getTime() + min * 60000 ? b : null;
   const leg = function (name, meta, amt, attr) {
     return '<div class="ride-done__leg"><dt>' + name + '</dt>' +
       '<dd><span class="ride-done__leg-meta">' + meta + '</span><span class="num">$<span ' + attr + '>' + amt + '</span></span></dd></div>';
