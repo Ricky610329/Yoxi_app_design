@@ -175,3 +175,13 @@
 沒做的：圖鑑進度條換獎勵（=刻意拿掉的集點卡）、每週目標（會有「沒達到」）——週回顧維持只寫「這一週你去了 N 個地方」。
 
 驗收：`python app/tests/run.py` node 80/80、瀏覽器 282/282；check-sw PASS；`verify-quiet.py` 在這台 Mac 只跑得了 ②（PASS、與基準相同）。
+
+## 2026-09-27 節日版：那一週都拿得到、會動的節日插畫（同分支）
+
+使用者：節日版要整個放假的那一週都拿得到；郵戳太陽春，要龍舟、月亮和玉兔、櫻花樹、鞭炮的動畫，但不能擋掉景色、也不能小到看不出來。細節見 `docs/HANDOFF.md` §18。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `2655314` | `FESTIVALS` 改成當天＋官方連假、`festSpan` 算那一週；加賞櫻；新增 `explore-fest.js`／`explore-fest.css`：四種會動的 SVG 插畫，只放在卡片四周、5 秒停；比例測試；VERSION v20 |
+
+驗收：`python app/tests/run.py` node 80/80、瀏覽器 283/283；check-sw PASS。
