@@ -18,7 +18,7 @@ gen-postcards.py —— 每張明信片五種畫風的成品：景點照片 → 
             （只用 img2img 時，「木刻版畫」會把新竹車站畫成日式寶塔）。
     輸出    app/assets/postcards/<明信片 id>-<款式>.jpg（480×640，JPEG q80）
             app/assets/postcards/index.json：每張的底圖、提示詞、種子、參數，可以重現。
-    款式    watercolor／oil／woodcut／ink／gold，跟 app/js/views/explore-cards.js 的 DRAW_STYLES 一致。
+    款式    watercolor／oil／woodcut／ink／gold，跟 app/js/views/explore-cards.js 的 CARD_STYLES 一致。
 
 環境（不進 repo；模型第一次跑會下載到 ~/.cache/huggingface，約 3 GB）：
     python3.13 -m venv .venv-sd && .venv-sd/bin/pip install torch diffusers transformers accelerate safetensors pillow opencv-python-headless

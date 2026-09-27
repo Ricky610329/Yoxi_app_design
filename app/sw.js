@@ -57,6 +57,7 @@ const PRECACHE = [
   './css/views/system.css',
   './css/views/ride.css',
   './css/views/explore.css',
+  './css/views/explore-fest.css',
   './css/views/album.css',
   // prototype js
   '../prototype/js/icons.js',
@@ -76,6 +77,7 @@ const PRECACHE = [
   './js/views/system.js',
   './js/views/ride.js',
   './js/views/explore-fx.js',
+  './js/views/explore-fest.js',
   './js/views/explore-cards.js',
   './js/views/explore-face.js',
   './js/views/explore-gold.js',

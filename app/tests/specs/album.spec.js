@@ -587,6 +587,51 @@ T.spec('album', function (t) {
     t.eq(app.$('[data-act="pick-card"].is-on').getAttribute('data-card'), recent[0], '沒收過的 card 不理，退回最近那張');
   });
 
+  /* 8b. 長輩圖＝那張明信片（使用者：「把全部的卡片、圖片、特效同步到分享的早安圖上面」） */
+  t.test('/elder：圖就是收下的那張明信片（成品、金框、節日版插畫、底圖署名），換地方整張跟著換、選好的祝福留著', async function (app) {
+    await app.reset();
+    const E = app.APP.explore;
+    const moon = E.FESTIVALS.filter(function (f) { return f.key === 'moon'; })[0];
+    const y = Object.keys(moon.days)[0];
+    await app.reset({ still: false, store: { demoDate: y + '-' + moon.days[y] } });
+    T.helpers.collect(app, 'glass-kiln');                  /* 中秋那一週走路收的 p11 */
+    app.APP.store.set('demoDate', null);
+    await app.go('/elder?card=p11');
+    await app.tick(80);
+    const img = app.$('[data-elder]');
+    t.eq(img.getAttribute('data-card'), 'p11', '圖是分享的那一張');
+    t.eq(app.$('[data-elder-art]').getAttribute('data-card-art'), 'p11', '卡面疊收下的那一款（data-card-art）');
+    const gen = app.$('[data-elder-art] > img.card-gen');
+    const want = E.postcardSrc('p11', E.cardStyleOf('p11').key);
+    t.ok(gen && gen.getAttribute('src') === want, '成品圖：' + (gen && gen.getAttribute('src')) + '（要 ' + want + '）');
+    t.ok(app.$('[data-elder] .fest[data-fest="moon"]'), '中秋版：月亮和玉兔也在長輩圖上');
+    t.ok(app.$('[data-elder] .fest').classList.contains('is-live'), '打開就動一次');
+    t.ok(app.$('[data-elder] .ai-mark'), '圖上標 AI 生成示意（這張圖會傳出去）');
+    t.includes(app.text('[data-elder-credit]'), E.cardPhoto('p11').author, '圖上印底圖照片的作者');
+    t.includes(app.text('[data-elder-credit]'), E.cardPhoto('p11').licence, '與授權');
+    t.ok(!img.classList.contains('is-gold'), '走路收的不是金框');
+    t.ok(app.$('[data-act="pick-card"][data-card="p11"]') && /中秋版/.test(app.text('[data-act="pick-card"][data-card="p11"]')), '選地方的小卡寫「中秋版」');
+    await app.click('[data-act="caption"][data-cap-i="1"]');
+    /* 換成搭車收的 p8（demo 一開始就有、金框、限定版） */
+    await app.click('[data-act="pick-card"][data-card="p8"]');
+    await app.tick(80);
+    const img2 = app.$('[data-elder]');
+    t.eq(img2.getAttribute('data-card'), 'p8', '整張換成 p8');
+    t.ok(img2.classList.contains('is-gold') && img2.hasAttribute('data-gold-aura'), '搭車收的：金框＋金粉');
+    t.ok(app.$('[data-elder] [data-ribbon]'), '金框的角標');
+    t.ok(!app.$('[data-elder] .fest'), 'p8 不是節日版：沒有插畫');
+    t.eq(app.$('[data-elder-art]').getAttribute('data-card-art'), 'p8', '卡面換成 p8 收下的那一款');
+    t.eq(app.text('[data-elder-big]'), '身體健康 萬事如意', '換地方不會把選好的祝福洗掉');
+    t.includes(app.text('[data-elder-small]'), '青草湖', '地點跟著換');
+    t.includes(app.text('[data-elder-credit]'), E.cardPhoto('p8').author, '圖上的署名跟著換');
+    t.includes(app.text('[data-credit]'), E.cardPhoto('p8').author, '圖底下的出處連結也跟著換');
+    t.eq(app.$$('[data-credit]').length, 1, '出處只有一行');
+    t.noDeadButtons(app, '/elder 換地方之後');
+    t.noBannedWords(app, { msg: '/elder' });
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    await app.reset();
+  }, { timeout: 15000 });
+
   /* 10. 週回顧的範圍 */
   t.test('/week：標題＝圖表那 7 天；只算日期在範圍裡的卡，範圍之後的另寫一行', async function (app) {
     await app.reset();
@@ -684,7 +729,7 @@ T.spec('album', function (t) {
   });
 
   /* 5c. 還沒生成成品的明信片（p12–p22）：收下之後在收藏裡是實景照片＋畫風濾鏡，不是插圖 */
-  t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋抽到的畫風，詳情寫照片出處', async function (app) {
+  t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋收下的畫風，詳情寫照片出處', async function (app) {
     await app.reset();
     const A = app.APP;
     T.helpers.collect(app, 'hill', { style: 'oil' });

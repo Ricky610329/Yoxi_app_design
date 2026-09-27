@@ -19,9 +19,9 @@ T.spec('flows', function (t) {
     return app.$$('.device .toast').map(function (x) { return x.textContent; }).join('｜');
   }
 
-  /* 目前畫面裡看得到的返回鍵（<a data-back>）、非 still 的抽卡：harness 的 T.helpers */
+  /* 目前畫面裡看得到的返回鍵（<a data-back>）、非 still 的翻卡：harness 的 T.helpers */
   const clickBack = T.helpers.clickBack;
-  const drawThrough = T.helpers.drawThrough;
+  const revealThrough = T.helpers.revealThrough;
 
   /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
@@ -41,7 +41,7 @@ T.spec('flows', function (t) {
     await app.at('/unlock/' + T0.id);
     if (!app.still) {
       t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先是抵達（這個地方亮起來）');
-      await drawThrough(app);
+      await revealThrough(app);
     }
     await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '3'; }, 2000, '結果');
     const inp = app.$('[data-one-line]');
@@ -430,12 +430,12 @@ T.spec('flows', function (t) {
       const txt = pre ? pre.textContent : '';
       if (txt || app.errors.length) bad.push(list[i].path + '：' + (txt || app.errors.join('；')).slice(0, 160));
     }
-    /* 抵達：這個地方亮起來、等你點；點過去抽卡會停在結果 */
+    /* 抵達：這個地方亮起來、等你點；點過去翻卡會停在結果 */
     await app.go('/unlock/moat');
     await app.tick(1500);
     t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先停在抵達，等你點發光的地方');
     t.ok(app.$('[data-unlock]').classList.contains('is-lit'), '這個地方亮起來了');
-    await drawThrough(app);
+    await revealThrough(app);
     t.ok(app.$('[data-act="collect"]'), '結果有「收進收藏」');
     /* 行程：配對 → 行程中由計時器切換 */
     await app.reset({ still: false, store: { dropoff: T.fixtures.dropoff({ id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' }) } });
@@ -766,8 +766,8 @@ T.spec('flows', function (t) {
     t.ok((app.text('[data-act="unlock-ride"]') || '').indexOf('限定') < 0, '/ride 入口不寫限定');
     await app.click('main.view [data-act="unlock-ride"]');
     await app.at('/unlock/moat');
-    t.ok(app.$('[data-final-card].postcard--gold'), '搭 yoxi 抵達必得金框');
-    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'gold', '抽到的是金框');
+    t.ok(app.$('[data-final-card].postcard--gold'), '搭 yoxi 抵達是金框');
+    t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'gold', '款式是金框');
     t.ok(!app.$('[data-points]'), '沒有 +50');
     t.includes(app.text('.unlock__sub'), '搭 yoxi 抵達', '文案仍是搭車抵達');
     await app.click('[data-act="collect"]');
@@ -776,7 +776,7 @@ T.spec('flows', function (t) {
     t.eq(A.ride.pointsRows().filter(function (r) { return r.city; }).length, city0, '城事解鎖回饋列數不變');
     t.eq(A.ride.pointsTotal() - total0, Math.floor(F.fare(km) / 20), '只多了一般的搭車回饋');
     await app.go('/postcard/p19');
-    t.ok(app.$('.postcard--gold'), '明信片頁是金框（抽到的款式）');
+    t.ok(app.$('.postcard--gold'), '明信片頁是金框（收下的款式）');
     t.eq(app.APP.store.get('cardStyle').p19, 'gold', 'store.cardStyle 記下金框');
     await app.go('/points');
     const sum = app.$$('[data-amt]').reduce(function (s, e) { return s + Number(e.getAttribute('data-amt')); }, 0);

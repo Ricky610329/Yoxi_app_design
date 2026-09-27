@@ -58,7 +58,7 @@ function cardFace(cardId, key) {
 /* 別的畫面（收藏、叫車首頁的卡片、浮起來的小卡）要顯示「收下的那一張」：元素帶 data-card-art="<明信片 id>"，
    這裡把那一款疊在插圖上面，跟 /unlock 的卡面同一個順序（cardFace）：
      生成好的成品（POSTCARD_GEN 裡的）→ 沒有成品、或成品載不到：底圖照片＋那一款的 SVG 濾鏡 → 都沒有才是插圖。
-   以前沒有第二步：p12–p22 還沒生成成品，抽卡時看到的是實景照片做的卡面，收下之後收藏裡卻變回插圖。
+   以前沒有第二步：p12–p22 還沒生成成品，翻卡時看到的是實景照片做的卡面，收下之後收藏裡卻變回插圖。
    還沒收的不疊（維持灰階插圖，「到了就會上色」）。
    金框那一款在哪裡顯示都有金框和金粉（explore-gold.js）：畫面自己標了 data-gold-aura（框畫在外層）就照它的，
    沒標的這裡補上 data-gold-aura＋.card-gold（通用的框，explore.css） */
@@ -105,7 +105,7 @@ function paintCardArt(root) {
 
 /* 照片＋濾鏡的卡面：濾鏡的參數是 px（水彩的白邊、油畫的筆觸），照 /unlock 卡面的寬（220 px）調的。
    直接套在 40 px 的獎章縮圖上會糊成一團、套在 290 px 的明信片詳情上又太淡，
-   所以照片一律先排成 PHOTO_W 寬（高照容器的比例）、套濾鏡，再整張縮放到容器大小：哪裡看起來都跟抽到時一樣。
+   所以照片一律先排成 PHOTO_W 寬（高照容器的比例）、套濾鏡，再整張縮放到容器大小：哪裡看起來都跟翻開時一樣。
    容器大小變了（還沒顯示、面板展開、視窗改大小）由 ResizeObserver 重算。 */
 const PHOTO_W = 220;
 const photoFit = window.ResizeObserver ? new ResizeObserver(function (entries) {

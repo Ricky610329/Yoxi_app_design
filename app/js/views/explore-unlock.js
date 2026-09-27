@@ -1,23 +1,24 @@
 /* ==========================================================================
-   yoxi 城事 web app — explore 區塊：/unlock/:id 抵達 → 收集 → 抽卡
+   yoxi 城事 web app — explore 區塊：/unlock/:id 抵達 → 收集 → 翻卡
    契約：app/ARCHITECTURE.md §3、§7、§8。只用 APP.view() 註冊，不改 app.js。
-   載入順序：explore-fx.js（APP.fx）→ explore-cards.js（抽卡、收下）→ explore.js（頁面零件）→ 這支。
+   載入順序：explore-fx.js（APP.fx）→ explore-cards.js（款式規則、收下）→ explore.js（頁面零件）→ 這支。
 
-   回答什麼：到了。這個地方的明信片是哪一款？收下它。
+   回答什麼：到了。這個地方的明信片是哪一款、為什麼是這一款？收下它。
    原型：unlock.html（三幕解鎖的前身）。
-   搭 yoxi 抵達必得金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
+   搭 yoxi 抵達是金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
-     幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板。
-     抽卡（data-at=2）：卡背升起 → 蓄力（拍數＝稀有度）→ 點一下翻開 → 依款式給特效（金框最重）。
-     結果（data-at=3）：卡面＋畫風名、一句話、收進收藏（抽到的不寫機率；想看機率按成品右上角的「?」）。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
+     幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板，面板上先寫好會收到哪一款、為什麼。
+     翻卡（data-at=2）：卡背升起 → 蓄力 → 點一下翻開 → 依款式給特效（金框最重）。
+     結果（data-at=3）：卡面（節日那一週多一層會動的插畫、遠行蓋一枚戳）＋畫風名＋為什麼、一句話、收進收藏。已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。
    特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
-   鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；抽完焦點移到「抽到 ○○」那一行。
-   走路抵達的抽卡在 mount 做（render 是純函式），結果記在 store.draws，重整、返回都不重抽。
-   結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與機率說明一起收掉。
+   鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；翻完焦點移到「收到 ○○」那一行。
+   款式照規則（explore-cards.js 的 cardRule：季節定畫風、搭 yoxi 是金框、節日版、遠行戳），render 就算得出來，
+   不用等 mount、不寫 store；重整、返回都是同一款。
+   結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與規則說明一起收掉。
    「回探索」與找不到、返回的保底都回叫車首頁的探索模式（/ride?mode=explore&area=<id>），不回舊的 /explore。
-   抽卡：每個地方五款（四種畫風＋金框），抵達時抽一款。搭 yoxi 抵達必得金框；走路抵達照 DRAW_STYLES 的機率。
-   機率依法要揭露，但不擺在畫面上搶戲：收在收集面板與成品右上角的「?」裡（data-act="open-odds"）。
-   刻意沒有：分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
+   規則說明收在收集面板與成品右上角的「?」裡（data-act="open-rules"），面板與結果只寫這一次適用的那幾條。
+   刻意沒有：機率、抽籤、「越稀有越華麗」的暗示（蓄力拍數只分金框與其他，四季的畫風一樣重）；
+             分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
    每款翻開的反應（REVEAL）刻意寫成五段程式而不是資料表：停格、震動、粒子、音效的先後各款不同，
    攤成表反而看不出節奏。
 
@@ -35,16 +36,18 @@ if (!K || !K.notFound) throw new Error('explore-unlock.js 要在 explore-cards.j
 const esc = APP.esc;
 const fmt = APP.fmt;
 const E = APP.explore;
-const DRAW_STYLES = E.DRAW_STYLES;
+const CARD_STYLES = E.CARD_STYLES;
 const cardStyleOf = E.cardStyleOf;
+const cardOrigin = E.cardOrigin;
+const ruleLines = E.ruleLines;
 const cardFace = E.cardFace;
 const cardPhoto = E.cardPhoto;
-const openOdds = E.openOdds;
+const openRules = E.openRules;
 const collect = E.collect;
 const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
-const styleOf = K.styleOf, storedDraw = K.storedDraw, rollDraw = K.rollDraw, arrivalAt = K.arrivalAt;
-const closeOdds = K.closeOdds;
+const styleOf = K.styleOf, arrivalAt = K.arrivalAt, today = K.today, marksHTML = K.marksHTML;
+const closeRules = K.closeRules;
 const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar, distHTML = K.distHTML;
 
 /* 收下時寫的一句話最多幾個字：輸入框的 maxlength、提示文字、收下時的截斷都讀這一個 */
@@ -60,18 +63,20 @@ function cardName(p) {
 /* 點數只給走不到的地方：判斷在 ride.js（APP.ride.limitedPlace），這裡不另寫一份 */
 const limitedPlace = APP.ride.limitedPlace;
 
-/* 稀有度 1–5 就是 DRAW_STYLES 的順序（越後面越難抽）。特效照稀有度分級給，常見的輕、稀有的重：
-   | 稀有度 | 款式     | 蓄力        | 翻開之後                                                        |
-   | 1      | 水彩     | 1 拍        | 水彩暈開、幾顆柔光                                              |
-   | 2      | 油畫     | 2 拍        | 筆刷掃過、暖色光點、卡片彈一下                                  |
-   | 3      | 木刻版畫 | 3 拍        | 砸下來、停格 50ms、輕震、衝擊環、木屑                           |
-   | 4      | 水墨     | 4 拍        | 墨滴落下、停格 80ms、夜色洗成宣紙、墨暈、圓相                   |
-   | 5      | 金框     | 4 拍＋昇格  | 閃光（整次唯一一次）、光芒、轉一圈半、停格 120ms、重震、金粉噴泉，金粉留著慢慢飄 |
-   蓄力每一拍換一個光色（白 → 暖橙 → 朱紅 → 墨 → 金），停在哪一色就透露是哪一級。 */
+/* 款式 1–5 就是 CARD_STYLES 的順序；它只決定光色與翻開的反應，不代表「稀有」：
+   四季的畫風一樣常見（看你什麼時候去），只有金框（搭 yoxi 才有）多一段昇格。
+   | 順序 | 款式     | 蓄力        | 翻開之後                                                        |
+   | 1    | 水彩     | 2 拍        | 水彩暈開、幾顆柔光                                              |
+   | 2    | 油畫     | 2 拍        | 筆刷掃過、暖色光點、卡片彈一下                                  |
+   | 3    | 木刻版畫 | 2 拍        | 砸下來、停格 50ms、輕震、衝擊環、木屑                           |
+   | 4    | 水墨     | 2 拍        | 墨滴落下、停格 80ms、夜色洗成宣紙、墨暈、圓相                   |
+   | 5    | 金框     | 4 拍＋昇格  | 閃光（整次唯一一次）、光芒、轉一圈半、停格 120ms、重震、金粉噴泉，金粉留著慢慢飄 |
+   蓄力每一拍換一個光色（白 → 暖橙 → 朱紅 → 墨 → 金）；翻開前停在這一款自己的光色。 */
 function tierOf(d) {
-  const i = d ? DRAW_STYLES.indexOf(d) : -1;
+  const i = d ? CARD_STYLES.indexOf(d) : -1;
   return i < 0 ? 1 : i + 1;
 }
+function beatsOf(d) { return d && d.gold ? 4 : 2; }
 function auraColor(i) {
   const F = APP.fx;
   if (!F) return [255, 255, 255];
@@ -123,24 +128,27 @@ function renderUnlock(params) {
   if (!p) {
     return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  /* 搭車還是走路、幾公里、這次的款式：跟收下時（APP.explore.collect）同一個答案 */
+  /* 搭車還是走路、幾公里、照規則是哪一款：跟收下時（APP.explore.collect）同一個答案 */
   const arr = arrivalAt(p);
   const isRide = !!arr.trip;
   const got = collected(p);
-  /* 已收過的地方不重抽：顯示當初收下的那一款。走路抵達還沒抽的是 null（卡背；mount 抽完重畫） */
-  const draw = got ? cardStyleOf(p.card) : arr.draw;
-  /* 金框看抽到的款式（搭車必得）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
-  const gold = !got && !!draw && !!draw.gold;
+  /* 已收過的地方：顯示當初收下的那一款與它的郵戳（cardOrigin）；還沒收：照今天的規則 */
+  const origin = got && p.card ? cardOrigin(p.card) : null;
+  const style = got ? cardStyleOf(p.card) : arr.style;
+  const lines = origin ? origin.lines : ruleLines(arr.rule);
+  const marks = origin ? origin.marks : marksHTML(arr.rule);
+  /* 金框看款式（搭 yoxi 抵達就是金框）；+50 點仍只給走不到的地方（ride.js 的 limitedPlace） */
+  const gold = !got && !!style && !!style.gold;
   const bonus = isRide && limitedPlace(p);
   const name = cardName(p);
-  const today = fmt.todayMMDD();
-  const year = new Date().getFullYear();
+  const day = today();
   const km = arr.km;
   const arriveBy = isRide
     ? '搭 yoxi 抵達 · ' + num(km) + ' 公里'
     : (p.dist != null ? '走了 ' + distHTML(p.dist) + ' 抵達' : '走路抵達');
-  const tier = tierOf(draw);
-  const odds = '<button class="ex-odds-btn" type="button" data-act="open-odds" aria-label="抽取機率"><span class="ex-odds-btn__i">?</span></button>';
+  const tier = tierOf(style);
+  const rulesBtn = '<button class="ex-rules-btn" type="button" data-act="open-rules" aria-label="明信片怎麼決定"><span class="ex-rules-btn__i">?</span></button>';
+  const why = lines.map(function (t) { return '<span class="ex-why__l">' + esc(t) + '</span>'; }).join('');
 
   /* ---- 幕一：抵達。夜色地圖上，這個地方亮起來；點它拉出「收集明信片」 ---- */
   const scene1 = got ? '' :
@@ -165,16 +173,16 @@ function renderUnlock(params) {
           '<span class="ex-sheet__art" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
           '<span class="ex-sheet__txt">' +
             '<span class="ex-sheet__t">' + esc(name) + '</span>' +
-            '<span class="ex-sheet__p">這裡有 ' + num(DRAW_STYLES.length) + ' 款明信片，收集時隨機抽出一款</span>' +
+            '<span class="ex-sheet__p ex-why" data-why>' + why + '</span>' +
           '</span>' +
-          odds +
+          rulesBtn +
         '</div>' +
-        '<button class="btn-primary ex-sheet__go" type="button" data-act="draw">收集明信片</button>' +
+        '<button class="btn-primary ex-sheet__go" type="button" data-act="open-card">收集明信片</button>' +
       '</div>' +
     '</div>';
 
-  /* ---- 抽卡舞台的特效層（只放這一款用得到的） ---- */
-  const key = draw ? draw.key : '';
+  /* ---- 翻卡舞台的特效層（只放這一款用得到的） ---- */
+  const key = style ? style.key : '';
   const stageFx = got ? '' :
     '<div class="ex-stage__fx" aria-hidden="true">' +
       (key === 'gold' ? '<span class="ex-rays"><i></i></span>' : '') +
@@ -186,11 +194,12 @@ function renderUnlock(params) {
         : '') +
     '</div>';
 
-  /* 抽完焦點移到這裡（tabindex=-1），報讀器念一次「抽到 ○○」 */
-  const label = draw
-    ? '<p class="ex-unlock__style" data-draw="' + esc(draw.key) + '" tabindex="-1">' +
-        (got ? '' : '<span class="ex-sr">抽到</span>') +
-        '<b class="ex-unlock__sname">' + esc(draw.name) + '</b>' +
+  /* 翻完焦點移到這裡（tabindex=-1），報讀器念一次「收到 ○○」和為什麼 */
+  const label = style
+    ? '<p class="ex-unlock__style" data-result-style="' + esc(style.key) + '" tabindex="-1">' +
+        (got ? '' : '<span class="ex-sr">收到</span>') +
+        '<b class="ex-unlock__sname">' + esc(style.name) + '</b>' +
+        '<span class="ex-why ex-unlock__why" data-why>' + why + '</span>' +
       '</p>'
     : '';
 
@@ -216,7 +225,7 @@ function renderUnlock(params) {
   const mute = !!APP.store.get('fxMute');
 
   return '<div class="unlock ex-unlock" data-unlock data-at="' + (got ? '3' : '1') + '"' + (isRide ? ' data-ride' : '') +
-      (draw ? ' data-style="' + esc(draw.key) + '" data-tier="' + tier + '"' : '') + '>' +
+      (style ? ' data-style="' + esc(style.key) + '" data-tier="' + tier + '"' : '') + '>' +
       (got ? '' : '<div class="ex-unlock__map" data-arrive-map aria-hidden="true"></div>' +
                   (key === 'ink' ? '<div class="ex-paper" aria-hidden="true"><svg class="ex-face__paper" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg></div>' : '') +
                   '<canvas class="ex-fx ex-fx--back" data-fx-back aria-hidden="true"></canvas>') +
@@ -231,17 +240,18 @@ function renderUnlock(params) {
                   '<span class="ex-back__dot"></span><span class="ex-back__mark">yoxi</span><span class="ex-back__sub">城事</span>' +
                 '</div>') +
               '<div class="postcard ex-flip__front' + (gold ? ' postcard--gold' : '') + '" data-final-card' +
-                  (draw ? ' data-style="' + esc(draw.key) + '"' : '') + '>' +
+                  (style ? ' data-style="' + esc(style.key) + '"' : '') + '>' +
                 (gold ? '<span class="postcard__ribbon" data-ribbon-new>yoxi 限定版</span>' : '') +
-                faceHTML(p, draw) +
+                faceHTML(p, style) +
                 '<span class="ai-mark">AI 生成示意</span>' +
+                marks +
                 '<span class="postcard__foot">' +
                   '<span class="postcard__name">' + esc(name) + '</span>' +
-                  '<span class="postcard__date">' + year + '.' + esc(today) + ' · ' + esc(p.area || '新竹市') + '</span>' +
+                  '<span class="postcard__date">' + day.getFullYear() + '.' + esc(fmt.todayMMDD(day)) + ' · ' + esc(p.area || '新竹市') + '</span>' +
                 '</span>' +
               '</div>' +
             '</div>' +
-            odds +
+            rulesBtn +
           '</div>' +
           /* 蓄力的說明字每拍換一次，不放 aria-live（報讀器會被每 0.5 秒打斷一次）；鍵盤與報讀器走「跳過動畫」 */
           (got ? '' : '<p class="ex-stage__cap" data-stage-cap>' + CHARGE_CAPS[0] + '</p>') +
@@ -255,8 +265,8 @@ function renderUnlock(params) {
       (got ? '' :
         '<canvas class="ex-fx ex-fx--front" data-fx aria-hidden="true"></canvas>' +
         '<div class="ex-flash" data-flash aria-hidden="true"></div>' +
-        /* 點畫面快轉只有滑鼠與觸控按得到：鍵盤與報讀器在抽卡時焦點停在這顆（平常看不到，鍵盤焦點才浮出來） */
-        '<button class="ex-skip" type="button" data-act="skip-draw" hidden>跳過動畫，直接看結果</button>' +
+        /* 點畫面快轉只有滑鼠與觸控按得到：鍵盤與報讀器在翻卡時焦點停在這顆（平常看不到，鍵盤焦點才浮出來） */
+        '<button class="ex-skip" type="button" data-act="skip-reveal" hidden>跳過動畫，直接看結果</button>' +
         '<button class="ex-sound" type="button" data-act="toggle-sound" aria-pressed="' + (mute ? 'false' : 'true') + '" aria-label="音效">' +
           SOUND_ICON + '</button>') +
     '</div>';
@@ -296,15 +306,8 @@ function mountUnlock(root, params) {
   const F = APP.fx;
   const isRide = !!APP.ride.trip.arrivedAt(p.id);
   const got = collected(p);
-  /* 走路抵達還沒抽：在這裡抽（render 是純函式，不寫 store），抽完照新的款式重畫這一頁。
-     mount 在第一次繪製之前，看不到卡背閃一下；之後重整、返回都讀 store.draws，不會重抽 */
-  if (!got && !isRide && !storedDraw(p, false)) {
-    rollDraw(p);
-    root.innerHTML = renderUnlock(params);
-    if (window.SHELL) { SHELL.injectArt(root); SHELL.injectIcons(root); }
-  }
   const box = root.querySelector('[data-unlock]');
-  const draw = styleOf(box.getAttribute('data-style'));
+  const style = styleOf(box.getAttribute('data-style'));
   const tier = Number(box.getAttribute('data-tier')) || 1;
   const u = sceneMs() / 1200;                    /* 全部時間跟著 --t-scene 縮放 */
   const timers = [];
@@ -329,7 +332,7 @@ function mountUnlock(root, params) {
   const cardBox = q('[data-card-box]');
   const flip = q('[data-flip]');
   const cap = q('[data-stage-cap]');
-  const skipBtn = q('[data-act="skip-draw"]');
+  const skipBtn = q('[data-act="skip-reveal"]');
   const noteInput = q('[data-one-line]');
   const focusEl = function (el) {
     if (!el) return;
@@ -350,29 +353,31 @@ function mountUnlock(root, params) {
 
   /* 結果：不論是跑完、被點掉、還是 still，最後都停在同一個 class 狀態（WAAPI 的動畫全部拿掉，交給 CSS）。
      quiet＝一進來就是結果（已收過、still、減少動態效果）：不搶焦點、不飄金粉。
-     不是 quiet（剛抽完）：焦點移到「抽到 ○○」那一行，報讀器念一次抽到什麼；「跳過動畫」收起來 */
+     不是 quiet（剛翻完）：焦點移到「收到 ○○」那一行，報讀器念一次收到什麼、為什麼；「跳過動畫」收起來 */
   const finish = function (quiet) {
     if (run) run.dead = true;
     timers.forEach(clearTimeout);
     timers.length = 0;
     glow = 0;
     if (motes) { motes.stop(); motes = null; }
-    box.classList.remove('is-drawing', 'is-ready', 'is-sheet');
+    box.classList.remove('is-revealing', 'is-ready', 'is-sheet');
     box.classList.add('is-done');
     if (flip) flip.classList.add('is-front');
     setAt(3);
     if (run) run.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* ignore */ } });
     if (shake) shake.stop();
-    if (draw && !got && F) box.style.setProperty('--aura', 'rgb(' + auraColor(tier - 1).join(' ') + ')');
-    if (draw && draw.key === 'ink' && !got) { box.classList.add('is-paper'); APP.ui.setStatus('dark'); }
-    if (draw && draw.gold && !got) box.classList.add('is-gold-up');
+    if (style && !got && F) box.style.setProperty('--aura', 'rgb(' + auraColor(tier - 1).join(' ') + ')');
+    if (style && style.key === 'ink' && !got) { box.classList.add('is-paper'); APP.ui.setStatus('dark'); }
+    if (style && style.gold && !got) box.classList.add('is-gold-up');
     /* 翻開以後才標：金框的邊開始散金粉（explore-gold.js），跟收藏裡看到它時一樣；翻開前標會先洩底 */
     const finalCard = q('[data-final-card].postcard--gold');
     if (finalCard) finalCard.setAttribute('data-gold-aura', '');
+    /* 節日版的插畫：翻開時已經開始動就不重來（跳過、已收過的直接在這裡開始；減少動態效果時 festPlay 不動） */
+    if (E.festPlay) E.festPlay(box, { restart: false });
     if (skipBtn) skipBtn.hidden = true;
-    if (!quiet) focusEl(q('[data-draw]') || q('[data-act="collect"]'));
+    if (!quiet) focusEl(q('[data-result-style]') || q('[data-act="collect"]'));
     /* 金框的金粉留著慢慢飄（「剛剛發生過」要看得見），DUST_MS 之後、或開始寫那一句話時停下來；其他款式安靜收尾 */
-    if (!quiet && front && draw && draw.gold && !F.calm() && !dust) {
+    if (!quiet && front && style && style.gold && !F.calm() && !dust) {
       const gc = [F.color('--gold'), F.color('--gold-lite')];
       const W0 = front.at(box).W;
       dust = front.stream({
@@ -387,7 +392,7 @@ function mountUnlock(root, params) {
   };
   if (noteInput) noteInput.onfocus = stopDust;
 
-  /* 已收過、still、減少動態效果（APP.reduceMotion）：直接停在結果，不演抵達與抽卡 */
+  /* 已收過、still、減少動態效果（APP.reduceMotion）：直接停在結果，不演抵達與翻卡 */
   if (got || APP.reduceMotion() || !F) {
     finish(true);
   } else {
@@ -400,7 +405,7 @@ function mountUnlock(root, params) {
     void box.offsetWidth;
     box.classList.add('is-lit');
     /* 亮起來的那一刻：一小圈光點、鐘聲，之後光點慢慢從地上升起。
-       抽卡已經開始（在它之前就按了「收集明信片」）就不演：play() 會清掉這個計時器，這裡再擋一次 */
+       翻卡已經開始（在它之前就按了「收集明信片」）就不演：play() 會清掉這個計時器，這裡再擋一次 */
     glow = later(function () {
       glow = 0;
       const spot = q('.ex-spot__pin');
@@ -436,13 +441,13 @@ function mountUnlock(root, params) {
       if (spot) spot.animate([{ transform: 'scale(1)' }, { transform: 'scale(.9)', offset: .3 }, { transform: 'scale(1)' }],
         { duration: 420, easing: F.ease.back });
     }
-    focusEl(q('[data-act="draw"]'));
+    focusEl(q('[data-act="open-card"]'));
   };
   const spotBtn = q('[data-act="open-spot"]');
   if (spotBtn) spotBtn.onclick = function (e) { if (e) e.stopPropagation(); openSheet(); };
 
-  box.querySelectorAll('[data-act="open-odds"]').forEach(function (b) {
-    b.onclick = function (e) { if (e) e.stopPropagation(); openOdds(); };
+  box.querySelectorAll('[data-act="open-rules"]').forEach(function (b) {
+    b.onclick = function (e) { if (e) e.stopPropagation(); openRules(); };
   });
   const credit = q('[data-act="open-credit"]');
   if (credit) credit.onclick = function (e) { if (e) e.stopPropagation(); };
@@ -459,7 +464,7 @@ function mountUnlock(root, params) {
     APP.ui.toast(mute ? '音效關了' : '音效開了');
   };
 
-  /* 點畫面：幕一打開面板；抽卡中蓄力 → 快轉到可以翻、可以翻 → 翻開、翻開中 → 直接看結果 */
+  /* 點畫面：幕一打開面板；翻卡中蓄力 → 快轉到可以翻、可以翻 → 翻開、翻開中 → 直接看結果 */
   box.onclick = function (e) {
     if (e && e.target && e.target.closest && e.target.closest('button, a, input')) return;
     const at = box.getAttribute('data-at');
@@ -470,7 +475,7 @@ function mountUnlock(root, params) {
     else if (run.phase === 'reveal') finish();
   };
 
-  /* ---- 抽卡 ---- */
+  /* ---- 翻卡 ---- */
   function play() {
     const R = run = { dead: false, fast: false, anims: [], phase: 'summon', tap: null };
     const alive = function () { return !R.dead; };
@@ -537,7 +542,7 @@ function mountUnlock(root, params) {
         .then(function () { return alive() ? W(260) : null; });
     };
 
-    /* 翻開：每一款各自的反應（earned juice：越稀有越重） */
+    /* 翻開：每一款各自的反應（earned juice：金框是搭 yoxi 才有的，最重；四季的畫風各有各的味道） */
     const PRE = 'translateY(6px) scale(.92)';
     const REVEAL = {
       watercolor: function (at) {
@@ -673,7 +678,7 @@ function mountUnlock(root, params) {
     const scene1 = q('[data-scene="1"]');
     const sheet = q('[data-arrive-sheet]');
     const mapEl = q('[data-arrive-map]');
-    /* 抵達的光點與鐘聲到此為止（還沒亮起來就按了：連排好的那一次一起取消，不然抽卡中會響鐘、光點冒不停） */
+    /* 抵達的光點與鐘聲到此為止（還沒亮起來就按了：連排好的那一次一起取消，不然翻卡中會響鐘、光點冒不停） */
     if (glow) { clearTimeout(glow); glow = 0; }
     if (motes) { motes.stop(); motes = null; }
     F.sfx.unlock();
@@ -683,9 +688,9 @@ function mountUnlock(root, params) {
       .then(function () {
         if (!alive()) return null;
         if (F.calm()) { finish(); return null; }      /* 減少動態：直接看結果（CSS 的淡入接手） */
-        box.classList.add('is-drawing');
+        box.classList.add('is-revealing');
         setAt(2);
-        /* 抽卡時卡片放在畫面正中；翻完才滑回結果的位置 */
+        /* 翻卡時卡片放在畫面正中；翻完才滑回結果的位置 */
         const b = box.getBoundingClientRect(), c = cardBox.getBoundingClientRect();
         const k = b.width / (box.offsetWidth || b.width) || 1;
         box.style.setProperty('--dy', (((b.top + b.height * .45) - (c.top + c.height / 2)) / k).toFixed(1) + 'px');
@@ -701,7 +706,7 @@ function mountUnlock(root, params) {
       .then(function () {
         if (!alive()) return null;
         R.phase = 'charge';
-        const beats = Math.min(tier, 4);
+        const beats = beatsOf(style);
         let chain = Promise.resolve();
         for (let i = 0; i < beats; i++) {
           chain = chain.then(function () { return alive() && !R.fast ? beat(i) : null; });
@@ -710,7 +715,7 @@ function mountUnlock(root, params) {
       })
       .then(function () {
         if (!alive()) return null;
-        if (tier === 5) {
+        if (style && style.gold) {
           if (!R.fast) return upgrade();
           box.classList.add('is-gold-up');
         }
@@ -733,20 +738,22 @@ function mountUnlock(root, params) {
         box.classList.remove('is-ready');
         if (cap) cap.textContent = '';
         F.sfx.flip();
+        /* 節日版的插畫跟著翻開一起開始（正面轉過來的時候就在動） */
+        if (E.festPlay) E.festPlay(box, { restart: false });
         const at = front.at(cardBox);
         return A(flip, [{ transform: 'none' }, { transform: PRE }], { duration: 140, easing: F.ease.in })
-          .then(function () { return alive() ? (REVEAL[draw ? draw.key : 'watercolor'] || REVEAL.watercolor)(at) : null; });
+          .then(function () { return alive() ? (REVEAL[style ? style.key : 'watercolor'] || REVEAL.watercolor)(at) : null; });
       })
       .then(function () { return alive() ? W(tier >= 4 ? 900 : 520) : null; })
       .then(function () { if (alive()) finish(); });
   }
 
-  const drawBtn = q('[data-act="draw"]');
-  if (drawBtn) drawBtn.onclick = function (e) {
+  const openBtn = q('[data-act="open-card"]');
+  if (openBtn) openBtn.onclick = function (e) {
     if (e) e.stopPropagation();
     if (run || !F) { if (!F) finish(); return; }
     /* 按下去這顆就停用、面板收走：焦點不能掉到 body，交給「跳過動畫」（鍵盤按 Enter／空白鍵就直接看結果） */
-    drawBtn.disabled = true;
+    openBtn.disabled = true;
     if (skipBtn) { skipBtn.hidden = false; focusEl(skipBtn); }
     play();
   };
@@ -764,7 +771,7 @@ function mountUnlock(root, params) {
       collecting = true;
       btn.disabled = true;
       const note = noteInput ? String(noteInput.value || '').trim().slice(0, NOTE_MAX) : '';
-      /* 搭車還是走路、哪一款、幾公里由 collect 在收的當下判斷（畫面開著的時候行程可能被取消或換掉了）；
+      /* 搭車還是走路、哪一款、幾公里由 collect 在收的當下照規則判斷（畫面開著的時候行程可能被取消或換掉了）；
          搭車收下會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
       collect(p.id, { note: note });
       APP.ui.toast('收進收藏了');
@@ -783,8 +790,8 @@ function mountUnlock(root, params) {
     if (back) back.destroy();
     if (front) front.destroy();
     if (map) map.destroy();
-    /* 掛在 .device 上的機率說明、還在響的音效：離開這一頁就收掉 */
-    closeOdds();
+    /* 掛在 .device 上的規則說明、還在響的音效：離開這一頁就收掉 */
+    closeRules();
     if (F && F.sfx.stopAll) F.sfx.stopAll();
   };
 }

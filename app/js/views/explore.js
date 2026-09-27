@@ -4,12 +4,12 @@
 
    explore 區塊分六支（依載入順序）：
      explore-fx.js      特效工具 APP.fx（粒子、震動、停格、閃光、合成音效、卡面畫風濾鏡）
-     explore-cards.js   明信片怎麼拿到的：APP.explore.collect／cardOrigin／DRAW_STYLES／drawStyle／openOdds／
+     explore-cards.js   明信片怎麼拿到的：APP.explore.collect／cardOrigin／CARD_STYLES／cardRule／openRules／
                         cardStyleOf（album、ride 也用）
      explore-face.js    明信片長什麼樣：APP.explore.cardFace／postcardSrc／cardPhoto／paintCardArt
      explore-gold.js    金框卡的金粉 APP.fx.gold（data-gold-aura）
      explore.js         這支：六個畫面＋APP.explore.gap／breakpoint
-     explore-unlock.js  /unlock/:id 抵達 → 收集 → 抽卡
+     explore-unlock.js  /unlock/:id 抵達 → 收集 → 翻卡
 
    這支檔案註冊六個畫面：
 
@@ -47,7 +47,7 @@
 
 const APP = window.APP;
 const K = APP && APP.explore && APP.explore._;
-/* explore-cards.js 要先載入（APP.explore 的明信片、抽卡、收下都在那裡）。順序錯了直接丟錯（寫進 #app-errors），
+/* explore-cards.js 要先載入（APP.explore 的明信片、款式規則、收下都在那裡）。順序錯了直接丟錯（寫進 #app-errors），
    不要安靜 return——那樣路由全部變成「尚未建檔」，看不出是載入順序的問題 */
 if (!K) throw new Error('explore.js 要在 explore-cards.js 之後載入（index.html 的順序）');
 
@@ -105,6 +105,12 @@ function trackMini(done, total) {
     s += '<i class="track-mini__node' + (n < done ? ' is-done' : '') + '"></i>';
   }
   return s;
+}
+
+/* 地方頁「到了會得到」的一句：現在去會是哪一款（規則在 explore-cards.js 的 cardRule；季節跟著今天） */
+function rulePreview() {
+  const walk = APP.explore.cardRule({ by: 'walk' });
+  return '畫風跟著季節：現在走路去是' + walk.style.name + '，搭 yoxi 去是金框';
 }
 
 /* 地方所屬的獎章（獎章清單放明信片 id，要先換過去） */
@@ -468,7 +474,7 @@ function renderPlace(params) {
         '<span class="ex-reward__img is-gray" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
         '<span class="u-fill">' +
           '<span class="ex-strong">一張〈' + esc(p.name) + '〉</span>' +
-          '<span class="ex-muted">這個地方獨有，由 AI 依當天的光線與季節生成</span>' +
+          '<span class="ex-muted" data-rule-preview>' + esc(rulePreview()) + '</span>' +
           (b ? '<span class="ex-muted">也會讓〈' + esc(b.name) + '〉多收集一張 · 收集 ' + num(b.done) + '/' + esc(b.total) + '</span>' : '') +
         '</span>' +
       '</div>' +
