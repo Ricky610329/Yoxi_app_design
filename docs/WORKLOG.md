@@ -185,3 +185,13 @@
 | `2655314` | `FESTIVALS` 改成當天＋官方連假、`festSpan` 算那一週；加賞櫻；新增 `explore-fest.js`／`explore-fest.css`：四種會動的 SVG 插畫，只放在卡片四周、5 秒停；比例測試；VERSION v20 |
 
 驗收：`python app/tests/run.py` node 80/80、瀏覽器 283/283；check-sw PASS。
+
+## 2026-09-27 龍舟、櫻花、長輩圖＝那張明信片（同分支，worktree）
+
+使用者：龍舟醜、櫻花少；分享的早安圖要有卡片、圖片、特效。細節見 `docs/HANDOFF.md` §19。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `65d2546` | 龍舟重畫（龍頭、龍鱗、划手、海水紋）、櫻花樹冠加密；`/elder` 整張換成收下的那張明信片（成品、金框、節日插畫、署名）＋大字祝福 |
+
+驗收：`python app/tests/run.py` node 80/80、瀏覽器 284/284。
