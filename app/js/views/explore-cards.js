@@ -218,15 +218,12 @@ function openRules() {
   scrim.innerHTML =
     '<div class="modal app-modal ex-rules__box">' +
       '<h2 class="ex-rules__t">明信片怎麼決定</h2>' +
-      '<p class="ex-rules__p">沒有抽籤：什麼時候去、怎麼去，就決定是哪一款。同一天用同樣方式到，每個人收到的都一樣。</p>' +
       '<h3 class="ex-rules__h">走路抵達：畫風跟著季節</h3><ul class="ex-rules__list" data-rules="season">' + seasons + '</ul>' +
       '<h3 class="ex-rules__h">搭 yoxi 抵達</h3><ul class="ex-rules__list" data-rules="ride">' +
         row('gold', '不分季節', esc(styleOf('gold').name)) +
         row('far', num(FAR_KM) + ' 公里以上', '多蓋一枚遠行紀念戳') +
       '</ul>' +
       '<h3 class="ex-rules__h">節日那一週：卡面多一層會動的插畫</h3><ul class="ex-rules__list" data-rules="festival">' + fests + '</ul>' +
-      '<p class="ex-rules__note">三節是節日那一週（週一到週日，連假更長就算到連假最後一天）；碰上櫻花季時以三節為主。' +
-        '每個地方收一張，記下你第一次來的那一天；再去一次不會換掉。畫風以該地景點照片為底，由 AI 生成。</p>' +
       '<button class="btn-primary" type="button" data-act="close-rules">知道了</button>' +
     '</div>';
   const end = APP.ui.overlay(scrim, {
