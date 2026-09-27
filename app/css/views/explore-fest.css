@@ -116,35 +116,49 @@
 .fest__waves svg { width: 200%; height: 100%; }
 .fw-back { fill: color-mix(in srgb, var(--yoxi-navy) 72%, var(--yoxi-white)); opacity: .85; }
 .fw-front { fill: color-mix(in srgb, var(--yoxi-navy) 55%, var(--yoxi-white)); opacity: .95; }
-.fw-foam { fill: none; stroke: var(--yoxi-white); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.fw-foam { fill: none; stroke: var(--yoxi-white); stroke-width: 1.6px; opacity: .85; vector-effect: non-scaling-stroke; }
+.fw-curl { fill: none; stroke: var(--yoxi-white); stroke-width: 1.2px; stroke-linecap: round; opacity: .55; vector-effect: non-scaling-stroke; }
 
-.fest__boat { left: 10%; bottom: calc(54px + 2%); width: 66%; }
+.fest__boat { left: 7%; bottom: calc(54px + 4.5%); width: 74%; }   /* 船底剛好吃進浪頭，船身與龍鱗露在水面上 */
 .fb-bob { transform-box: fill-box; transform-origin: 50% 85%; }
 .fb-hull, .fb-dragon { fill: var(--yoxi-red); }
+.fb-keel { fill: color-mix(in srgb, var(--yoxi-red) 60%, var(--yoxi-navy)); }
 .fb-tail, .fb-neck { fill: none; stroke: var(--yoxi-red); stroke-linecap: round; }
-.fb-tail { stroke-width: 5; }
-.fb-neck { stroke-width: 8; }
-.fb-stripe, .fb-horn, .fb-mane, .fb-whisker, .fb-scale { fill: none; stroke: var(--gold); stroke-linecap: round; }
-.fb-stripe { stroke-width: 2.4; }
-.fb-horn, .fb-mane { stroke-width: 2; }
+.fb-tail { stroke-width: 5.5; }
+.fb-neck { stroke-width: 9; }
+.fb-fin { fill: var(--gold); }
+.fb-rim, .fb-horn, .fb-mane, .fb-whisker, .fb-scale, .fb-spine, .fb-brow { fill: none; stroke: var(--gold); stroke-linecap: round; stroke-linejoin: round; }
+.fb-rim { stroke-width: 2.4; }
+.fb-horn { stroke-width: 2.2; }
+.fb-mane { stroke-width: 2.6; }
+.fb-spine { stroke-width: 1.6; stroke-dasharray: 1 3.4; }
+.fb-brow { stroke-width: 1.4; }
 .fb-whisker { stroke-width: 1.3; }
-.fb-scale { stroke-width: 1.4; }
+.fb-scale { stroke-width: 1.3; opacity: .9; }
+.fb-teeth { fill: none; stroke: var(--yoxi-white); stroke-width: 1; stroke-linejoin: round; }
 .fb-eye { fill: var(--yoxi-white); }
 .fb-pupil { fill: var(--yoxi-navy); }
-.fb-body { fill: none; stroke: var(--yoxi-navy); stroke-width: 6; stroke-linecap: round; }
-.fb-head { fill: var(--yoxi-navy); }
-.fb-paddle line { stroke: color-mix(in srgb, var(--gold) 70%, var(--yoxi-navy)); stroke-width: 2.4; stroke-linecap: round; }
-.fb-paddle ellipse { fill: color-mix(in srgb, var(--gold) 70%, var(--yoxi-navy)); }
+.fb-body { fill: none; stroke: var(--yoxi-navy); stroke-width: 7; stroke-linecap: round; }
+.fb-face { fill: var(--yoxi-cream); }
+.fb-hair { fill: var(--yoxi-navy); }
+.fb-band { fill: none; stroke: var(--yoxi-red); stroke-width: 1.8; stroke-linecap: round; }
+.fb-arm { fill: none; stroke: var(--yoxi-navy); stroke-width: 3; stroke-linecap: round; }
+.fb-shaft { stroke: color-mix(in srgb, var(--gold) 70%, var(--yoxi-navy)); stroke-width: 2.4; stroke-linecap: round; }
+.fb-blade { fill: color-mix(in srgb, var(--gold) 70%, var(--yoxi-navy)); }
 .fb-paddle, .fb-stick { transform-origin: var(--o); transform: rotate(-8deg); }
-.fb-drum { fill: var(--yoxi-red); stroke: var(--gold); stroke-width: 1.6; }
+.fb-drum { fill: var(--yoxi-red); stroke: var(--gold); stroke-width: 1.4; }
+.fb-drum-top { fill: var(--yoxi-cream); stroke: var(--gold); stroke-width: 1.2; }
 .fb-stick { stroke: var(--yoxi-navy); stroke-width: 2; stroke-linecap: round; }
 .fb-pole { stroke: var(--yoxi-navy); stroke-width: 1.6; }
-.fb-flag { fill: var(--gold); transform-box: fill-box; transform-origin: 0 50%; }
+.fb-flag { fill: var(--gold); stroke: var(--yoxi-red); stroke-width: 1.2; stroke-linejoin: round; transform-box: fill-box; transform-origin: 0 50%; }
+.fb-spray circle { fill: var(--yoxi-white); }
+.fb-spray { opacity: .85; transform-box: fill-box; transform-origin: 30% 100%; }
 
 .fest.is-live .fb-bob { animation: fest-bob 1.7s ease-in-out 3; }
 .fest.is-live .fb-paddle { animation: fest-row .85s ease-in-out var(--d) 6 alternate; }
 .fest.is-live .fb-stick { animation: fest-drum .425s ease-in-out 12 alternate; }
 .fest.is-live .fb-flag { animation: fest-flag .6s ease-in-out 8 alternate; }
+.fest.is-live .fb-spray { animation: fest-spray .85s ease-out 6; }
 .fest.is-live .fest__waves--back svg { animation: fest-wave 5s linear 1; }
 .fest.is-live .fest__waves--front svg { animation: fest-wave 2.6s linear 2; }
 
@@ -152,9 +166,15 @@
   0%, 100% { transform: translateY(0) rotate(-1.6deg); }
   50%      { transform: translateY(-4px) rotate(1.6deg); }
 }
-@keyframes fest-row { from { transform: rotate(-24deg); } to { transform: rotate(16deg); } }
+@keyframes fest-row { from { transform: rotate(-26deg); } to { transform: rotate(18deg); } }
 @keyframes fest-drum { from { transform: rotate(0deg); } to { transform: rotate(40deg); } }
 @keyframes fest-flag { from { transform: skewY(0deg); } to { transform: skewY(-10deg) scaleX(.9); } }
+/* 船頭的水花：每划一下濺起來一次 */
+@keyframes fest-spray {
+  0%   { opacity: 0; transform: translateY(4px) scale(.6); }
+  30%  { opacity: .9; transform: translateY(-3px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(2px) scale(1); }
+}
 /* 浪往左移一整張卡寬：svg 是兩倍寬、花紋每半張重複一次，停下來跟開始一模一樣 */
 @keyframes fest-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 

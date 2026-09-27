@@ -89,56 +89,89 @@ function moon(u) {
 
 /* ---------------------------------------------------------------- 端午：龍舟＋浪 */
 
-/* 一段重複的浪：period 要能整除 300（svg 寬 600、往左移一半就接回原樣） */
+/* 後面那層：平緩的浪（period 要能整除 300：svg 寬 600、往左移一半就接回原樣） */
 function wave(y, amp, period) {
   let d = 'M0 ' + y + ' Q ' + (period / 4) + ' ' + (y - amp) + ' ' + (period / 2) + ' ' + y;
   for (let x = period; x <= 600; x += period / 2) d += ' T ' + x + ' ' + y;
   return d;
 }
+/* 前面那層：海水紋——一排圓弧的浪頭，每個浪頭裡捲一道白線 */
+function scallop(y, w, h) {
+  let d = 'M0 ' + y, curls = '';
+  for (let x = 0; x < 600; x += w) {
+    d += ' a ' + (w / 2) + ' ' + h + ' 0 0 1 ' + w + ' 0';
+    curls += 'M' + r1(x + w * .22) + ' ' + r1(y - h * .1) + ' q ' + r1(w * .2) + ' ' + r1(-h * .9) + ' ' + r1(w * .46) + ' ' + r1(-h * .35) + ' ';
+  }
+  return { d: d, curls: curls };
+}
+
+/* 一個划手：身體往船頭傾、頭帶、槳（槳與手臂繞著肩膀轉） */
+function rower(x, i) {
+  return '<path class="fb-body" d="M' + x + ' 63 L' + (x + 3) + ' 50"/>' +
+    '<circle class="fb-face" cx="' + (x + 4) + '" cy="44.5" r="4.6"/>' +
+    '<path class="fb-hair" d="M' + (x - .6) + ' 44.5 a 4.6 4.6 0 0 1 9.2 0 Z"/>' +
+    '<path class="fb-band" d="M' + (x - .4) + ' 43.2 h 9 M' + (x - .4) + ' 43.2 l -3.4 2.2"/>' +
+    '<g class="fb-paddle" style="' + vars({ o: (x + 2) + 'px 52px', d: r1(i * .07) + 's' }) + '">' +
+      '<path class="fb-arm" d="M' + (x + 2) + ' 52 L' + (x - 3) + ' 60"/>' +
+      '<line class="fb-shaft" x1="' + (x - 1) + '" y1="53" x2="' + (x - 12) + '" y2="86"/>' +
+      '<ellipse class="fb-blade" cx="' + (x - 12) + '" cy="86" rx="2.8" ry="5.4" transform="rotate(18 ' + (x - 12) + ' 86)"/>' +
+    '</g>';
+}
 
 function duanwu() {
-  const back = wave(18, 6, 100), front = wave(28, 7, 150);
-  const rowers = [58, 78, 98, 118, 138].map(function (x, i) {
-    return '<path class="fb-body" d="M' + x + ' 55 L' + (x + 2) + ' 45"/>' +
-      '<circle class="fb-head" cx="' + (x + 3) + '" cy="39.5" r="4.3"/>' +
-      '<g class="fb-paddle" style="' + vars({ o: (x + 1) + 'px 45px', d: r1(i * .06) + 's' }) + '">' +
-        '<line x1="' + (x + 1) + '" y1="45" x2="' + (x - 9) + '" y2="72"/>' +
-        '<ellipse cx="' + (x - 9) + '" cy="72" rx="2.4" ry="4.4" transform="rotate(20 ' + (x - 9) + ' 72)"/>' +
-      '</g>';
-  }).join('');
+  const back = wave(22, 6, 100);
+  const front = scallop(28, 30, 6);
+  const rowers = [74, 92, 110, 128, 146, 164].map(rower).join('');
   return '<span class="fest__piece fest__waves fest__waves--back" aria-hidden="true">' +
       '<svg viewBox="0 0 600 90" preserveAspectRatio="none" focusable="false"><path class="fw-back" d="' + back + ' V 90 H 0 Z"/></svg>' +
     '</span>' +
     '<span class="fest__piece fest__boat" data-fest-part="boat">' +
-      '<svg viewBox="0 0 218 84" focusable="false">' +
+      '<svg viewBox="0 0 250 96" focusable="false">' +
         '<g class="fb-bob">' +
-          /* 船尾的旗子 */
-          '<line class="fb-pole" x1="22" y1="46" x2="22" y2="8"/>' +
-          '<path class="fb-flag" d="M22 8 L44 13 L22 20 Z"/>' +
-          /* 龍尾 */
-          '<path class="fb-tail" d="M16 46 C6 40 4 28 12 22 C16 19 21 21 20 26"/>' +
+          /* 船尾：燕尾旗、掌舵的人與長槳 */
+          '<line class="fb-pole" x1="36" y1="62" x2="36" y2="10"/>' +
+          '<path class="fb-flag" d="M36 10 L60 14 L53 19 L61 24 L36 28 Z"/>' +
+          '<path class="fb-body" d="M48 63 L48 48"/>' +
+          '<circle class="fb-face" cx="48" cy="42.5" r="4.6"/><path class="fb-hair" d="M43.4 42.5 a 4.6 4.6 0 0 1 9.2 0 Z"/>' +
+          '<line class="fb-shaft" x1="50" y1="50" x2="28" y2="90"/>' +
+          /* 龍尾：往上捲，尾端一簇金色的鰭 */
+          '<path class="fb-tail" d="M22 54 C10 46 7 31 15 23 C21 17 30 20 28 28 C26 33 20 31 21 27"/>' +
+          '<path class="fb-fin" d="M15 23 C9 15 13 6 21 3 C19 10 23 13 27 15 C22 15 18 18 15 23 Z"/>' +
           rowers +
-          /* 鼓手 */
-          '<path class="fb-body" d="M162 55 L162 45"/><circle class="fb-head" cx="162" cy="39.5" r="4.3"/>' +
-          '<circle class="fb-drum" cx="173" cy="47" r="6.5"/>' +
-          '<line class="fb-stick" style="' + vars({ o: '164px 44px' }) + '" x1="164" y1="44" x2="170" y2="37"/>' +
-          /* 船身 */
-          '<path class="fb-hull" d="M12 46 Q20 66 60 68 L150 68 Q186 66 196 48 Q186 56 150 56 L60 56 Q26 56 12 46 Z"/>' +
-          '<path class="fb-stripe" d="M24 60 Q60 63 105 63 Q150 63 184 57"/>' +
-          '<path class="fb-scale" d="M50 59 q5 4 10 0 M70 60 q5 4 10 0 M90 60 q5 4 10 0 M110 60 q5 4 10 0 M130 60 q5 4 10 0 M150 59 q5 4 10 0"/>' +
-          /* 龍頭 */
-          '<path class="fb-neck" d="M186 52 C196 42 192 32 198 24"/>' +
-          '<path class="fb-dragon" d="M190 18 C196 9 209 11 210 19 L207 22 L200 22 L207 26 L203 29 C196 31 189 27 190 18 Z"/>' +
-          '<path class="fb-horn" d="M195 13 L190 4 M199 12 L197 3"/>' +
-          '<path class="fb-mane" d="M190 20 C185 23 184 29 187 33"/>' +
-          '<path class="fb-whisker" d="M207 23 C213 25 215 30 212 34"/>' +
-          '<circle class="fb-eye" cx="200" cy="17" r="2.3"/><circle class="fb-pupil" cx="200.6" cy="17" r="1.1"/>' +
+          /* 鼓手面向划手，打鼓 */
+          '<path class="fb-body" d="M190 63 L187 50"/>' +
+          '<circle class="fb-face" cx="186" cy="44.5" r="4.6"/><path class="fb-hair" d="M181.4 44.5 a 4.6 4.6 0 0 1 9.2 0 Z"/>' +
+          '<rect class="fb-drum" x="193" y="49" width="15" height="12" rx="2"/>' +
+          '<ellipse class="fb-drum-top" cx="200.5" cy="49" rx="7.5" ry="2.6"/>' +
+          '<line class="fb-stick" style="' + vars({ o: '189px 52px' }) + '" x1="189" y1="52" x2="197" y2="44"/>' +
+          /* 船身：上面一道金邊、一排龍鱗，下半截深一點 */
+          '<path class="fb-hull" d="M20 52 C30 62 46 64 62 64 L184 64 C200 64 210 60 218 54 C214 68 202 80 180 80 L78 80 C52 80 32 72 20 52 Z"/>' +
+          '<path class="fb-keel" d="M40 72 C54 77 66 78 78 78 L180 78 C194 78 204 74 210 66 C204 76 194 80 180 80 L78 80 C60 80 48 77 40 72 Z"/>' +
+          '<path class="fb-rim" d="M22 54 C32 63 46 65.5 62 65.5 L184 65.5 C200 65.5 210 61.5 217 56"/>' +
+          '<path class="fb-scale" d="' + (function () {
+            let d = '';
+            for (let x = 64; x < 184; x += 10) d += 'M' + x + ' 69 q 5 5 10 0 ';
+            return d;
+          })() + '"/>' +
+          /* 龍頭：S 形的脖子、張開的嘴、金角、鬃毛、鬍鬚 */
+          '<path class="fb-neck" d="M212 58 C226 50 216 38 224 27"/>' +
+          '<path class="fb-spine" d="M216 56 C228 48 219 37 226 28"/>' +
+          '<path class="fb-mane" d="M217 21 C209 19 207 26 212 29 C207 30 206 36 212 37 C207 39 208 45 214 45"/>' +
+          '<path class="fb-dragon" d="M216 26 C212 14 221 6 231 8 C236 9 240 12 243 16 L235 19.5 L242 21.5 L239 27 C231 31 221 31 216 26 Z"/>' +
+          '<path class="fb-teeth" d="M234 19.6 l1.4 2 l1.4 -1.6 M236 22 l1.2 -1.6 l1.2 1.8"/>' +
+          '<path class="fb-horn" d="M221 10 C217 4 213 3 209 4 M225 9 C223 3 220 0 216 0"/>' +
+          '<path class="fb-brow" d="M223 12.5 q 4 -3 8 -1"/>' +
+          '<circle class="fb-eye" cx="227" cy="15.5" r="2.9"/><circle class="fb-pupil" cx="227.8" cy="15.5" r="1.4"/>' +
+          '<path class="fb-whisker" d="M241 23 C247 25 249 31 245 35 M237 27 C241 31 239 37 235 39"/>' +
+          /* 船頭濺起的水花 */
+          '<g class="fb-spray"><circle cx="222" cy="72" r="2.2"/><circle cx="228" cy="66" r="1.6"/><circle cx="232" cy="72" r="1.3"/><circle cx="226" cy="60" r="1.1"/></g>' +
         '</g>' +
       '</svg>' +
     '</span>' +
     '<span class="fest__piece fest__waves fest__waves--front" data-fest-part="waves">' +
       '<svg viewBox="0 0 600 90" preserveAspectRatio="none" focusable="false">' +
-        '<path class="fw-front" d="' + front + ' V 90 H 0 Z"/><path class="fw-foam" d="' + front + '"/>' +
+        '<path class="fw-front" d="' + front.d + ' V 90 H 0 Z"/><path class="fw-foam" d="' + front.d + '"/>' +
+        '<path class="fw-curl" d="' + front.curls + '"/>' +
       '</svg>' +
     '</span>';
 }
@@ -147,8 +180,9 @@ function duanwu() {
 
 /* 樹冠：一叢一叢的花（中心 x、y、半徑）。每一叢用小圓疊出不規則的輪廓，再撒幾朵五瓣的花 */
 const CLUMPS = [
-  [96, 46, 20], [126, 36, 17], [156, 30, 15], [68, 62, 17], [44, 28, 16], [18, 16, 13],
-  [132, 74, 15], [106, 86, 13], [162, 66, 11], [74, 90, 11], [112, 20, 12], [84, 30, 11],
+  [96, 46, 22], [124, 36, 19], [152, 28, 17], [172, 42, 12], [68, 60, 19], [44, 28, 18], [20, 14, 15],
+  [132, 74, 17], [108, 88, 15], [158, 64, 14], [76, 92, 13], [112, 18, 14], [84, 28, 14], [140, 52, 13],
+  [60, 38, 12], [30, 46, 12], [172, 20, 10], [92, 68, 13], [120, 58, 12], [48, 76, 11], [6, 30, 10], [144, 90, 10],
 ];
 /* 固定種子的亂數：每次畫出來一樣（縮圖、測試都穩定） */
 function seeded(n) {
@@ -175,14 +209,14 @@ function sakura(u) {
   const rnd = seeded(7);
   let puffs = '', flowers = '';
   CLUMPS.forEach(function (c) {
-    const n = 11;
+    const n = 14;
     for (let i = 0; i < n; i++) {
       const ang = i * 2.4 + rnd(), dist = c[2] * Math.sqrt((i + .5) / n) * .8;
       puffs += '<circle class="ft-puff ft-puff--' + (i % 3) + '" cx="' + r1(c[0] + Math.cos(ang) * dist) + '" cy="' + r1(c[1] + Math.sin(ang) * dist) +
         '" r="' + r1(c[2] * (.34 + rnd() * .16)) + '"/>';
     }
-    for (let i = 0; i < 3; i++) {
-      const size = r1(c[2] * (.55 + rnd() * .25));
+    for (let i = 0; i < 5; i++) {
+      const size = r1(c[2] * (.5 + rnd() * .25));
       const x = r1(c[0] + (rnd() - .5) * c[2] * 1.2), y = r1(c[1] + (rnd() - .5) * c[2] * 1.1);
       flowers += '<use href="#' + f + '" x="' + r1(x - size / 2) + '" y="' + r1(y - size / 2) + '" width="' + size + '" height="' + size + '"' +
         ' transform="rotate(' + Math.round(rnd() * 72) + ' ' + x + ' ' + y + ')"/>';

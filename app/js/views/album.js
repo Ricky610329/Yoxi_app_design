@@ -14,7 +14,7 @@
      /footprint       城市足跡：真實地圖＋霧、覆蓋率用固定範圍算、城市顏色由去過的地方算。來源：fogmap.html、concept-map-footprint.html。
      /lookback        每日回顧四幕（只有你）。來源：lookback.html。
      /week            週回顧（唯一可分享的匯總）。來源：week.html。
-     /elder           長輩圖（?card=<明信片 id>：從哪一張分享過來，那一張排第一）。來源：elder.html。
+     /elder           長輩圖（?card=<明信片 id>：從哪一張分享過來，那一張排第一）。圖就是收下的那張明信片（畫風、金框、節日版）＋大字祝福。來源：elder.html。
    子頁的返回鍵都走 subMount（見「子頁的返回鍵」）：從上一層點進來就照歷史退一格，
    切 tab 停回來、重新整理、直接開網址就回邏輯上的上一層。
 
@@ -27,7 +27,7 @@
    - /album 不攤開明信片網格：L1 一屏一事、可按數 ≤ 12；網格在 /postcards（整片算一個可按的東西，見 harness 的 data-gallery）。
    - 「yoxi 限定版」只給 APP.ride.limitedCard（搭 yoxi 去走不到的地方、+50 點）；其他金框卡寫「yoxi 金框」。
    - 金框卡不管在哪裡顯示（疊卡、/postcards、詳情、獎章的組成卡、每日回顧、週回顧）都是金框，畫框的那個元素標 data-gold-aura，
-     金粉由 explore-gold.js 畫（契約 §7）；長輩圖挑的是插圖不是明信片，不標。
+     金粉由 explore-gold.js 畫（契約 §7）；長輩圖整張就是那張明信片，金框卡的長輩圖也是金框、有金粉。
    - 城市足跡不寫「多久沒回去會變淡」：app 沒有記回訪，寫了就是假的。
    - 回顧不靠計時器自動翻頁：每一幕都等使用者按「下一步」或做選擇。
    - 數字一律從 STATE／MOCK／APP.fmt 算；步幅＝LOOKBACK.steps ÷ LOOKBACK.km，不另寫常數。
@@ -1235,6 +1235,42 @@ function elderCards(ctx) {
   return { cards: [shared].concat(recent.filter(function (p) { return p !== shared; })).slice(0, 3), shared: shared };
 }
 
+/* 長輩圖的那一張圖＝收下的那張明信片本身（跟明信片頁同一套）：成品或照片＋那一款的濾鏡（data-card-art）、
+   金框與角標、節日版會動的插畫、遠行戳（cardOrigin().marks），再壓一句大字祝福。3:4，景色整張看得到。
+   底下一條跟明信片的地名那一條一樣高（節日插畫的兔子、浪都對齊它）：日期與地點、底圖照片的署名、yoxi 城事。
+   這張圖會傳出去：一定帶「AI 生成示意」與底圖的作者、授權（CC 授權要署名）。還沒收過任何一張：只有祝福的字。 */
+function elderImage(p, cap) {
+  const big = '<div class="alb-elder__cap"><div class="alb-elder__big" data-elder-big>' + esc(cap) + '</div></div>';
+  if (!p) {
+    return '<div class="alb-elder alb-elder--empty" data-elder>' + big +
+      '<div class="alb-elder__foot"><span class="alb-elder__small" data-elder-small>新竹</span><span class="alb-elder__sig">yoxi 城事</span></div></div>';
+  }
+  const o = APP.explore.cardOrigin(p.id);
+  const ph = APP.explore.cardPhoto ? APP.explore.cardPhoto(p.id) : null;
+  return '<div class="alb-elder' + (o.gold ? ' is-gold' : '') + '" data-elder data-card="' + esc(p.id) + '"' + (o.gold ? ' data-gold-aura' : '') + '>' +
+      '<div class="alb-elder__art" data-elder-art data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '"></div>' +
+      '<span class="ai-mark">AI 生成示意</span>' +
+      (o.limited ? '<span class="postcard__ribbon" data-ribbon="limited">yoxi 限定版</span>'
+        : o.gold ? '<span class="postcard__ribbon" data-ribbon="gold">yoxi 金框</span>' : '') +
+      o.marks +
+      big +
+      '<div class="alb-elder__foot">' +
+        '<span class="alb-elder__small" data-elder-small>' + esc(YEAR() + '.' + o.date + ' · ' + p.name) + '</span>' +
+        (ph ? '<span class="alb-elder__credit" data-elder-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') + '</span>' : '') +
+        '<span class="alb-elder__sig">yoxi 城事</span>' +
+      '</div>' +
+    '</div>';
+}
+/* 選地方的小卡：也是收下的那一款（data-card-art；金框卡自己會補框），節日版在名字底下寫一個字 */
+function elderPick(p, on) {
+  const o = APP.explore.cardOrigin(p.id);
+  return '<button class="alb-elder__pick' + (on ? ' is-on' : '') + '" type="button" data-act="pick-card" data-card="' + esc(p.id) + '">' +
+    '<span class="alb-elder__pickart" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '"></span>' +
+    '<span class="alb-elder__pickt">' + esc(p.name) + '</span>' +
+    (o && o.festival ? '<span class="alb-elder__pickf">' + esc(o.festival.name) + '版</span>' : '') +
+  '</button>';
+}
+
 APP.view('elder', {
   path: '/elder',
   tab: 'album',
@@ -1245,23 +1281,13 @@ APP.view('elder', {
     const cards = E.cards;
     const first = cards[0];
     const caps = [APP.fmt.greet() + ' 平安喜樂', '身體健康 萬事如意', '我今天去走走了', '有空一起來'];
-    const got = first ? STATE.card(first.id) : null;
     return header({ title: '傳給家人', back: '/week' }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
-        (first ? '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖，不是實景照片。</p>' : '') +
-        '<div class="alb-pad">' +
-          '<div class="alb-elder" data-elder>' +
-            '<div class="alb-elder__art" data-elder-art' + (first ? ' data-art="' + esc(first.art) + '" data-seed="' + cardIdx(first) + '" data-wide' : '') + '></div>' +
-            '<div class="alb-elder__shade"></div>' +
-            '<div class="alb-elder__cap">' +
-              '<div class="alb-elder__big" data-elder-big>' + esc(caps[0]) + '</div>' +
-              '<div class="alb-elder__small" data-elder-small>' +
-                (first ? esc(YEAR() + '.' + got.date + ' · ' + first.name) : '新竹') + '</div>' +
-            '</div>' +
-            '<span class="alb-elder__sig">yoxi 城事</span>' +
-          '</div>' +
+        (first ? '<p class="ai-note">圖是 AI 依實景照片改作的示意圖，不是照片；底圖照片的作者與授權印在圖上。</p>' : '') +
+        '<div class="alb-pad" data-elder-wrap>' +
+          elderImage(first, caps[0]) +
           (first
-            ? '<p class="alb-foot">用你去過的地方做的。圖是 AI 畫的，不是照片。</p>'
+            ? '<p class="alb-foot">用你收下的那張明信片做的：畫風、金框、節日版都跟著。</p>' + photoCreditHTML(first.id)
             : '<p class="alb-foot" data-elder-empty>還沒有去過的地方可以放進圖裡，先傳一句問候。收下第一張明信片之後，這裡就能換成那個地方。</p>') +
         '</div>' +
         '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">換一句話</h2></div>' +
@@ -1273,11 +1299,7 @@ APP.view('elder', {
             '<span class="sec__m">' + (E.shared
               ? (cards.length > 1 ? '分享的這張＋最近 ' + (cards.length - 1) + ' 張' : '分享的這張')
               : '最近 ' + cards.length + ' 張') + '</span></div>' +
-            '<div class="alb-elder__picks">' + cards.map(function (p, i) {
-              return '<button class="alb-elder__pick' + (i ? '' : ' is-on') + '" type="button" data-act="pick-card" data-card="' + esc(p.id) + '">' +
-                '<span class="alb-elder__pickart" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide></span>' +
-                '<span class="alb-elder__pickt">' + esc(p.name) + '</span></button>';
-            }).join('') + '</div></div>'
+            '<div class="alb-elder__picks">' + cards.map(function (p, i) { return elderPick(p, !i); }).join('') + '</div></div>'
           : '') +
         '<div class="alb-pad alb-pad--end">' +
           '<button class="btn-primary" type="button" data-act="send-family">' +
@@ -1288,13 +1310,15 @@ APP.view('elder', {
   },
   mount: function (root, params, ctx) {
     subMount(root, ctx, 'elder');
-    const big = root.querySelector('[data-elder-big]');
-    const small = root.querySelector('[data-elder-small]');
-    const art = root.querySelector('[data-elder-art]');
+    const wrap = root.querySelector('[data-elder-wrap]');
+    let cap = (root.querySelector('[data-elder-big]') || {}).textContent || '';
+    /* 節日版的插畫：打開就動一次；換地方換成那一張，再動一次 */
+    APP.explore.festPlay(wrap);
     const caps = root.querySelectorAll('[data-act="caption"]');
     caps.forEach(function (b) {
       b.onclick = function () {
-        big.textContent = b.textContent;
+        cap = b.textContent;
+        root.querySelector('[data-elder-big]').textContent = cap;
         caps.forEach(function (x) { x.classList.toggle('is-on', x === b); });
       };
     });
@@ -1303,8 +1327,15 @@ APP.view('elder', {
       b.onclick = function () {
         const p = cardById(b.getAttribute('data-card'));
         if (!p) return;
-        art.innerHTML = SHELL.postcardArt(p.art, { seed: cardIdx(p), wide: true });
-        small.textContent = YEAR() + '.' + STATE.card(p.id).date + ' · ' + p.name;
+        /* 整張圖換成那一張（卡面、金框、節日版、署名都跟著）；出處連結也換 */
+        const old = wrap.querySelector('[data-elder]');
+        old.insertAdjacentHTML('afterend', elderImage(p, cap));
+        old.remove();
+        const credit = wrap.querySelector('[data-credit]');
+        if (credit) credit.outerHTML = photoCreditHTML(p.id);
+        else wrap.insertAdjacentHTML('beforeend', photoCreditHTML(p.id));
+        if (window.SHELL) SHELL.injectArt(wrap);
+        APP.explore.festPlay(wrap);
         picks.forEach(function (x) { x.classList.toggle('is-on', x === b); });
       };
     });
