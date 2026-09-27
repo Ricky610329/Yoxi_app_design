@@ -210,3 +210,15 @@
 | （本段最後一筆） | 合併後的縫合：回訪也算進行程紀錄與點數、回訪的歸因不蓋掉第一次、`rideRound` 取代 `rideVia._round`、候車頁的 100 m 讀同一個常數、/going 候車中的說法、demo 走路抵達候車中的地方；VERSION v21 |
 
 驗收：`python app/tests/run.py` node 106/106、瀏覽器 313/313；check-sw PASS；`verify-quiet.py` 在這台 Mac 只跑得了 ②（PASS）。
+
+## 2026-09-27 翻卡特效：木刻版畫套印、水彩暈成白紙、油畫厚塗筆觸（分支 `feat/reveal-fx`，已合併）
+
+使用者：抽完卡的「?」底下兩段小字刪掉；木刻版畫沒有特效、油畫與水彩要更明顯，水墨保持。照水墨好看的地方重做另外三款：換掉整個場景、做這個媒材才有的動作、留一樣東西在結果頁。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| `f8f9422` | 規則說明（「?」）拿掉開頭「沒有抽籤…」與底下三節／收一張／AI 生成的註記；卡面本身仍標「AI 生成示意」 |
+| `31daad3` | 木刻版畫＝套印（白紙 → 紅版 → 最後一版，停格、震、木屑、放射刻線、木紋，`.is-print`）；水彩＝濕紙暈成白紙、五團顏料化開（`.is-wash`）；油畫＝五道厚塗筆觸一筆一筆刷上去（`.is-paint`）。新濾鏡 `exf-print／gouge／grain／bloom／impasto`、新音效 `drip／brush／press`；蓄力拍數不變（四季一樣重）；跳過、`?still=1`、減少動態效果都停在同一個結果 |
+| （合併到 main 時） | `explore-fx.js` 檔頭拿掉舊的「常見的款式輕、稀有的重」 |
+
+驗收：`python app/tests/run.py` 全綠（合併後的 main：瀏覽器 314/314，check-sw PASS）；Playwright 逐格看過四款翻卡與 still／減少動態效果的結果頁。`verify-quiet.py` 在這台 Mac 找不到 Chrome，沒跑；沒動 `prototype/`。

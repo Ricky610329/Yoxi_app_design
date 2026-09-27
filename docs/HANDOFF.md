@@ -360,6 +360,6 @@ python app/tests/run.py                           # web app：node 單元＋head
 - 簡報、影片、`pitch/BRIEF.md`、網站沒有寫到回訪、首訪／里程紀念、相框與稱號、來回接送：要不要寫進提案是提案的決定；pitch/docs 只同步了 100 m 與「一人一天一張」。`app/assets/shots/` 沒重拍。
 - 週回顧、每日回顧、城市足跡只看第一次（STATE）；回訪沒算進「這一週去了幾個地方」。
 - demo 一開始的 8 張卡日期沒有年份，一天一張對它們是比 `MM.DD`（明年同一天會被當成今天收過）。新收的都記了年月日。
-- `explore-fx.js` 檔頭還有一句「常見的款式輕、稀有的重」（舊的抽卡說法）：那支檔在 `feat/reveal-fx` 被改寫中，留給那邊。
+- ~~`explore-fx.js` 檔頭還有一句「常見的款式輕、稀有的重」（舊的抽卡說法）~~：合併到 main 時改掉了（見 WORKLOG 的翻卡特效那一段）。
 
 驗證：`python app/tests/run.py` node 106/106、瀏覽器 313/313；`check-sw.py` PASS（`chengshi-app-v21`）；Playwright 看過 /album、/rewards（選相框與稱號）、八種相框、/postcard ?v=2、/unlock 內灣（首訪＋里程 30 km）、規則說明、/place 回訪、/line、/family、分享面板、來回的每一段。`verify-quiet.py` 在這台 Mac 只跑得了 ②（PASS、三個變體與基準完全相同），其餘段落找不到 Chrome 略過；`prototype/` 沒動。
