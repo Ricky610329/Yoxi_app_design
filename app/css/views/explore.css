@@ -934,7 +934,6 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
 .ex-rules { z-index: 96; }
 .ex-rules__box { max-height: 100%; overflow: auto; }
 .ex-rules__t { font-size: var(--fs-title); font-weight: var(--fw-heavy); margin-bottom: var(--sp-2); }
-.ex-rules__p { font-size: var(--fs-sm); line-height: 1.6; margin-bottom: var(--sp-4); }
 .ex-rules__h { font-size: var(--fs-sm); font-weight: var(--fw-heavy); margin: var(--sp-3) 0 var(--sp-2); }
 .ex-rules__list { list-style: none; margin: 0; padding: 0; }
 .ex-rules__row {
@@ -948,9 +947,10 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
 .ex-rules__row > span:last-child { text-align: right; }
 /* 現在是這個季節：粗體就好，不加徽章（沒有「限時」的語氣） */
 .ex-rules__row.is-now { font-weight: var(--fw-heavy); }
-.ex-rules__note { font-size: var(--fs-xs); line-height: 1.6; opacity: .7; margin: var(--sp-4) 0; }
+/* 「知道了」和最後一張表之間留白（原本由底下的小字撐開） */
+.ex-rules__box > .btn-primary { margin-top: var(--sp-4); }
 
-/* 卡面上的郵戳（節慶、遠行；explore-cards.js 的 marksHTML）：蓋在右下、地名那一條的上面。
+/* 卡面上的紀念戳（首訪、里程；explore-cards.js 的 marksHTML）：蓋在右下、地名那一條的上面。
    /unlock 的卡面與收藏的明信片頁共用；小卡（收藏牆、疊卡）不蓋，免得一面牆都是章。 */
 .card-marks {
   position: absolute;
@@ -978,6 +978,8 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
 }
 .card-mark small { font-size: var(--fs-xs); font-weight: var(--fw-bold); }
 .card-mark + .card-mark { transform: rotate(6deg); }
+/* 里程紀念是搭 yoxi 累積的：金色的框（跟金框同一個意思），字用墨藍才讀得清楚 */
+.card-mark[data-mark="mile"] { border-color: var(--gold); color: var(--yoxi-navy); }
 
 /* ---------- /routes ---------- */
 .ex-routes { display: grid; gap: var(--sp-3); padding: var(--sp-4) var(--gutter) 0; }
@@ -1045,3 +1047,6 @@ html[data-still] .ex-unlock .ex-face__holo { animation: none; }
   box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 3px color-mix(in srgb, var(--gold-lite) 70%, transparent);
   pointer-events: none;
 }
+
+/* ---------- 回訪（explore-unlock.js）：「第 N 次來」跟抵達方式並排 ---------- */
+.ex-arrive__chip--again { margin-left: var(--sp-2); }

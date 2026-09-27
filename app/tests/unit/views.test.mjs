@@ -60,7 +60,7 @@ test('款式規則：五款（四季＋金框），四季的月份不重疊、�
   assert.equal(typeof E.openOdds, 'undefined', '沒有機率說明');
 });
 
-test('cardRule：走路看季節、搭 yoxi 是金框；節日那一週是節日版；FAR_KM 以上蓋遠行戳', () => {
+test('cardRule：走路看季節、搭 yoxi 是金框；節日那一週是節日版；第一次來是首訪；搭 yoxi 累積跨過 MILE_STEPS 是里程紀念', () => {
   const { APP } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });
   const E = APP.explore;
   const R = (by, ymd, km) => { const [y, m, d] = ymd.split('-').map(Number); return E.cardRule({ by, km, date: new Date(y, m - 1, d, 12) }); };
@@ -92,28 +92,40 @@ test('cardRule：走路看季節、搭 yoxi 是金框；節日那一週是節日
   assert.deepEqual([...E.festSpan('duanwu', 2027)], ['06-07', '06-13'], 'festSpan：116 年端午（週三）');
   assert.equal(E.festSpan('moon', 2030), null, 'festSpan：表上沒有的年份是 null');
   assert.deepEqual([...E.festSpan('sakura', 2030)], ['01-25', '03-15'], 'festSpan：賞櫻每年一樣');
-  /* 遠行：搭 yoxi FAR_KM 公里以上（含）；走路再遠也不算 */
-  assert.equal(R('ride', '2027-04-02', E.FAR_KM).far, true, '剛好 FAR_KM：算');
-  assert.equal(R('ride', '2027-04-02', E.FAR_KM - 0.1).far, false, '差一點：不算');
-  assert.equal(R('walk', '2027-04-02', 40).far, false, '走路不算遠行');
+  /* 里程紀念：看累積（before＋這一趟），不看單趟；跨過兩個記大的；走路不算；沒給 before 就不算 */
+  const RM = (by, km, before) => E.cardRule({ by, km, before, date: new Date(2027, 3, 2, 12) });
+  const first = E.MILE_STEPS[0];
+  assert.equal(RM('ride', 1, first - 1).mile, first, '剛好跨過第一個：算');
+  assert.equal(RM('ride', 0.5, first - 1).mile, 0, '差一點：不算');
+  assert.equal(RM('ride', 1, first).mile, 0, '之前已經跨過：這一趟不再蓋');
+  assert.equal(RM('ride', 50, 20).mile, 60, '一趟跨過 30 與 60（20 → 70）：記大的');
+  assert.equal(RM('walk', 40, 0).mile, 0, '走路不算里程');
+  assert.equal(RM('ride', 40).mile, 0, '沒給之前的累積：不算');
+  assert.equal(RM('ride', 12.3, 20).total, 32.3, 'total＝之前的累積＋這一趟');
+  assert.ok(E.MILE_STEPS.every((m, i, a) => !i || m > a[i - 1]), 'MILE_STEPS 由小到大');
+  /* 首訪：呼叫的人說是第一次才算 */
+  assert.equal(E.cardRule({ by: 'walk', first: true }).first, true);
+  assert.equal(E.cardRule({ by: 'walk' }).first, false);
+  assert.equal(typeof E.FAR_KM, 'undefined', '單趟的遠行戳拿掉了（換成累積的里程紀念）');
   /* 同一天同樣方式，每次都一樣（沒有亂數） */
   assert.deepEqual(JSON.stringify(R('walk', '2026-09-25')), JSON.stringify(R('walk', '2026-09-25')));
 });
 
-test('ruleLines：一條規則一句；marksHTML：節日版是會動的插畫、遠行是一枚戳', () => {
+test('ruleLines：一條規則一句；marksHTML：節日版是會動的插畫、首訪與里程各一枚戳', () => {
   const { APP } = loadApp({ views: ['ride', 'explore-fx', 'explore-fest', 'explore-cards'] });
   const E = APP.explore;
   const K = E._;
-  const R = (by, ymd, km) => { const [y, m, d] = ymd.split('-').map(Number); return E.cardRule({ by, km, date: new Date(y, m - 1, d, 12) }); };
+  const R = (by, ymd, km, o) => { const [y, m, d] = ymd.split('-').map(Number); return E.cardRule(Object.assign({ by, km, date: new Date(y, m - 1, d, 12) }, o)); };
   assert.deepEqual([...E.ruleLines(R('walk', '2026-10-01'))], ['秋天的畫風是木刻版畫']);
+  assert.deepEqual([...E.ruleLines(R('walk', '2026-10-01', 1, { first: true }))], ['秋天的畫風是木刻版畫', '第一次來，多蓋一枚首訪紀念戳']);
   assert.deepEqual([...E.ruleLines(R('walk', '2026-09-23'))], ['秋天的畫風是木刻版畫', '中秋那一週去的，卡面有月亮和玉兔']);
-  assert.deepEqual([...E.ruleLines(R('ride', '2027-02-08', 28))],
-    ['搭 yoxi 抵達是金框', '春節那一週去的，卡面有鞭炮', '搭 yoxi 28 公里，多蓋一枚遠行紀念戳']);
+  assert.deepEqual([...E.ruleLines(R('ride', '2027-02-08', 28, { first: true, before: 14.6 }))],
+    ['搭 yoxi 抵達是金框', '第一次來，多蓋一枚首訪紀念戳', '春節那一週去的，卡面有鞭炮', '搭 yoxi 累積到 30 公里，多蓋一枚里程紀念戳']);
   assert.deepEqual([...E.ruleLines(R('walk', '2027-03-01'))], ['春天的畫風是水彩', '櫻花季去的，卡面有櫻花樹']);
   assert.equal(K.marksHTML(R('walk', '2026-10-01')), '', '都沒有就沒有 HTML');
-  const m = K.marksHTML(R('ride', '2026-09-25', 28));
-  assert.ok(/data-fest="moon"/.test(m) && /data-mark="far"/.test(m) && /28 km/.test(m), '中秋插畫＋遠行戳：' + m.slice(0, 80));
-  assert.ok(m.indexOf('data-fest') < m.indexOf('data-mark="far"'), '插畫在戳前面（戳壓在插畫上）');
+  const m = K.marksHTML(R('ride', '2026-09-25', 28, { first: true, before: 14.6 }));
+  assert.ok(/data-fest="moon"/.test(m) && /data-mark="first"/.test(m) && /data-mark="mile"/.test(m) && /30 km/.test(m), '中秋插畫＋首訪戳＋里程戳：' + m.slice(0, 80));
+  assert.ok(m.indexOf('data-fest') < m.indexOf('data-mark="first"'), '插畫在戳前面（戳壓在插畫上）');
   for (const f of E.FESTIVALS) {
     const h = E.festHTML(f.key);
     assert.ok(new RegExp('data-fest="' + f.key + '"').test(h) && /aria-hidden="true"/.test(h) && /data-fest-part/.test(h), f.key + '：有插畫、報讀器略過、有主角');

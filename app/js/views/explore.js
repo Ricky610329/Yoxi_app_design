@@ -56,8 +56,9 @@ const fmt = APP.fmt;
 const M = K.M, S = K.S, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
 
-/* 抵達驗證的兩個數字：契約 §5 的文案規定（80 公尺內停 1 分鐘），全頁只寫在這裡 */
-const ARRIVE_RADIUS_M = 80;
+/* 抵達驗證的兩個數字：契約 §5 的文案規定（走進這個地方 100 公尺內、停 1 分鐘），全頁只寫在這裡。
+   100 公尺是「到了以後在附近走走」的範圍（使用者給的流程：抵達後於 100 m 範圍內步行探索），不是要站在一個點上 */
+const ARRIVE_RADIUS_M = 100;
 const ARRIVE_STAY_MIN = 1;
 
 /* 探索首頁的可按數上限（L1 一屏一事；§6.3 第 4 條） */
@@ -456,6 +457,9 @@ function renderPlace(params) {
       text: '這個地方可能還沒寫好內容，或網址打錯了。先回探索看看附近的地方。' });
   }
   const got = collected(p);
+  /* 每一次來都收一張：收過的地方再去一次，會再收一張那一天的（一天一張，今天收過就等明天） */
+  const again = got && !!p.card && APP.explore.canCollect(p.card);
+  const nVisit = got && p.card ? APP.explore.visits(p.card).length : 0;
   const hasDist = p.dist != null;
   const walk = hasDist && fmt.canWalk(p.dist);
   const r = hasDist ? rideOf(p) : null;
@@ -467,44 +471,50 @@ function renderPlace(params) {
         '<span>·</span><span>車資約 $' + num(r.fare) + '</span>';
 
   const b = badgeOf(p);
-  const reward = got ? '' :
+  const reward = got && !again ? '' :
     '<section class="ex-pad">' +
       '<div class="sec"><h2 class="sec__t">到了會得到</h2></div>' +
       '<div class="card card--pad u-row u-gap4">' +
-        '<span class="ex-reward__img is-gray" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
+        '<span class="ex-reward__img' + (got ? '' : ' is-gray') + '" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
         '<span class="u-fill">' +
-          '<span class="ex-strong">一張〈' + esc(p.name) + '〉</span>' +
+          '<span class="ex-strong" data-reward-t>' + (got ? '再收一張〈' + esc(p.name) + '〉 · 第 ' + num(nVisit + 1) + ' 次來' : '一張〈' + esc(p.name) + '〉') + '</span>' +
           '<span class="ex-muted" data-rule-preview>' + esc(rulePreview()) + '</span>' +
-          (b ? '<span class="ex-muted">也會讓〈' + esc(b.name) + '〉多收集一張 · 收集 ' + num(b.done) + '/' + esc(b.total) + '</span>' : '') +
+          (b && !got ? '<span class="ex-muted">也會讓〈' + esc(b.name) + '〉多收集一張 · 收集 ' + num(b.done) + '/' + esc(b.total) + '</span>' : '') +
         '</span>' +
       '</div>' +
     '</section>';
 
   /* ---- K1 動作區 ---- */
+  /* 收過的地方：今天收過了只有「看明信片」；還收得到就跟沒去過一樣可以出發，次要動作換成「看收過的明信片」 */
+  const seeCard = p.card ? '<a class="btn-ghost" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">看收過的明信片' +
+    (nVisit > 1 ? ' · ' + num(nVisit) + ' 張' : '') + '</a>' : '';
   let foot;
-  if (got) {
+  if (got && !again) {
     foot = p.card
-      ? '<a class="btn-primary" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">已在收藏 · 看明信片</a>'
+      ? '<a class="btn-primary" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">已在收藏 · 看明信片</a>' +
+        '<p class="ex-foot__note" data-today-got>今天已經收過這一張，明天再來會再收一張</p>'
       : '';
   } else if (!hasDist || walk) {
     foot =
       '<div class="ex-foot__row">' +
-        '<a class="btn-primary" href="#/going/' + esc(p.id) + '" data-act="go-walk">走路前往</a>' +
+        '<a class="btn-primary" href="#/going/' + esc(p.id) + '" data-act="go-walk">' + (got ? '再走過去一次' : '走路前往') + '</a>' +
         '<button class="btn-ghost" type="button" data-act="set-dropoff">設為下車點</button>' +
       '</div>' +
       '<p class="ex-foot__note">' + (hasDist
         ? distHTML(p.dist) + '，走過去大概 ' + num(fmt.walkMin(p.dist)) + ' 分鐘'
-        : '距離待確認；設為下車點只是填好目的地，還沒叫車') + '</p>';
+        : '距離待確認；設為下車點只是填好目的地，還沒叫車') + '</p>' +
+      (got ? seeCard : '');
   } else {
     const R = routeOf(p);
     foot =
       '<button class="btn-primary ex-ride" type="button" data-act="set-dropoff">' +
         '<span class="ex-ride__t">用 yoxi 前往 · 約 $' + num(r.fare) + ' · ' + num(r.min) + ' 分</span>' +
-        /* 限定版（+點數）只給走不到的地方：判斷在 ride.js 的 limitedPlace，不在這裡用距離另算一次 */
-        (APP.ride.limitedPlace(p) ? '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' : '') +
+        /* 限定版（+點數）只給第一次去走不到的地方：判斷在 ride.js 的 limitedPlace，不在這裡用距離另算一次 */
+        (APP.ride.limitedPlace(p) && !got ? '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' : '') +
       '</button>' +
-      (R ? '<a class="btn-ghost" href="#/route/' + esc(R.id) + '" data-act="open-route">先看看路線</a>'
-         : '<a class="btn-ghost" href="#/routes" data-act="open-route">看這個月的路線</a>') +
+      (got ? seeCard
+        : R ? '<a class="btn-ghost" href="#/route/' + esc(R.id) + '" data-act="open-route">先看看路線</a>'
+        : '<a class="btn-ghost" href="#/routes" data-act="open-route">看這個月的路線</a>') +
       '<p class="ex-foot__note">' + num(r.km) + ' 公里，這一段搭車比較合理。按下去只是填好下車點，還沒叫車。</p>';
   }
 
@@ -554,6 +564,7 @@ function gotLine(p) {
   const bits = ['已收藏'];
   if (c && c.date) bits.push(esc(c.date));
   if (c) bits.push(c.by === 'ride' ? '搭車抵達' : '走路抵達');
+  if (c && c.visits > 1) bits.push('收過 ' + num(c.visits) + ' 張');
   return '<span class="ex-gotline" data-got-line>' + bits.join(' · ') + '</span>';
 }
 
@@ -574,8 +585,8 @@ function mountPlace(root, params) {
 
 /* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義。
    已抵達（phase done）的那一趟不算「進行中」：人已經下車了，可以走去別的地方；
-   但如果它就是這個地方、明信片還沒收（rodeHere），就不必再走一趟，直接去收那一張。 */
-function rodeHere(p) { return !!APP.ride.trip.arrivedAt(p.id) && !collected(p); }
+   但如果它就是這個地方、這一次的明信片還沒收（rodeHere；收過的地方回訪也算），就不必再走一趟，直接去收那一張。 */
+function rodeHere(p) { return !!APP.ride.trip.arrivedAt(p.id) && !!p.card && APP.explore.canCollect(p.card); }
 
 function renderGoing(params) {
   const p = APP.place(params.id);
@@ -620,8 +631,8 @@ function renderGoing(params) {
       '</div>' +
       '<div class="card card--pad u-row u-gap3 ex-going__card ex-going__card--mist">' +
         '<span data-icon="place" class="ex-ic22 ex-noshrink"></span>' +
-        '<span class="ex-going__p ex-muted">抵達以現場定位確認：半徑 ' + num(ARRIVE_RADIUS_M) + ' 公尺內停留 ' +
-          num(ARRIVE_STAY_MIN) + ' 分鐘才算數。明信片是走到現場才拿得到的東西，所以這一關不能只靠按鈕。</span>' +
+        '<span class="ex-going__p ex-muted" data-arrive-rule>到了以後在附近 ' + num(ARRIVE_RADIUS_M) + ' 公尺內走走，定位確認你在這一圈裡停留 ' +
+          num(ARRIVE_STAY_MIN) + ' 分鐘，就收得到這一次的明信片。明信片是走到現場才拿得到的東西，所以這一關不能只靠按鈕。</span>' +
       '</div>' +
       '<div class="ex-going__acts">' +
         '<button class="demo-btn ex-demo" type="button" data-act="arrive">模擬抵達</button>' +

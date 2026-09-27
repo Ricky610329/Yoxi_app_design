@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | **Google Maps 儲存地點／時間軸** | 自訂清單（想去、去過、旅行）並可加註記；時間軸記錄去過的地點與路線，可編輯刪除；2023-12 宣布時間軸改存在裝置上、自動刪除預設 3 個月 | 不主動開口推薦「今天這一個」；存的是座標不是「我去過」的證據；不會把你導向叫車，也沒有點數 | Maps 回答怎麼去你已經想去的地方；城事是城市先開口、一天一個、附理由、到了才上色，走不到就接回 yoxi | [Google 清單說明](https://support.google.com/maps/answer/9948049?hl=en)、[時間軸說明](https://support.google.com/maps/answer/6258979?hl=en)、[Google 部落格 2023-12-12](https://blog.google/products/maps/updates-to-location-history-and-new-controls-coming-soon-to-maps/) |
 | **Pokémon GO**（Niantic） | 以 GPS 在真實地圖上移動；PokéStop 與道館設在歷史標記、紀念碑、公共藝術等真實地標；走路收集道具與寶可夢 | 地標是「補給點」，內容與地方本身無關；動機來自遊戲收集，不是地方；對交通無轉換 | 城事的地方有三段故事（現在的它／以前的它／為什麼是今天），動機來自地方本身；走不到的地方直接變成一張叫車訂單 | [Niantic 說明](https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/117-visiting-pokestops-and-gyms/)、[Wikipedia](https://en.wikipedia.org/wiki/Pok%C3%A9mon_Go) |
-| **Pikmin Bloom**（Niantic；使用者最初的靈感） | 走路讓幼苗長大（100 → 10,000 步）、沿路種花留下軌跡；一天結束有生活紀錄回顧；皮克敏帶回明信片，可收藏或寄給朋友 | 獎勵的是「步數」這個過程，不是抵達某個地方；明信片來自遊戲內遠征，不是你真的去過的地方；沒有交通接點 | 城事只在你真的抵達（80 m 內停 1 分鐘）才上色；明信片是「我去過」的證據，背面是日期、怎麼到的、你寫的一句話 | [官方玩法](https://pikminbloom.com/en/gameplay)、[Niantic 說明](https://niantic.helpshift.com/hc/en/23-pikmin-bloom/faq/2854-how-to-play-pikmin-bloom/) |
+| **Pikmin Bloom**（Niantic；使用者最初的靈感） | 走路讓幼苗長大（100 → 10,000 步）、沿路種花留下軌跡；一天結束有生活紀錄回顧；皮克敏帶回明信片，可收藏或寄給朋友 | 獎勵的是「步數」這個過程，不是抵達某個地方；明信片來自遊戲內遠征，不是你真的去過的地方；沒有交通接點 | 城事只在你真的抵達（100 m 內停 1 分鐘）才上色；明信片是「我去過」的證據，背面是日期、怎麼到的、你寫的一句話 | [官方玩法](https://pikminbloom.com/en/gameplay)、[Niantic 說明](https://niantic.helpshift.com/hc/en/23-pikmin-bloom/faq/2854-how-to-play-pikmin-bloom/) |
 | **LINE GO**（LINE × 裕隆） | 叫車、租車、機場接送、代駕整合；LINE POINTS 折抵車資；有「天天領」抽乘車金 | 點數是 LINE 生態系的通用點數，不接用車、保養；互動設計以抽獎、乘車金為主，不產生「不搭車也打開」的內容 | 城事的點數回到和泰 Points，接的是 yoxi、iRent、HOTAI 購、汽車保養這條「出行與用車」的鏈；開啟理由是地方，不是抽獎 | [Money101](https://www.money101.com.tw/blog/line-taxi-%E8%A9%95%E5%83%B9-%E5%84%AA%E6%83%A0)、[卡優新聞網](https://www.cardu.com.tw/epoint/detail.php?39805=) |
 | **Uber／Uber One** | 月費會員（2026-07 起月費 NT$199）；行程依車型回饋 3%–15% Uber One 點數；點數入帳 60 天失效；Uber 與 yoxi 2024 起合作（司機可雙平台接單） | 回饋綁付費訂閱、限 Uber 內使用、有效期短；沒有探索內容 | 城事不收月費、點數不因探索而過期、回饋出得了 yoxi（iRent、HOTAI 購）；Uber 是 yoxi 的司機端合作夥伴，不是乘客端的探索競品 | [Uber 官方 2026 會員更新](https://www.uber.com/tw/zh-tw/blog/uber-one-benefits-update-2026/)、[Uber 會員方案更新](https://www.uber.com/tw/zh-tw/blog/tw-uber-one-benefits-update/)、[數位時代 2024-02-16](https://www.bnext.com.tw/article/78389/yoxi-uuber) |
 | **Strava／步數 app** | 記錄運動；路段（Segment）排行榜與 KOM／QOM；完整排行榜與路線規劃屬付費訂閱 | 動機建立在比較與排名；對「今天去哪裡」沒有答案；與叫車無關 | 城事刻意沒有排名、連續天數；比的是「你的城市慢慢長出顏色」，不是跟別人比 | [Strava 訂閱功能](https://support.strava.com/hc/en-us/articles/216917657-Strava-Subscription-Features)、[BikeRadar](https://www.bikeradar.com/news/strava-leaderboards-routes-subscription) |
@@ -206,7 +206,7 @@
 
 1. Maps 回答「怎麼去你已經想去的地方」；城事回答「你每天路過的哪裡值得進去」。
 2. Maps 的儲存是你自己存；城事是城市先開口，一天一個、附理由（天氣、時段、你還沒去過的那一類）。
-3. 到了才上色：80 m 內停 1 分鐘才算去過，收下的不是座標，是「我去過」。
+3. 到了才上色：100 m 內停 1 分鐘才算去過，收下的不是座標，是「我去過」。
 4. Maps 不會把你導向叫車；城事在走不到的地方一鍵填好下車點、車資當場算好。
 5. 而且我們不碰你的完整行蹤：日誌、心情、走過的路線只有你看得到。
 
@@ -238,7 +238,7 @@
 | # | 停下來的點 | 為什麼耳目一新（一句話） | 截圖 | 放在簡報哪裡（建議） |
 |---|---|---|---|---|
 | 1 | **一天一個** | 叫車 app 通常給你一整頁優惠，城事只給你一個地方和它為什麼是今天（天氣、時段、你還缺的那一類），少到讓人想出門 | `explore.png`（配 `push-am.png`） | 第 3 章流程 A 開頭 |
-| 2 | **到了才上色** | 不是按一下收藏，是真的走到 80 m 內、停 1 分鐘，城市足跡才慢慢長出顏色 | `unlock.png`、`footprint.png` | 第 3 章流程 A 結尾 |
+| 2 | **到了才上色** | 不是按一下收藏，是真的走到 100 m 內、停 1 分鐘，城市足跡才慢慢長出顏色 | `unlock.png`、`footprint.png` | 第 3 章流程 A 結尾 |
 | 3 | **腳到不了的一段** | 路線上走得到的段落一個字都不提車，只有內灣 28 km 那一段長出「設為下車點 · 約 $691 · 65 分」——叫車平台主動叫你走路 | `route.png`、`ride-dropoff.png` | 第 3 章流程 B（全份重點） |
 | 4 | **只有你／你可分享** | 日誌與心情頁明寫「只有你看得到」而且沒有分享鍵；分享的只有明信片、週回顧、長輩圖，存成圖片不含位置 | `lookback.png`、`album-journal.png`、`share.png` | 第 3 章流程 C；第 6 章隱私 |
 | 5 | **長輩圖** | 同一批明信片換一個世代：「早安 平安喜樂 · 內灣老街」，年輕人去過的地方變成傳給爸媽的問候 | `elder.png`（配 `week.png`） | 第 3 章流程 C 結尾；第 5 章 |

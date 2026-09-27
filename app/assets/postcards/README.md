@@ -1,16 +1,18 @@
 # 明信片成品（AI 生成）
 
-明信片各五款，對應抽卡的五種畫風。目前生成了 p1–p11（55 張）；p12–p22 還沒生成，畫面上退回「實景照片＋SVG 濾鏡」的示意，補的時候跑 `app/tools/gen-postcards.py` 再更新 `explore.js` 的 `POSTCARD_GEN`。
+明信片各五款，對應五種畫風。目前生成了 p1–p11（55 張）；p12–p22 還沒生成，畫面上退回「實景照片＋SVG 濾鏡」的示意，補的時候跑 `app/tools/gen-postcards.py` 再更新 `explore-face.js` 的 `POSTCARD_GEN`。
 
-| 檔名 | 款式 | 走路抵達的機率 |
+哪一款不是抽的，全部照規則（2026-09-27 拿掉機率）：
+
+| 檔名 | 款式 | 什麼時候收到 |
 |---|---|---|
-| `<id>-watercolor.jpg` | 水彩 | 45% |
-| `<id>-oil.jpg` | 油畫 | 30% |
-| `<id>-woodcut.jpg` | 木刻版畫 | 16.5% |
-| `<id>-ink.jpg` | 水墨 | 8% |
-| `<id>-gold.jpg` | yoxi 金框 | 0.5%（搭 yoxi 抵達 100%） |
+| `<id>-watercolor.jpg` | 水彩 | 春天（3–5 月）走路抵達 |
+| `<id>-oil.jpg` | 油畫 | 夏天（6–8 月）走路抵達 |
+| `<id>-woodcut.jpg` | 木刻版畫 | 秋天（9–11 月）走路抵達 |
+| `<id>-ink.jpg` | 水墨 | 冬天（12–2 月）走路抵達 |
+| `<id>-gold.jpg` | yoxi 金框 | 搭 yoxi 抵達（不分季節） |
 
-機率的唯一來源是 `app/js/views/explore.js` 的 `DRAW_STYLES`，這張表只是對照。
+規則的唯一來源是 `app/js/views/explore-cards.js` 的 `CARD_STYLES`，這張表只是對照。節日版的插畫、首訪紀念戳、里程紀念戳是程式疊在卡面上的，不另外生圖。
 
 ## 怎麼做的
 

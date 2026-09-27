@@ -213,8 +213,10 @@ T.spec('flows', function (t) {
     await app.click('main.view [data-act="go-week"]');
     await app.at('/week');
     await app.click('main.view [data-act="share"]');
+    /* 週回顧沒有指定哪一張明信片：沒有「傳到 LINE 給家人」的一鍵傳，第一格是長輩圖（明信片的分享見 family.spec） */
     const first = app.$('.device > .sys-share .row-nav');
-    t.eq(first && first.getAttribute('data-act'), 'share-family', '分享面板第一格是傳給家人');
+    t.eq(first && first.getAttribute('data-act'), 'share-family', '週回顧的分享面板第一格是長輩圖');
+    t.ok(!app.$('.sys-share [data-act="share-line"]'), '週回顧沒有一鍵傳到 LINE');
     await app.click('.sys-share [data-act="share-family"]');
     await app.at('/elder');
     await app.click('[data-act="send-family"]');
@@ -494,7 +496,7 @@ T.spec('flows', function (t) {
       t.eq(S.count(), n0 + 1, tag + 'collect 連按兩次只收一張');
       A.nav.back();
       await app.at('/unlock/glass-kiln');
-      t.includes(app.text('main.view[data-view]'), '已在收藏裡', tag + 'collect 只推一筆 /album（返回回到解鎖頁）');
+      t.ok(app.$('[data-today-got]'), tag + 'collect 只推一筆 /album（返回回到解鎖頁：今天已經收下這一張）');
       t.eq(app.errors.length, 0, tag + '錯誤：' + app.errors.join('；'));
     }
   }, { timeout: 30000 });

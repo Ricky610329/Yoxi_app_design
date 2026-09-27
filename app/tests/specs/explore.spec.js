@@ -173,13 +173,22 @@ T.spec('explore', function (t) {
     await app.reset();
   });
 
-  t.test('/place：收過 → 已在收藏 · 看明信片', async function (app) {
+  t.test('/place：收過的地方可以再去一次（回訪再收一張）；今天收過就只剩看明信片', async function (app) {
     await app.reset();
     await app.go('/place/market');
     const a = app.$('[data-place-foot] [data-act="open-postcard"]');
-    t.ok(a, '看明信片');
+    t.ok(a, '看收過的明信片');
     t.eq(a && a.getAttribute('href'), '#/postcard/' + app.APP.place('market').card, '→ /postcard/:card');
-    t.ok(!app.$('[data-act="go-walk"], [data-act="set-dropoff"]'), '收過就不再推走路／叫車');
+    t.includes(app.text('[data-place-foot] [data-act="go-walk"]'), '再走過去一次', '收過的（九月初）今天還可以再去一次');
+    t.includes(app.text('[data-reward-t]'), '第 2 次來', '到了會得到：再收一張、第 2 次');
+    t.ok(t.countTappables(app) <= T.tapMax('/place/market'), '可按數 ≤ 上限');
+    T.helpers.collect(app, 'market');
+    await app.go('/explore');
+    await app.go('/place/market');
+    t.ok(app.$('[data-place-foot] [data-today-got]'), '今天收過了：寫明天再來');
+    t.ok(!app.$('[data-act="go-walk"], [data-act="set-dropoff"]'), '今天收過就不再推走路／叫車');
+    t.includes(app.text('[data-got-line]'), '收過 2 張', '已收藏那一行寫收過幾張');
+    await app.reset();
   });
 
   /* 4. /explore/map：10 顆、點一顆小卡名字對 */
@@ -225,7 +234,7 @@ T.spec('explore', function (t) {
     await app.go('/explore');
     await app.go('/going/glass-kiln');
     t.ok(app.$('.spot'), '地圖上有目的地');
-    t.includes(app.text('main.view[data-view]'), '80', '抵達怎麼驗：80 公尺');
+    t.includes(app.text('[data-arrive-rule]'), '100 公尺內走走', '抵達怎麼驗：附近 100 公尺內走走');
     t.ok(!/倒數|步數/.test(app.text('main.view[data-view]')), '沒有倒數、步數');
     await app.click('[data-act="cancel-going"]');
     await app.at('/explore');
@@ -251,15 +260,34 @@ T.spec('explore', function (t) {
     t.eq(c && c.date, app.APP.fmt.todayMMDD(), '日期用今天');
   });
 
-  t.test('/unlock/glass-kiln：已收過 → 已在收藏裡＋看明信片', async function (app) {
+  t.test('/unlock/glass-kiln：今天收過 → 看今天那一張；別天再來 → 第 2 次，再收一張（圖鑑不變、沒有首訪戳）', async function (app) {
     /* 自己準備狀態（單獨跑這一條也對）：先收下 p11 */
     await app.reset();
     T.helpers.collect(app, 'glass-kiln');
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-scene="3"].is-on'), '第三幕');
-    t.includes(app.text('main.view[data-view]'), '已在收藏裡', '已在收藏裡');
+    t.ok(app.$('[data-today-got]'), '今天已經收下這一張');
     t.eq(app.$('[data-act="open-postcard"]') && app.$('[data-act="open-postcard"]').getAttribute('href'), '#/postcard/p11', '→ /postcard/p11');
-    t.ok(!app.$('[data-act="collect"]'), '不能再收一次');
+    t.ok(!app.$('[data-act="collect"]'), '同一天不能再收一次');
+    /* 隔天再來 */
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    const ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    app.APP.store.set('demoDate', ymd);
+    const n0 = app.STATE.count();
+    await app.go('/explore');
+    await app.go('/unlock/glass-kiln');
+    t.eq(app.$('[data-unlock]').getAttribute('data-visit'), '2', '第 2 次');
+    t.includes(app.text('[data-visit-n]'), '第 2 次來', '寫第幾次來');
+    t.ok(!app.$('[data-final-card] [data-mark="first"]'), '回訪沒有首訪戳');
+    t.ok(!/首訪/.test(app.text('[data-result-style] [data-why]')), '為什麼：不寫首訪');
+    await app.click('[data-act="collect"]');
+    await app.at('/album');
+    t.eq(app.STATE.count(), n0, '圖鑑（STATE）不多一張');
+    const v = app.APP.store.get('visits');
+    t.eq(v.length, 1, 'store.visits 多一筆');
+    t.eq(v[0] && v[0].card + '#' + v[0].v, 'p11#2', '記下是 p11 的第 2 次');
+    t.eq(v[0] && v[0].date, ymd, '記下那一天');
+    await app.reset();
   });
 
   t.test('/unlock/neiwan?ride=1：金框、by ride、points +50、trip 清掉', async function (app) {
@@ -342,7 +370,9 @@ T.spec('explore', function (t) {
     t.includes(app.text('[data-result-style]'), '水墨', '寫出畫風名');
     t.includes(app.text('[data-result-style] [data-why]'), '冬天的畫風是水墨', '寫出為什麼');
     t.ok(!app.$('[data-final-card].postcard--gold'), '水墨不是金框');
-    t.ok(!app.$('[data-final-card] .card-marks') && !app.$('[data-final-card] .fest'), '不是節日、不是搭車：沒有插畫、沒有戳');
+    t.ok(app.$('[data-final-card] .card-mark[data-mark="first"]'), '第一次來：首訪紀念戳');
+    t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]') && !app.$('[data-final-card] .fest'), '不是節日、不是搭車：沒有插畫、沒有里程戳');
+    t.includes(app.text('[data-result-style] [data-why]'), '第一次來，多蓋一枚首訪紀念戳', '為什麼：首訪');
     await app.go('/explore');
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '重進還是同一款');
@@ -356,17 +386,21 @@ T.spec('explore', function (t) {
     const txt = app.text('.ex-rules');
     E.CARD_STYLES.forEach(function (d) { t.includes(txt, d.name, '寫出 ' + d.name); });
     E.FESTIVALS.forEach(function (f) { t.includes(txt, f.name + '', '寫出 ' + f.name); });
-    t.includes(txt, E.FAR_KM + ' 公里以上', '遠行的門檻（APP.explore.FAR_KM）');
+    t.includes(txt, '累積到 ' + E.MILE_STEPS.join('、') + ' 公里', '里程紀念的門檻（APP.explore.MILE_STEPS）');
+    t.includes(txt, '你現在累積' + E.rideKm() + '／' + E.nextMile(E.rideKm()) + ' 公里', '寫出現在累積幾公里');
+    t.includes(txt, '首訪紀念戳', '首訪紀念');
+    t.includes(txt, '一天一張', '每一次來都收一張、一天一張');
     t.ok(!/機率|%|抽到|抽取/.test(txt), '不寫機率');
     t.ok(app.$('.ex-rules [data-rule="ink"].is-now'), '現在的季節（冬天）標出來');
-    t.eq(app.$$('.ex-rules .is-now').length, 1, '只標一個季節');
+    t.eq(app.$$('.ex-rules [data-rules="season"] .is-now').length, 1, '只標一個季節');
     t.noBannedWords(app, { msg: '規則說明' });
     await app.click('[data-act="close-rules"]');
     t.ok(!app.$('.ex-rules'), '知道了 → 關掉');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.APP.store.get('cardStyle').p11, 'ink', 'store.cardStyle 記下水墨');
-    t.eq(JSON.stringify(app.APP.store.get('cardMarks').p11), JSON.stringify({ fest: '', far: 0 }), '沒有郵戳也記一筆（查過了，沒有）');
+    const mk = app.APP.store.get('cardMarks').p11;
+    t.eq(JSON.stringify([mk.fest, mk.mile]), JSON.stringify(['', 0]), '沒有節日、沒有里程也記一筆（查過了，沒有）');
     t.eq(app.STATE.card('p11').date, app.APP.fmt.todayMMDD(new Date(seasonDate(app, 'ink') + 'T12:00:00')), '收下的日期是 demo 的那一天');
     await app.reset();
   });
@@ -426,7 +460,7 @@ T.spec('explore', function (t) {
     t.ok(rabbit && app.win.getComputedStyle(rabbit).animationName === 'fest-hop', '兔子在跳');
     t.ok(/^\d/.test(app.win.getComputedStyle(rabbit).animationIterationCount), '有限次（不會一直動）：' + app.win.getComputedStyle(rabbit).animationIterationCount);
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'woodcut', '中秋在秋天：木刻版畫');
-    t.ok(!app.$('[data-final-card] .card-mark'), '走路沒有遠行戳');
+    t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '走路沒有里程戳');
     t.includes(app.text('[data-result-style] [data-why]'), '秋天的畫風是木刻版畫', '結果寫為什麼（畫風）');
     t.includes(app.text('[data-result-style] [data-why]'), moon.deco, '結果寫為什麼（節日版）');
     t.ok(!app.$('[data-points]'), '走路沒有 +50');
@@ -487,29 +521,32 @@ T.spec('explore', function (t) {
     await app.reset();
   }, { timeout: 20000 });
 
-  t.test('搭 yoxi 20 公里以上：金框＋遠行紀念戳（寫出公里數）；不到就只有金框', async function (app) {
+  t.test('搭 yoxi 累積跨過里程：金框＋里程紀念戳（寫出跨過的公里數）；沒跨過就只有金框', async function (app) {
     await app.reset();
     const E = app.APP.explore;
     const far = T.fixtures.trip({ phase: 'done', startedAt: new Date().toISOString(), rated: true });
-    t.ok(far.km >= E.FAR_KM, '前提：fixture 的內灣這一趟超過門檻（' + far.km + ' km）');
+    const before = E.rideKm();
+    const mile = E.MILE_STEPS.filter(function (m) { return m > before && m <= before + far.km; }).pop();
+    t.ok(mile, '前提：demo 累積 ' + before + ' km，搭去內灣（' + far.km + ' km）會跨過一個里程');
     await app.reset({ store: { trip: far } });
     await app.go('/unlock/neiwan');
     t.ok(app.$('[data-final-card].postcard--gold'), '金框');
-    const mark = app.$('[data-final-card] .card-mark[data-mark="far"]');
-    t.ok(mark, '遠行紀念戳');
-    t.includes(mark && mark.textContent, far.km + ' km', '戳上寫公里數（行程的 km）');
-    t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi ' + far.km + ' 公里，多蓋一枚遠行紀念戳', '結果寫為什麼');
+    const mark = app.$('[data-final-card] .card-mark[data-mark="mile"]');
+    t.ok(mark, '里程紀念戳');
+    t.includes(mark && mark.textContent, mile + ' km', '戳上寫跨過的里程');
+    t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi 累積到 ' + mile + ' 公里，多蓋一枚里程紀念戳', '結果寫為什麼');
     t.includes(app.text('[data-result-style] [data-why]'), '搭 yoxi 抵達是金框', '金框的理由');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     await app.go('/postcard/p9');
-    t.ok(app.$('.alb-big__card .card-mark[data-mark="far"]'), '明信片頁也蓋遠行戳');
-    /* 近的：玻璃窯 1 km，金框但不蓋遠行戳 */
+    t.ok(app.$('.alb-big__card .card-mark[data-mark="mile"]'), '明信片頁也蓋里程戳');
+    t.ok(app.$('.alb-big__card .card-mark[data-mark="first"]'), '明信片頁也蓋首訪戳');
+    /* 近的：玻璃窯 1 km，累積沒跨過：金框但不蓋里程戳 */
     await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'glass-kiln', phase: 'done', startedAt: new Date().toISOString(), rated: true, km: 1 }) } });
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-final-card].postcard--gold'), '近的也是金框');
-    t.ok(!app.$('[data-final-card] .card-mark[data-mark="far"]'), '不到門檻：沒有遠行戳');
-    t.ok(!/遠行/.test(app.text('[data-result-style] [data-why]')), '不到門檻：不寫遠行');
+    t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '沒跨過：沒有里程戳');
+    t.ok(!/里程/.test(app.text('[data-result-style] [data-why]')), '沒跨過：不寫里程');
     await app.reset();
   });
 
