@@ -5,7 +5,8 @@
    這支註冊九個 view（/rewards 相框與稱號在 album-rewards.js）：
      /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近收下的三張疊卡，最後收的在最上面，點了進 /postcards）、統計兩格、
                       「回顧」一列三格（今天的回顧 → /lookback、這一週 → /week、城市足跡 → /footprint）、
-                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。390×844 一屏放得下。
+                      獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」，卡底細線隔開一列「相框與稱號」→ /rewards）。
+                      390×844 一屏放得下、不用捲。
                       舊連結 ?tab=journal|week|badges|cards 落在同一頁：捲到對應的那一塊、亮一下，再把 ?tab 拿掉。
      /postcards       明信片子頁：收下的一段（最近的在前，每張連到詳情）、還沒去的一段，左上返回。
      /badges          全部獎章：三欄六角章牆，收下的寫日期、還在路上的寫「收集 n/m」。
@@ -389,7 +390,7 @@ function albumV2CardHTML(p) {
     'data-card="' + esc(p.id) + '"' + (gold ? ' data-gold' : '') + '>' + inner + '</a>';
 }
 
-/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges）。
+/* 獎章精選卡：最近收下的那一枚放大，其餘排成一列小章＋「顯示全部」（→ /badges），卡底一列相框與稱號（→ /rewards）。
    一枚都還沒收下時，放大的位置不拿還在路上的章充數（那一格的意思是「最近收下」），改成一個空的章位＋一句話。 */
 const MEDAL_MINI = 5;
 function albumV2MedalsHTML() {
@@ -416,6 +417,7 @@ function albumV2MedalsHTML() {
       '<a class="alb-v2__medal-all" href="#/badges" data-act="go-badges">' +
         (extra > 0 ? '<small>+' + extra + ' 枚</small>' : '') + '顯示全部</a>' +
     '</div>' +
+    albumV2RewardsHTML() +
   '</section>';
 }
 
@@ -460,7 +462,9 @@ function albumV2LookHTML() {
   '</section>';
 }
 
-/* 相框與稱號的入口（album-rewards.js）：現在用的相框、稱號，收下了幾個。一列、一個可按 */
+/* 相框與稱號的入口（album-rewards.js）：現在用的相框、稱號，收下了幾個。一列、一個可按。
+   放在獎章卡的最底下（稱號多半是湊齊一組獎章換到的，同一類東西），不自己一張卡：
+   單獨一張只有一列很孤單，收藏首頁也因為它要往下捲一截。 */
 function albumV2RewardsHTML() {
   if (!APP.album.rewards) return '';
   const all = APP.album.rewards();
@@ -506,7 +510,6 @@ function albumV2Render() {
       '</div>' +
       albumV2LookHTML() +
       albumV2MedalsHTML() +
-      albumV2RewardsHTML() +
     '</div></div>';
 }
 

@@ -222,3 +222,13 @@
 | （合併到 main 時） | `explore-fx.js` 檔頭拿掉舊的「常見的款式輕、稀有的重」 |
 
 驗收：`python app/tests/run.py` 全綠（合併後的 main：瀏覽器 314/314，check-sw PASS）；Playwright 逐格看過四款翻卡與 still／減少動態效果的結果頁。`verify-quiet.py` 在這台 Mac 找不到 Chrome，沒跑；沒動 `prototype/`。
+
+## 2026-09-27 收藏首頁一屏：相框與稱號併進獎章卡（分支 `feat/album-rewards-into-medals`）
+
+使用者：收藏頁只有一個「相框與稱號」一列很怪，而且要往下捲；要收藏頁不捲，傾向把它併進其中一個選項。
+
+| commit | 做了什麼／為什麼 |
+|---|---|
+| （本段這一筆） | 「相框與稱號」從獨立一張卡改成獎章卡最底下一列（細線隔開；稱號多半是湊齊一組獎章換來的，同一類東西）；放大那一枚章上下各少 4px、入口的小樣縮小、那一行字不折行。390×844 的內容從 792 降到約 760（可視 784），預設／回訪＋換相框／0 張都不用捲；album.spec 加一條「一屏不用捲」 |
+
+驗收：`python app/tests/run.py` 全綠；Playwright 看過三種狀態的 /album。沒動 `prototype/`。

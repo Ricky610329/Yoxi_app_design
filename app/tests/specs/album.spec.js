@@ -289,6 +289,32 @@ T.spec('album', function (t) {
     t.eq(app.text('[data-stat="badges"]'), (got.length + 1) + '/' + B.length, '獎章數 +1');
   });
 
+  t.test('/album 一屏：相框與稱號併在獎章卡最底下，390×844 不用往下捲（預設、回訪＋換相框、0 張都一樣）', async function (app) {
+    const fits = function (msg) {
+      const s = app.$('main.view .alb-v2__scroll');
+      t.ok(s && s.scrollHeight <= s.clientHeight + 1, msg + '：不用捲 ' + (s && s.scrollHeight) + ' ≤ ' + (s && s.clientHeight));
+    };
+    await app.reset();
+    await app.go('/album');
+    t.ok(app.$('.alb-v2__medals [data-act="go-rewards"]'), '相框與稱號的入口在獎章卡裡');
+    t.eq(app.$$('main.view .alb-v2__rw').length, 1, '只有這一個入口，不另開一張卡');
+    fits('預設');
+    /* 回訪（主卡多一句）＋用一個相框、最長的稱號 */
+    app.APP.explore.collect('station');
+    const A = app.APP.album;
+    const frame = A.rewards('frame').filter(function (r) { return r.got; })[0];
+    const title = A.rewards('title').filter(function (r) { return r.got; })
+      .sort(function (x, y) { return y.name.length - x.name.length; })[0];
+    A.setLook({ frame: frame ? frame.key : null, title: title ? title.key : null });
+    await app.go('/album');
+    fits('回訪＋相框＋稱號');
+    const A0 = app.STATE.all;
+    A0.cards = {}; A0.km = 0; A0.lastCard = null; A0.lastSeen = null;
+    await app.go('/album');
+    fits('0 張');
+    await app.reset();
+  });
+
   /* 隱私分軌 */
   t.test('收藏首頁沒有私密回顧分享鍵、/week 有，並呼叫 APP.ui.share', async function (app) {
     await app.reset();

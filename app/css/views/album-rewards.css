@@ -159,15 +159,17 @@ button.rw-row { cursor: pointer; }
   display: inline-block; padding: 2px var(--sp-2); border-radius: var(--r-pill);
   background: var(--yoxi-cream); color: var(--yoxi-navy); font-size: var(--fs-cap); font-weight: var(--fw-bold); white-space: nowrap;
 }
+/* 入口是獎章卡最底下的一列（album.js 的 albumV2MedalsHTML），細線跟上面的章隔開；不另開一張卡 */
 .alb-v2__rw {
   display: flex; align-items: center; gap: var(--sp-3); min-height: 44px;
-  margin: var(--sp-3) var(--gutter) 0; padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
-  background: var(--yoxi-white); box-shadow: var(--sh-card); color: var(--yoxi-navy);
+  padding-top: var(--sp-1);
+  border-top: 1px solid var(--yoxi-line); color: var(--yoxi-navy);
 }
-.alb-v2__rw .rw-swatch { --rw-pad: 4px; width: 30px; height: 38px; }
+.alb-v2__rw .rw-swatch { --rw-pad: 3px; width: 26px; height: 32px; }
+.alb-v2__rw .u-fill { min-width: 0; }
 .alb-v2__rw strong { display: block; font-size: var(--fs-sm); }
-.alb-v2__rw small { display: block; color: var(--app-muted); font-size: var(--fs-xs); }
+/* 一行寫完（稱號長一點就省略）：折成兩行獎章卡會變高，收藏首頁又要捲 */
+.alb-v2__rw small { display: block; overflow: hidden; color: var(--app-muted); font-size: var(--fs-xs); white-space: nowrap; text-overflow: ellipsis; }
 
 /* ---------- 明信片頁：每一次來（album.js 的 visitsStripHTML） ---------- */
 .alb-visits { display: flex; gap: var(--sp-3); overflow-x: auto; padding-bottom: var(--sp-1); }

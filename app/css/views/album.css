@@ -122,8 +122,9 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-v2__postcard small { margin-top: 2px; color: var(--app-muted); font-size: var(--fs-xs); }
 .alb-v2__note { padding: var(--sp-2) var(--gutter) var(--sp-6); }
 
-/* 獎章精選卡：最近收下的一枚（左邊章、右邊名字與日期），下面一列小章疊在一起＋「顯示全部」。
-   做成橫排而不是大章置中：收藏首頁在 390×844 一屏放得下，不用往下捲 */
+/* 獎章精選卡：最近收下的一枚（左邊章、右邊名字與日期），下面一列小章疊在一起＋「顯示全部」，
+   卡底一列相框與稱號（album-rewards.css 的 .alb-v2__rw）。
+   做成橫排而不是大章置中、放大那一枚上下只留 --sp-1：收藏首頁在 390×844 一屏放得下，不用往下捲 */
 .alb-v2__medals {
   margin: var(--sp-3) var(--gutter) 0; padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
@@ -132,7 +133,7 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-v2__medals .alb-v2__section-head { margin-bottom: 0; }
 .alb-v2__medal-top {
   display: grid; grid-template-columns: 68px minmax(0, 1fr); column-gap: var(--sp-4);
-  align-items: center; padding: var(--sp-2) 0; text-align: left;
+  align-items: center; padding: var(--sp-1) 0; text-align: left;
 }
 .alb-v2__medal-top .alb-hex { grid-row: 1 / 3; width: 68px; height: 68px; }
 .alb-v2__medal-top strong { align-self: end; font-size: var(--fs-lead); line-height: var(--lh-tight); }
