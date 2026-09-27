@@ -690,6 +690,8 @@
     { path: '/lookback', area: 'album' },
     { path: '/week', area: 'album' },
     { path: '/elder', area: 'album' },
+    { path: '/line', area: 'family' },
+    { path: '/family/p1', area: 'family' },
     { path: '/settings', area: 'system' },
   ];
 

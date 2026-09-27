@@ -13,7 +13,8 @@
    - index.html 的「六扇門」＋ js/catalog.js 的 FLOWS.proves（onboarding 三句）
    刻意沒有的東西：
    - 登入、帳號、未讀數字、推播頻率設定（上限就是兩則，不給調高）。
-   - 分享面板沒有「日誌／心情」；「傳給家人」不離開 app（原型是 href="elder.html"，這裡指 #/elder）。
+   - 分享面板沒有「日誌／心情」；給家人的兩格都不離開 app：「傳到 LINE 給家人」是 #/line 的示意（沒有真的連 LINE），
+     「做一張長輩圖再傳」指 #/elder（原型是 href="elder.html"）。
    - 照片授權沒有外部連結（app 內不連網，也不留死按鈕），只列作者與授權。
    ========================================================================== */
 
@@ -189,9 +190,15 @@ function push(opt) {
 }
 
 /* --------------------------------------------------------------------------
-   APP.ui.share(opt)：第一格永遠是「傳給家人」→ #/elder（opt.card 有給就帶 ?card=<明信片 id>）
-   opt = { title, kind:'postcard'|'week', card, url }
-   - card：明信片 id；長輩圖用這一張。舊的呼叫（kind:'postcard' 帶 id）也認。
+   APP.ui.share(opt)：分享面板。前兩格都是給家人的（承接長輩傳長輩圖的習慣）：
+     1. 「傳到 LINE 給家人」（data-act="share-line"）：有指定哪一張明信片時才有。一鍵：APP.family.sendToLine
+        記一筆 store.shares（示意，沒有真的送出）→ #/line?share=<id>，那張卡已經在「家人」群組裡。
+     2. 「做一張長輩圖再傳」（data-act="share-family"）→ #/elder（有 card 就帶 ?card=<明信片 id>）。
+     之後是存成圖片、複製連結。
+   opt = { title, kind:'postcard'|'week', card, v, url }
+   - card：明信片 id；一鍵傳的就是這一張、長輩圖也先用這一張。舊的呼叫（kind:'postcard' 帶 id）也認。
+     沒有 card（週回顧）就沒有一鍵傳：第一格是長輩圖。
+   - v：這張明信片是第幾次造訪收下的（預設 1），跟著 card 存進那一筆分享。
    - url：「複製連結」要複製的網址；沒給就是「打開面板那一刻」的這一頁（之後換頁或改 query 都不影響）。
    面板是浮層（data-overlay）：換頁時由 core 的 APP.ui.dismissOverlays() 收掉。
    -------------------------------------------------------------------------- */
@@ -207,27 +214,37 @@ function share(opt) {
   if (old) dropOverlay(old);
   const url = shareUrl(opt.url);
   const card = opt.card || (opt.kind === 'postcard' && opt.id) || null;
+  const v = Math.max(1, Math.floor(Number(opt.v)) || 1);
+  /* 一鍵傳到 LINE：要知道是哪一張明信片（APP.family 在 album-family.js，面板打開時早就載好了） */
+  const fam = window.APP.family;
+  const oneTap = !!(card && fam && fam.canSend(card));
 
   const title = opt.title ||
     (opt.kind === 'postcard' ? '分享這張明信片' : opt.kind === 'week' ? '分享這一週' : '分享');
 
-  const rows = [
-    ['share-family', '傳給家人', '自動排成長輩圖：大字、吉祥話、你去過的地方'],
-    ['share-save', '存成圖片', '存到相簿，原圖不含任何位置資訊'],
-    ['share-link', '複製連結', '對方點開只看得到這一張，看不到你的其他紀錄'],
-  ];
+  /* [data-act, 標題, 說明, 圖示（家人那兩格才有）] */
+  const rows = [].concat(
+    oneTap ? [['share-line', '傳到 LINE 給家人', '一鍵傳到「家人」群組，只傳這一張（示意，不會真的送出）', 'share']] : [],
+    [
+      ['share-family', '做一張長輩圖再傳', '排成大字、吉祥話、你去過的地方，再傳給家人', 'elder'],
+      ['share-save', '存成圖片', '存到相簿，原圖不含任何位置資訊'],
+      ['share-link', '複製連結', '對方點開只看得到這一張，看不到你的其他紀錄'],
+    ]);
 
   const scrim = document.createElement('div');
   scrim.className = 'scrim sys-share';
   scrim.setAttribute('data-share-url', url);
-  if (card) scrim.setAttribute('data-share-card', card);
+  if (card) {
+    scrim.setAttribute('data-share-card', card);
+    scrim.setAttribute('data-share-v', String(v));
+  }
   scrim.innerHTML =
     '<div class="sharesheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
       '<div class="sharesheet__handle"></div>' +
       '<div class="sharesheet__t">' + esc(title) + '</div>' +
-      rows.map(function (r, i) {
+      rows.map(function (r) {
         return '<button class="row-nav" type="button" data-act="' + r[0] + '">' +
-          (i === 0 ? '<span class="tile-icon tile-icon--md"><span data-icon="elder" class="sys-ico"></span></span>' : '') +
+          (r[3] ? '<span class="tile-icon tile-icon--md"><span data-icon="' + r[3] + '" class="sys-ico"></span></span>' : '') +
           '<span class="row-nav__body">' +
             '<span class="row-nav__title">' + r[1] + '</span>' +
             '<span class="row-nav__sub">' + r[2] + '</span>' +
@@ -238,6 +255,11 @@ function share(opt) {
 
   const close = function () { dropOverlay(scrim); };
   scrim.onclick = function (e) { if (e.target === scrim) close(); };
+  const line = scrim.querySelector('[data-act="share-line"]');
+  if (line) line.onclick = function () {
+    close();
+    fam.sendToLine({ card: card, v: v });
+  };
   scrim.querySelector('[data-act="share-family"]').onclick = function () {
     close();
     APP.nav.go(card ? '/elder?card=' + encodeURIComponent(card) : '/elder');

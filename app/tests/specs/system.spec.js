@@ -159,16 +159,23 @@ T.spec('system', function (t) {
     t.eq(app.APP.store.get('pushes').length, 1, '今天的可以發');
   });
 
-  t.test('分享面板：三格、第一格傳給家人 → /elder、點 scrim 關閉', async function (app) {
+  t.test('分享面板：有明信片時四格（傳到 LINE → 長輩圖 → 存圖 → 連結）、沒有時三格、點 scrim 關閉', async function (app) {
     await app.reset();
     await app.go('/album');
-    app.APP.ui.share({ kind: 'postcard' });
+    app.APP.ui.share({ kind: 'postcard', card: 'p1' });
     await app.waitFor(function () { return app.$('.sharesheet'); }, 2000, '.sharesheet');
     t.eq(app.text('.sharesheet__t'), '分享這張明信片', '標題依 kind');
-    const rows = app.$$('.sharesheet .row-nav');
-    t.eq(rows.length, 3, '三格');
-    t.eq(rows[0].getAttribute('data-act'), 'share-family', '第一格是傳給家人');
+    const acts = function () { return app.$$('.sharesheet .row-nav').map(function (r) { return r.getAttribute('data-act'); }).join(','); };
+    t.eq(acts(), 'share-line,share-family,share-save,share-link', '有 card：第一格一鍵傳到 LINE、第二格長輩圖');
+    t.includes(app.text('[data-act="share-line"]'), '傳到 LINE 給家人', '第一格的字');
+    t.includes(app.text('[data-act="share-family"]'), '長輩圖', '第二格寫明是長輩圖');
     t.includes(app.text('.sharesheet__note'), '日誌與心情不會被分享', '底部說明');
+    app.$('.sys-share')._dismiss();
+    await app.tick(30);
+    /* 沒有指定哪一張（舊呼叫、週回顧）：沒有一鍵傳，第一格是長輩圖 */
+    app.APP.ui.share({ kind: 'postcard' });
+    await app.waitFor(function () { return app.$('.sharesheet'); }, 2000, '.sharesheet');
+    t.eq(acts(), 'share-family,share-save,share-link', '沒有 card：三格、第一格是長輩圖');
     /* 點 scrim 關閉 */
     const scrim = app.$('.sys-share');
     scrim.dispatchEvent(new app.win.MouseEvent('click', { bubbles: true }));
