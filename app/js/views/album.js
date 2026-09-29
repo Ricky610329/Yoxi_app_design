@@ -241,9 +241,18 @@ function verseHTML(cardId, origin) {
   const v = APP.explore && APP.explore.verseOf ? APP.explore.verseOf(cardId, origin) : null;
   if (!v) return '';
   return '<p class="alb-verse" data-verse>' +
-    '<span class="alb-verse__t">' + esc(v.text) + '</span>' +
+    '<span class="alb-verse__t">' + verseLinesHTML(v.text) + '</span>' +
     (v.by ? '<span class="alb-verse__by">' + esc(v.by) + (v.title ? '〈' + esc(v.title) + '〉' : '') + '</span>' : '') +
   '</p>';
+}
+/* 那一句逢逗號、句號斷行，一個短句一行（像題字）；句尾標點另包一層，CSS 讓它懸在行外，置中的才是字。
+   字不增不減：textContent 還是原句（測試拿它比對 VERSES） */
+function verseLinesHTML(text) {
+  return (String(text).match(/[^，；。！？]+[，；。！？]*/g) || [String(text)]).map(function (l) {
+    const m = l.match(/^(.*?)([，；。！？]*)$/);
+    return '<span class="alb-verse__l">' + esc(m[1]) +
+      (m[2] ? '<span class="alb-verse__p">' + esc(m[2]) + '</span>' : '') + '</span>';
+  }).join('');
 }
 
 function storyOf(cardId) {

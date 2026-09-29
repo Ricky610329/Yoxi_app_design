@@ -557,6 +557,20 @@ T.spec('album', function (t) {
     t.ok(!app.$('.alb-hint') && !app.$('[data-act="again"]'), '沒有翻面提示、沒有「再來的話」');
   });
 
+  /* 那一句排成題字：逢逗號、句號一行，句尾標點另包一層（CSS 懸出去），字不增不減 */
+  t.test('/postcard/p7 那一句一個短句一行，拼回去是原句', async function (app) {
+    await app.reset();
+    await app.go('/postcard/p7');
+    const E = app.APP.explore;
+    const want = E.verseOf('p7', E.cardOrigin('p7')).text;
+    const lines = app.$$('[data-verse] .alb-verse__l').map(function (l) { return l.textContent; });
+    t.ok(lines.length >= 2, '分成 ' + lines.length + ' 行');
+    t.eq(lines.join(''), want, '拼回去是原句');
+    t.eq(app.text('[data-verse] .alb-verse__t'), want, 'textContent 還是原句');
+    t.ok(lines.every(function (l) { return /[，；。！？]$/.test(l); }), '每一行都停在標點上');
+    t.eq(app.$$('[data-verse] .alb-verse__p').length, lines.length, '句尾標點各包一層');
+  });
+
   /* 背面的字級照正文走（標題 22、內文 16）：每一張都要排得進卡裡。
      量 offsetTop／offsetWidth（排版位置，不受 rotateY 影響）；手寫的那句故意給很長，看截行有沒有接住 */
   t.test('明信片背面：每一張的字都排得進卡裡（內文不截、落款在卡內、地點不壓到郵戳）', async function (app) {

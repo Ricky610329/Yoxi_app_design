@@ -17,6 +17,9 @@
    紅底上的白字、placecard 圖上的字不在此列。
    -------------------------------------------------------------------------- */
 :root { --app-muted: color-mix(in srgb, var(--yoxi-slate) 70%, var(--yoxi-navy)); }
+/* 題字用的明體（明信片頁的那一句）：只用裝置內建的，不加 webfont。
+   Windows 11／Android 有 Noto Serif TC、Mac 有宋體；都沒有就退回 serif，版面不變 */
+:root { --app-serif: "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", serif; }
 
 .u-muted, .btn-link, .row-nav__sub, .route-input__label, .tabbar__item,
 .story__note, .postcard--locked .postcard__foot, .ai-note, .badge__prog, .fogmap__legend,
