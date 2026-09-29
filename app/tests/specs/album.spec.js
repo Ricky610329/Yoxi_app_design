@@ -505,6 +505,31 @@ T.spec('album', function (t) {
     app.APP.ui.share = orig;
     t.eq(got && got.kind, 'postcard', 'kind=postcard');
     t.eq(got && got.id, 'p1', 'id=p1');
+    t.eq(app.text('.alb-hint'), '點一下翻回正面', '翻過去之後提示改寫翻回正面');
+  });
+
+  /* 背面的字級照正文走（標題 22、內文 16）：每一張都要排得進卡裡。
+     量 offsetTop／offsetWidth（排版位置，不受 rotateY 影響）；手寫的那句故意給很長，看截行有沒有接住 */
+  t.test('明信片背面：每一張的字都排得進卡裡（內文不截、落款在卡內、地點不壓到郵戳）', async function (app) {
+    const ids = app.MOCK.POSTCARDS.map(function (p) { return p.id; });
+    const extra = ids.filter(function (id) { return !app.STATE.card(id); });
+    const long = '老街的粄條很好吃，下次要帶媽媽一起來，順便去看那座吊橋，走到對岸再走回來';
+    await app.reset({ cards: extra.map(function (id, k) { return { id: id, note: k === 0 ? long : '' }; }) });
+    for (let k = 0; k < ids.length; k++) {
+      await app.go('/postcard/' + ids[k]);
+      const back = app.$('.alb-big__back');
+      const story = app.$('.alb-back__story');
+      const sign = app.$('.alb-back__sign');
+      const kick = app.$('.alb-back__kicker');
+      const mark = app.$('.alb-back__mark');
+      if (!back || !story || !sign || !kick || !mark) { t.fail(ids[k] + ' 背面少了元素'); continue; }
+      const padB = parseFloat(app.win.getComputedStyle(back).paddingBottom);
+      t.ok(sign.offsetTop + sign.offsetHeight <= back.clientHeight - padB + 1,
+        ids[k] + ' 落款在卡內：' + (sign.offsetTop + sign.offsetHeight) + ' ≤ ' + (back.clientHeight - padB));
+      t.ok(story.scrollHeight <= story.clientHeight + 1, ids[k] + ' 背面那段話沒被截掉：' + story.scrollHeight + ' ≤ ' + story.clientHeight);
+      t.ok(kick.offsetLeft + kick.offsetWidth <= mark.offsetLeft, ids[k] + ' 地點那行不壓到郵戳');
+      if (ids[k] === extra[0]) t.includes(app.text('.alb-big__note'), long, ids[k] + ' 手寫的那一句在背面（太長就截行）');
+    }
   });
 
   /* 金框的框要看得到：畫在 ::after（插圖上面），不是被 --sh-lift 蓋掉、被滿版插圖遮住的 inset 陰影 */

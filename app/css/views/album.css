@@ -226,12 +226,105 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 }
 .alb-big__card.postcard--gold .postcard__back { box-shadow: inset 0 0 0 3px var(--gold); }
 .alb-big__name { font-size: var(--fs-body); }
-.alb-big__back { padding: 18px; }
-.alb-big__back b { font-size: var(--fs-body); }
-.alb-big__back small { font-size: var(--fs-xs); }
-.alb-big__back p { font-size: var(--fs-xs); line-height: 1.8; margin-top: var(--sp-2); }
-.alb-big__back .postcard__stamp { width: 40px; height: 40px; font-size: var(--fs-xs); }
-.alb-big__note { font-weight: var(--fw-heavy); font-size: var(--fs-cap) !important; }
+/* 背面：排得像真的明信片背面。字級照正文走（標題 22、內文 16），不沿用 chengshi.css 小卡的 10px；
+   中文不斜體（瀏覽器的假斜體會把字壓歪）。內框一條髮絲線，郵票的齒孔是 radial-gradient 挖出來的。
+   那段話與手寫的一句各自截行，太長也不會把落款擠出卡外。 */
+.alb-big__back { padding: 22px 22px 18px; gap: 0; }
+.alb-big__back::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid color-mix(in srgb, var(--yoxi-navy) 9%, transparent);
+  border-radius: var(--r-btn);
+  pointer-events: none;
+}
+.alb-back__head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; min-height: 60px; }
+.alb-back__kicker { max-width: calc(100% - 100px); padding-top: 2px; font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: .24em; color: var(--app-muted); }
+.alb-back__stamp {
+  flex: none;
+  width: 48px;
+  height: 60px;
+  padding: 4px;
+  background: radial-gradient(circle at 3px 3px, transparent 1.5px, var(--yoxi-white) 1.9px) -3px -3px / 6px 6px;
+  filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--yoxi-navy) 18%, transparent));
+  transform: rotate(3deg);
+}
+.alb-back__stamp > span {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  background: var(--yoxi-red-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yoxi-red) 30%, transparent);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-heavy);
+  font-style: italic;
+  color: var(--yoxi-red);
+}
+/* 郵戳：蓋在郵票左下，雙圈、微斜、墨色帶一點透 */
+.alb-back__mark {
+  position: absolute;
+  top: 10px;
+  right: 38px;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  border: 1.5px solid currentColor;
+  border-radius: var(--r-pill);
+  outline: 1px solid currentColor;
+  outline-offset: -6px;
+  color: var(--yoxi-red);
+  opacity: .7;
+  transform: rotate(-14deg);
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.alb-back__mark > span:first-child { font-weight: var(--fw-heavy); letter-spacing: .2em; padding-left: .2em; }
+.alb-back__mark > span:last-child { font-weight: var(--fw-bold); letter-spacing: .02em; }
+.alb-big__back b {
+  display: block;
+  margin-top: var(--sp-3);
+  font-size: var(--fs-title);
+  font-weight: var(--fw-heavy);
+  line-height: 1.3;
+  letter-spacing: .02em;
+  text-wrap: balance;
+}
+.alb-big__back small { display: block; margin-top: var(--sp-1); font-size: var(--fs-cap); font-style: normal; letter-spacing: .04em; }
+.alb-big__back .alb-back__story {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid color-mix(in srgb, var(--yoxi-navy) 12%, transparent);
+  font-size: var(--fs-body);
+  line-height: 1.85;
+  letter-spacing: .03em;
+  text-align: justify;
+}
+.alb-big__back .alb-big__note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  line-height: 1.6;
+}
+.alb-back__sign {
+  margin-top: auto;
+  padding-top: var(--sp-3);
+  align-self: flex-end;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-bold);
+  letter-spacing: .08em;
+}
+.alb-back__logo { font-weight: var(--fw-heavy); font-style: italic; letter-spacing: 0; color: var(--yoxi-red); }
 
 .alb-hint { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-cap); color: var(--app-muted); }
 /* 明信片底圖照片的出處：一行小字，連結的命中區 44×44，不撐高這一行 */
@@ -241,10 +334,25 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-fact .tile-icon [data-icon] { width: 22px; height: 22px; display: block; }
 .alb-fact .row-nav__sub { margin-top: 0; }
 .alb-fact .row-nav__title { font-size: var(--fs-body); }
-/* 這一張的那一句（跟 /unlock 翻開之後的是同一句） */
-.alb-verse { margin-top: var(--sp-3); padding-left: var(--sp-3); border-left: 2px solid var(--yoxi-line); }
-.alb-verse__t { display: block; font-size: var(--fs-body); line-height: var(--lh-story); letter-spacing: .04em; }
-.alb-verse__by { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
+/* 卡片底下的標題、日期、那一句：跟卡片同一條中線 */
+.alb-lede { text-align: center; }
+/* 這一張的那一句（跟 /unlock 翻開之後的是同一句）：置中，上下各一個大引號。
+   引號是 ::before／::after，不進 textContent（測試比對 .alb-verse__t 的字）。 */
+.alb-verse { max-width: 20em; margin: var(--sp-5) auto 0; }
+.alb-verse__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-med); line-height: var(--lh-story); letter-spacing: .06em; text-wrap: balance; }
+.alb-verse__t::before,
+.alb-verse__t::after {
+  display: block;
+  height: .5em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--fs-display) * 1.8);
+  font-weight: var(--fw-reg);
+  line-height: 1;
+  color: var(--yoxi-slate-lite);
+}
+.alb-verse__t::before { content: '\201C'; margin-bottom: var(--sp-1); }
+.alb-verse__t::after { content: '\201D'; margin-top: var(--sp-2); }
+.alb-verse__by { display: block; margin-top: var(--sp-3); font-size: var(--fs-cap); letter-spacing: .08em; color: var(--app-muted); }
 .alb-verse__by::before { content: '——'; }
 .alb-again { margin-top: var(--sp-3); background: var(--yoxi-cream); border: 0; }
 .alb-again__k {
