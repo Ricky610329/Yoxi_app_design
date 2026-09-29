@@ -576,6 +576,8 @@ T.spec('album', function (t) {
       t.ok(sign.offsetTop + sign.offsetHeight <= back.clientHeight - padB + 1,
         ids[k] + ' 落款在卡內：' + (sign.offsetTop + sign.offsetHeight) + ' ≤ ' + (back.clientHeight - padB));
       t.ok(story.scrollHeight <= story.clientHeight + 1, ids[k] + ' 背面那段話沒被截掉：' + story.scrollHeight + ' ≤ ' + story.clientHeight);
+      /* 地圖上沒有的路線站（p10、p12–p18）以前落到通用句：現在寫這個地方以前的樣子 */
+      t.ok(app.text('.alb-back__story') !== '在這裡停了一下。', ids[k] + ' 背面寫這個地方自己的一段話：' + app.text('.alb-back__story').slice(0, 16));
       t.ok(kick.offsetLeft + kick.offsetWidth <= mark.offsetLeft, ids[k] + ' 地點那行不壓到郵戳');
       if (ids[k] === extra[0]) t.includes(app.text('.alb-big__note'), long, ids[k] + ' 手寫的那一句在背面（太長就截行）');
     }

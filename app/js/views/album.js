@@ -220,7 +220,8 @@ function medalSVG(b, got) {
   '</svg>';
 }
 
-/* 卡片背面的一段話：原型寫好的三張 → 地點的「以前的它」→ 通用句 */
+/* 卡片背面的一段話：原型寫好的三張 → 地點的「以前的它」→ 通用句。
+   地圖上沒有的路線站（p10、p12–p18）沒有足跡地點，看明信片自己的地方（mock.js 的 WRITTEN 寫好了三段） */
 const STORY = {
   p11: '新竹曾經是全世界最會做玻璃的地方之一。這裡有矽砂、有天然氣，兩樣做玻璃最貴的東西都便宜。1970 年代這條巷子裡有七座窯，日夜不熄，整條街是亮的。',
   p9:  '內灣線 1951 年通車，原本不是給人坐的 —— 它是為了把尖石山上的木材與水泥原料運下山。林業一停，人就走了。',
@@ -249,7 +250,7 @@ function verseHTML(cardId, origin) {
 function storyOf(cardId) {
   if (STORY[cardId]) return STORY[cardId];
   const pid = APP.footprintPlace(cardId);
-  const pl = pid ? APP.place(pid) : null;
+  const pl = APP.place(pid || cardId);
   const past = pl && (pl.story || []).filter(function (s) { return s.label === '以前的它'; })[0];
   return past ? past.text : '在這裡停了一下。';
 }
