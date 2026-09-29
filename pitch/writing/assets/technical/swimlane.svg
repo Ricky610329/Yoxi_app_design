@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="580" viewBox="0 0 760 580" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">從選地方到收藏回看的四泳道流程</title>
+  <desc id="diagram-desc">使用者、App、遊喜樂後端與既有 yoxi 之間的步行與搭車分支、到訪核對、發卡與收藏回看流程。</desc>
+  <defs>
+    <style>text { font-family: Noto Sans TC, Microsoft JhengHei, PingFang TC, sans-serif; }.label { font-size: 16px; font-weight: 500; }.strong { font-size: 18px; font-weight: 700; }.title { font-size: 24px; font-weight: 800; }.line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }</style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#062040" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#778AA4" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="580" fill="#FCFDFF" />
+  <text x="28" y="37" font-size="24px" font-weight="800" fill="#062040" text-anchor="start">四泳道服務流程</text>
+  <rect x="520" y="16" width="212" height="32" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="626.0" y="38" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">提案架構／待接入能力</text>
+  <rect x="22" y="74" width="716" height="92" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="126" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">使用者</text>
+  <path d="M 132 84 L 132 156" class="line" stroke="#778AA4" stroke-width="1.5" />
+  <rect x="22" y="174" width="716" height="92" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="226" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">App</text>
+  <path d="M 132 184 L 132 256" class="line" stroke="#778AA4" stroke-width="1.5" />
+  <rect x="22" y="274" width="716" height="92" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="326" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">遊喜樂後端</text>
+  <path d="M 132 284 L 132 356" class="line" stroke="#778AA4" stroke-width="1.5" />
+  <rect x="22" y="374" width="716" height="92" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="426" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">既有 yoxi</text>
+  <path d="M 132 384 L 132 456" class="line" stroke="#778AA4" stroke-width="1.5" />
+  <path d="M 214 119 L 214 201" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 214 236 L 214 301" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 284 301 L 284 236 L 316 236" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 388 194 L 388 144" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 350 144 L 350 394" class="line" stroke="#778AA4" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-muted)" />
+  <path d="M 446 421 L 482 421" class="line" stroke="#778AA4" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-muted)" />
+  <path d="M 540 394 L 540 348" class="line" stroke="#778AA4" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-muted)" />
+  <path d="M 423 119 L 540 119 L 540 201" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 540 247 L 540 301" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 540 347 L 626 347" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 678 347 L 678 247" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 678 201 L 678 147" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <rect x="150" y="94" width="128" height="50" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="214.0" y="120.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="214.0" dy="0">選地方</tspan>
+  </text>
+  <rect x="316" y="94" width="144" height="50" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="388.0" y="120.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="388.0" dy="0">選步行或搭車</tspan>
+  </text>
+  <rect x="604" y="94" width="112" height="50" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="660.0" y="120.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="660.0" dy="0">收藏回看</tspan>
+  </text>
+  <rect x="150" y="194" width="128" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="214.0" y="211.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="214.0" dy="0">取得內容</tspan>
+    <tspan x="214.0" dy="22">與理由</tspan>
+  </text>
+  <rect x="316" y="194" width="144" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="388.0" y="211.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="388.0" dy="0">顯示步行／</tspan>
+    <tspan x="388.0" dy="22">搭車選項</tspan>
+  </text>
+  <rect x="482" y="194" width="116" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="540.0" y="211.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="540.0" dy="0">提交定位＋</tspan>
+    <tspan x="540.0" dy="22">可用證據</tspan>
+  </text>
+  <rect x="620" y="194" width="96" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="668.0" y="222.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="668.0" dy="0">顯示卡片</tspan>
+  </text>
+  <rect x="150" y="294" width="134" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="217.0" y="311.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="217.0" dy="0">回傳已審</tspan>
+    <tspan x="217.0" dy="22">地方內容</tspan>
+  </text>
+  <rect x="482" y="294" width="116" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="540.0" y="311.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="540.0" dy="0">核對到訪</tspan>
+    <tspan x="540.0" dy="22">與去重</tspan>
+  </text>
+  <rect x="626" y="294" width="90" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="671.0" y="322.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="671.0" dy="0">發卡保存</tspan>
+  </text>
+  <rect x="330" y="394" width="116" height="54" rx="8" fill="#FFFFFF" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="7 6" />
+  <text x="388.0" y="411.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="388.0" dy="0">本人確認後</tspan>
+    <tspan x="388.0" dy="22">建立行程</tspan>
+  </text>
+  <rect x="482" y="394" width="116" height="54" rx="8" fill="#FFFFFF" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="7 6" />
+  <text x="540.0" y="411.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="540.0" dy="0">授權行程</tspan>
+    <tspan x="540.0" dy="22">證據</tspan>
+  </text>
+  <rect x="462" y="143" width="174" height="27" rx="8" fill="#FBEBDF" />
+  <text x="549" y="163" font-size="16px" font-weight="700" fill="#778AA4" text-anchor="middle">步行可略過 yoxi</text>
+  <rect x="144" y="378" width="176" height="31" rx="8" fill="#EAF1F5" />
+  <text x="232" y="399" font-size="16px" font-weight="700" fill="#778AA4" text-anchor="middle">搭車分支｜接點待串</text>
+  <rect x="22" y="486" width="716" height="72" rx="8" fill="#FCFDFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="380" y="511.0" font-size="16px" font-weight="500" fill="#062040" text-anchor="middle">
+    <tspan x="380" dy="0">例外處理｜證據不足先進待核對，不重複發卡；</tspan>
+    <tspan x="380" dy="22">內容或生成失敗改用已審模板，既有收藏仍可回看。</tspan>
+  </text>
+</svg>

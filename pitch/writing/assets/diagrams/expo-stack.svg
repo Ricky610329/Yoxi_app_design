@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="1030" viewBox="0 0 1060 1030" role="img" aria-labelledby="title desc" data-source="pitch/writing/notes/technical-appendix.md" data-source-sha256="5da9f3032d005d47d0c260c060b6ae9926264d6108914c641a150b19932291b5">
+  <title id="title">Expo 行動端技術棧</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 5da9f3032d005d47d0c260c060b6ae9926264d6108914c641a150b19932291b5</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
+    <style>
+      text { font-family: Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif; fill: #062040; }
+      .node { fill: #FFFFFF; stroke: #062040; stroke-width: 2; rx: 8; }
+      .group { fill: #FCFDFF; stroke: #778AA4; stroke-width: 1.5; rx: 16; }
+      .edge { fill: none; stroke: #062040; stroke-width: 2; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+      .label-bg { fill: #FFFFFF; opacity: .96; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+<text class="" text-anchor="start" font-size="25" font-weight="700"><tspan x="30" y="34.0">Expo 行動端技術棧與替換邊界</tspan></text>
+  <rect class="group" x="20" y="50" width="1020" height="435"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="44" y="86.0">行動端：React Native / TypeScript</tspan></text>
+  <rect class="group" x="20" y="500" width="700" height="470"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="44" y="536.0">服務介面：demo 與正式後端共用契約</tspan></text>
+  <rect class="group" x="740" y="500" width="300" height="185"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="764" y="536.0">App 外</tspan></text>
+  <path class="edge" d="M 685 183 V 210 H 550 V 240"/>
+  <path class="edge" d="M 365 279 H 185 V 390"/>
+  <path class="edge" d="M 550 318 V 390"/>
+  <path class="edge" d="M 735 279 H 860 V 390"/>
+  <path class="edge dashed" d="M 860 468 V 575"/>
+  <path class="edge" d="M 735 279 H 680 V 500 H 700 V 614 H 555"/>
+  <path class="edge" d="M 185 614 H 145 V 730"/>
+  <path class="edge dashed" d="M 555 614 H 540 V 730"/><rect class="label-bg" x="550.5" y="663" width="119" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="610" y="680.0">正式串接時切換</tspan></text>
+  <path class="edge" d="M 540.0 808 V 836.5 H 540.0 V 865"/>
+  <rect class="node" x="500" y="105" width="370" height="78" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="685.0" y="137.5">開發與安裝</tspan><tspan x="685.0" y="162.5">Development build / EAS 可選</tspan></text>
+  <rect class="node" x="365" y="240" width="370" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="550.0" y="272.5">介面層</tspan><tspan x="550.0" y="297.5">React Native + TypeScript</tspan></text>
+  <rect class="node" x="35" y="390" width="300" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="185.0" y="422.5">畫面導覽</tspan><tspan x="185.0" y="447.5">Expo Router</tspan></text>
+  <rect class="node" x="365" y="390" width="300" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="515.0" y="422.5">裝置能力</tspan><tspan x="515.0" y="447.5">Location / FileSystem / SecureStore</tspan></text>
+  <rect class="node" x="695" y="390" width="330" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="860.0" y="422.5">圖片分享</tspan><tspan x="860.0" y="447.5">expo-sharing → 系統分享面板</tspan></text>
+  <rect class="node" x="185" y="575" width="370" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="370.0" y="607.5">服務介面層</tspan><tspan x="370.0" y="632.5">Ride / Places / Postcards</tspan></text>
+  <rect class="node" x="35" y="730" width="300" height="78" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="185.0" y="762.5">demo 資料來源</tspan><tspan x="185.0" y="787.5">固定景點、模擬行程與抵達</tspan></text>
+  <rect class="node" x="390" y="730" width="300" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="540.0" y="762.5">正式候選 API</tspan><tspan x="540.0" y="787.5">Python FastAPI / HTTPS</tspan></text>
+  <rect class="node" x="390" y="865" width="300" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="540.0" y="897.5">雲端運行</tspan><tspan x="540.0" y="922.5">Cloud Run + Firestore + Storage</tspan></text>
+  <rect class="node" x="755" y="575" width="270" height="78" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="890.0" y="607.5">App 外：LINE</tspan><tspan x="890.0" y="632.5">本人傳圖、家人聊天</tspan></text>
+  <text class="" text-anchor="start" font-size="16" font-weight="600"><tspan x="45" y="1000.0">同一組 Ride / Places / Postcards 介面，先接明示 mock，後續換成授權 API。</tspan></text>
+</svg>

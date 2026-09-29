@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">遊喜樂整體系統分層</title>
+  <desc id="diagram-desc">App 介面、遊喜樂新增 API、共同資料與內容 AI 後台，以及既有 yoxi 授權接點之間的責任與連接。</desc>
+  <defs>
+    <style>text { font-family: Noto Sans TC, Microsoft JhengHei, PingFang TC, sans-serif; }.label { font-size: 16px; font-weight: 500; }.strong { font-size: 18px; font-weight: 700; }.title { font-size: 24px; font-weight: 800; }.line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }</style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#062040" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#778AA4" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="500" fill="#FCFDFF" />
+  <text x="28" y="37" font-size="24px" font-weight="800" fill="#062040" text-anchor="start">整體系統分層</text>
+  <rect x="520" y="16" width="212" height="32" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="626.0" y="38" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">提案架構／待接入能力</text>
+  <rect x="28" y="52" width="146" height="32" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="101.0" y="74" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">UI 已有原型</text>
+  <rect x="184" y="52" width="166" height="32" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="267.0" y="74" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">雲端服務待建</text>
+  <path d="M 278 155 L 278 222" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 380 155 L 380 222" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 482 155 L 482 222" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 146 226 L 168 226" class="line" stroke="#778AA4" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-muted)" />
+  <path d="M 146 273 L 168 273" class="line" stroke="#778AA4" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-muted)" />
+  <rect x="24" y="91" width="712" height="74" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="40" y="116" font-size="18px" font-weight="700" fill="#062040" text-anchor="start">App 介面｜現有 HTML / PWA 可操作原型</text>
+  <rect x="214" y="121" width="128" height="34" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="278.0" y="139.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="278.0" dy="0">探索</tspan>
+  </text>
+  <rect x="356" y="121" width="128" height="34" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="420.0" y="139.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="420.0" dy="0">出行</tspan>
+  </text>
+  <rect x="498" y="121" width="194" height="34" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="595.0" y="139.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="595.0" dy="0">收藏與回看</tspan>
+  </text>
+  <rect x="24" y="186" width="122" height="126" rx="8" fill="#FCFDFF" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="7 6" />
+  <text x="85" y="201.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="85" dy="0">既有 yoxi</tspan>
+    <tspan x="85" dy="22">企業授權接入</tspan>
+  </text>
+  <text x="41" y="253" font-size="16px" font-weight="500" fill="#062040" text-anchor="start">身分</text>
+  <text x="41" y="277" font-size="16px" font-weight="500" fill="#062040" text-anchor="start">行程／報價</text>
+  <text x="41" y="301" font-size="16px" font-weight="500" fill="#062040" text-anchor="start">支付</text>
+  <rect x="168" y="186" width="568" height="126" rx="8" fill="#FBEBDF" stroke="#F3DAC7" stroke-width="1.5" />
+  <text x="186" y="214" font-size="18px" font-weight="700" fill="#062040" text-anchor="start">遊喜樂新增 API｜模組化雲端服務待建</text>
+  <rect x="184" y="228" width="166" height="68" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="267.0" y="252.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="267.0" dy="0">地方與推薦</tspan>
+    <tspan x="267.0" dy="22">內容、偏好、條件</tspan>
+  </text>
+  <rect x="368" y="228" width="166" height="68" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="451.0" y="252.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="451.0" dy="0">到訪核對</tspan>
+    <tspan x="451.0" dy="22">證據、規則、去重</tspan>
+  </text>
+  <rect x="552" y="228" width="166" height="68" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="635.0" y="252.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="635.0" dy="0">收藏回憶</tspan>
+    <tspan x="635.0" dy="22">紀錄、卡面、回看</tspan>
+  </text>
+  <rect x="168" y="348" width="568" height="118" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="186" y="375" font-size="18px" font-weight="700" fill="#062040" text-anchor="start">共同資料與內容供給</text>
+  <rect x="184" y="388" width="260" height="62" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="314.0" y="398.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="314.0" dy="0">共同資料</tspan>
+    <tspan x="314.0" dy="22">已審地方／卡面版本</tspan>
+    <tspan x="314.0" dy="22">本人偏好／有效到訪／收藏</tspan>
+  </text>
+  <rect x="462" y="388" width="256" height="62" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="590.0" y="398.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="590.0" dy="0">內容 AI 後台</tspan>
+    <tspan x="590.0" dy="22">批次產生 → 人工審核</tspan>
+    <tspan x="590.0" dy="22">發布至共同資料</tspan>
+  </text>
+  <path d="M 267 298 L 267 344" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+  <path d="M 451 298 L 451 344" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+  <path d="M 635 298 L 635 344" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+  <path d="M 462 419 L 444 419" class="line" stroke="#778AA4" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#arrow-muted)" />
+  <text x="28" y="488" font-size="16px" font-weight="500" fill="#778AA4" text-anchor="start">實線＝新增服務內部責任　虛線＝企業授權或發布接點</text>
+</svg>

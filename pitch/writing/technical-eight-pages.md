@@ -1,0 +1,186 @@
+<!-- page: 方案架構 -->
+<div class="eyebrow">方案設計與技術落地 / 01 方案架構</div>
+
+# 整體架構：介面、服務與資料分層
+
+<p class="lead">遊喜樂以探索、出行與收藏為應用入口；新增服務承接地方內容、到訪核對與收藏紀錄，透過授權介面接入既有 yoxi 能力。</p>
+
+<figure class="technical-diagram"><img src="assets/technical/system.svg" alt="遊喜樂整體方案架構，包含App、新增服務、資料與AI後台及既有yoxi接點"><figcaption>圖 1｜整體方案架構。方塊代表責任範圍；前端已有原型，正式後端及企業串接屬提案。</figcaption></figure>
+
+## 三個服務模組，共用一致的資料基礎
+
+**地方與推薦**提供已上架內容、可用地點與推薦理由；**到訪核對**接收位置及可用行程證據，依規則確認資格並處理重送；**收藏與回憶**保存卡片版本、有效到訪及本人收藏，供回看與統計使用。模組初期可置於同一個後端，先分清職責，再依用量調整部署。
+
+內容與 AI 後台負責草稿、卡面、人工審核及發布，將核准內容送入正式資料庫。App 讀取發布後的內容，收卡則引用已審卡面；生成工作的延遲或失敗不應阻塞已有收藏的讀取。
+
+## 既有能力的接入邊界
+
+帳號、行程、報價、支付與回饋依企業介面處理；新增服務不自行計算正式帳務。現有 HTML／PWA 展示畫面與規則，尚未證明正式派車、到訪驗證或雲端同步可用。各模組的資料責任及實際呼叫順序，分別見下兩頁。[G1–G3]
+
+<!-- page: 資料與服務分工 -->
+<div class="eyebrow">方案設計與技術落地 / 02 資料與服務分工</div>
+
+# 內容可追溯，到訪與收藏有共同依據
+
+<p class="lead">將公開地方內容、本人授權資料與有效到訪分開管理，再用地方識別碼、內容版本及到訪識別碼連接各服務。</p>
+
+<figure class="technical-diagram"><img src="assets/technical/data.svg" alt="地方來源、本人偏好與到訪證據經不同核對流程，流入地方庫、推薦與收藏"><figcaption>圖 2｜資料流與權責。箭頭表示資料交付；內容上架與到訪核定各有負責模組。</figcaption></figure>
+
+## 公開內容由編輯發布，個人資料依授權使用
+
+地方資料保存座標、可用資訊、來源及發布版本；圖片另保留素材出處、模型或製作方式及簽核紀錄。推薦與卡面引用同一地方識別碼，讓更新或撤架能找到受影響的內容。AI 草稿及未核准圖像留在候選區，不能直接成為使用者看到的正式資料。
+
+本人自選興趣與授權互動可用於推薦；企業彙總出行趨勢只支援選點與內容規劃，不能直接當作某個人的生活史。App 送出的定位是待核對證據，正式資格由後端依精度、時間、場域及可用行程訊號判定。
+
+## 同一次到訪，只形成一份有效收藏結果
+
+後端以本人帳號、地方及日期規則去重，保存有效到訪識別碼，再連到當次卡片及素材版本。重送請求取回同一結果；另日再訪保留新紀錄。卡片張數與去過的地方數分開計算。現有原型以本機狀態演示這些互動，正式持久化、跨裝置同步及存取權限仍需實作。[G2–G3]
+
+<!-- page: 流程設計 -->
+<div class="eyebrow">方案設計與技術落地 / 03 流程設計</div>
+
+# 從選擇地方，到核對到訪與保存收藏
+
+<p class="lead">泳道將操作與系統責任對齊。步行可直接進入到訪核對；搭車分支由本人確認，並依企業流程取得行程資訊。</p>
+
+<figure class="technical-diagram swimlane"><img src="assets/technical/swimlane.svg" alt="使用者、App、遊喜樂後端與既有yoxi服務的探索到收藏泳道流程"><figcaption>圖 3｜核心流程與企業接點。正式到訪需核對訊號，原型中的模擬抵達不能替代驗證。</figcaption></figure>
+
+## 先確認行動，再核定收藏
+
+App 取得地方與理由後，讓使用者選擇步行或將地點帶入叫車。搭車須依既有流程確認上下車點及報價；抵達時 App 提交位置與取樣資訊，後端合併可用證據，通過核對後才保存到訪、選款與收藏。卡面由已審圖庫取用，不必在現場等待生圖。
+
+## 中斷時保留可恢復的狀態
+
+推薦失敗回到已審內容與模板；定位不足回傳待核對，使用者仍可瀏覽及叫車。斷線重送採同一請求識別，查回既有結果；卡面載入失敗不刪除收藏。分享與回程為自選動作，另行處理，不作收卡資格的依據。
+
+<!-- page: AI 應用架構 -->
+<div class="eyebrow">方案設計與技術落地 / 04 應用的 AI 技術</div>
+
+# AI 分成即時建議與離線內容產線
+
+<p class="lead">將模型輸入、處理、查核及發布分開，讓每項輸出有依據，也讓模型失效時仍有可用的服務結果。</p>
+
+<figure class="technical-diagram"><img src="assets/technical/ai.svg" alt="推薦理由、來源約束文案與批次圖像三條AI管線及其查核點"><figcaption>圖 4｜AI 應用管線。呈現目標責任分工；初期可用人工審稿清單，完整管理後台依規模建置。</figcaption></figure>
+
+## 推薦先有可解釋結果，再產生自然語言
+
+程式先篩選開放狀態、距離及本人需求，再以可解釋分數排序。模型把地方特徵與授權偏好整理成短理由；理由須能回指輸入，失敗時使用固定句型。資料量足夠後才比較文字嵌入等語意方法，硬條件仍由規則控制。
+
+## 文案與圖像通過查核，才進入服務資料
+
+地方文案採檢索增強生成（RAG）：由可信來源選段，模型回傳草稿、來源識別碼及待查句子。結構化輸出限制欄位，編輯核對事實及可到訪性後發布。[1] 卡面則依有權使用的參考素材批次產生候選，經地標、風格與權利檢視後上架，抵達時按規則取用。[2]
+
+現有圖庫已有離線製作流程，本機回憶卡也可加入照片與心情；線上推薦、內容產線及個人生成仍屬候選。模型比較應記錄版本、無依據句子率、人工修正量及核准成品成本，選用個人回憶生成前另確認同意與資料處理範圍。[G3、G5]
+
+<!-- page: 工具與選用原因 -->
+<div class="eyebrow">方案設計與技術落地 / 05 工具與選用原因</div>
+
+# 工具對應服務責任，部署保留替換空間
+
+<p class="lead">以既有原型驗證操作，再評估手機能力與後端接入；以下為候選實作，正式選型依企業技術、資料政策與測試結果決定。</p>
+
+<figure class="technical-diagram deployment"><img src="assets/technical/deployment.svg" alt="前端、Cloud Run候選API、資料儲存與背景AI工作之部署對應"><figcaption>圖 5｜候選工具與部署位置。API 與背景工作分開處理，模型及提示版本以設定管理。</figcaption></figure>
+
+| 架構位置 | 工具／方法 | 選用理由與必要條件 |
+|---|---|---|
+| App 介面 | 現有 HTML／PWA；Expo、React Native、TypeScript 作獨立 demo 候選 | 沿用流程驗證成果；需要定位、裝置製圖等實機測試時才評估手機 demo。既有 App 接法由企業盤點。[3] |
+| 推薦及文案 | 規則排序；Gemini Flash-Lite／Flash 類模型＋RAG | 短理由比較延遲與單次成本；來源草稿比較欄位穩定、繁中品質及改字工時。先保留規則與模板基準。[1] |
+| 卡面產製 | DreamShaper 8＋ControlNet 既有流程；Imagen 雲端候選 | 既有腳本及參數可追溯；雲端按需產生候選。兩者都需審查地標、權利、可用率及總成本。[2、G5] |
+| API 與背景工作 | Python／FastAPI；Cloud Run 候選 | 可整理內容、到訪與收藏介面，將批次生成及重試移出即時操作；也可部署在企業既有平台。[4] |
+| 資料及圖片 | 企業核可資料庫；Cloud Storage 候選 | 資料保存來源、版本及本人紀錄；物件儲存放核准圖片，便於更新、權限管理與撤回。[4] |
+
+## 以可替換的服務契約降低接入成本
+
+前端透過地方、到訪、收藏等介面取資料，展示時接模擬資料，正式環境再接企業核可 API。模型輸出只在內容或理由欄位使用；行程、金額及收卡判定保持穩定規則。選型時用相同案例比較品質、延遲、資料區域與含人工修正的總成本，再決定模型與部署配置。
+
+<!-- page: 成本優化與資源需求 -->
+<div class="eyebrow">方案設計與技術落地 / 06 成本優化與資源需求評估</div>
+
+# 依架構拆分投入，先建可運作的最小範圍
+
+<p class="lead">5 地方試辦初估 236–384 人時，約 29.5–48 人天。估算前提是既有 App 與企業 API 可重用；所有數量與工時均為規劃假設。[G4]</p>
+
+<div class="cost-map">
+<div><b>一次性接入</b><span>App／API／有效紀錄</span><small>依介面缺口與驗證範圍估工</small></div>
+<div><b>持續內容維護</b><span>來源／文案／卡面審核</span><small>隨地方量及更新頻率增加</small></div>
+<div><b>按用量服務</b><span>模型／運算／儲存傳輸</span><small>按實際請求及資產流量計費</small></div>
+</div>
+<p class="caption">圖 6｜成本對應架構中的三類責任。每月增量＝內容人工與本地支出＋模型費＋基礎服務費。</p>
+
+| 工作包／主要責任 | 人時區間 | 對應交付 |
+|---|---:|---|
+| 產品與設計 | 24–40 | 流程、狀態、介面與驗收條件 |
+| 城市編輯／來源與授權稽核 | 12–24 | 5 地方及最多 25 張既有示意卡複核 |
+| 前端探索／收藏／回憶卡接入 | 48–72 | 操作畫面與本機模板 |
+| 後端到訪／收藏／事件 | 56–88 | 核對、去重、有效紀錄及觀測 |
+| 企業服務介接 | 24–40 | 既有身分、定位、行程或下車點接點 |
+| 資料／AI 評估 | 32–56 | 理由對照、來源草稿與固定案例 |
+| 整合 QA／易用性／成本分析 | 40–64 | 回歸、操作觀察與用量報告 |
+| **合計** | **236–384** | **8 小時／人天，29.5–48 人天** |
+
+## 優化發生在架構與流程，而不只在模型單價
+
+卡面先審後用，日期及紀念元素由程式疊加，避免每次抵達都生圖；常用理由依內容、條件及版本快取，過期資訊仍由規則攔截。回憶卡保留本機模板，個人生成按本人選用才呼叫。模型費以文字輸入／輸出量乘對應單價、候選張數乘圖片單價計；另計人工退稿、重生、API、資料庫及傳輸。[5]
+
+## 人力與預算的適用邊界
+
+角色可兼任，每包工時只算一次。試辦先複核既有素材，不預編大量新圖；若素材不足，另估製作與審查。法遵／資安在資料及授權節點參與，深入稽核另估。原生 App 重建、派遣後端、完整審稿產線、Points、地圖服務與額外授權不在本表；人天也不等於曆日工期。正式雲端規格須以實測峰值、請求量及傳輸量校準。
+
+## 執行資源隨實際瓶頸擴充
+
+最小環境包含 API、背景批次工作、資料庫、物件儲存及監控；雲端模型採 API 時，初期不另配置常駐 GPU。若沿用本機生圖，需另盤點硬體容量與維護工時。先量延遲、失敗率、同時請求量及圖片流量，再調整運算與快取；內容增加時，也要檢查編輯審核容量，避免只擴機器而留下發布瓶頸。
+
+<!-- page: 八、補充資料：原型與程式 -->
+<div class="eyebrow">方案設計與技術落地 / 07 八、補充資料：原型與程式</div>
+
+# 用原型對照模組，用程式核對規則
+
+<p class="lead">以下畫面來自現有 HTML／PWA，分別對應地方呈現、收藏資料與本機回憶卡；圖 1–5 的正式雲端與企業接點仍待實作。</p>
+
+<div class="screens">
+<figure><img src="../../app/assets/shots/ride-cards.png" alt="探索與前往原型"><figcaption><b>地方與前往介面</b><br>查看地點、選擇步行或 yoxi。</figcaption></figure>
+<figure><img src="../../app/assets/shots/album.png" alt="收藏原型"><figcaption><b>收藏資料呈現</b><br>讀取卡片、里程與足跡。</figcaption></figure>
+<figure><img src="../../app/assets/shots/lookback.png" alt="本機回憶卡原型"><figcaption><b>本機回憶卡</b><br>地點模板、照片與心情組合。</figcaption></figure>
+</div>
+<p class="caption">圖 7｜截圖：ride-cards.png、album.png、lookback.png。地圖 © OpenStreetMap contributors（ODbL）。青草湖卡面為 AI 改作示意，參考照片 © lienyuan lee／Wikimedia Commons，<a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>；其餘素材來源及授權見 [G5]。</p>
+
+## 從畫面接回實作與資料契約
+
+App README 提供啟動方式及原型路徑；App 架構文件定義路由、狀態、模組介面與數字公式。[G1–G2] 探索與收卡由 explore-cards.js、explore-unlock.js 及 explore-face.js 分別處理選款、收卡互動及共用卡面；收藏讀取同一份示範狀態。[G3]
+
+回憶卡的 album-memory.js 在裝置端縮圖、排版並寫入 localStorage，未接線上模型，也未提供跨裝置同步。素材腳本、生成參數與授權文件則用來追查卡面的製作來源，不能替代正式內容簽核。[G3、G5]
+
+<div class="note"><b>可驗證範圍：</b>介面與規則已有可操作原型，可依程式及測試重現。<br><b>接入後仍需驗收：</b>身分與權限、真實到訪判定、請求去重、正式資料保存、模型品質及企業行程接點。模擬畫面不作正式串接或營運成效的證據。</div>
+
+<!-- page: 八、補充資料：參考來源 -->
+<div class="eyebrow">方案設計與技術落地 / 08 八、補充資料：參考來源</div>
+
+# 架構依據、工具文件與程式證據
+
+本節來源對應前文的技術選擇、估算及原型，連結可直接點選。官方文件說明候選能力，實際採用仍依企業環境與測試結果。外部技術文件查閱日：2026-09-29。
+
+## 官方技術文件與資料來源
+
+<div class="refs">
+<p><b>[1] 文字生成與格式控制。</b><a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output">Google Cloud：Structured output</a>，對應草稿欄位及來源識別碼的格式約束。欄位合格不代表事實正確，仍需來源與編輯核對。</p>
+<p><b>[2] 圖像候選能力。</b><a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/image/overview">Google Cloud：Generate and edit images</a>，用於確認圖像服務的能力與限制；地方辨識、參考素材及商用條件須另驗。</p>
+<p><b>[3] 手機 demo。</b><a href="https://docs.expo.dev/develop/development-builds/introduction/">Expo：Development builds</a>，用於含原生能力的測試版本；不代表可直接移植至既有 yoxi App。</p>
+<p><b>[4] API、部署與儲存。</b><a href="https://fastapi.tiangolo.com/">FastAPI</a>、<a href="https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run">Cloud Run overview</a>、<a href="https://docs.cloud.google.com/storage/docs/introduction">Cloud Storage overview</a>，分別對應 Python API、容器運行與成品物件儲存。</p>
+<p><b>[5] 可重算的服務單價。</b><a href="https://cloud.google.com/vertex-ai/generative-ai/pricing">生成式 AI 定價</a>、<a href="https://cloud.google.com/run/pricing">Cloud Run 定價</a>、<a href="https://cloud.google.com/storage/pricing">Cloud Storage 定價</a>。模型費與基礎服務按實際模型、區域及用量換算，人力與授權另計。</p>
+</div>
+
+## GitHub 程式碼文檔、原型與估算依據
+
+<div class="refs code-refs">
+<p><b>[G1] 原型入口與操作。</b><a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/README.md">app/README.md</a>：啟動方式、畫面路徑與已知限制。</p>
+<p><b>[G2] 現有實作契約。</b><a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/ARCHITECTURE.md">app/ARCHITECTURE.md</a>：路由、狀態、模組 API、公式及測試契約；<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/tests/README.md">app/tests/README.md</a>：驗收方式。</p>
+<p><b>[G3] 模組實作證據。</b><a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/js/views/ride.js">探索入口</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/js/views/explore-cards.js">選款規則</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/js/views/explore-unlock.js">抵達互動</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/js/views/explore-face.js">卡面共用來源</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/js/views/album.js">收藏呈現</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/js/views/album-memory.js">本機回憶卡</a>。</p>
+<p><b>[G4] 需求與估算。</b><a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/pitch/writing/notes/cost-assumptions.md">成本假設第 9 節</a>：236–384 人時的工作包與排除範圍；<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/pitch/writing/04-cost-and-resources.md">成本與資源</a>：內容及用量假設。這些是規劃估算，不是報價。</p>
+<p><b>[G5] 概念畫面及素材來源。</b><a href="https://github.com/Ricky610329/Yoxi_app_design/tree/f0151d6/app/assets/shots">原型截圖</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/assets/postcards/README.md">卡面素材說明</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/tools/gen-postcards.py">生成腳本</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/app/assets/postcards/index.json">生成參數</a>、<a href="https://github.com/Ricky610329/Yoxi_app_design/blob/f0151d6/prototype/assets/photos/credits.js">照片作者與授權</a>，用於追查成品與原始素材。</p>
+</div>
+
+## 證據的使用方式
+
+先以架構圖辨認模組責任，再用程式與畫面核對已有能力；正式 API、雲端產線及資料庫是接續開發範圍。引用素材須沿用其署名、授權與示意標示，企業未授權公開資料不納入 repo。
+
+<p class="caption">GitHub 連結固定在來源版本 f0151d6，已核對本機版本與檔案存在；匿名可讀性仍須在對外送件前確認。本文架構為方案設計，工時與內容量均屬規劃假設。</p>

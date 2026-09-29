@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(tempfile.gettempdir()) / 'yoxi-writing-reader-check'
@@ -22,21 +23,57 @@ class Links(HTMLParser):
     def __init__(self):
         super().__init__()
         self.links, self.ids = [], []
+        self.chapters, self.diagrams, self.diagram_shortcuts = [], [], []
+        self._diagram_nav_depth = 0
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        classes = attrs.get('class', '').split()
         if 'id' in attrs:
             self.ids.append(attrs['id'])
+        if tag == 'article' and 'chapter' in classes:
+            self.chapters.append(attrs.get('id'))
+        if tag == 'figure' and 'diagram' in classes:
+            self.diagrams.append(attrs.get('id'))
+        if tag == 'div' and 'diagram-nav' in classes:
+            self._diagram_nav_depth += 1
+        if tag == 'a' and self._diagram_nav_depth:
+            self.diagram_shortcuts.append(attrs.get('href'))
         for key in ('href', 'src'):
             if key in attrs:
                 self.links.append(attrs[key])
 
+    def handle_endtag(self, tag):
+        if tag == 'div' and self._diagram_nav_depth:
+            self._diagram_nav_depth -= 1
+
 
 parser = Links()
 parser.feed((ROOT / 'index.html').read_text(encoding='utf-8'))
+expected_chapters = ['overview', 'architecture', 'flow', 'ai', 'cost', 'evidence',
+    'technical', 'cost-detail', 'verification', 'archive']
+expected_diagram_ids = ['diagram-product-cycle', 'diagram-service-layers', 'diagram-flow',
+    'diagram-ai-pipeline', 'diagram-architecture', 'diagram-expo-stack',
+    'diagram-evolution', 'diagram-share-boundary', 'diagram-sequence',
+    'diagram-archived-cards']
+expected_shortcuts = ['#diagram-product-cycle', '#diagram-service-layers',
+    '#diagram-flow', '#diagram-ai-pipeline']
+expected_diagrams = sum(len(re.findall(r'^```mermaid\s*$', f.read_text(encoding='utf-8'), re.M))
+    for folder in [ROOT, ROOT / 'notes'] for f in folder.glob('*.md'))
 errors = []
 if len(parser.ids) != len(set(parser.ids)):
     errors.append('Duplicate HTML ids')
+if parser.chapters != expected_chapters:
+    errors.append('Chapter order: ' + json.dumps(parser.chapters, ensure_ascii=False))
+if parser.diagrams != expected_diagram_ids:
+    errors.append('Diagram order: ' + json.dumps(parser.diagrams, ensure_ascii=False))
+if parser.diagram_shortcuts != expected_shortcuts:
+    errors.append('Hero diagram shortcuts: ' + json.dumps(parser.diagram_shortcuts, ensure_ascii=False))
+for svg in (ROOT / 'assets' / 'diagrams').glob('*.svg'):
+    words = ''.join(ET.parse(svg).getroot().itertext())
+    for forbidden in ['任務', '完成', '達成', '挑戰', '每日']:
+        if forbidden in words:
+            errors.append('Diagram wording: ' + svg.name + ': ' + forbidden)
 for uri in parser.links:
     parsed = urlsplit(uri)
     if parsed.scheme:
@@ -62,7 +99,10 @@ var result = {};
 try {
   d.querySelectorAll('img').forEach(function(img) {img.loading='eager';});
   result.chapters = d.querySelectorAll('.chapter').length;
+  result.chapterIds = Array.from(d.querySelectorAll('.chapter')).map(function(x) { return x.id; });
   result.diagrams = d.querySelectorAll('.diagram img').length;
+  result.heroShortcutHrefs = Array.from(d.querySelectorAll('.diagram-nav a')).map(function(x) { return x.hash; });
+  result.archiveInitiallyClosed = !d.getElementById('archive-panel').open;
   result.tables = d.querySelectorAll('table').length;
   result.initialOverflow = d.documentElement.scrollWidth > w.innerWidth + 1;
   d.getElementById('font-size').click();
@@ -79,7 +119,13 @@ try {
       result.activeNav = d.querySelector('nav a[aria-current="location"]').hash;
       result.imagesLoaded = Array.from(d.images).every(function(i) {return i.complete && i.naturalWidth > 0;});
       result.externalResources = w.performance.getEntriesByType('resource').filter(function(r) {return /^https?:/.test(r.name);}).map(function(r) {return r.name;});
-      document.getElementById('result').textContent = JSON.stringify(result);
+      d.querySelector('.diagram-nav a[href="#diagram-product-cycle"]').click();
+      setTimeout(function() {
+        var top = d.getElementById('diagram-product-cycle').getBoundingClientRect().top;
+        result.diagramShortcut = w.location.hash === '#diagram-product-cycle' && top >= 0 && top <= 160;
+        result.diagramNav = d.querySelector('nav a[aria-current="location"]').hash;
+        document.getElementById('result').textContent = JSON.stringify(result);
+      }, 200);
     }, 800);
   }, 200);
 } catch (e) {document.getElementById('result').textContent = JSON.stringify({error:String(e)});}
@@ -103,9 +149,13 @@ for name, width, height in [('desktop', 1440, 1000), ('mobile', 390, 844)]:
             raise SystemExit('Browser did not report: ' + name)
         result = json.loads(unescape(match.group(1)))
         report['views'][name] = result
-        if (result.get('error') or result.get('chapters') != 8 or result.get('diagrams') != 5
+        if (result.get('error') or result.get('chapters') != len(expected_chapters)
+            or result.get('chapterIds') != expected_chapters
+            or result.get('diagrams') != expected_diagrams
+            or result.get('heroShortcutHrefs') != expected_shortcuts
             or result.get('initialOverflow') or result.get('largeOverflow')
-            or not all(result.get(x) for x in ['fontToggle','printButton','archiveOpen','imagesLoaded'])
+            or not all(result.get(x) for x in ['archiveInitiallyClosed','fontToggle','printButton','archiveOpen','imagesLoaded','diagramShortcut'])
+            or result.get('diagramNav') != '#architecture'
             or result.get('activeNav') != '#architecture' or result.get('externalResources')):
             errors.append(name + ': ' + json.dumps(result, ensure_ascii=False))
 (OUT / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
