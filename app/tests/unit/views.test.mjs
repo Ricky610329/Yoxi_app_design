@@ -9,7 +9,7 @@ const STATE_KEY = 'yoxi-chengshi-v1-2';
 const TAIPEI = (mmdd) => '2026-' + mmdd.replace('.', '-') + 'T10:00:00+08:00';
 const ids = (list) => list.map((p) => p.id).join(',');
 /* system 不載：它的 demo 面板在 state:change 時會去畫 DOM（node 沒有 document） */
-const VIEWS = ['ride', 'explore-fx', 'explore-cards', 'explore-verse', 'explore-gold', 'explore', 'explore-unlock', 'album'];
+const VIEWS = ['ride', 'explore-fx', 'explore-cards', 'explore-verse', 'explore-gold', 'explore', 'explore-unlock', 'album', 'album-memory'];
 
 /* ---------------------------------------------------------------- ride（行程 module 在 trip.test.mjs） */
 
@@ -228,20 +228,63 @@ test('weekStats：範圍之後、下個月收的都放在 after，不算進本�
   assert.equal(w.now.places, w0.now.places + 1, '地方數只多範圍裡那一個');
 });
 
-test('cityColors：每個去過的地方算進一道顏色；一張都沒有就沒有顏色', () => {
-  const { APP } = loadApp({ views: VIEWS });
-  const bands = APP.album.cityColors();
-  assert.ok(bands.length > 0);
-  assert.equal(bands.reduce((s, b) => s + b.n, 0), APP.album.visitedPlaces().length, '色帶的地方數＝去過的地方');
-  assert.ok(bands.every((b) => typeof b.c === 'string' && b.n > 0));
-  const empty = loadApp({ views: VIEWS, storage: memoryStorage({ [STATE_KEY]: JSON.stringify({ cards: {} }) }) });
-  assert.equal(empty.STATE.count(), 0);
-  assert.deepEqual([...empty.APP.album.cityColors()], [], '0 張卡沒有顏色');
-  assert.equal(empty.APP.album.visitedPlaces().length, 0);
+test('memory：模板優先今天到訪；草稿只接受本機圖片 data URL', () => {
+  const { APP, STATE } = loadApp({ views: VIEWS, now: TAIPEI('09.29') });
+  const M = APP.album.memory;
+  assert.ok(M && typeof M.places === 'function' && typeof M.cards === 'function' && typeof M.draft === 'function');
+  assert.deepEqual([...M.moods].map((m) => m.key), ['good', 'ok', 'low'], '三種心情是穩定公開契約');
+  const places = [...M.places()];
+  assert.equal(places.length, STATE.count(), '每張已收明信片都可選');
+  assert.ok(places.every((p) => STATE.has(p.id)), '模板沒有未收明信片');
+  assert.equal(M.templates().today, false, '沒有今天新到訪就用最近去過的地方');
+  assert.equal(M.templates().places.map((p) => p.id).join(','), places.map((p) => p.id).join(','));
+  assert.equal(M.draft('p11', 'good'), null, '未收的 p11 不能做回憶卡');
+  const good = M.draft('p1', 'good');
+  const low = M.draft('p1', 'low');
+  const normalized = M.draft('p1', 'not-a-mood');
+  assert.deepEqual(Object.keys(good).sort(), ['cardId', 'date', 'mood', 'prompt'].sort(), '草稿只有可儲存的四個欄位');
+  assert.equal(good.cardId, 'p1');
+  assert.equal(good.mood, 'good');
+  assert.equal(good.date, '09.29');
+  assert.ok(good.prompt.includes(places.find((p) => p.id === 'p1').name), '描述寫進所選地點');
+  assert.notEqual(good.prompt, low.prompt, '不同心情產生不同描述');
+  assert.ok(M.moods.some((m) => m.key === normalized.mood), '不認得的心情會正規化');
+  const photo = 'data:image/png;base64,iVBORw0KGgo=';
+  const withPhoto = M.draft('p1', 'ok', photo);
+  assert.equal(withPhoto.photo, photo, '合法本機圖片放進草稿');
+  assert.ok(withPhoto.prompt.includes('使用者照片'), '描述同步反映自己的照片');
+  assert.equal(M.draft('p1', 'ok', 'https://example.com/x.jpg').photo, undefined, '外部網址不當成自己的照片');
+  STATE.collect('glass-kiln', { date: '09.29' });
+  assert.equal(M.templates().today, true, '今天到訪後切成今天模板');
+  assert.equal(M.templates().places.map((p) => p.id).join(','), 'p11', '今天只有 p11 就只出現 p11');
+});
+
+test('memory.cards／save：本機保存後可讀回，重新載入仍在', () => {
+  const saved = [{ id: 'memory-p1-good-09.29', cardId: 'p1', mood: 'good', prompt: '新竹車站的好心情', date: '09.29' }];
+  const storage = memoryStorage({ [STATE_KEY]: JSON.stringify({ today: { memoryCards: saved } }) });
+  const { APP } = loadApp({ views: VIEWS, storage });
+  assert.deepEqual(JSON.parse(JSON.stringify(APP.album.memory.cards())), saved);
+  const empty = loadApp({ views: VIEWS });
+  assert.deepEqual([...empty.APP.album.memory.cards()], [], '舊狀態沒有 memoryCards 時是空陣列');
+  const d = empty.APP.album.memory.draft('p1', 'low');
+  const item = empty.APP.album.memory.save(d);
+  assert.ok(item && item.id && item.cardId === 'p1', 'save 回傳帶 id 的成品');
+  assert.equal(JSON.stringify(empty.APP.album.memory.cards()), JSON.stringify([item]), 'save 後立即讀得到');
+  const again = loadApp({ views: VIEWS, storage: empty.storage });
+  assert.equal(JSON.stringify(again.APP.album.memory.cards()), JSON.stringify([item]), '重載後仍讀得到');
+});
+
+test('memory.save：裝置存不下時回傳 null 並回復原狀態', () => {
+  const storage = memoryStorage({}, { throwOnSet: true });
+  const { APP } = loadApp({ views: VIEWS, storage });
+  const before = JSON.stringify(APP.album.memory.cards());
+  const result = APP.album.memory.save(APP.album.memory.draft('p1', 'good'));
+  assert.equal(result, null, '沒有假稱保存成功');
+  assert.equal(JSON.stringify(APP.album.memory.cards()), before, '失敗後不留下幽靈成品');
 });
 
 test('APP.state：寫 STATE 一定跟著 state:change；batch 裡的寫入寫完才發一次', () => {
-  const { APP, STATE } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });
+  const { APP, STATE } = loadApp({ views: VIEWS });
   let n = 0;
   const off = APP.on('state:change', () => { n++; });
   APP.state.setToday({ mood: 'calm' });
@@ -270,8 +313,10 @@ test('APP.state：寫 STATE 一定跟著 state:change；batch 裡的寫入寫完
   off2();
   const km0 = STATE.all.km;
   assert.ok(STATE.count() > 0 && km0 > 0);
+  APP.state.setToday({ memoryCards: [{ id: 'memory-1', cardId: 'p1', mood: 'good', prompt: 'x', date: '09.29' }] });
   APP.state.wipe();
   assert.deepEqual([STATE.count(), STATE.all.km, STATE.all.lastCard, STATE.lastIsNew], [0, 0, null, false], 'wipe 真的清空');
+  assert.deepEqual([...APP.album.memory.cards()], [], 'wipe 後公開 API 讀不到回憶卡');
   assert.equal(STATE.all.settings.layer, false, 'STATE.settings 的開關是偏好，留著');
   off();
 });

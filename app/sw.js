@@ -60,6 +60,7 @@ const PRECACHE = [
   './css/views/explore.css',
   './css/views/explore-fest.css',
   './css/views/album.css',
+  './css/views/album-memory.css',
   './css/views/album-family.css',
   // prototype js
   '../prototype/js/icons.js',
@@ -87,6 +88,7 @@ const PRECACHE = [
   './js/views/explore.js',
   './js/views/explore-unlock.js',
   './js/views/album.js',
+  './js/views/album-memory.js',
   './js/views/album-family.js',
   // 照片
   '../prototype/assets/photos/brick-1.jpg',

@@ -122,13 +122,13 @@ T.spec('system', function (t) {
     t.ok(!pushmock(app), '浮層收掉');
   });
 
-  t.test('晚上推播：數字從 LOOKBACK 算、點卡片到 /lookback', async function (app) {
+  t.test('晚上推播：邀請製作回憶卡、點卡片到 /lookback', async function (app) {
     await app.reset();
     await app.go('/ride');
     app.APP.ui.push({ when: 'pm' });
     await app.waitFor(function () { return pushmock(app); }, 2000, '.pushmock');
-    const L = app.MOCK.LOOKBACK;
-    t.includes(app.text('.pushmock__t'), '今天走了 ' + L.km + ' km，經過 ' + L.places.length + ' 個地方', 'pm 標題');
+    t.eq(app.text('.pushmock__t'), '把去過的地方，做成一張回憶卡', 'pm 標題');
+    t.includes(app.text('.pushmock'), '選一個地方，讓心情決定畫面', 'pm 內文');
     t.eq(app.$('.pushmock__time').textContent, '21:30', '晚上 21:30');
     await app.click('.pushmock [data-act="open-push"]');
     await app.at('/lookback');
@@ -220,6 +220,7 @@ T.spec('system', function (t) {
   t.test('清除我的足跡：確認後真的清空（明信片 0、點數 0、下車點與行程一起清）', async function (app) {
     await app.reset({ store: { dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: 1 }) } });
     app.STATE.collect('glass-kiln', {});
+    app.APP.state.setToday({ memoryCards: [{ id: 'memory-1', cardId: 'p1', mood: 'good', prompt: 'x', date: app.APP.fmt.todayMMDD() }] });
     await app.go('/settings');
     await app.click('[data-act="more"]');       /* 清除足跡收在展開區（設定頁可按數 ≤ 10） */
     await app.click('[data-act="wipe"]');
@@ -227,6 +228,7 @@ T.spec('system', function (t) {
     t.eq(app.STATE.count(), 0, 'STATE 清空');
     t.eq(app.STATE.points, 0, '點數 0');
     t.eq(app.APP.store.get('dropoff'), null, '下車點一起清');
+    t.eq(app.APP.album.memory.cards().length, 0, '回憶卡一起清');
     t.eq(app.STATE.all.settings.pushAm, true, '設定不動');
   });
 
@@ -548,6 +550,7 @@ T.spec('system', function (t) {
   t.test('QA 2：清除我的足跡真的清空；重設 demo 的文案寫清楚是回到初始', async function (app) {
     await app.reset({ store: { dropoff: T.fixtures.dropoff({ id: 'neiwan', name: '內灣', km: 28, setAt: now() }),
                                trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
+    app.APP.state.setToday({ memoryCards: [{ id: 'memory-1', cardId: 'p1', mood: 'low', prompt: 'x', date: app.APP.fmt.todayMMDD() }] });
     await app.go('/settings');
     await app.click('[data-act="more"]');
     await app.click('[data-act="wipe"]');
@@ -557,7 +560,7 @@ T.spec('system', function (t) {
     t.eq(S.points, 0, 'STATE.points === 0');
     t.eq(S.all.km, 0, 'km 0');
     t.eq(S.all.lastCard, null, 'lastCard null');
-    t.eq(S.all.today.done, false, 'today 歸零');
+    t.eq(A.album.memory.cards().length, 0, '回憶卡歸零');
     t.eq(A.store.get('dropoff'), null, 'dropoff 清掉');
     t.eq(A.store.get('trip'), null, 'trip 清掉');
     t.includes(app.text('.toast') || '', '足跡已清除', 'toast');
@@ -569,7 +572,7 @@ T.spec('system', function (t) {
     t.eq(app.$$('main.view .postcard--locked').length, app.$$('main.view [data-card]').length, '書架全部是灰的');
     await app.go('/footprint');
     t.eq(app.text('[data-coverage]'), '0', '城市足跡覆蓋率 0');
-    t.eq(app.$$('.citycolor__band').length, 0, '城市顏色 0 道');
+    t.eq(app.$$('[data-layer="seenArea"]').length, 0, '已訪區域圖層不存在');
     await app.reload();
     t.eq(app.STATE.count(), 0, '重載之後還是 0');
     await app.go('/points');

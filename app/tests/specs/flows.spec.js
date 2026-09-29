@@ -175,7 +175,7 @@ T.spec('flows', function (t) {
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   }, { timeout: 20000 });
 
-  t.test('流程 C 晚上的回顧（非 still）：收一張 → 晚上推播 → 單頁回顧 → 這一週 → 長輩圖', async function (app) {
+  t.test('流程 C 晚上的回顧（非 still）：收一張 → 晚上推播 → 製作回憶卡 → 這一週 → 長輩圖', async function (app) {
     await app.reset({ still: false });
     const A = app.APP, S = app.STATE;
     t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
@@ -188,27 +188,25 @@ T.spec('flows', function (t) {
     t.ok(app.$('.device > .pushmock[data-push="pm"]'), '晚上推播浮層');
     await app.click('.pushmock [data-act="open-push"]');
     await app.at('/lookback');
-    t.ok(app.$('[data-lb]'), '單頁回顧');
-    t.eq(app.text('[data-lb-km]'), String(app.MOCK.LOOKBACK.km), '當日距離＝LOOKBACK.km');
-    t.eq(app.$$('[data-lb-act], [data-lb-steps], [data-act="next"]').length, 0, '沒有四幕與步數流程');
-    t.ok(app.text('main.view[data-view]').indexOf('步數') < 0 && app.text('main.view[data-view]').indexOf('走路') < 0,
-      '回顧沒有步數／走路文案');
-    t.ok(app.text('main.view[data-view]').indexOf(last && last.name) < 0, '不重複剛收的明信片摘要');
-    await app.click('[data-act="photo"][data-photo="1"]');
-    t.ok(!app.$('main.view[data-view] [data-act="share"]'), '回顧沒有分享鍵');
-    await app.click('[data-act="mood"][data-mood="good"]');
+    t.eq(app.text('.memory-heading h1'), '把這一刻，留成卡。', '推播打開回憶卡房間');
+    t.eq(app.$('[data-act="pick-memory-template"].is-selected').getAttribute('data-card'), last.id, '剛收的地方是今日模板並預選');
+    t.includes(app.text('[data-memory-period]'), '今天去過', '明確說是今天的到訪');
+    t.ok(!app.$('main.view[data-view] [data-act="share"]'), '製作頁沒有分享鍵');
+    await app.click('[data-act="memory-mood"][data-mood="ok"]');
     t.ok(app.route().path === '/lookback', '選心情只改本頁，尚未儲存');
-    t.ok(!S.all.today || S.all.today.mood !== 'good', 'STATE 尚未寫入選擇');
-    await app.click('[data-act="save-lookback"]');
+    t.eq((S.all.today.memoryCards || []).length, 0, 'STATE 尚未寫入選擇');
+    t.eq(app.$('[data-act="pick-memory-template"].is-selected').getAttribute('data-memory-mood'), 'ok', '心情直接改在模板卡');
+    await app.click('[data-act="make-memory"]');
+    t.ok(app.route().path === '/lookback', '收下後留在製作頁');
+    t.eq(S.all.today.memoryCards.length, 1, 'STATE.today.memoryCards 一張');
+    t.eq(S.all.today.memoryCards[0].mood, 'ok', '記下心情');
+    t.eq(S.all.today.memoryCards[0].cardId, last.id, '記下地方的明信片');
+    await app.click('main.view[data-view] a[data-back]');
     await app.at('/album');
     t.eq(app.route().path, '/album', '回到收藏');
-    t.eq(S.all.today.mood, 'good', 'STATE.today.mood');
-    t.eq(S.all.today.photo, 1, 'STATE.today.photo');
     t.ok(!app.$('main.view[data-view] [data-act="share"]'), '收藏主頁沒有分享鈕');
-    /* 日誌：回顧結束落在收藏首頁的「回顧」一列（?tab=journal 用過就拿掉），今天的心情在那一格、只有你 */
-    t.ok(app.$('[data-look-tile="journal"].is-landed'), '「今天的回顧」那一格亮一下');
     t.ok(!/tab=/.test(app.win.location.hash), '網址的 ?tab 拿掉了：' + app.win.location.hash);
-    t.ok(app.$('[data-look-tile="journal"] [data-mood-now="good"]'), '今天的心情在「今天的回顧」那一格');
+    t.eq(app.text('[data-look-tile="journal"] [data-look-today]'), '1', '首頁顯示一張回憶卡');
     await app.click('main.view [data-act="go-week"]');
     await app.at('/week');
     await app.click('main.view [data-act="share"]');
@@ -691,13 +689,13 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 5. 亂按 QA 回報（一項一條；這裡只留跨區塊的） */
 
-  t.test('QA 9／10：回顧只記當日距離；/trip/done 沒行程頁首寫「行程」、評過分的星數重整還在', async function (app) {
+  t.test('QA 9／10：回憶卡是本機構圖且不含舊里程；/trip/done 沒行程頁首寫「行程」、評過分的星數重整還在', async function (app) {
     await app.reset();
     await app.go('/lookback');
-    t.eq(app.text('[data-lb-km]'), String(app.MOCK.LOOKBACK.km), '當日公里來自 LOOKBACK.km');
     const lookback = app.text('main.view[data-view]');
-    t.ok(lookback.indexOf('這個月') < 0 && lookback.indexOf('步數') < 0 && lookback.indexOf('走路') < 0,
-      '沒有月累積、步數或走路文案');
+    t.includes(lookback, '模板合成示意', '明確說是模板合成示意');
+    t.ok(lookback.indexOf('這個月') < 0 && lookback.indexOf('步數') < 0 && lookback.indexOf('公里') < 0,
+      '沒有舊月累積、步數或里程文案');
     await app.go('/trip/done');
     t.eq(app.text('.hdr-red__title'), '行程', '沒行程：頁首「行程」');
     t.includes(app.text('main.view[data-view]'), '目前沒有行程', '內文維持');

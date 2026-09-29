@@ -126,5 +126,8 @@
 /* app/css/views/album.css */
 :where(html[data-motion="full"]:not([data-still])) .alb-v2 .is-landed { animation-duration: var(--t-scene) !important; }
 
+/* app/css/views/album-memory.css */
+:where(html[data-motion="full"]:not([data-still])) .memory-face.is-made { animation-duration: var(--t-scene) !important; }
+
 /* app/css/views/album-family.css */
 :where(html[data-motion="full"]:not([data-still])) .fam-heart { transition-duration: var(--t-fast), var(--t-fast) !important; }

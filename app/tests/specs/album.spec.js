@@ -227,7 +227,9 @@ T.spec('album', function (t) {
     const i0 = histI(app);
     await app.click('[data-act="go-week"]');
     await app.at('/week');
-    await app.click('[data-act="go-elder"]');
+    t.ok(!app.$('main.view [data-act="go-elder"]'), '週回顧沒有獨立長輩圖入口');
+    await app.click('main.view [data-act="share"]');
+    await app.click('.sys-share [data-act="share-family"]');
     await app.at('/elder');
     await back(app);
     await app.at('/week');
@@ -343,67 +345,117 @@ T.spec('album', function (t) {
     t.eq(got && got.kind, 'week', 'share kind=week');
   });
 
-  /* 2. 今日回顧是單頁；選擇只留在頁面，按「儲存」才寫入 STATE */
-  t.test('/lookback 單頁選照片與心情，明確儲存後才寫入並回收藏', async function (app) {
+  function setUpload(app, name, type, bytes) {
+    const input = app.$('[data-memory-upload]');
+    const file = new app.win.File([bytes], name, { type: type });
+    try {
+      const dt = new app.win.DataTransfer(); dt.items.add(file); input.files = dt.files;
+    } catch (e) { Object.defineProperty(input, 'files', { configurable: true, value: [file] }); }
+    input.dispatchEvent(new app.win.Event('change', { bubbles: true }));
+  }
+
+  t.test('/lookback 以到訪卡為主體：左右換模板、選心情，只有一個主要動作', async function (app) {
     await app.reset();
     await app.go('/lookback');
     const before = JSON.stringify(app.STATE.all.today || {});
-    t.ok(app.$('[data-lb]'), '只有一張今日回顧頁');
-    t.eq(app.$$('[data-lb-act], [data-lb-steps], [data-act="next"], [data-act="skip-photo"], [data-act="no-mood"]').length, 0,
-      '沒有四幕、步數與舊導覽按鈕');
-    t.eq(app.text('[data-lb-km]'), String(app.MOCK.LOOKBACK.km), '距離＝LOOKBACK.km');
-    t.ok(app.text('main.view[data-view]').indexOf('步') < 0 && app.text('main.view[data-view]').indexOf('走路') < 0,
-      '今日回顧沒有步數／走路文案');
-    t.eq(app.$$('[data-act="photo"]').length, app.MOCK.LOOKBACK.photos.length, '照片可選');
-    t.eq(app.$$('[data-act="mood"]').length, 3, '心情三選一');
-    await app.click('[data-act="photo"][data-photo="1"]');
-    await app.click('[data-act="mood"][data-mood="ok"]');
-    t.eq(JSON.stringify(app.STATE.all.today || {}), before, '選擇時尚未寫入 STATE');
-    t.ok(app.$('[data-act="photo"][data-photo="1"].is-on'), '照片選取狀態留在頁面');
-    t.ok(app.$('[data-act="mood"][data-mood="ok"].is-on'), '心情選取狀態留在頁面');
-    await app.click('[data-act="save-lookback"]');
-    await app.at('/album');
-    const T0 = app.STATE.all.today;
-    t.eq(T0.done, true, 'today.done');
-    t.eq(T0.mood, 'ok', 'today.mood');
-    t.eq(T0.photo, 1, 'today.photo');
-    t.eq(T0.date, app.APP.fmt.todayMMDD(), 'today.date');
-    t.eq(app.route().path, '/album', '回到收藏主頁');
-    t.eq(app.text('[data-stat="cards"]'), String(app.STATE.count()), '摘要仍讀當前卡片數');
+    const M = app.APP.album.memory, T0 = M.templates();
+    const faces = app.$$('[data-act="pick-memory-template"]');
+    t.eq(faces.length, T0.places.length, '模板數＝可用到訪地點');
+    t.eq(T0.today, false, '初始沒有今天新到訪，使用最近去過的地方');
+    t.includes(app.text('[data-memory-period]'), '最近去過', '畫面誠實說明最近到訪');
+    t.ok(faces[0].classList.contains('is-selected') && faces[0].getAttribute('aria-pressed') === 'true', '第一張預選');
+    t.ok(faces.every(function (f) { return app.STATE.has(f.getAttribute('data-card')); }), '沒有未收的模板');
+    t.eq(app.$$('[data-act="memory-mood"]').length, 3, '心情是三個小選項');
+    t.eq(app.$$('[data-act="make-memory"]').length, 1, '只有一個主要動作');
+    t.eq(app.$$('main.view select, main.view [data-act="preview-memory"], main.view [data-act="save-memory"]').length, 0, '沒有表單選單或分開預覽／儲存');
+    if (faces[1]) {
+      await app.click(faces[1]);
+      t.ok(faces[1].classList.contains('is-selected') && !faces[0].classList.contains('is-selected'), '點卡片換模板');
+    }
+    const selected = app.$('[data-act="pick-memory-template"].is-selected');
+    await app.click('[data-act="memory-mood"][data-mood="low"]');
+    t.eq(selected.getAttribute('data-memory-mood'), 'low', '心情直接改在卡片主體');
+    t.ok(selected.querySelector('.memory-template-art'), '沒有自己的照片時使用地點模板');
+    t.eq(JSON.stringify(app.STATE.all.today || {}), before, '換模板與心情都還沒寫入');
+    t.includes(app.text('[data-memory-status]'), '不會上傳', '說明照片只留本機');
   });
 
-  t.test('/lookback 返回不儲存；同日既有選擇保留，隔日不沿用且可不選心情儲存', async function (app) {
+  t.test('/lookback 上傳自己的照片可替換模板、移除可還原；格式錯誤會顯示原因', async function (app) {
     await app.reset();
-    const A = app.APP;
-    const today = A.fmt.todayMMDD();
-    A.state.setToday({ done: true, mood: 'low', photo: 2, date: today });
-    await app.go('/album');
-    await app.click('[data-act="go-lookback"]');
+    await app.go('/lookback');
+    const count0 = app.STATE.count(), points0 = app.STATE.points;
+    const selected = app.$('[data-act="pick-memory-template"].is-selected');
+    setUpload(app, 'note.txt', 'text/plain', 'not an image');
+    t.includes(app.text('[data-memory-status]'), 'JPG、PNG 或 WebP', '錯誤格式有原因');
+    const raw = app.win.atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n1cAAAAASUVORK5CYII=');
+    const bytes = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    setUpload(app, 'memory.png', 'image/png', bytes);
+    await app.waitFor(function () { return !!selected.querySelector('.memory-own-photo'); }, 2500, '自己的照片進入卡面');
+    const jpeg = selected.querySelector('.memory-own-photo').getAttribute('src');
+    t.ok(/^data:image\/jpeg;base64,/.test(jpeg), '圖片在本機縮圖後轉成 JPEG');
+    t.includes(app.text('[data-photo-label]'), '換一張', '上傳後可替換');
+    t.ok(!app.$('[data-act="remove-memory-photo"]').hidden, '移除照片可用');
+    t.eq(app.STATE.count(), count0, '上傳不改原明信片');
+    t.eq(app.STATE.points, points0, '上傳不改點數');
+    await app.click('[data-act="remove-memory-photo"]');
+    t.ok(selected.querySelector('.memory-template-art') && !selected.querySelector('.memory-own-photo'), '移除後回到地點模板');
+    setUpload(app, 'memory.png', 'image/png', bytes);
+    await app.waitFor(function () { return !!selected.querySelector('.memory-own-photo'); }, 2500, '再次放入自己的照片');
+    await app.click('[data-act="memory-mood"][data-mood="low"]');
+    await app.click('[data-act="make-memory"]');
+    const item = app.STATE.all.today.memoryCards[0];
+    t.ok(item && /^data:image\/jpeg;base64,/.test(item.photo), '保存本機 JPEG data URL');
+    t.eq(item.mood, 'low', '保存心情');
+    t.eq(item.date, app.APP.fmt.todayMMDD(), '保存製卡日期');
+    await app.reload('/lookback');
     await app.at('/lookback');
-    t.ok(app.$('[data-act="photo"][data-photo="2"].is-on'), '同日既有照片預先選取');
-    t.ok(app.$('[data-act="mood"][data-mood="low"].is-on'), '同日既有心情預先選取');
-    await app.click('[data-act="photo"][data-photo="0"]');
-    await app.click('[data-act="mood"][data-mood="good"]');
-    await app.click('main.view[data-view] a[data-back]');
-    await app.at('/album');
-    t.eq(app.STATE.all.today.photo, 2, '直接返回不改照片');
-    t.eq(app.STATE.all.today.mood, 'low', '直接返回不改心情');
+    await app.click('[data-act="open-memory"][data-memory-id="' + item.id + '"]');
+    const reopened = app.$('[data-act="pick-memory-template"].is-selected');
+    t.eq(reopened.getAttribute('data-memory-mood'), 'low', '重開後心情一致');
+    t.eq(reopened.querySelector('.memory-own-photo').getAttribute('src'), item.photo, '重開後照片一致');
+    t.includes((reopened.textContent || '').replace(/\s+/g, ' ').trim(), item.date, '重開後日期一致');
+    t.eq(app.STATE.count(), count0, '保存回憶卡也不改原明信片');
+    t.eq(app.STATE.points, points0, '保存回憶卡也不改點數');
+  });
 
+  t.test('/lookback 做成我的卡後留在本頁、不可重複；重載後小卡可重開', async function (app) {
+    await app.reset();
     await app.go('/lookback');
-    await app.click('[data-act="save-lookback"]');
-    await app.at('/album');
-    t.eq(app.STATE.all.today.photo, 2, '同日直接儲存保留照片');
-    t.eq(app.STATE.all.today.mood, 'low', '同日不另選心情仍保留心情');
+    const face = app.$('[data-act="pick-memory-template"].is-selected');
+    const cardId = face.getAttribute('data-card');
+    await app.click('[data-act="memory-mood"][data-mood="ok"]');
+    await app.click('[data-act="make-memory"]');
+    t.eq(app.route().path, '/lookback', '做成後留在本頁');
+    const saved = app.STATE.all.today.memoryCards;
+    t.eq(saved.length, 1, '儲存一張');
+    t.eq(saved[0].cardId, cardId, '記下明信片 id');
+    t.eq(saved[0].mood, 'ok', '記下心情');
+    t.includes(saved[0].prompt, app.APP.album.memory.places().filter(function (p) { return p.id === cardId; })[0].name, '描述反映地點');
+    t.ok(app.$('[data-act="make-memory"]').disabled, '同一版儲存後按鈕停用');
+    await app.click('[data-act="make-memory"]');
+    t.eq(app.STATE.all.today.memoryCards.length, 1, '重複點不會多存一張');
+    t.ok(app.$('[data-act="open-memory"][data-memory-id="' + saved[0].id + '"]'), '已收下的小卡出現');
+    await app.reload('/lookback');
+    await app.at('/lookback');
+    const kept = app.$('[data-act="open-memory"][data-memory-id="' + saved[0].id + '"]');
+    t.ok(kept, '重載後仍有小卡');
+    await app.click(kept);
+    t.ok(app.$('[data-act="make-memory"]').disabled, '重開成品不會再存一次');
+    t.includes(app.text('[data-memory-status]'), '已留在這裡', '畫面說明是已存成品');
+    await app.go('/album');
+    t.eq(app.text('[data-look-today]'), '1', '收藏首頁顯示一張回憶卡');
+  });
 
-    A.state.setToday({ done: true, mood: 'good', photo: 1, date: today === '01.01' ? '01.02' : '01.01' });
-    await app.go('/lookback');
-    t.eq(app.$$('[data-act="photo"].is-on, [data-act="mood"].is-on').length, 0, '隔日的照片與心情不預先選取');
-    await app.click('[data-act="save-lookback"]');
+  t.test('/lookback 直接返回不寫入，返回目標保留 journal 錨點', async function (app) {
+    await app.reset({ hash: '/lookback' });
+    await app.at('/lookback');
+    const before = JSON.stringify(app.STATE.all.today || {});
+    await app.click('[data-act="memory-mood"][data-mood="low"]');
+    const backLink = app.$('main.view[data-view] a[data-back]');
+    t.eq(backLink.getAttribute('data-back'), '/album?tab=journal', '直接進入的返回目標');
+    await app.click(backLink);
     await app.at('/album');
-    t.eq(app.STATE.all.today.date, today, '改記今天日期');
-    t.eq(app.STATE.all.today.done, true, '不選心情也能儲存');
-    t.eq(app.STATE.all.today.photo, null, '隔日照片不沿用');
-    t.eq(app.STATE.all.today.mood, null, '隔日心情不沿用');
+    t.eq(JSON.stringify(app.STATE.all.today || {}), before, '離開而未做成卡不寫入');
   });
 
   /* 3. 覆蓋率算出來 */
@@ -416,10 +468,17 @@ T.spec('album', function (t) {
     t.ok(n > 0, '初始狀態有去過的地方，覆蓋率 > 0');
     t.eq(app.$$('.spot').length, 0, '.spot 0 顆');
     const svg = app.$('[data-fp-map] svg.map__svg');
-    t.ok(svg && svg.childNodes.length > 0 && svg.querySelector('[data-layer="fog"]'), '地圖有畫出來、有霧');
-    const bands = app.APP.album.cityColors();
-    t.eq(app.$$('.citycolor__band').length, bands.length, '城市顏色色帶＝去過的地方算出來的');
-    t.eq(bands.reduce(function (s, b) { return s + b.n; }, 0), app.APP.album.visitedPlaces().length, '每個去過的地方都有算進一道顏色');
+    t.ok(svg && svg.childNodes.length > 0 && svg.querySelector('[data-layer="building"]'), '紙本地圖有建物底圖');
+    t.eq(app.$$('.citycolor, .citycolor__band, [data-citycolor]').length, 0, '沒有任意城市色帶');
+    const seenLayer = svg.querySelector('[data-layer="seenArea"]');
+    t.ok(seenLayer && Number(seenLayer.getAttribute('data-seen-count')) === app.APP.album.footprintSeen().seen.length, '已訪區域數對應可定位足跡');
+    t.ok(seenLayer.querySelector('.alb-fp__seen-area'), '非道路已訪色層存在');
+    t.ok(svg.querySelector('[data-layer="roadMajor"]') && svg.querySelector('[data-layer="roadMinor"]'), '道路仍保留');
+    const layers = Array.prototype.slice.call(svg.children);
+    const building = svg.querySelector('[data-layer="building"]'), water = svg.querySelector('[data-layer="waterArea"], [data-layer="water"], [data-layer="coast"]');
+    t.ok(layers.indexOf(building) < layers.indexOf(seenLayer), '建物在已訪色層下方');
+    t.ok(!water || layers.indexOf(seenLayer) < layers.indexOf(water), '河流蓋在已訪色層上方');
+    t.ok(layers.indexOf(seenLayer) < layers.indexOf(svg.querySelector('[data-layer="roadMajor"]')), '道路蓋在已訪色層上方');
     t.ok(app.text('main.view[data-view]').indexOf('90 天') < 0, '不寫「90 天沒回去會變淡」（app 沒有記回訪）');
     const seen = (app.$('[data-fp-map]').getAttribute('data-seen') || '').split(',').filter(Boolean);
     const expect = app.APP.album.footprintSeen().seen;
@@ -522,10 +581,12 @@ T.spec('album', function (t) {
     t.eq(w.now.places, inWeek, '本週地方數＝本週日期的卡');
   });
 
-  t.test('/elder 傳給家人 toast、返回回 /week', async function (app) {
+  t.test('/week 由分享面板進長輩圖，傳給家人 toast、返回回 /week', async function (app) {
     await app.reset();
     await app.go('/week');
-    await app.click('[data-act="go-elder"]');
+    t.ok(!app.$('main.view [data-act="go-elder"]'), '頁面沒有重複的長輩圖入口');
+    await app.click('main.view [data-act="share"]');
+    await app.click('.sys-share [data-act="share-family"]');
     await app.at('/elder');
     await app.click('[data-act="caption"][data-cap-i="2"]');
     t.eq(app.text('[data-elder-big]'), '我今天去走走了', '換一句話');
@@ -556,21 +617,20 @@ T.spec('album', function (t) {
     await app.at('/album');
   });
 
-  /* 3. 回顧、這一週、城市足跡不再是孤兒頁：收藏首頁的「回顧」一列 */
-  t.test('/album 三個入口用途與圖示不重複，今天／本週只顯示距離', async function (app) {
+  /* 3. 回憶卡、這一週、城市足跡不再是孤兒頁：收藏首頁的摘要列 */
+  t.test('/album 三個入口各顯示自己的單一數字；回憶卡只讀 memoryCards 張數', async function (app) {
     await app.reset();
     await app.go('/album');
-    const A = app.APP, L = app.MOCK.LOOKBACK;
+    const A = app.APP;
     [['go-lookback', '#/lookback'], ['go-week', '#/week'], ['go-footprint', '#/footprint']].forEach(function (x) {
       const a = app.$('.alb-v2__look [data-act="' + x[0] + '"]');
       t.eq(a && a.getAttribute('href'), x[1], x[0]);
     });
-    t.ok(app.$('[data-look-tile="journal"] [data-icon="lock"]'), '今天＝lock（只有你）');
+    t.ok(app.$('[data-look-tile="journal"] [data-icon="postcard"]'), '回憶卡＝postcard');
     t.ok(app.$('[data-look-tile="week"] [data-icon="share"]'), '這一週＝share（可分享）');
     t.ok(app.$('[data-look-tile="footprint"] [data-icon="viewMap"]'), '城市足跡＝viewMap（空間記憶）');
-    t.includes(app.text('[data-look-today]'), String(L.km), '今天顯示 LOOKBACK.km');
-    t.includes(app.text('[data-look-today]'), '公里', '今天只用距離作移動指標');
-    t.includes(app.text('[data-look-week]'), String(A.album.weekStats().now.km), '這一週顯示 weekStats.now.km');
+    t.eq(app.text('[data-look-today]'), '0', '預設 0 張回憶卡');
+    t.eq(app.text('[data-look-week]'), String(A.album.weekStats().now.km), '這一週顯示 weekStats.now.km');
     t.includes(app.text('[data-look-tile="week"]'), '公里', '這一週只用距離作移動指標');
     t.eq(app.text('[data-look-cov]'), String(A.album.coverage()), '覆蓋率＝城市足跡同一個公式');
     t.ok(app.text('.alb-v2__look').indexOf('步') < 0 && app.text('.alb-v2__look').indexOf('走路') < 0,
@@ -579,21 +639,15 @@ T.spec('album', function (t) {
     t.eq(app.$$('[data-stat="places"], [data-stat="km"]').length, 0, '首頁沒有重複的地方／距離統計卡');
     const n = t.countTappables(app);
     t.ok(n <= 12, '可按數 ' + n + ' ≤ 12');
-    /* 今天看過回顧：心情文字跟距離共存，首頁不再放照片 */
-    const today = A.fmt.todayMMDD();
-    app.STATE.setToday({ done: true, mood: 'low', photo: 2, date: today });
+    app.STATE.setToday({ done: true, mood: 'low', photo: 2, date: A.fmt.todayMMDD() });
     await app.go('/ride');
     await app.go('/album');
-    t.ok(app.$('[data-look-tile="journal"] [data-look-today] [data-mood-now="low"]'), 'data-mood-now 在文字上');
-    t.eq(app.$$('[data-look-photo]').length, 0, '首頁不重複放今天的照片');
-    t.includes(app.text('[data-look-today]'), String(L.km), '看過後仍保留今天距離');
-    t.includes(app.text('[data-look-today]'), '今天有點累', '心情的字');
-    /* 別天留下來的心情不算今天的 */
-    app.STATE.setToday({ date: today === '01.01' ? '01.02' : '01.01' });
+    t.eq(app.text('[data-look-today]'), '0', '舊日誌欄位不影響回憶卡張數');
+    t.eq(app.$$('[data-mood-now], [data-look-photo], [data-icon="lock"]').length, 0, '首頁不再放心情、照片或鎖頭');
+    app.STATE.setToday({ memoryCards: [{ id: 'memory-1', cardId: 'p1', mood: 'good', prompt: 'x', date: A.fmt.todayMMDD() }] });
     await app.go('/ride');
     await app.go('/album');
-    t.ok(!app.$('[data-look-tile="journal"] [data-mood-now]'), '別天的心情不掛在今天');
-    t.includes(app.text('[data-look-today]'), String(L.km), '別天狀態不影響今天距離');
+    t.eq(app.text('[data-look-today]'), '1', 'memoryCards 一張就顯示 1');
   });
 
   t.test('舊連結 /album?tab=journal|week|badges：落在收藏首頁、對應那一塊亮一下，網址的 ?tab 拿掉', async function (app) {
@@ -609,32 +663,16 @@ T.spec('album', function (t) {
     }
   });
 
-  t.test('今日回顧儲存：落在收藏首頁，「今天的回顧」亮一下、寫今天的心情', async function (app) {
+  t.test('回憶卡儲存後返回收藏：journal 那格亮一下、網址移除舊 tab 參數', async function (app) {
     await app.reset();
     await app.go('/album');
     await app.click('[data-act="go-lookback"]');
     await app.at('/lookback');
-    await app.click('[data-act="mood"][data-mood="good"]');
-    t.ok(app.route().path === '/lookback', '選心情不會自動離開或儲存');
-    await app.click('[data-act="save-lookback"]');
+    await app.click('[data-act="make-memory"]');
+    await app.click('main.view[data-view] a[data-back]');
     await app.at('/album');
-    t.eq(app.STATE.all.today.date, app.APP.fmt.todayMMDD(), 'today 記下是哪一天看的');
-    t.ok(app.$('[data-look-tile="journal"].is-landed'), '「今天的回顧」亮一下');
-    t.ok(app.$('[data-look-tile="journal"] [data-mood-now="good"]'), '今天的心情');
+    t.eq(app.text('[data-look-today]'), '1', '首頁顯示一張');
     t.ok(!/tab=/.test(app.win.location.hash), '網址的 ?tab 拿掉了');
-  });
-
-  /* 7. 今日回顧不再混入明信片或月累積：這些已有收藏首頁與週回顧負責 */
-  t.test('/lookback 不重複今日新卡或月累積，只記當日距離', async function (app) {
-    await app.reset();
-    const A = app.APP;
-    const today = A.fmt.todayMMDD();
-    A.state.collect('neiwan', { date: today });
-    await app.go('/lookback');
-    const txt = app.text('main.view[data-view]');
-    t.eq(app.text('[data-lb-km]'), String(app.MOCK.LOOKBACK.km), '只顯示當日距離');
-    t.ok(txt.indexOf('內灣老街') < 0 && txt.indexOf('今天多了一張') < 0, '不重複明信片摘要');
-    t.ok(txt.indexOf('這個月') < 0 && txt.indexOf('步') < 0 && txt.indexOf('走路') < 0, '不放月累積或步行指標');
   });
 
   /* 8. 長輩圖用分享的那一張 */
@@ -887,10 +925,11 @@ T.spec('album', function (t) {
       t.eq(!!(pic && pic.hasAttribute('data-gold-aura')), g, '獎章的組成卡 ' + id + '：金粉 ＝ 金框');
       if (g) t.ok(goldFrame(app, pic), '獎章的組成卡 ' + id + '：框看得到');
     });
-    /* 今天搭車收的 p11：今日回顧不重複放卡；週回顧（在範圍裡的話）仍保留金框 */
+    /* 今天搭車收的 p11：回憶卡尚未預覽時不先畫卡；週回顧（在範圍裡的話）仍保留金框 */
     A.state.collect('glass-kiln', { date: A.fmt.todayMMDD(), by: 'ride', km: 1 });
     await app.go('/lookback');
-    t.eq(app.$$('[data-card-art], [data-gold-aura]').length, 0, '今日回顧不重複放明信片');
+    t.eq(app.$$('main.view [data-card-art]').length, 1, '製作頁只畫目前選到的模板');
+    t.ok(app.$('main.view [data-act="pick-memory-template"].is-selected [data-gold-aura]'), '搭車收的地方模板保留明信片金粉');
     await app.go('/week');
     app.$$('.alb-weekcard').forEach(function (el) {
       const id = el.getAttribute('data-card');
@@ -902,11 +941,11 @@ T.spec('album', function (t) {
   });
 
   /* 12. 0 張卡的空狀態 */
-  t.test('0 張卡：首頁不拿還沒收的獎章放大、足跡沒有顏色、長輩圖不說「用你去過的地方做的」', async function (app) {
+  t.test('0 張卡：首頁不拿未收獎章放大、足跡沒有已訪建物、回憶卡引導去探索且不能製作', async function (app) {
     await app.reset();
     const A0 = app.STATE.all;
     A0.cards = {}; A0.km = 0; A0.lastCard = null; A0.lastSeen = null;
-    app.APP.state.setToday({ photo: null, mood: null, done: false });
+    app.APP.state.setToday({ memoryCards: [] });
     await app.go('/album');
     t.ok(app.$('[data-medal-empty]'), '獎章卡是空的章位');
     t.ok(!app.$('.alb-v2__medal-top[data-badge]'), '沒有放大一枚還沒收的章');
@@ -915,18 +954,17 @@ T.spec('album', function (t) {
     t.noDeadButtons(app, '/album（0 張）');
     t.noBannedWords(app, { msg: '/album（0 張）' });
     await app.go('/footprint');
-    t.eq(app.$$('.citycolor__band').length, 0, '沒有城市顏色');
-    t.ok(app.$('[data-citycolor-empty]'), '寫還沒有顏色');
+    t.eq(app.$$('[data-layer="seenArea"]').length, 0, '沒有已訪區域圖層');
     t.eq(app.text('[data-coverage]'), '0', '覆蓋率 0');
-    await app.go('/elder');
-    t.ok(app.$('[data-elder-empty]'), '長輩圖的空狀態文案');
-    t.ok(app.text('main.view[data-view]').indexOf('用你去過的地方做的') < 0, '不說用你去過的地方做的');
-    t.eq(app.$$('[data-act="pick-card"]').length, 0, '沒有地方可以換');
-    t.noDeadButtons(app, '/elder（0 張）');
+    await app.go('/lookback');
+    const ride = app.$('[data-act="go-ride"]');
+    t.ok(ride && ride.getAttribute('href') === '#/ride?mode=explore', '空狀態引導去附近看看');
+    t.eq(app.$$('[data-memory-templates], [data-memory-upload], [data-act="make-memory"]').length, 0, '沒有地點時不出現模板、上傳或製卡控制');
+    t.noDeadButtons(app, '/lookback（0 張）');
   });
 
   /* 14. 可按的東西至少 44×44 */
-  t.test('收藏各頁的關閉鍵、分享、今日回顧返回、足跡返回都至少 44×44', async function (app) {
+  t.test('收藏各頁的關閉鍵、分享、回憶卡返回、足跡返回都至少 44×44', async function (app) {
     await app.reset();
     const size = function (sel) {
       const el = app.$(sel);
@@ -940,7 +978,7 @@ T.spec('album', function (t) {
     await app.go('/footprint');
     t.ok(big(size('main.view .alb-fp__back')), '足跡返回 ' + size('main.view .alb-fp__back'));
     await app.go('/lookback');
-    t.ok(big(size('main.view .alb-journal__top a[data-back]')), '今日回顧返回 ' + size('main.view .alb-journal__top a[data-back]'));
+    t.ok(big(size('main.view a[data-back]')), '回憶卡返回 ' + size('main.view a[data-back]'));
   });
 
   /* ============================================================ 回歸測試（從 flows.spec 搬來）

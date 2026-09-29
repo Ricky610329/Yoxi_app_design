@@ -17,8 +17,8 @@
 | 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
 | 地圖歸誰 | **F＋E** 同頁切模式 | 叫車首頁是真實新竹地圖（`HSMAP` paper）；搭車不顯示景點，探索同時最多 **4** 個景點，可設為下車點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
-| 收藏組織 | 摘要式首頁 | 「我的明信片」主卡（張數＋最近三張疊卡，點了進 `/postcards`）、「回顧」三入口（鎖＝私密今天、分享＝週里程、地圖＝城市足跡）、獎章精選卡；不重複放累積統計，390×844 含狀態列一屏、不用捲 |
-| 獎章呈現 | **X4** 勳章牆（六角金屬章，章面是地標線稿） | 首頁放大最近收下的一枚＋一列小章＋「顯示全部」→ `/badges` 三欄章牆；沒有進度環、沒有集點卡；還在路上的寫「收集 4/8」 |
+| 收藏組織 | 數據摘要＋製卡入口 | 明信片主卡、回憶卡張數、週里程、城市點亮比例；數字大於入口標籤。`/lookback` 保留舊網址但改為回憶卡製作，不再叫今天的回顧 |
+| 獎章呈現 | **X4** 勳章牆（六角金屬章，章面是地標線稿） | 首頁保留最新一枚主章與其餘一列小章，放大章面、使用下半頁空間；顯示全部進 `/badges` |
 | 進度獎勵 | 只有獎章（「收集 n/m」） | 2026-09-27 做過 `/rewards` 相框與稱號，同一天使用者拿掉：已經有獎章，再一套收集的東西是重複的，收藏首頁也因為它要捲。不要再加回來，除非使用者改主意 |
 | 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
 | 認知負擔 | **L1** 一屏一事 | 每個畫面可按的東西 ≤ 10，`/explore`／`/album` 索引頁 ≤ 12（`tools/audit-load.html` 的量法） |
@@ -70,7 +70,8 @@ app/
   js/views/explore-gold.js  金框明信片的金粉（APP.fx.gold）：畫面上標了 data-gold-aura 的金框卡，邊緣一直散出金粉，捲動、拖面板、換頁時帶著慣性跟著飄
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、路線列表／詳情
   js/views/explore-unlock.js 抵達與翻卡（/unlock）
-  js/views/album.js         收藏（摘要式＋X4 六角章）、明信片子頁、全部獎章、明信片（?v=第幾次）、獎章、城市足跡、每日回顧、週回顧、長輩圖
+  js/views/album.js         收藏（數據摘要＋X4 六角章）、明信片子頁、全部獎章、明信片（?v=第幾次）、獎章、城市足跡、週回顧、長輩圖
+  js/views/album-memory.js  回憶卡：到訪地點模板、可選本機照片與心情、一鍵製作並保存；同名 CSS
   js/views/album-family.js  傳到 LINE 給家人、家人的回應（示意）：/line、/family/:id、APP.family（樣式在 css/views/album-family.css）
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore-face.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，由 sw 在執行期 cache-first 存（看過一次離線也有），載不到時卡面退回照片＋SVG 濾鏡
@@ -206,7 +207,7 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   `state:change` 由 `APP.state` 自己發（見上），統計、設定開關、demo 面板靠它更新（底欄不聽這些事件，也沒有小紅點）。
 - id 認不得的 `trip`／`dropoff`（舊版資料、手改）：`APP.ride.trip` 讀的時候一律當作沒有行程（任何畫面都一樣）；`/ride`、`/trip`、`/trip/done` 的 mount 與 `arrive()` 再真的清掉，不會卡住叫車。
 - 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`rideVia`、`rideRound`、`cardStyle`、`cardMarks`、`visits`、`shares`、`replies`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`、`demoDate`）與 `STATE.settings`。
-- 每日回顧結束時用 `APP.state.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情；照片留在私人回顧頁。
+- 回憶卡透過 `APP.state.setToday` 寫 `today.memoryCards`；日期保存在每張卡上，收藏首頁顯示保存張數。照片只保存在本機，不上傳。
 
 ### 3.4 格式與公式（不准手寫數字）
 ```js
@@ -435,8 +436,8 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/line` | 長輩的手機：LINE「家人」群組（示意）。傳出去的明信片（最近三次，最新在下；`?share=<id>` 對準那一次）、誰喜歡（寫名字）、留言；「看看子女收到的樣子（示意）」→ `/family/<card>?share=<id>` | null | 新（參考 `elder.html`、`vision-family-a.html`） | album（album-family.js） |
 | `/family/:id` | 子女的手機：在 LINE 裡點開那張明信片（示意）：喜歡、三句快速回覆、自己打一句；`?share` 沒給或對不上用這張卡最近的一次，沒傳過是空狀態 | null | 新（參考 `vision-family-a／b.html`） | album（album-family.js） |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
-| `/footprint` | 城市足跡（真實地圖＋霧、覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |
-| `/lookback` | 今天的回顧：單頁當日里程、可選照片與心情；明確儲存後返回收藏（只有你） | null | `lookback.html` | album |
+| `/footprint` | 城市足跡（真實道路留白、已訪非道路區域上色，覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |
+| `/lookback` | 回憶卡：左右滑動到訪地點模板，可加自己的照片與心情，一鍵製作保存 | null | `lookback.html` | album-memory |
 | `/week` | 週回顧：七日里程圖、期間內收卡、分享（不顯示步數或比較排名） | album | `week.html` | album |
 | `/elder` | 長輩圖（`?card=<id>` 把那張排第一並預選） | album | `elder.html` | album |
 | `/settings` | 遊喜樂設定（隱私開關、重設、demo 工具） | null | `settings.html` | system |
@@ -450,7 +451,11 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 
 ## 9. 桌機／手機
 
-**收藏整理（2026-09-29）**：首頁只做明信片、私人回顧、週摘要、地理足跡與獎章索引，移除重複累積統計。今日距離讀 `MOCK.LOOKBACK.km`；週距離沿用固定示意週期，舊 `HEALTH_STEPS` 僅為唯讀示意資料轉換來源，`weekStats().now.days[].km` 提供公里，介面不顯示或另存步數。照片／心情選擇先留在頁面，只有 `save-lookback` 透過 `APP.state.setToday` 儲存；直接返回不更動記錄。足跡維持原地理範圍與覆蓋公式，配色僅在 app 覆寫。
+**回憶卡（2026-09-29 追加）**：`js/views/album-memory.js` 與同名 CSS 負責 `/lookback`，沿用深藍底與完整明信片的視覺。`APP.album.memory.templates()` 優先取今天到訪地點；當日沒有記錄時，明示改用最近到訪地點。左右滑動模板，可選本機照片與三種心情，只有「做成我的卡」一個主要動作，沒有下拉選單或提示詞面板。照片在本機縮至長邊最多 1000 px、JPEG 壓縮後預覽；心情對應內部構圖提示、色調與短句。這是構圖示意，尚未接 AI，必須明示。
+
+按製作才透過 `APP.state.setToday` 寫 `STATE.all.today.memoryCards`（陣列，每張 `{id, cardId, mood, prompt, date, photo?}`，photo 是本機 data URL）；核對 localStorage 實際寫入，容量不足則還原並提示，不誤報成功。卡片不計入抵達明信片、獎章、里程。重開保留原卡日期／照片／心情，清除足跡時隨 today 清空。`APP.album.memory` 提供 `places/templates/cards/draft/moods/save`。空收藏沒有製作按鈕，導回探索。沒有上傳、API key 或模擬下載成功。週頁只保留回顧和分享。
+
+**收藏整理（2026-09-29）**：首頁三格以回憶卡張數、週里程、城市點亮比例為主，圖標分別對應製卡、里程與地圖。`ResizeObserver` 依三格最窄可用空間統一數字字級，離頁清理。獎章保留主章＋小章原設計並放大。週距離沿用固定示意週期，舊 `HEALTH_STEPS` 僅為唯讀示意資料轉換來源，`weekStats().now.days[].km` 提供公里，介面不顯示或另存步數。足跡維持原地理範圍與覆蓋公式，灰色未訪區與品牌色已訪區都放在道路下方，道路保持清楚；繪製邏輯僅在 app 覆寫。
 
 - 桌機：寬度 ≥ 560，而且（有 hover 加細指標，或高度 ≥ 700）——手機橫放（844×390、觸控）算手機。JS 的 `DESKTOP_MQ` 與 app.css 的兩個 `@media` 要同步。沿用 `.stage > .device` 手機外框（390×844），縮放量的是 `.stage` 實際的 padding；狀態列顯示真實時間；旁邊 `#demo-panel`（高度上限＝縮放後外框的高度，太高就在面板裡捲）。
 - 手機（其餘）：`.device` 滿版（100vw × 100dvh，無圓角、無瀏海、隱藏原型狀態列與 home indicator），`#demo-panel` 隱藏。

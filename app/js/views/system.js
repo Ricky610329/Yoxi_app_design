@@ -144,9 +144,8 @@ function push(opt) {
     body = (M.TODAY && M.TODAY.hook) || '';
     to = '/ride?mode=explore&area=' + encodeURIComponent((M.TODAY && M.TODAY.id) || 'glass-kiln');
   } else {
-    const L = M.LOOKBACK || { km: 0, places: [] };
-    title = '今天走了 ' + L.km + ' km，經過 ' + (L.places || []).length + ' 個地方';
-    body = '點開看看今天多了哪一張';
+    title = '把去過的地方，做成一張回憶卡';
+    body = '選一個地方，讓心情決定畫面';
     to = '/lookback';
   }
 
@@ -453,7 +452,7 @@ APP.view('settings', {
           '<div class="sec"><h2 class="sec__t sec__t--sm">什麼時候找你</h2></div>' +
           '<div class="card">' +
             switchRow('sun', '早上的地方', PUSH_TIME.am + '　今天的地方', 'pushAm') +
-            switchRow('steps', '晚上的回顧', PUSH_TIME.pm + '　今天走過的路', 'pushPm') +
+            switchRow('postcard', '回憶卡提醒', PUSH_TIME.pm + '　把去過的地方留成卡', 'pushPm') +
           '</div>' +
           '<div class="card card--pad sys-set__note">' +
             '<b>一天最多兩則。</b>我們不會為了讓你多打開 app 而多傳訊息給你。' +

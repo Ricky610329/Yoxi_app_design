@@ -37,7 +37,7 @@ const repo = (rel) => fileURLToPath(new URL('../../../' + rel, import.meta.url))
 /* views 的載入順序＝index.html（名字就是 app/js/views/<名字>.js）。
    node 只載得動沒有 DOM 的原型檔：icons／shell／interact／hsmap 不載（SHELL、INTERACT、HSMAP 是空物件），
    views 只跑到「註冊畫面＋匯出 APP.<區塊>」為止，render／mount 不在這裡測。 */
-export const VIEW_ORDER = ['system', 'ride', 'explore-fx', 'explore-fest', 'explore-cards', 'explore-verse', 'explore-face', 'explore-gold', 'explore', 'explore-unlock', 'album', 'album-family'];
+export const VIEW_ORDER = ['system', 'ride', 'explore-fx', 'explore-fest', 'explore-cards', 'explore-verse', 'explore-face', 'explore-gold', 'explore', 'explore-unlock', 'album', 'album-memory', 'album-family'];
 
 /* 固定時間的 Date：new Date()／Date.now() 都是 at，其餘（帶參數的 new Date、Date.parse）照舊 */
 export function fixedDate(at) {
