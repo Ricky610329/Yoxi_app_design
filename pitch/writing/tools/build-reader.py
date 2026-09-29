@@ -22,8 +22,13 @@ DOCS = [
     ('verification.md', 'verification', '紀錄', '驗證與交接'),
     ('notes/optional-card-ideas.md', 'archive', '備存', '早期討論'),
 ]
-DIAGRAMS = {'architecture': ['architecture'], 'flow': ['flow', 'sequence'],
+DIAGRAMS = {'architecture': ['service-layers', 'architecture', 'expo-stack', 'evolution'],
+            'flow': ['flow', 'share-boundary', 'sequence'],
             'ai': ['ai-pipeline'], 'archive': ['archived-cards']}
+DIAGRAM_TITLES = {'service-layers': '服務責任分層', 'architecture': '完整服務架構',
+    'expo-stack': 'Expo 行動 demo 技術棧', 'evolution': '從原型到正式接入',
+    'flow': 'App 內外使用流程', 'share-boundary': '分享與資料邊界',
+    'sequence': '核心服務時序', 'ai-pipeline': 'AI 內容產線', 'archived-cards': '早期機率卡討論備存'}
 LINKS = {name: ident for name, ident, _, _ in DOCS}
 md = MarkdownIt('commonmark', {'html': False, 'breaks': True}).enable('table')
 
@@ -45,10 +50,11 @@ def render_doc(filename, ident):
             svg = ET.parse(ROOT / uri).getroot()
             dimensions = f'width="{svg.attrib["width"]}" height="{svg.attrib["height"]}"'
             token.type = 'html_block'
-            token.content = (f'<figure class="diagram"><a href="{uri}" target="_blank" '
+            title = DIAGRAM_TITLES[asset]
+            token.content = (f'<figure class="diagram" id="diagram-{asset}"><a href="{uri}" target="_blank" '
                 f'rel="noopener" aria-label="另開分頁放大圖表">'
-                f'<img src="{uri}" {dimensions} alt="{escape(asset)}：架構或流程圖，文字版見下方" loading="lazy"></a>'
-                '<figcaption>點圖可另開分頁放大；流程仍以正文說明為準。</figcaption></figure>'
+                f'<img src="{uri}" {dimensions} alt="{escape(title)}，文字版見下方" loading="lazy"></a>'
+                f'<figcaption>{escape(title)} · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure>'
                 f'<details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary>'
                 f'<pre><code>{escape(token.content)}</code></pre></details>')
         for child in token.children or []:
@@ -106,7 +112,9 @@ page = '''<!doctype html>
     <div class="eyebrow">TECHNICAL PROPOSAL / 閱讀版</div>
     <h1>把出行的體驗，<br>留下成為一張明信片。</h1>
     <p class="hero-lead">從方案架構與流程，到 AI 工具、內容成本與實作佐證。<br>沿用既有接送能力，說清楚新增服務如何運作。</p>
-    <div class="hero-flow" aria-label="服務主流程"><span>選景點</span><b>→</b><span>接送與探索</span><b>→</b><span>保證收卡</span><b>→</b><span>分享與累積</span></div>
+    <div class="hero-flow" aria-label="服務主流程"><span>選景點與接送</span><b>→</b><span>App 收卡與累積</span><b>→</b><span>自選分享到 LINE</span></div>
+    <p class="share-note">家人看圖與聊天留在 LINE，子女資料不回傳 App。</p>
+    <div class="diagram-nav" aria-label="圖解導覽"><span>先看圖解</span><a href="#diagram-service-layers">服務分層</a><a href="#diagram-share-boundary">分享邊界</a><a href="#diagram-expo-stack">Expo 技術棧</a><a href="#diagram-evolution">正式接入路徑</a></div>
     <div class="toolbar"><button type="button" id="print-page">列印 / 存成 PDF</button><button type="button" id="font-size" aria-pressed="false">放大字體</button><span>Ctrl / ⌘ + F 搜尋全文</span></div>
   </header>
   __ARTICLES__

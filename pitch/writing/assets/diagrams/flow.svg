@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1410" viewBox="0 0 1120 1410" role="img" aria-labelledby="title desc" data-source="pitch/writing/02-flow-design.md" data-source-sha256="2d9e96c988ba866e3c8673ffc9074d9b7850b3866e49618a73040e4125bba6cd">
-  <title id="title">遊喜樂主要體驗流程</title>
-  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 2d9e96c988ba866e3c8673ffc9074d9b7850b3866e49618a73040e4125bba6cd</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="1690" viewBox="0 0 980 1690" role="img" aria-labelledby="title desc" data-source="pitch/writing/02-flow-design.md" data-source-sha256="5f4f704e81b0681f47e35465ec8e6f056384bba94f2aa16b6e7e6ac89c2b00d7">
+  <title id="title">遊喜樂使用流程</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 5f4f704e81b0681f47e35465ec8e6f056384bba94f2aa16b6e7e6ac89c2b00d7</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
     <style>
@@ -13,34 +13,34 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#FFFFFF"/>
-<text class="" text-anchor="start" font-size="24" font-weight="700"><tspan x="70" y="38.0">主要體驗流程</tspan></text>
-  <path class="edge" d="M 290.0 136 V 155.5 H 290.0 V 175"/>
-  <path class="edge" d="M 290.0 241 V 260.5 H 290.0 V 280"/>
-  <path class="edge" d="M 290.0 346 V 365.5 H 290.0 V 385"/>
-  <path class="edge" d="M 290.0 451 V 470.5 H 290.0 V 490"/>
-  <path class="edge" d="M 290.0 556 V 575.5 H 290.0 V 595"/>
-  <path class="edge" d="M 290.0 677 V 698.5 H 290.0 V 720"/>
-  <path class="edge" d="M 290.0 802 V 823.5 H 290.0 V 845"/>
-  <path class="edge" d="M 290.0 927 V 948.5 H 290.0 V 970"/>
-  <path class="edge" d="M 290.0 1036 V 1055.5 H 290.0 V 1075"/>
-  <path class="edge" d="M 290.0 1141 V 1160.5 H 290.0 V 1180"/>
-  <path class="edge" d="M 290.0 1246 V 1265.5 H 290.0 V 1285"/>
-  <path class="edge" d="M 480 886.0 H 552.5 V 886.0 H 625"/>
-  <path class="edge" d="M 480 523.0 H 552.5 V 523.0 H 625"/>
-  <path class="edge" d="M 835.0 556 V 575.5 H 835.0 V 595"/>
-  <rect class="node" x="100" y="70" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="109.0">長輩選定 / 被推薦景點</tspan></text>
-  <rect class="node" x="100" y="175" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="214.0">確認上下車點、去回程與候車安排</tspan></text>
-  <rect class="node" x="100" y="280" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="319.0">本人確認費用並叫車</tspan></text>
-  <rect class="node" x="100" y="385" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="424.0">去程接送</tspan></text>
-  <rect class="node" x="100" y="490" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="529.0">抵達景點，司機依約候車</tspan></text>
-  <rect class="node" x="100" y="595" width="380" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="629.5">100 m 規劃範圍內探索</tspan><tspan x="290.0" y="654.5">定位與行程證據驗證</tspan></text>
-  <rect class="node" x="100" y="720" width="380" height="82" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="754.5">取得當次明信片</tspan><tspan x="290.0" y="779.5">符合條件保證可收錄</tspan></text>
-  <rect class="node" x="100" y="845" width="380" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="879.5">依規則組合</tspan><tspan x="290.0" y="904.5">常態、節慶、首訪、里程</tspan></text>
-  <rect class="node" x="100" y="970" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="1009.0">查看卡片、選擇分享到 LINE</tspan></text>
-  <rect class="node" x="100" y="1075" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="1114.0">子女開啟指定卡片分享頁</tspan></text>
-  <rect class="node" x="100" y="1180" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="1219.0">在分享頁按讚 / 留言</tspan></text>
-  <rect class="node" x="100" y="1285" width="380" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="290.0" y="1324.0">長輩查看回應</tspan></text>
-  <rect class="node" x="625" y="845" width="420" height="82" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="835.0" y="892.0">圖鑑累積、公開里程碑樣式資格</tspan></text>
-  <rect class="node" x="625" y="490" width="420" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="835.0" y="529.0">使用者確認回程</tspan></text>
-  <rect class="node" x="625" y="595" width="420" height="66" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="835.0" y="634.0">回程接送與結算</tspan></text>
+<text class="" text-anchor="start" font-size="25" font-weight="700"><tspan x="35" y="35.0">使用流程：收藏與回程不等待分享結果</tspan></text>
+  <rect class="group" x="30" y="55" width="920" height="905"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="54" y="91.0">App 內：出行與收藏</tspan></text>
+  <rect class="group" x="30" y="1250" width="920" height="410"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="54" y="1286.0">App 外：LINE，不回傳聊天資料</tspan></text>
+  <path class="edge" d="M 305.0 200 V 222.5 H 305.0 V 245"/>
+  <path class="edge" d="M 305.0 315 V 337.5 H 305.0 V 360"/>
+  <path class="edge" d="M 305.0 430 V 452.5 H 305.0 V 475"/>
+  <path class="edge" d="M 305.0 545 V 567.5 H 305.0 V 590"/>
+  <path class="edge" d="M 305.0 672 V 696.0 H 305.0 V 720"/>
+  <path class="edge" d="M 520 761 H 565"/>
+  <path class="edge" d="M 305.0 802 V 826.0 H 305.0 V 850"/>
+  <path class="edge" d="M 520 510 H 565"/>
+  <path class="edge dashed" d="M 305 920 V 1080"/>
+  <path class="edge" d="M 490.0 1385 V 1407.5 H 490.0 V 1430"/>
+  <path class="edge" d="M 490.0 1512 V 1536.0 H 490.0 V 1560"/>
+  <path class="edge" d="M 490.0 1162 V 1238.5 H 490.0 V 1315"/>
+  <rect class="node" x="90" y="130" width="430" height="70" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="171.0">選定 / 被推薦景點</tspan></text>
+  <rect class="node" x="90" y="245" width="430" height="70" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="286.0">確認上下車點與候車安排</tspan></text>
+  <rect class="node" x="90" y="360" width="430" height="70" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="401.0">本人確認費用並叫車</tspan></text>
+  <rect class="node" x="90" y="475" width="430" height="70" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="516.0">去程接送，抵達依約候車</tspan></text>
+  <rect class="node" x="90" y="590" width="430" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="624.5">100 m 規劃範圍探索</tspan><tspan x="305.0" y="649.5">定位與行程證據驗證</tspan></text>
+  <rect class="node" x="90" y="720" width="430" height="82" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="754.5">保證取得當次明信片</tspan><tspan x="305.0" y="779.5">固定規則組合款式</tspan></text>
+  <rect class="node" x="565" y="720" width="335" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="732.5" y="767.0">保存圖鑑、計算里程碑資格</tspan></text>
+  <rect class="node" x="90" y="850" width="430" height="70" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="305.0" y="891.0">預覽並選擇分享</tspan></text>
+  <rect class="node" x="565" y="475" width="335" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="732.5" y="509.5">本人選擇回程</tspan><tspan x="732.5" y="534.5">接送與結算</tspan></text>
+  <rect class="node" x="290" y="1080" width="400" height="82" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="490.0" y="1114.5">系統分享面板</tspan><tspan x="490.0" y="1139.5">自行選擇 LINE</tspan></text>
+  <rect class="node" x="290" y="1315" width="400" height="70" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="490.0" y="1356.0">長輩選對象並傳送圖片</tspan></text>
+  <rect class="node" x="290" y="1430" width="400" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="490.0" y="1477.0">子女看圖、回話或傳貼圖</tspan></text>
+  <rect class="node" x="290" y="1560" width="400" height="70" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="490.0" y="1601.0">長輩在 LINE 看回應</tspan></text>
+  <text class="" text-anchor="start" font-size="15" font-weight="700"><tspan x="55" y="1000.0">分享出口</tspan></text>
+  <text class="" text-anchor="start" font-size="15" font-weight="500"><tspan x="55" y="1035.0">圖片交給系統面板後，App 不知道收件人、已讀或回覆。</tspan></text>
 </svg>

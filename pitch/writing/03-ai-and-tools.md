@@ -10,6 +10,8 @@
 
 AI 輸出不直接變成產品事實。地方歷史、開放資訊與圖像先經人工檢查；推薦只能從上架地方庫選取，不能編造景點、車資或優惠。符合到訪條件即取得卡片，款式與里程碑資格由公開的伺服器規則處理，不交由語言模型自由判斷。
 
+手機端的 Expo／React Native、定位、圖片輸出與分享 SDK 分工見 [01 章技術棧](01-solution-architecture.md)。它們負責讓內容可使用、可帶出去分享；AI 只取得已授權且必要的內容與己方事件，不接收 LINE 私聊或子女回覆，也不以家人互動推斷推薦偏好。
+
 ## 工具選用與分工
 
 | 工作 | 建議工具／技術 | 選用原因 | 人工或程式負責的部分 |
@@ -52,6 +54,8 @@ flowchart LR
 成本比較放在 [04 章](04-cost-and-resources.md)：省下的是起稿與整理時間，審稿、重寫、查證與圖片淘汰仍需計入。不宣稱 AI 能完全替代城市編輯。
 
 ## 圖片：已有 PoC 與正式候選怎麼區分
+
+整合後的 [回憶卡程式](../../app/js/views/album-memory.js) 已能將到訪地方、自選照片與心情組合成模板示意，照片在本機處理及保存；這仍不是即時 AI 生圖或正式 LINE 回傳服務。既有圖庫與個人組卡是兩層能力，展示時分開說明。
 
 repo 已保存 DreamShaper 8＋ControlNet Canny 製作的部分卡面；產生器讀取授權照片，將輪廓資訊與圖生圖流程結合。這能約束構圖，但仍可能出錯，不能保證地標精確。依據：[生成腳本](../../app/tools/gen-postcards.py)、[參數清單](../../app/assets/postcards/index.json)、[素材說明](../../app/assets/postcards/README.md)。模型來源：[DreamShaper 8](https://huggingface.co/Lykon/dreamshaper-8)、[ControlNet Canny](https://huggingface.co/lllyasviel/control_v11p_sd15_canny)（查閱 2026-09-29）。
 

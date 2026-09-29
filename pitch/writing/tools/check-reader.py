@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(tempfile.gettempdir()) / 'yoxi-writing-reader-check'
@@ -34,9 +35,16 @@ class Links(HTMLParser):
 
 parser = Links()
 parser.feed((ROOT / 'index.html').read_text(encoding='utf-8'))
+expected_diagrams = sum(len(re.findall(r'^```mermaid\s*$', f.read_text(encoding='utf-8'), re.M))
+    for folder in [ROOT, ROOT / 'notes'] for f in folder.glob('*.md'))
 errors = []
 if len(parser.ids) != len(set(parser.ids)):
     errors.append('Duplicate HTML ids')
+for svg in (ROOT / 'assets' / 'diagrams').glob('*.svg'):
+    words = ''.join(ET.parse(svg).getroot().itertext())
+    for forbidden in ['任務', '完成', '達成', '挑戰', '每日']:
+        if forbidden in words:
+            errors.append('Diagram wording: ' + svg.name + ': ' + forbidden)
 for uri in parser.links:
     parsed = urlsplit(uri)
     if parsed.scheme:
@@ -79,7 +87,13 @@ try {
       result.activeNav = d.querySelector('nav a[aria-current="location"]').hash;
       result.imagesLoaded = Array.from(d.images).every(function(i) {return i.complete && i.naturalWidth > 0;});
       result.externalResources = w.performance.getEntriesByType('resource').filter(function(r) {return /^https?:/.test(r.name);}).map(function(r) {return r.name;});
-      document.getElementById('result').textContent = JSON.stringify(result);
+      d.querySelector('.diagram-nav a[href="#diagram-expo-stack"]').click();
+      setTimeout(function() {
+        var top = d.getElementById('diagram-expo-stack').getBoundingClientRect().top;
+        result.diagramShortcut = w.location.hash === '#diagram-expo-stack' && top >= 0 && top <= 160;
+        result.diagramNav = d.querySelector('nav a[aria-current="location"]').hash;
+        document.getElementById('result').textContent = JSON.stringify(result);
+      }, 200);
     }, 800);
   }, 200);
 } catch (e) {document.getElementById('result').textContent = JSON.stringify({error:String(e)});}
@@ -103,9 +117,10 @@ for name, width, height in [('desktop', 1440, 1000), ('mobile', 390, 844)]:
             raise SystemExit('Browser did not report: ' + name)
         result = json.loads(unescape(match.group(1)))
         report['views'][name] = result
-        if (result.get('error') or result.get('chapters') != 8 or result.get('diagrams') != 5
+        if (result.get('error') or result.get('chapters') != 8 or result.get('diagrams') != expected_diagrams
             or result.get('initialOverflow') or result.get('largeOverflow')
-            or not all(result.get(x) for x in ['fontToggle','printButton','archiveOpen','imagesLoaded'])
+            or not all(result.get(x) for x in ['fontToggle','printButton','archiveOpen','imagesLoaded','diagramShortcut'])
+            or result.get('diagramNav') != '#architecture'
             or result.get('activeNav') != '#architecture' or result.get('externalResources')):
             errors.append(name + ': ' + json.dumps(result, ensure_ascii=False))
 (OUT / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')

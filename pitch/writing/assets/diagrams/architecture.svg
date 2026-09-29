@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1590" height="1180" viewBox="0 0 1590 1180" role="img" aria-labelledby="title desc" data-source="pitch/writing/01-solution-architecture.md" data-source-sha256="eeccddb48cdc2321b28d3690e7689232d8a47c81f2badb3bfff2e72c9130c3c0">
-  <title id="title">遊喜樂服務架構</title>
-  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 eeccddb48cdc2321b28d3690e7689232d8a47c81f2badb3bfff2e72c9130c3c0</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1150" height="1325" viewBox="0 0 1150 1325" role="img" aria-labelledby="title desc" data-source="pitch/writing/01-solution-architecture.md" data-source-sha256="89e73a561f99e3d811742999867bded3adbe4f629dde868bf8d40514f31cb68d">
+  <title id="title">遊喜樂完整服務架構</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 89e73a561f99e3d811742999867bded3adbe4f629dde868bf8d40514f31cb68d</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
     <style>
@@ -13,56 +13,55 @@
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#FFFFFF"/>
-<rect class="group" x="25" y="55" width="410" height="405"/>
-  <text class="" text-anchor="start" font-size="22" font-weight="700"><tspan x="50" y="90.0">使用者端</tspan></text>
-  <rect class="group" x="475" y="30" width="1090" height="865"/>
-  <text class="" text-anchor="start" font-size="22" font-weight="700"><tspan x="500" y="68.0">遊喜樂新增服務</tspan></text>
-  <rect class="group" x="25" y="950" width="1540" height="200"/>
-  <text class="" text-anchor="start" font-size="22" font-weight="700"><tspan x="50" y="988.0">既有／外部服務：接法待確認</tspan></text>
-  <path class="edge" d="M 405 163.0 H 460.0 V 138.0 H 515"/>
-  <path class="edge" d="M 405 373.0 H 460.0 V 138.0 H 515"/>
-  <path class="edge" d="M 405 268.0 H 460.0 V 138.0 H 515"/>
-  <path class="edge dashed" d="M 515 138 H 455 V 925 H 220 V 1020"/>
-  <path class="edge dashed" d="M 230.0 201 V 610.5 H 610.0 V 1020"/>
-  <path class="edge" d="M 765 138.0 H 795.0 V 113.0 H 825"/>
-  <path class="edge" d="M 765 138.0 H 795.0 V 218.0 H 825"/>
-  <path class="edge" d="M 765 138.0 H 795.0 V 323.0 H 825"/>
-  <path class="edge" d="M 765 138.0 H 795.0 V 428.0 H 825"/>
-  <path class="edge dashed" d="M 610 1020 V 925 H 800 V 218 H 825"/><rect class="label-bg" x="749.0" y="888" width="102" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="800" y="905.0">授權行程事件</tspan></text>
-  <path class="edge" d="M 1115 218.0 H 1162.5 V 173.0 H 1210"/>
-  <path class="edge" d="M 1115 113.0 H 1162.5 V 173.0 H 1210"/>
-  <path class="edge" d="M 1115 323.0 H 1162.5 V 173.0 H 1210"/>
-  <path class="edge" d="M 1115 428.0 H 1162.5 V 173.0 H 1210"/>
-  <path class="edge" d="M 1115 218.0 H 1162.5 V 338.0 H 1210"/>
-  <path class="edge" d="M 1115 323.0 H 1162.5 V 338.0 H 1210"/>
-  <path class="edge" d="M 795 603.0 H 835.0 V 603.0 H 875"/>
-  <path class="edge" d="M 1155 603.0 H 1195.0 V 603.0 H 1235"/>
-  <path class="edge" d="M 1375 641 V 680 H 655 V 641"/>
-  <path class="edge" d="M 655 565 V 500 H 1545 V 173 H 1530"/>
-  <path class="edge" d="M 795 603 V 690 H 1550 V 338 H 1530"/>
-  <path class="edge dashed" d="M 230 201 V 925 H 1005 V 1020"/>
-  <path class="edge dashed" d="M 1005 1020 V 925 H 455 V 268 H 405"/><rect class="label-bg" x="526.0" y="896" width="68" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="560" y="913.0">分享連結</tspan></text>
-  <path class="edge dashed" d="M 1115 428 H 1175 V 925 H 1380 V 1020"/>
-  <path class="edge" d="M 640.0 176 V 455.5 H 1015.0 V 735"/>
-  <path class="edge" d="M 1015.0 641 V 688.0 H 1015.0 V 735"/>
-  <rect class="node" x="55" y="125" width="350" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="230.0" y="156.5">yoxi App 新增體驗</tspan><tspan x="230.0" y="181.5">選景點、接送狀態、收卡、收藏</tspan></text>
-  <rect class="node" x="55" y="230" width="350" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="230.0" y="261.5">子女分享頁</tspan><tspan x="230.0" y="286.5">查看指定明信片、回應</tspan></text>
-  <rect class="node" x="55" y="335" width="350" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="230.0" y="366.5">競賽行動 demo 候選</tspan><tspan x="230.0" y="391.5">Expo / React Native</tspan></text>
-  <rect class="node" x="515" y="100" width="250" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="640.0" y="131.5">Cloud Run API</tspan><tspan x="640.0" y="156.5">身分、權限、限流、版本</tspan></text>
-  <rect class="node" x="825" y="75" width="290" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="970.0" y="106.5">地方與推薦模組</tspan><tspan x="970.0" y="131.5">已審內容、偏好、交通條件</tspan></text>
-  <rect class="node" x="825" y="180" width="290" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="970.0" y="211.5">到訪與卡片模組</tspan><tspan x="970.0" y="236.5">定位驗證、固定款式、去重</tspan></text>
-  <rect class="node" x="825" y="285" width="290" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="970.0" y="316.5">分享與互動模組</tspan><tspan x="970.0" y="341.5">分享權限、回應、撤回</tspan></text>
-  <rect class="node" x="825" y="390" width="290" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="970.0" y="421.5">圖鑑與里程碑模組</tspan><tspan x="970.0" y="446.5">累積紀錄、樣式資格</tspan></text>
-  <rect class="node" x="1210" y="135" width="320" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1370.0" y="166.5">Firestore 候選</tspan><tspan x="1370.0" y="191.5">內容版本、收藏、事件與權限</tspan></text>
-  <rect class="node" x="1210" y="300" width="320" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1370.0" y="331.5">Cloud Storage 候選</tspan><tspan x="1370.0" y="356.5">已審卡面、分享成品、素材出處</tspan></text>
-  <rect class="node" x="515" y="565" width="280" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="655.0" y="596.5">內容審稿與資產管理</tspan><tspan x="655.0" y="621.5">人工核准、更新與撤架</tspan></text>
-  <rect class="node" x="875" y="565" width="280" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1015.0" y="596.5">排程 / 佇列 / 背景工作</tspan><tspan x="1015.0" y="621.5">生成、重試、圖片輸出</tspan></text>
-  <rect class="node" x="1235" y="565" width="280" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1375.0" y="596.5">Vertex AI 候選</tspan><tspan x="1375.0" y="621.5">Gemini 文字 / 圖像模型</tspan></text>
-  <rect class="node" x="875" y="735" width="280" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1015.0" y="766.5">監控與分析</tspan><tspan x="1015.0" y="791.5">錯誤、成本、去識別化事件</tspan></text>
-  <rect class="node" x="70" y="1020" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="220.0" y="1064.0">yoxi 帳號與登入</tspan></text>
-  <rect class="node" x="445" y="1020" width="330" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="610.0" y="1051.5">行程、派車、車資與支付</tspan><tspan x="610.0" y="1076.5">來回候車供給待企業核可</tspan></text>
-  <rect class="node" x="855" y="1020" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1005.0" y="1051.5">LINE 分享入口</tspan><tspan x="1005.0" y="1076.5">使用者自行確認傳送</tspan></text>
-  <rect class="node" x="1230" y="1020" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="18" font-weight="500"><tspan x="1380.0" y="1051.5">Points / 促銷</tspan><tspan x="1380.0" y="1076.5">非最小試點必要條件</tspan></text>
-  <line x1="520" y1="860" x2="600" y2="860" class="edge dashed" marker-end="none"/>
-  <text class="" text-anchor="start" font-size="14" font-weight="500"><tspan x="618" y="866.0">虛線：既有／外部介接（含授權行程與分享連結）</tspan></text>
+<text class="" text-anchor="start" font-size="25" font-weight="700"><tspan x="30" y="32.0">完整服務架構：分享在裝置端交接</tspan></text>
+  <rect class="group" x="25" y="50" width="710" height="350"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="49" y="86.0">長輩行動端</tspan></text>
+  <rect class="group" x="775" y="50" width="350" height="350"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="799" y="86.0">App 外：由使用者自行操作</tspan></text>
+  <rect class="group" x="25" y="435" width="1100" height="575"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="49" y="471.0">遊喜樂新增服務</tspan></text>
+  <rect class="group" x="25" y="1080" width="1100" height="170"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="49" y="1116.0">既有 yoxi：接法待企業確認</tspan></text>
+  <path class="edge" d="M 355 138 H 380 V 420 H 585 V 485"/>
+  <path class="edge" d="M 205 281 V 420 H 585 V 485"/>
+  <path class="edge" d="M 355 138 H 382 V 188 H 410"/>
+  <path class="edge" d="M 355 243 H 382 V 188 H 410"/>
+  <path class="edge dashed" d="M 710 188 H 755 V 138 H 810"/>
+  <path class="edge" d="M 952.5 176 V 190.5 H 952.5 V 205"/>
+  <path class="edge" d="M 952.5 281 V 295.5 H 952.5 V 310"/>
+  <path class="edge dashed" d="M 435 523 H 35 V 1060 H 205 V 1135"/>
+  <path class="edge dashed" d="M 55 138 H 15 V 1050 H 585 V 1135"/>
+  <path class="edge" d="M 435 523 H 385 V 580 H 205 V 620"/>
+  <path class="edge" d="M 585.0 561 V 590.5 H 585.0 V 620"/>
+  <path class="edge" d="M 735 523 H 785 V 580 H 965 V 620"/>
+  <path class="edge dashed" d="M 585 1135 V 1060 H 1135 V 580 H 585 V 620"/><rect class="label-bg" x="879.0" y="1033" width="102" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="930" y="1050.0">授權行程事件</tspan></text>
+  <path class="edge" d="M 585 696 V 725 H 395 V 755"/>
+  <path class="edge" d="M 205 696 V 725 H 395 V 755"/>
+  <path class="edge" d="M 965 696 V 725 H 395 V 755"/>
+  <path class="edge" d="M 585 696 V 725 H 775 V 755"/>
+  <path class="edge" d="M 315 928.0 H 330.0 V 928.0 H 345"/>
+  <path class="edge" d="M 605 928.0 H 620.0 V 928.0 H 635"/>
+  <path class="edge" d="M 635 928 H 625 V 990 H 185 V 966"/>
+  <path class="edge" d="M 185 890 V 855 H 395 V 831"/>
+  <path class="edge" d="M 185 890 V 840 H 775 V 831"/>
+  <path class="edge dashed" d="M 1115 658 H 1135 V 1173 H 1115"/>
+  <path class="edge" d="M 735 523 H 1120 V 928 H 1115"/>
+  <path class="edge" d="M 475 890 V 860 H 1020 V 890"/>
+  <rect class="node" x="55" y="100" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="205.0" y="131.5">yoxi App 新增體驗</tspan><tspan x="205.0" y="156.5">景點、行程、收卡、收藏</tspan></text>
+  <rect class="node" x="55" y="205" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="205.0" y="236.5">獨立手機 demo 候選</tspan><tspan x="205.0" y="261.5">Expo / React Native</tspan></text>
+  <rect class="node" x="410" y="150" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="560.0" y="181.5">卡面輸出</tspan><tspan x="560.0" y="206.5">預覽、疊字、本機圖片</tspan></text>
+  <rect class="node" x="810" y="100" width="285" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="952.5" y="144.0">手機系統分享面板</tspan></text>
+  <rect class="node" x="810" y="205" width="285" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="952.5" y="249.0">LINE 選對象、傳圖片</tspan></text>
+  <rect class="node" x="810" y="310" width="285" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="952.5" y="341.5">子女看圖、家人聊天</tspan><tspan x="952.5" y="366.5">內容與身分不回傳 yoxi</tspan></text>
+  <rect class="node" x="435" y="485" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="585.0" y="516.5">Cloud Run API</tspan><tspan x="585.0" y="541.5">身分、權限、限流、版本</tspan></text>
+  <rect class="node" x="55" y="620" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="205.0" y="651.5">地方與推薦</tspan><tspan x="205.0" y="676.5">已審內容、偏好、交通條件</tspan></text>
+  <rect class="node" x="435" y="620" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="585.0" y="651.5">到訪與卡片</tspan><tspan x="585.0" y="676.5">定位驗證、固定規則、去重</tspan></text>
+  <rect class="node" x="815" y="620" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="965.0" y="651.5">圖鑑與里程碑</tspan><tspan x="965.0" y="676.5">累積紀錄、樣式資格</tspan></text>
+  <rect class="node" x="245" y="755" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="395.0" y="786.5">Firestore 候選</tspan><tspan x="395.0" y="811.5">內容版本、收藏、必要事件</tspan></text>
+  <rect class="node" x="625" y="755" width="300" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="775.0" y="786.5">Cloud Storage 候選</tspan><tspan x="775.0" y="811.5">已審圖庫與素材出處</tspan></text>
+  <rect class="node" x="55" y="890" width="260" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="185.0" y="921.5">內容管理</tspan><tspan x="185.0" y="946.5">人工核准與撤架</tspan></text>
+  <rect class="node" x="345" y="890" width="260" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="475.0" y="921.5">背景工作</tspan><tspan x="475.0" y="946.5">批次生成與重試</tspan></text>
+  <rect class="node" x="635" y="890" width="260" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="765.0" y="921.5">Vertex AI 候選</tspan><tspan x="765.0" y="946.5">文字與圖像模型</tspan></text>
+  <rect class="node" x="925" y="890" width="190" height="76" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="1020.0" y="921.5">監控與分析</tspan><tspan x="1020.0" y="946.5">錯誤、成本、使用事件</tspan></text>
+  <rect class="node" x="55" y="1135" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="205.0" y="1179.0">企業帳號與登入</tspan></text>
+  <rect class="node" x="435" y="1135" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="585.0" y="1166.5">行程、派車、車資與支付</tspan><tspan x="585.0" y="1191.5">來回候車供給待核可</tspan></text>
+  <rect class="node" x="815" y="1135" width="300" height="76" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="965.0" y="1166.5">Points / 促銷</tspan><tspan x="965.0" y="1191.5">非試點必要條件</tspan></text>
+  <line x1="55" y1="1290" x2="135" y2="1290" class="edge dashed" marker-end="none"/>
+  <text class="" text-anchor="start" font-size="15" font-weight="500"><tspan x="155" y="1296.0">虛線：跨平台移交或企業接點；LINE 區域沒有回傳線</tspan></text>
 </svg>

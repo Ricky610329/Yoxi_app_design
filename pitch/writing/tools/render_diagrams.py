@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the five pitch/writing Mermaid blocks as dependency-free SVG files.
+"""Render the pitch/writing Mermaid blocks as dependency-free SVG files.
 
 The layouts are intentionally curated for the current diagrams.  Every source
 block is SHA-256 pinned: when prose authors change a Mermaid block this script
@@ -33,17 +33,26 @@ WHITE = "#FFFFFF"
 CREAM = "#FBEBDF"
 FONT = "Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif"
 
+# name: (source, Mermaid block index, pinned SHA-256, curated layout)
 SPECS = {
-    "architecture.svg": ("pitch/writing/01-solution-architecture.md", 0,
-                         "eeccddb48cdc2321b28d3690e7689232d8a47c81f2badb3bfff2e72c9130c3c0"),
+    "service-layers.svg": ("pitch/writing/01-solution-architecture.md", 0,
+                           "d47185453750ca4d5db548a13411d92e444afca4286bbc38d882af45340bff74", "service-layers"),
+    "architecture.svg": ("pitch/writing/01-solution-architecture.md", 1,
+                         "89e73a561f99e3d811742999867bded3adbe4f629dde868bf8d40514f31cb68d", "architecture"),
+    "expo-stack.svg": ("pitch/writing/01-solution-architecture.md", 2,
+                       "5da9f3032d005d47d0c260c060b6ae9926264d6108914c641a150b19932291b5", "expo-stack"),
+    "evolution.svg": ("pitch/writing/01-solution-architecture.md", 3,
+                      "49ebf71bae09bf3409fabc5a33c07af691dc153015580cff2a6238e960b90f4d", "evolution"),
     "flow.svg": ("pitch/writing/02-flow-design.md", 0,
-                 "2d9e96c988ba866e3c8673ffc9074d9b7850b3866e49618a73040e4125bba6cd"),
-    "sequence.svg": ("pitch/writing/02-flow-design.md", 1,
-                     "164c112acad6afb008403af23788e7847b0dc3b829c5017268e7c62b0da85742"),
+                 "5f4f704e81b0681f47e35465ec8e6f056384bba94f2aa16b6e7e6ac89c2b00d7", "flow"),
+    "share-boundary.svg": ("pitch/writing/02-flow-design.md", 1,
+                           "b0f4fb467020991fb10f47c608d569a126b54deb02eb41c0c7c8c54f755ff229", "share-boundary"),
+    "sequence.svg": ("pitch/writing/02-flow-design.md", 2,
+                     "fa143ac6b57b6b98d0382436e2f032017cd5d59405f0b73dd1937a851a51840d", "sequence"),
     "ai-pipeline.svg": ("pitch/writing/03-ai-and-tools.md", 0,
-                       "3d83ecdb0dbef771d772ded3bb12720d77ca20bcac11ed823d9322657877a778"),
+                       "3d83ecdb0dbef771d772ded3bb12720d77ca20bcac11ed823d9322657877a778", "ai-pipeline"),
     "archived-cards.svg": ("pitch/writing/notes/optional-card-ideas.md", 0,
-                          "ed7b42faafef5d2914d5b97f6e3052fad8c6bf1b13da0ef5c6ef56baca3177ae"),
+                          "ed7b42faafef5d2914d5b97f6e3052fad8c6bf1b13da0ef5c6ef56baca3177ae", "archived-cards"),
 }
 
 
@@ -154,35 +163,84 @@ def routed_edge(path: str, label: str = "", lx: float = 0, ly: float = 0,
     return out
 
 
+def group_box(x: int, y: int, w: int, h: int, title: str) -> str:
+    return (f'<rect class="group" x="{x}" y="{y}" width="{w}" height="{h}"/>'
+            + text_block(x + 24, y + 36, title, size=21, weight=700, anchor="start"))
+
+
+def render_service_layers(block: str, source: str, digest: str) -> str:
+    labels, edges = graph_parts(block)
+    boxes = {
+        "UI": (330, 65, 390, 78), "SERVICE": (330, 215, 390, 78),
+        "DATA": (330, 365, 390, 78), "CONTENT": (35, 535, 390, 78),
+        "RIDE": (625, 535, 390, 78), "OUT": (330, 665, 390, 78),
+        "FAMILY": (330, 785, 390, 78),
+    }
+    body = [
+        text_block(35, 34, "責任分層：App 內收卡，聊天留在 LINE", size=25,
+                   weight=700, anchor="start"),
+        group_box(20, 45, 1010, 415, "遊喜樂與既有 yoxi"),
+        group_box(20, 480, 1010, 150, "支援與企業能力"),
+        group_box(20, 650, 1010, 230, "使用者主動分享後的外部區域"),
+    ]
+    for a, b, lab, dash in edges:
+        if (a, b) == ("CONTENT", "DATA"):
+            body.append(routed_edge("M 230 535 V 404 H 330", lab, 260, 394, dash))
+        elif (a, b) == ("UI", "RIDE"):
+            body.append(routed_edge("M 720 104 H 820 V 535", lab, 0, 0, dash))
+        else:
+            body.append(edge_between(boxes[a], boxes[b], lab, dash))
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"UI", "FAMILY"} else WHITE), size=18)
+                for k in boxes)
+    body.append(text_block(740, 748, "跨出 App 後沒有資料回傳線", size=15,
+                           weight=600, anchor="start"))
+    return base_svg(1050, 900, "遊喜樂責任分層", source, digest, "\n  ".join(body))
+
+
 def render_architecture(block: str, source: str, digest: str) -> str:
     labels, edges = graph_parts(block)
     boxes = {
-        "APP": (55, 125, 350, 76), "FAMILY": (55, 230, 350, 76), "DEMO": (55, 335, 350, 76),
-        "API": (515, 100, 250, 76), "PLACE": (825, 75, 290, 76), "VISIT": (825, 180, 290, 76),
-        "SHARE": (825, 285, 290, 76), "BOOK": (825, 390, 290, 76),
-        "DB": (1210, 135, 320, 76), "STORAGE": (1210, 300, 320, 76),
-        "CMS": (515, 565, 280, 76), "JOB": (875, 565, 280, 76), "AI": (1235, 565, 280, 76),
-        "OPS": (875, 735, 280, 76),
-        "ID": (70, 1020, 300, 76), "RIDE": (445, 1020, 330, 76),
-        "LINE": (855, 1020, 300, 76), "POINTS": (1230, 1020, 300, 76),
+        "APP": (55, 100, 300, 76), "DEMO": (55, 205, 300, 76),
+        "EXPORT": (410, 150, 300, 76),
+        "OS": (810, 100, 285, 76), "LINE": (810, 205, 285, 76),
+        "FAMILY": (810, 310, 285, 76),
+        "API": (435, 485, 300, 76),
+        "PLACE": (55, 620, 300, 76), "VISIT": (435, 620, 300, 76),
+        "BOOK": (815, 620, 300, 76),
+        "DB": (245, 755, 300, 76), "STORAGE": (625, 755, 300, 76),
+        "CMS": (55, 890, 260, 76), "JOB": (345, 890, 260, 76),
+        "AI": (635, 890, 260, 76), "OPS": (925, 890, 190, 76),
+        "ID": (55, 1135, 300, 76), "RIDE": (435, 1135, 300, 76),
+        "POINTS": (815, 1135, 300, 76),
     }
     body = [
-        '<rect class="group" x="25" y="55" width="410" height="405"/>',
-        text_block(50, 90, "使用者端", size=22, weight=700, anchor="start"),
-        '<rect class="group" x="475" y="30" width="1090" height="865"/>',
-        text_block(500, 68, "遊喜樂新增服務", size=22, weight=700, anchor="start"),
-        '<rect class="group" x="25" y="950" width="1540" height="200"/>',
-        text_block(50, 988, "既有／外部服務：接法待確認", size=22, weight=700, anchor="start"),
+        text_block(30, 32, "完整服務架構：分享在裝置端交接", size=25, weight=700, anchor="start"),
+        group_box(25, 50, 710, 350, "長輩行動端"),
+        group_box(775, 50, 350, 350, "App 外：由使用者自行操作"),
+        group_box(25, 435, 1100, 575, "遊喜樂新增服務"),
+        group_box(25, 1080, 1100, 170, "既有 yoxi：接法待企業確認"),
     ]
     routes = {
-        ("CMS", "DB"): ("M 655 565 V 500 H 1545 V 173 H 1530", "", 0, 0),
-        ("CMS", "STORAGE"): ("M 795 603 V 690 H 1550 V 338 H 1530", "", 0, 0),
-        ("AI", "CMS"): ("M 1375 641 V 680 H 655 V 641", "", 0, 0),
-        ("APP", "LINE"): ("M 230 201 V 925 H 1005 V 1020", "", 0, 0),
-        ("API", "ID"): ("M 515 138 H 455 V 925 H 220 V 1020", "", 0, 0),
-        ("RIDE", "VISIT"): ("M 610 1020 V 925 H 800 V 218 H 825", "授權行程事件", 800, 905),
-        ("LINE", "FAMILY"): ("M 1005 1020 V 925 H 455 V 268 H 405", "分享連結", 560, 913),
-        ("BOOK", "POINTS"): ("M 1115 428 H 1175 V 925 H 1380 V 1020", "", 0, 0),
+        ("APP", "API"): ("M 355 138 H 380 V 420 H 585 V 485", "", 0, 0),
+        ("DEMO", "API"): ("M 205 281 V 420 H 585 V 485", "", 0, 0),
+        ("APP", "EXPORT"): ("M 355 138 H 382 V 188 H 410", "", 0, 0),
+        ("DEMO", "EXPORT"): ("M 355 243 H 382 V 188 H 410", "", 0, 0),
+        ("EXPORT", "OS"): ("M 710 188 H 755 V 138 H 810", "", 0, 0),
+        ("API", "ID"): ("M 435 523 H 35 V 1060 H 205 V 1135", "", 0, 0),
+        ("APP", "RIDE"): ("M 55 138 H 15 V 1050 H 585 V 1135", "", 0, 0),
+        ("API", "PLACE"): ("M 435 523 H 385 V 580 H 205 V 620", "", 0, 0),
+        ("API", "BOOK"): ("M 735 523 H 785 V 580 H 965 V 620", "", 0, 0),
+        ("API", "OPS"): ("M 735 523 H 1120 V 928 H 1115", "", 0, 0),
+        ("RIDE", "VISIT"): ("M 585 1135 V 1060 H 1135 V 580 H 585 V 620", "授權行程事件", 930, 1050),
+        ("VISIT", "DB"): ("M 585 696 V 725 H 395 V 755", "", 0, 0),
+        ("PLACE", "DB"): ("M 205 696 V 725 H 395 V 755", "", 0, 0),
+        ("BOOK", "DB"): ("M 965 696 V 725 H 395 V 755", "", 0, 0),
+        ("VISIT", "STORAGE"): ("M 585 696 V 725 H 775 V 755", "", 0, 0),
+        ("CMS", "DB"): ("M 185 890 V 855 H 395 V 831", "", 0, 0),
+        ("CMS", "STORAGE"): ("M 185 890 V 840 H 775 V 831", "", 0, 0),
+        ("AI", "CMS"): ("M 635 928 H 625 V 990 H 185 V 966", "", 0, 0),
+        ("JOB", "OPS"): ("M 475 890 V 860 H 1020 V 890", "", 0, 0),
+        ("BOOK", "POINTS"): ("M 1115 658 H 1135 V 1173 H 1115", "", 0, 0),
     }
     for a, b, lab, dash in edges:
         if (a, b) in routes:
@@ -190,26 +248,139 @@ def render_architecture(block: str, source: str, digest: str) -> str:
             body.append(routed_edge(path, route_label or lab, lx, ly, dash))
         else:
             body.append(edge_between(boxes[a], boxes[b], lab, dash))
-    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"CMS", "ID", "RIDE", "LINE", "POINTS"} else WHITE), size=18)
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"APP", "FAMILY", "CMS", "ID", "RIDE", "POINTS"} else WHITE), size=17)
                 for k in boxes)
-    body.append('<line x1="520" y1="860" x2="600" y2="860" class="edge dashed" marker-end="none"/>')
-    body.append(text_block(618, 866, "虛線：既有／外部介接（含授權行程與分享連結）", size=14, anchor="start"))
-    return base_svg(1590, 1180, "遊喜樂服務架構", source, digest, "\n  ".join(body))
+    body.append('<line x1="55" y1="1290" x2="135" y2="1290" class="edge dashed" marker-end="none"/>')
+    body.append(text_block(155, 1296, "虛線：跨平台移交或企業接點；LINE 區域沒有回傳線", size=15, anchor="start"))
+    return base_svg(1150, 1325, "遊喜樂完整服務架構", source, digest, "\n  ".join(body))
+
+
+def render_expo_stack(block: str, source: str, digest: str) -> str:
+    labels, edges = graph_parts(block)
+    boxes = {
+        "BUILD": (500, 105, 370, 78), "UI": (365, 240, 370, 78),
+        "ROUTER": (35, 390, 300, 78), "DEVICE": (365, 390, 300, 78),
+        "SHARE": (695, 390, 330, 78), "ADAPTER": (185, 575, 370, 78),
+        "MOCK": (35, 730, 300, 78), "API": (390, 730, 300, 78),
+        "CLOUD": (390, 865, 300, 78), "LINE": (755, 575, 270, 78),
+    }
+    body = [
+        text_block(30, 34, "Expo 行動端技術棧與替換邊界", size=25, weight=700, anchor="start"),
+        group_box(20, 50, 1020, 435, "行動端：React Native / TypeScript"),
+        group_box(20, 500, 700, 470, "服務介面：demo 與正式後端共用契約"),
+        group_box(740, 500, 300, 185, "App 外"),
+    ]
+    routes = {
+        ("BUILD", "UI"): ("M 685 183 V 210 H 550 V 240", "", 0, 0),
+        ("UI", "ROUTER"): ("M 365 279 H 185 V 390", "", 0, 0),
+        ("UI", "DEVICE"): ("M 550 318 V 390", "", 0, 0),
+        ("UI", "SHARE"): ("M 735 279 H 860 V 390", "", 0, 0),
+        ("UI", "ADAPTER"): ("M 735 279 H 680 V 500 H 700 V 614 H 555", "", 0, 0),
+        ("SHARE", "LINE"): ("M 860 468 V 575", "", 0, 0),
+        ("ADAPTER", "MOCK"): ("M 185 614 H 145 V 730", "", 0, 0),
+        ("ADAPTER", "API"): ("M 555 614 H 540 V 730", "正式串接時切換", 610, 680),
+    }
+    for a, b, lab, dash in edges:
+        if (a, b) in routes:
+            path, route_label, lx, ly = routes[(a, b)]
+            body.append(routed_edge(path, route_label or lab, lx, ly, dash))
+        else:
+            body.append(edge_between(boxes[a], boxes[b], lab, dash))
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"BUILD", "MOCK", "LINE"} else WHITE), size=17)
+                for k in boxes)
+    body.append(text_block(45, 1000, "同一組 Ride / Places / Postcards 介面，先接明示 mock，後續換成授權 API。",
+                           size=16, weight=600, anchor="start"))
+    return base_svg(1060, 1030, "Expo 行動端技術棧", source, digest, "\n  ".join(body))
+
+
+def render_evolution(block: str, source: str, digest: str) -> str:
+    labels, edges = graph_parts(block)
+    boxes = {
+        "WEB": (35, 100, 300, 88), "EXPO": (455, 100, 300, 88),
+        "CONTRACT": (875, 100, 300, 88), "MOCK": (875, 280, 300, 88),
+        "BACKEND": (455, 460, 300, 88), "YOXI": (35, 460, 300, 88),
+    }
+    body = [
+        text_block(35, 40, "從現有原型走向企業接入", size=25, weight=700, anchor="start"),
+        text_block(35, 72, "每一步都有可展示產物；虛線表示尚待驗證或授權。", size=16, anchor="start"),
+    ]
+    routes = {
+        ("CONTRACT", "BACKEND"): ("M 1025 188 V 415 H 605 V 460", "通過企業驗證後", 815, 405),
+        ("YOXI", "BACKEND"): ("M 335 504 H 455", "", 0, 0),
+    }
+    for a, b, lab, dash in edges:
+        if (a, b) in routes:
+            path, route_label, lx, ly = routes[(a, b)]
+            body.append(routed_edge(path, route_label or lab, lx, ly, dash))
+        else:
+            body.append(edge_between(boxes[a], boxes[b], lab, dash))
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"WEB", "MOCK"} else WHITE), size=17)
+                for k in boxes)
+    return base_svg(1210, 585, "技術演進路線", source, digest, "\n  ".join(body))
 
 
 def render_flow(block: str, source: str, digest: str) -> str:
     labels, edges = graph_parts(block)
     boxes = {
-        "A": (100, 70, 380, 66), "B": (100, 175, 380, 66), "C": (100, 280, 380, 66),
-        "D": (100, 385, 380, 66), "E": (100, 490, 380, 66), "F": (100, 595, 380, 82),
-        "G": (100, 720, 380, 82), "H": (100, 845, 380, 82), "I": (100, 970, 380, 66),
-        "J": (100, 1075, 380, 66), "K": (100, 1180, 380, 66), "L": (100, 1285, 380, 66),
-        "M": (625, 845, 420, 82), "R": (625, 490, 420, 66), "S": (625, 595, 420, 66),
+        "A": (90, 130, 430, 70), "B": (90, 245, 430, 70),
+        "C": (90, 360, 430, 70), "D": (90, 475, 430, 70),
+        "E": (90, 590, 430, 82), "F": (90, 720, 430, 82),
+        "G": (565, 720, 335, 82), "H": (90, 850, 430, 70),
+        "R": (565, 475, 335, 82), "OS": (290, 1080, 400, 82),
+        "I": (290, 1315, 400, 70), "J": (290, 1430, 400, 82),
+        "K": (290, 1560, 400, 70),
     }
-    body = [text_block(70, 38, "主要體驗流程", size=24, weight=700, anchor="start")]
-    body.extend(edge_between(boxes[a], boxes[b], lab, dash) for a, b, lab, dash in edges)
-    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"G", "M"} else WHITE), size=17) for k in boxes)
-    return base_svg(1120, 1410, "遊喜樂主要體驗流程", source, digest, "\n  ".join(body))
+    body = [
+        text_block(35, 35, "使用流程：收藏與回程不等待分享結果", size=25, weight=700, anchor="start"),
+        group_box(30, 55, 920, 905, "App 內：出行與收藏"),
+        group_box(30, 1250, 920, 410, "App 外：LINE，不回傳聊天資料"),
+    ]
+    routes = {
+        ("D", "R"): ("M 520 510 H 565", "", 0, 0),
+        ("F", "G"): ("M 520 761 H 565", "", 0, 0),
+        ("H", "OS"): ("M 305 920 V 1080", "", 0, 0),
+    }
+    for a, b, lab, dash in edges:
+        if (a, b) in routes:
+            path, route_label, lx, ly = routes[(a, b)]
+            body.append(routed_edge(path, route_label or lab, lx, ly, dash))
+        else:
+            body.append(edge_between(boxes[a], boxes[b], lab, dash))
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"F", "OS", "K"} else WHITE), size=18)
+                for k in boxes)
+    body.append(text_block(55, 1000, "分享出口", size=15, weight=700, anchor="start"))
+    body.append(text_block(55, 1035, "圖片交給系統面板後，App 不知道收件人、已讀或回覆。",
+                           size=15, anchor="start"))
+    return base_svg(980, 1690, "遊喜樂使用流程", source, digest, "\n  ".join(body))
+
+
+def render_share_boundary(block: str, source: str, digest: str) -> str:
+    labels, edges = graph_parts(block)
+    boxes = {
+        "CARD": (55, 120, 260, 76), "TAP": (355, 120, 250, 76),
+        "EVENT": (645, 120, 300, 76), "OS": (305, 365, 370, 82),
+        "LINE": (155, 620, 300, 82), "CHAT": (525, 620, 350, 82),
+    }
+    body = [
+        text_block(35, 36, "分享與量測邊界", size=25, weight=700, anchor="start"),
+        group_box(25, 60, 950, 180, "我們能處理與量測"),
+        group_box(25, 560, 950, 185, "App 外：子女資料不回傳 yoxi"),
+    ]
+    routes = {
+        ("TAP", "OS"): ("M 480 196 V 365", "移交圖片", 560, 315),
+        ("OS", "LINE"): ("M 490 447 V 520 H 470 V 661 H 455", "", 0, 0),
+    }
+    for a, b, lab, dash in edges:
+        if (a, b) in routes:
+            path, route_label, lx, ly = routes[(a, b)]
+            body.append(routed_edge(path, route_label or lab, lx, ly, dash))
+        else:
+            body.append(edge_between(boxes[a], boxes[b], lab, dash))
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"OS", "CHAT"} else WHITE), size=18)
+                for k in boxes)
+    body.append(text_block(510, 505, "責任交接點", size=16, weight=700))
+    body.append(text_block(500, 795, "沒有從 LINE 或聊天回到己方事件的箭頭。", size=16, weight=600))
+    return base_svg(1000, 830, "分享與資料邊界", source, digest, "\n  ".join(body))
 
 
 def parse_sequence(block: str):
@@ -285,16 +456,29 @@ def render_linear(block: str, source: str, digest: str, title: str, horizontal: 
     return base_svg(width, height, title, source, digest, "\n  ".join(body))
 
 
-def build(name: str, block: str, source: str, digest: str) -> str:
-    if name == "architecture.svg":
-        return render_architecture(block, source, digest)
-    if name == "flow.svg":
-        return render_flow(block, source, digest)
-    if name == "sequence.svg":
-        return render_sequence(block, source, digest)
-    if name == "ai-pipeline.svg":
-        return render_linear(block, source, digest, "AI 文案編審管線", True)
+def render_ai_pipeline(block: str, source: str, digest: str) -> str:
+    return render_linear(block, source, digest, "AI 文案編審管線", True)
+
+
+def render_archived_cards(block: str, source: str, digest: str) -> str:
     return render_linear(block, source, digest, "備存卡片規則流程", False)
+
+
+RENDERERS = {
+    "service-layers": render_service_layers,
+    "architecture": render_architecture,
+    "expo-stack": render_expo_stack,
+    "evolution": render_evolution,
+    "flow": render_flow,
+    "share-boundary": render_share_boundary,
+    "sequence": render_sequence,
+    "ai-pipeline": render_ai_pipeline,
+    "archived-cards": render_archived_cards,
+}
+
+
+def build(layout: str, block: str, source: str, digest: str) -> str:
+    return RENDERERS[layout](block, source, digest)
 
 
 def main() -> int:
@@ -303,7 +487,7 @@ def main() -> int:
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     failed = False
-    for name, (relative, index, expected) in SPECS.items():
+    for name, (relative, index, expected, layout) in SPECS.items():
         blocks = mermaid_blocks(ROOT / relative)
         if index >= len(blocks):
             print(f"FAIL {name}: {relative} Mermaid block #{index + 1} is missing")
@@ -315,7 +499,7 @@ def main() -> int:
             print(f"FAIL {name}: source changed ({actual}); review layout and update its pinned hash")
             failed = True
             continue
-        rendered = build(name, block, relative, actual)
+        rendered = build(layout, block, relative, actual)
         target = OUT / name
         if args.check:
             if not target.exists() or target.read_text(encoding="utf-8") != rendered:

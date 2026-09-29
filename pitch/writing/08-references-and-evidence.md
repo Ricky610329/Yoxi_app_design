@@ -6,7 +6,7 @@
 
 ## 1. 可用於正文的補充說明
 
-本方案提供可操作的 HTML／PWA 原型、畫面素材、收卡規則程式與 AI 圖像生成參數，供評審檢視從探索到出行、收藏與分享的體驗。正式服務架構以企業既有能力與新增模組分工呈現，並說明來回候車、家庭回應與里程碑樣式需要補齊的接點。
+本方案提供可操作的 HTML／PWA 原型、畫面素材、收卡規則程式與 AI 圖像生成參數，供評審檢視從探索到出行、收藏與分享的體驗。正式服務架構以企業既有能力與新增模組分工呈現，並說明來回候車、分享圖輸出、系統分享面板與里程碑樣式需要補齊的接點。長輩在 LINE 自選對象送圖，子女在 LINE 看圖、回話或貼圖；這段私聊不回傳 yoxi。
 
 AI 工具能力與單價取自供應商官方文件；使用動機研究保留為背景資料，不另替換團隊原有論述，也不宣稱本案已有留存改善。人力與使用量明標假設，後續以試點數據修正。
 
@@ -33,6 +33,11 @@ AI 工具能力與單價取自供應商官方文件；使用動機研究保留�
 | [Expo 既有原生 App 整合](https://docs.expo.dev/brownfield/overview/) | 可評估模組整合，官方標示 alpha 支援限制 | 不承諾正式 App 可以無改動嵌入 |
 | [Expo Location](https://docs.expo.dev/versions/latest/sdk/location/) | 定位能力、權限與平台限制 | 定位值不等於到訪或防刷的充分證據 |
 | [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) | 裝置端敏感小型資料儲存候選 | 不是雲端秘密管理或完整權限系統 |
+| [Expo FileSystem](https://docs.expo.dev/versions/latest/sdk/filesystem/) | 行動端檔案與暫存圖面管理 | 不會自動把 React Native 畫面轉成圖片，仍需輸出元件 |
+| [EAS Build](https://docs.expo.dev/build/introduction/) | development build 與安裝包的建置選項 | 不是執行期後端，主方案不以購買 EAS 為前提 |
+| [FastAPI](https://fastapi.tiangolo.com/) | Python 型別化 API 與 OpenAPI 文件能力 | 本案的正式 API 尚未建置，企業可依既有框架接同一契約 |
+| [Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) | 可檢查平台分享能力，並以 `shareAsync` 分享本機檔案；iOS／Android 支援本機檔案，web 另有瀏覽器與 HTTPS 等限制 | `shareAsync` 回傳 `Promise<void>`，不提供已送出、收件人、已讀或 LINE 私聊內容 |
+| [React Native Share](https://reactnative.dev/docs/share) | 可開啟原生分享面板；回傳值可用於處理平台行為差異 | Android 總是回報 `Share.sharedAction`，不能據此推論使用者已送出、對方已收件或已讀 |
 | [Cloud Run](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run) | API 與背景工作的部署候選 | 不表示已有正式服務或可用率實測 |
 | [結構化輸出](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output) | 約束模型輸出格式與欄位 | 結構正確不等於事實正確 |
 | [文字嵌入](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings) | 地方文本相似度與檢索 | 不直接證明個人化推薦品質 |
@@ -41,8 +46,6 @@ AI 工具能力與單價取自供應商官方文件；使用動機研究保留�
 | [Cloud Run 定價](https://cloud.google.com/run/pricing) | 依 CPU、記憶體與執行型態試算 | 不能直接套別區域範例當台灣帳單 |
 | [DreamShaper 8 模型頁](https://huggingface.co/Lykon/dreamshaper-8) | 現有生成工具使用的模型來源 | 不表示所有圖片內容已被模型供應商核可 |
 | [ControlNet Canny 模型頁](https://huggingface.co/lllyasviel/control_v11p_sd15_canny) | 現有輪廓控制模型的來源 | 不保證建築圖像與實景完全一致 |
-| [LINE LIFF 分享介面](https://developers.line.biz/en/reference/liff/#share-target-picker) | 可分享給使用者選定的好友／群組，回報分享結果 | 不提供收件人數，不等於可讀家人私聊 |
-| [LINE 接收訊息事件](https://developers.line.biz/en/docs/messaging-api/receiving-messages/) | 核對官方帳號可接收的事件 | 不代表分享後的私人聊天可回讀；子女互動設在自有頁 |
 
 Google 部分頁面已使用 Gemini Enterprise Agent Platform 名稱；本稿沿用 repo 的 Vertex AI 用語，實際模型 ID、區域與 SKU 以正式部署設定為準。
 
@@ -51,7 +54,7 @@ Google 部分頁面已使用 Gemini Enterprise Agent Platform 名稱；本稿沿
 1. **Ryan, R. M., & Deci, E. L.（2000）**。*Self-Determination Theory and the Facilitation of Intrinsic Motivation, Social Development, and Well-Being.* American Psychologist, 55(1), 68–78。[作者研究網站全文](https://www.selfdeterminationtheory.org/SDT/documents/2000_RyanDeci_SDT.pdf)。用途：自主、能力感與關係連結的背景依據，可供團隊原有使用動機論述參考。
 2. **Looyestyn, J., et al.（2017）**。*Does gamification increase engagement with online programs? A systematic review.* PLOS ONE, 12(3), e0173403。[期刊原文](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173403)。用途：支持將遊戲化視為值得測試的參與設計，也提醒長期效果需另驗證。
 
-兩篇均不能直接證明遊喜樂能增加多少留存或出行。主方案的接送、保證收卡與家人互動仍需實際驗證。
+兩篇均不能直接證明遊喜樂能增加多少留存或出行。主方案的接送、保證收卡，以及 App 外、LINE 內的家人互動仍需實際驗證。
 
 ## 5. GitHub 與程式碼文件
 
@@ -68,7 +71,7 @@ Repo remote：[Ricky610329/Yoxi_app_design](https://github.com/Ricky610329/Yoxi_
 | [生成參數](../../app/assets/postcards/index.json) | 提示、種子、模型與參考照片檔名 | 可追溯製作設定；不同環境未必位元級重現 |
 | [卡面素材說明](../../app/assets/postcards/README.md) | 已有圖像範圍與示意標示 | 部分尚未生成的地方有替代畫面 |
 | [App 測試說明](../../app/tests/README.md) | 驗收方法與執行方式 | 測試通過不等於真實營運成效 |
-| [本次流程稿](02-flow-design.md) | 接送、收卡、分享、家人回應與里程碑 | 正式接點與新增樣式仍是提案 |
+| [本次流程稿](02-flow-design.md) | 接送、收卡、系統分享出口與里程碑 | LINE 私聊不回傳 yoxi；正式接點與新增樣式仍是提案 |
 
 如果提供評審 GitHub 連結，交件時再指定可讀分支或 commit permalink。僅有這次本機 commit 不能保證遠端可讀，不在附錄捏造已部署 demo 網址。
 
@@ -95,6 +98,8 @@ Repo remote：[Ricky610329/Yoxi_app_design](https://github.com/Ricky610329/Yoxi_
 來源：`app/assets/shots/album.png`。可展示收藏與回顧如何累積成個人內容；其中張數與里程是示範狀態，不是使用者研究數據。
 
 本次看過上述三張工作樹圖片；不改圖、不重拍正在調整的 App。此 Markdown 使用相對連結，檔案更新時畫面也會更新，因此交件 PDF 應使用固定版本的素材。
+
+Repo 內的家人回話、表情或回應狀態 mock 是歷史概念，不能把 App 造型直接當作 LINE 實際介面。本版展示若需要家人情境，另標「外部聊天情境示意」，不把該畫面當作已建置的子女回應頁、帳號或聊天資料管線，也不能用來主張 yoxi 取得送出、收件、已讀或私聊內容。分享面板關閉或使用者回到 app，都不等於圖片已送出。
 
 ## 7. 素材來源與交件時的誠實標示
 

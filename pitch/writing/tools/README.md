@@ -13,7 +13,9 @@ python pitch/writing/tools/check-reader.py
 
 安裝套件只供建置使用，已產出的 HTML 不載入外部套件。圖表以本機 SVG 呈現，保留 Mermaid 原始碼供核對；調整圖表來源後須同步檢閱生成器中的版面與來源雜湊，再重新生成。`render_diagrams.py --check` 可驗證目前圖面仍對應來源。
 
-`check-reader.py` 需要本機 Chrome 或 Edge；它檢查檔案／章節連結，並實際操作桌面及手機閱讀版，將報告和截圖寫入系統暫存目錄。
+`check-reader.py` 需要本機 Chrome 或 Edge；它檢查檔案／章節連結、SVG 用語及來源中的圖數，並實際操作桌面及手機閱讀版的導覽、字體、列印入口與 Expo 圖解捷徑，將報告和截圖寫入系統暫存目錄。
+
+圖表清單：01 章為服務分層、完整架構、Expo 技術棧、正式接入路徑；02 章為使用流程、分享資料邊界、核心時序；03 章為 AI 內容產線；備存章保留早期卡片規則。圖的原始順序與 `build-reader.py` 的 `DIAGRAMS`、生成器 `SPECS` 必須一致。
 
 版面在 `assets/reader.css`，導覽、放大字體與列印行為在 `assets/reader.js`。圖表與原型圖片可另開檢視；HTML 內同一份文件的連結轉為章節定位，其他程式文件維持原始檔連結。
 

@@ -27,7 +27,9 @@
     <div class="eyebrow">TECHNICAL PROPOSAL / 閱讀版</div>
     <h1>把出行的體驗，<br>留下成為一張明信片。</h1>
     <p class="hero-lead">從方案架構與流程，到 AI 工具、內容成本與實作佐證。<br>沿用既有接送能力，說清楚新增服務如何運作。</p>
-    <div class="hero-flow" aria-label="服務主流程"><span>選景點</span><b>→</b><span>接送與探索</span><b>→</b><span>保證收卡</span><b>→</b><span>分享與累積</span></div>
+    <div class="hero-flow" aria-label="服務主流程"><span>選景點與接送</span><b>→</b><span>App 收卡與累積</span><b>→</b><span>自選分享到 LINE</span></div>
+    <p class="share-note">家人看圖與聊天留在 LINE，子女資料不回傳 App。</p>
+    <div class="diagram-nav" aria-label="圖解導覽"><span>先看圖解</span><a href="#diagram-service-layers">服務分層</a><a href="#diagram-share-boundary">分享邊界</a><a href="#diagram-expo-stack">Expo 技術棧</a><a href="#diagram-evolution">正式接入路徑</a></div>
     <div class="toolbar"><button type="button" id="print-page">列印 / 存成 PDF</button><button type="button" id="font-size" aria-pressed="false">放大字體</button><span>Ctrl / ⌘ + F 搜尋全文</span></div>
   </header>
   <article id="overview" class="chapter" aria-label="閱讀說明"><div class="chapter-meta"><span>導讀 / 閱讀說明</span><a href="README.md">Markdown 原稿 ↗</a></div><h2 id="overview-heading-1">遊喜樂｜競賽技術與落地文件</h2>
@@ -61,7 +63,8 @@
 </tbody>
 </table></div>
 <p>主流程沿用使用者提供的版本：</p>
-<p><strong>長輩選定／被推薦景點 → yoxi 去程、候車待命與回程 → 抵達後於 100 m 範圍探索 → 定位驗證後取得當次明信片 → 固定規則決定款式 → 查看並分享至 LINE → 子女回應 → 圖鑑累積與里程碑樣式獎勵。</strong></p>
+<p><strong>App 內：選景點 → yoxi 接送與探索 → 驗證到訪、取得固定款式明信片 → 保存圖鑑與里程碑資格。</strong></p>
+<p><strong>自選分享：預覽卡片 → 系統分享面板 → 離開 App，在 LINE 選對象傳圖 → 家人在 LINE 看圖、回話或傳貼圖。</strong> 家人互動留在 LINE，不回傳 yoxi，也不影響圖鑑累積。</p>
 <p>正文不另重寫團隊的使用動機故事。以這條流程回答如何實作、AI 做什麼、需要哪些資料與新增資源。初期不以額外行銷預算、獎池或專任內容團隊為啟動條件；必要的素材整理、工程接入與運算仍分項估算。</p>
 <h3 id="overview-heading-3">文件怎麼讀</h3>
 <p>每份先提供可摘入簡報的正文，再列圖表、工程細節與估算。架構圖與流程圖使用 Mermaid。補充資料包含 GitHub 入口、程式文件及現有畫面，相對連結可從專案內直接查看。</p>
@@ -81,7 +84,7 @@
 </tr>
 <tr>
 <td>提案</td>
-<td>正式架構、API、家庭回應與里程碑客製樣式等待建置能力</td>
+<td>Expo 手機 demo、正式 API、圖片分享出口與里程碑客製樣式等待建置</td>
 </tr>
 <tr>
 <td>假設</td>
@@ -97,211 +100,351 @@
 <li>內容量與人力：<a href="../docs/business.md">business.md</a>；歷史雲端試算：<a href="../docs/ai-architecture.md">ai-architecture.md</a>。本區另拆最小試點與擴城容量，不將整體平台成本算給新功能。</li>
 <li>AI 素材：<a href="../../app/assets/postcards/README.md">卡面說明</a>。已有離線成品，不等於線上 AI 服務已建置。</li>
 <li>「八」沿用本次指定章號；repo 的官方整理列補充資料為第七章，組版時依實際模板統一。</li>
-<li><a href="#verification">驗證紀錄</a>記錄連結、公式與原型基準檢查。文件在獨立工作樹提交，保留目前共用工作區中的其他修改。</li>
+<li><a href="#verification">驗證紀錄</a>記錄連結、公式與原型基準檢查。前一版已整合 main；本次從整合版本開文件分支修訂，保留既有 App 實作。</li>
 </ul>
 </article>
-<article id="architecture" class="chapter" aria-label="方案架構"><div class="chapter-meta"><span>01 / 方案架構</span><a href="01-solution-architecture.md">Markdown 原稿 ↗</a></div><h2 id="architecture-heading-1">方案架構｜把出行、明信片與家人互動接在一起</h2>
+<article id="architecture" class="chapter" aria-label="方案架構"><div class="chapter-meta"><span>01 / 方案架構</span><a href="01-solution-architecture.md">Markdown 原稿 ↗</a></div><h2 id="architecture-heading-1">方案架構｜App 留下旅程，分享延伸到 LINE</h2>
 <blockquote>
-<p>對應：方案架構、技術與運算資源。<br />
-結論：沿用 yoxi 既有出行能力，新增地方內容、到訪收卡與分享服務；AI 支援內容供給，權限與收錄規則由程式控制。<br />
-待確認：來回候車的企業產品與 API、定位驗證參數、分享登入策略、里程碑樣式及資料保存期限。</p>
+<p>對應：方案架構、技術棧與運算資源。<br />
+結論：沿用 yoxi 出行能力，新增推薦、收卡與圖鑑；App 輸出明信片，家人互動發生在 LINE。<br />
+狀態：HTML／PWA 已有原型；Expo 行動端與雲端 API 是建議實作方案，尚未建置。</p>
 </blockquote>
 <h3 id="architecture-heading-2">1. 正文草稿</h3>
-<p>遊喜樂以 yoxi 既有 App 為服務入口，將景點推薦、去回程接送、抵達探索、明信片與家人互動串成同一條流程。使用者選定景點後，由企業核可的出行方案處理叫車、候車與回程；新增模組則在抵達條件成立後，提供可保存與分享的當次明信片，逐步累積個人圖鑑。候車與回程的供給、費率及接口仍需企業確認。</p>
-<p>系統分為行動端、遊喜樂應用服務、AI 內容產線、資料儲存與外部接點。行動端負責操作與呈現，應用服務管理權限、到訪、卡片及家人回應；AI 產線事先生成地方文案與卡面，經人工核准後上架。正式行程、車資、支付及 Points 仍以 yoxi 授權服務為準，不由新模組另建一套帳務或派遣系統。</p>
-<p>初期可從少量已查核景點與已有素材開始，以既有入口提供服務，不把獎池或額外行銷作為必要前提。之後若有使用證據與營運資源，再增加地方內容、客製樣式或企業促銷串接。這個起步方式仍需要基本接入、驗證與素材維護，成本於 04 章分列。</p>
-<h3 id="architecture-heading-3">2. 完整架構圖（提案）</h3>
-<p>實線表示提案內資料流，虛線表示需企業／第三方授權或後續驗證的接點；不是已連線系統圖。</p>
-<figure class="diagram"><a href="assets/diagrams/architecture.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/architecture.svg" width="1590" height="1180" alt="architecture：架構或流程圖，文字版見下方" loading="lazy"></a><figcaption>點圖可另開分頁放大；流程仍以正文說明為準。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TB
-  subgraph CLIENT[&quot;使用者端&quot;]
-    APP[&quot;yoxi App 新增體驗&lt;br/&gt;選景點、接送狀態、收卡、收藏&quot;]
-    FAMILY[&quot;子女分享頁&lt;br/&gt;查看指定明信片、回應&quot;]
-    DEMO[&quot;競賽行動 demo 候選&lt;br/&gt;Expo / React Native&quot;]
+<p>遊喜樂以 yoxi 既有 App 為服務入口，將景點推薦、去回程接送、抵達探索與明信片收藏接在一起。使用者選定景點後，由企業核可的出行方案處理叫車、候車與回程；新增模組則在抵達條件成立後提供當次明信片，累積個人圖鑑。候車與回程的供給、費率及接口仍需企業確認。</p>
+<p><strong>分享流程中，App 的責任到「製卡、收藏、開啟分享」為止。</strong> 長輩透過手機分享面板選擇 LINE，再自行選擇家人傳送圖片；子女在 LINE 內看圖、回話或傳貼圖。這段互動承接既有聊天習慣，不要求子女安裝遊喜樂、註冊或進入另一個回應頁，也不將私人聊天回傳給 yoxi。圖鑑在有效收卡時累積，與分享是否送出、子女是否回覆無關。</p>
+<p>技術分為行動介面、應用服務、內容產線與資料儲存。AI 事先協助生成地方文案與圖面，經人工核准後發布；抵達時使用已審圖面，依日期及紀念規則組卡。正式行程、車資、支付與 Points 以企業授權服務為準。初期可從少量已查核景點與已有素材起步，不以額外行銷或獎池作為啟動條件。</p>
+<h3 id="architecture-heading-3">2. 先看責任分層</h3>
+<p>這張圖回答「誰負責什麼」，先把使用體驗與供應商名稱分開。家人互動是服務帶來的外部價值，並不是我們新增的資料庫。</p>
+<figure class="diagram" id="diagram-service-layers"><a href="assets/diagrams/service-layers.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/service-layers.svg" width="1050" height="900" alt="服務責任分層，文字版見下方" loading="lazy"></a><figcaption>服務責任分層 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TB
+  UI[&quot;使用者體驗層&lt;br/&gt;選景點、看行程、收卡、圖鑑&quot;]
+  SERVICE[&quot;遊喜樂服務層&lt;br/&gt;推薦、到訪驗證、卡片規則&quot;]
+  DATA[&quot;資料層&lt;br/&gt;已審內容、本人收藏、必要事件&quot;]
+  CONTENT[&quot;內容供給層&lt;br/&gt;AI 草稿與圖面 → 人工核准&quot;]
+  RIDE[&quot;既有 yoxi 能力&lt;br/&gt;帳號、出行、車資與支付&quot;]
+  OUT[&quot;裝置分享出口&lt;br/&gt;輸出圖片、本人選擇傳送&quot;]
+  FAMILY[&quot;App 外：LINE&lt;br/&gt;家人看圖與聊天，不回傳&quot;]
+  UI --&gt; SERVICE
+  SERVICE --&gt; DATA
+  CONTENT --&gt; DATA
+  UI -.-&gt; RIDE
+  UI --&gt; OUT
+  OUT -.-&gt; FAMILY
+</code></pre></details><h3 id="architecture-heading-4">3. 完整服務架構（提案）</h3>
+<p>實線表示提案內資料流，虛線表示跨平台移交或企業接點。外部 LINE 區域沒有回到資料庫的聊天資料線；這不是已連線系統圖。</p>
+<figure class="diagram" id="diagram-architecture"><a href="assets/diagrams/architecture.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/architecture.svg" width="1150" height="1325" alt="完整服務架構，文字版見下方" loading="lazy"></a><figcaption>完整服務架構 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TB
+  subgraph CLIENT[&quot;長輩行動端&quot;]
+    APP[&quot;yoxi App 新增體驗&lt;br/&gt;景點、行程、收卡、收藏&quot;]
+    DEMO[&quot;獨立手機 demo 候選&lt;br/&gt;Expo / React Native&quot;]
+    EXPORT[&quot;卡面輸出&lt;br/&gt;預覽、疊字、本機圖片&quot;]
   end
   subgraph NEW[&quot;遊喜樂新增服務&quot;]
     API[&quot;Cloud Run API&lt;br/&gt;身分、權限、限流、版本&quot;]
-    PLACE[&quot;地方與推薦模組&lt;br/&gt;已審內容、偏好、交通條件&quot;]
-    VISIT[&quot;到訪與卡片模組&lt;br/&gt;定位驗證、固定款式、去重&quot;]
-    SHARE[&quot;分享與互動模組&lt;br/&gt;分享權限、回應、撤回&quot;]
-    BOOK[&quot;圖鑑與里程碑模組&lt;br/&gt;累積紀錄、樣式資格&quot;]
-    DB[&quot;Firestore 候選&lt;br/&gt;內容版本、收藏、事件與權限&quot;]
-    STORAGE[&quot;Cloud Storage 候選&lt;br/&gt;已審卡面、分享成品、素材出處&quot;]
-    JOB[&quot;排程 / 佇列 / 背景工作&lt;br/&gt;生成、重試、圖片輸出&quot;]
-    AI[&quot;Vertex AI 候選&lt;br/&gt;Gemini 文字 / 圖像模型&quot;]
-    CMS[&quot;內容審稿與資產管理&lt;br/&gt;人工核准、更新與撤架&quot;]
-    OPS[&quot;監控與分析&lt;br/&gt;錯誤、成本、去識別化事件&quot;]
+    PLACE[&quot;地方與推薦&lt;br/&gt;已審內容、偏好、交通條件&quot;]
+    VISIT[&quot;到訪與卡片&lt;br/&gt;定位驗證、固定規則、去重&quot;]
+    BOOK[&quot;圖鑑與里程碑&lt;br/&gt;累積紀錄、樣式資格&quot;]
+    DB[&quot;Firestore 候選&lt;br/&gt;內容版本、收藏、必要事件&quot;]
+    STORAGE[&quot;Cloud Storage 候選&lt;br/&gt;已審圖庫與素材出處&quot;]
+    JOB[&quot;背景工作&lt;br/&gt;批次生成與重試&quot;]
+    AI[&quot;Vertex AI 候選&lt;br/&gt;文字與圖像模型&quot;]
+    CMS[&quot;內容管理&lt;br/&gt;人工核准與撤架&quot;]
+    OPS[&quot;監控與分析&lt;br/&gt;錯誤、成本、使用事件&quot;]
   end
-  subgraph EXIST[&quot;既有／外部服務：接法待確認&quot;]
-    ID[&quot;yoxi 帳號與登入&quot;]
-    RIDE[&quot;行程、派車、車資與支付&lt;br/&gt;來回候車供給待企業核可&quot;]
-    LINE[&quot;LINE 分享入口&lt;br/&gt;使用者自行確認傳送&quot;]
-    POINTS[&quot;Points / 促銷&lt;br/&gt;非最小試點必要條件&quot;]
+  subgraph EXIST[&quot;既有 yoxi：接法待企業確認&quot;]
+    ID[&quot;企業帳號與登入&quot;]
+    RIDE[&quot;行程、派車、車資與支付&lt;br/&gt;來回候車供給待核可&quot;]
+    POINTS[&quot;Points / 促銷&lt;br/&gt;非試點必要條件&quot;]
+  end
+  subgraph OUTSIDE[&quot;App 外：由使用者自行操作&quot;]
+    OS[&quot;手機系統分享面板&quot;]
+    LINE[&quot;LINE 選對象、傳圖片&quot;]
+    FAMILY[&quot;子女看圖、家人聊天&lt;br/&gt;內容與身分不回傳 yoxi&quot;]
   end
   APP --&gt; API
   DEMO --&gt; API
-  FAMILY --&gt; API
+  APP --&gt; EXPORT
+  DEMO --&gt; EXPORT
+  EXPORT -.-&gt; OS
+  OS --&gt; LINE
+  LINE --&gt; FAMILY
   API -.-&gt; ID
   APP -.-&gt; RIDE
   API --&gt; PLACE
   API --&gt; VISIT
-  API --&gt; SHARE
   API --&gt; BOOK
   RIDE -. &quot;授權行程事件&quot; .-&gt; VISIT
   VISIT --&gt; DB
   PLACE --&gt; DB
-  SHARE --&gt; DB
   BOOK --&gt; DB
   VISIT --&gt; STORAGE
-  SHARE --&gt; STORAGE
   CMS --&gt; JOB
   JOB --&gt; AI
   AI --&gt; CMS
   CMS --&gt; DB
   CMS --&gt; STORAGE
-  APP -.-&gt; LINE
-  LINE -. &quot;分享連結&quot; .-&gt; FAMILY
   BOOK -.-&gt; POINTS
   API --&gt; OPS
   JOB --&gt; OPS
-</code></pre></details><p>方塊是責任分工，不表示每個模組都部署一個微服務。最初採模組化 API 加背景工作即可。Cloud Run 是應用服務與工作程序的候選，部署能力依<a href="https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run">官方文件</a>核對（2026-09-29）。企業若已有相同服務，優先重用並只估增量。</p>
-<h3 id="architecture-heading-4">3. 既有能力與新增能力</h3>
+</code></pre></details><p>方塊是職責，不代表一個方塊部署一個微服務。初期用一個模組化 API 加背景工作即可。API 管理帳號權限和卡片紀錄，行動端讀取已審素材組卡並匯出圖片；使用者照片與心情優先在裝置處理。若未來改採伺服器輸出個人卡面，再另定上傳、刪除與保存規則及成本。</p>
+<p><a href="https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run">Cloud Run</a> 是 API 與工作程序的部署候選（查閱 2026-09-29）。企業已有同類服務時優先重用，只評估新增用量。</p>
+<h3 id="architecture-heading-5">4. 既有能力與新增能力</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
 <tr>
 <th>項目</th>
 <th>分工</th>
-<th>不能預先承諾的事</th>
+<th>現況與前提</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>帳號、正式叫車、支付</td>
-<td>沿用企業服務</td>
-<td>競賽有資料不等於取得叫車 API</td>
+<td>沿用企業授權服務</td>
+<td>取得競賽資料不等於取得叫車 API</td>
 </tr>
 <tr>
 <td>去程、候車、回程</td>
-<td>沿用或由企業擴充行程產品，新模組呈現狀態</td>
-<td>目前來回流程為模擬，不表示 yoxi 已有同款候車商品</td>
+<td>新模組顯示企業行程狀態</td>
+<td>現有行程為模擬；來回商品、費率和供給待核可</td>
 </tr>
 <tr>
-<td>地方內容與推薦</td>
-<td>新增內容管理及推薦接口</td>
-<td>不推未查核、無開放資訊的地點</td>
+<td>地方與推薦</td>
+<td>新增內容管理、過濾與排序</td>
+<td>候選地方先查核，不生成未知車資或景點</td>
 </tr>
 <tr>
-<td>定位與抵達收卡</td>
-<td>新增到訪驗證與冪等收錄</td>
-<td>手機位置與按鈕操作不是付款或點數證據</td>
+<td>定位與收卡</td>
+<td>新增到訪驗證、固定規則與去重</td>
+<td>手機訊號不能單獨證明付費行程</td>
 </tr>
 <tr>
-<td>卡面與短句</td>
-<td>AI 預生成，審核後依規則組合</td>
-<td>「當次專屬」不等於每次即時重新生圖</td>
+<td>卡面輸出</td>
+<td>已審圖庫＋當次紀念元素</td>
+<td>每次組卡不必重新生圖</td>
 </tr>
 <tr>
-<td>LINE 分享與家人回應</td>
-<td>分享指定內容連結，回應存於自有服務</td>
-<td>不讀取 LINE 聊天內容，也不自動傳送給聯絡人</td>
+<td>分享至 LINE</td>
+<td>行動端交給系統分享面板</td>
+<td>本人選對象；App 不建立子女回應頁</td>
 </tr>
 <tr>
-<td>圖鑑與里程碑客製樣式</td>
-<td>確定性規則，達到公開門檻核發資格</td>
-<td>原型已有獎章；客製樣式屬提案，不宣稱已建置</td>
+<td>圖鑑與客製樣式</td>
+<td>依有效收錄紀錄計算</td>
+<td>現有獎章與未來客製樣式須區分</td>
 </tr>
 </tbody>
 </table></div>
-<h3 id="architecture-heading-5">4. 資料需求與可能新增的用戶資訊</h3>
+<h3 id="architecture-heading-6">5. 資料需求與可觀測範圍</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
 <tr>
 <th>資料</th>
-<th>可支持的服務</th>
-<th>取得前提與邊界</th>
+<th>用途</th>
+<th>取得前提與限制</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>企業提供的時段、頻率、熱門上下車區域與 POI 趨勢</td>
-<td>初步選點、城市內容供給</td>
+<td>企業提供的時段、頻率、熱門區域與 POI 趨勢</td>
+<td>初步選點、內容供給</td>
 <td>彙總資料不能直接對應某位登入者</td>
 </tr>
 <tr>
-<td>使用者自選興趣、可接受步行距離與通知偏好</td>
+<td>自選興趣、可接受步行距離、通知偏好</td>
 <td>初次推薦與操作簡化</td>
 <td>可略過、修改；不推定年齡或健康狀態</td>
 </tr>
 <tr>
-<td>地方曝光、查看、選擇、收藏、略過</td>
-<td>判斷哪些內容有用、改善排序</td>
-<td>保留曝光分母及版本，一次點擊不等於確定喜好</td>
+<td>曝光、查看、選擇、收藏、略過</td>
+<td>改善排序、判斷內容有用程度</td>
+<td>保留曝光分母、版本；一次點擊不是確定喜好</td>
 </tr>
 <tr>
-<td>位置、精度、時間戳、場域位置</td>
-<td>判斷抵達與探索</td>
-<td>精確證據只按必要期限保留；不預設持續背景追蹤</td>
+<td>位置精度、時間戳與場域位置</td>
+<td>判定有效到訪</td>
+<td>必要期限保留；不預設持續背景追蹤</td>
 </tr>
 <tr>
 <td>授權行程識別碼與狀態</td>
-<td>配對去程、候車、回程及搭車款式</td>
-<td>不把電話、付款資料或原始軌跡送入模型</td>
+<td>配對接送及搭車款式</td>
+<td>不把電話、付款資料或原始軌跡送模型</td>
 </tr>
 <tr>
-<td>地方、到訪序次、卡片版本、累積里程</td>
-<td>首訪、回訪、里程紀念、圖鑑</td>
-<td>舊卡依當次規則保存，不能隨新版改樣</td>
+<td>地方、到訪序次、卡片版本與里程</td>
+<td>首訪、回訪、紀念與圖鑑</td>
+<td>舊卡依當次規則保存</td>
 </tr>
 <tr>
-<td>分享事件與子女在自有頁的回應</td>
-<td>顯示家人互動、衡量分享價值</td>
-<td>只取得本服務內的回應，不取得 LINE 私訊</td>
+<td>製卡、圖片輸出、點擊分享、分享介面呼叫狀態</td>
+<td>評估卡面使用及分享意圖</td>
+<td>僅是己方事件，不等於實際送出或家人看到</td>
+</tr>
+<tr>
+<td>子女身分、聊天內容、已讀、貼圖、回覆次數</td>
+<td><strong>不列入收集資料</strong></td>
+<td>在 LINE 發生，沒有回傳通路，也不推估家庭關係</td>
 </tr>
 </tbody>
 </table></div>
-<p>建議事件包含 actorKey、eventType、placeId、recommendationId、contentVersion、occurredAt。actorKey 若仍可連回個人，就不稱為匿名。個人日誌、照片與回應分別設存取權限，分享只公開使用者選定的卡，不附上下車地址或完整行程。</p>
-<p>保存／刪除期限、分享連結效期與回應身分方式是待企業確認的產品設定；未知欄位不先寫成已能取得。競賽資料依既有官方規範使用，不放入公開 repo。</p>
-<h3 id="architecture-heading-6">5. Expo 的位置</h3>
-<p>Expo＋React Native＋TypeScript 是獨立行動 demo 的候選，可用同一套主要流程驗證 iOS／Android 操作。原型 HTML／CSS 與 DOM 事件仍需移植，不能直接改檔名變成原生 App。正式導入以 yoxi 既有技術棧為優先，新增 API 可供原生端使用。</p>
-<p>需要自訂原生依賴時採 development build；Expo Go 能開畫面不代表正式定位、分享與 SDK 都通過。<a href="https://docs.expo.dev/develop/development-builds/introduction/">Development builds</a>（2026-09-29）。官方對既有原生 App 整合仍標 alpha，正式嵌入需另作相容性試驗。<a href="https://docs.expo.dev/brownfield/overview/">Brownfield 文件</a>（2026-09-29）。</p>
-<p>定位先以前景取樣與權限處理驗證，背景能力依平台限制另測。<a href="https://docs.expo.dev/versions/latest/sdk/location/">Expo Location</a>（2026-09-29）。裝置憑證可評估 <a href="https://docs.expo.dev/versions/latest/sdk/securestore/">SecureStore</a>；模型金鑰與企業私鑰只留伺服器。</p>
-<h3 id="architecture-heading-7">6. 正式服務的可靠性</h3>
+<p>建議己方事件包含 actorKey、eventType、placeId、cardId、contentVersion、occurredAt；資料可連回個人時不稱為匿名。匯出僅包含本人預覽選定的圖文，不附精確上下車地址、完整行程、私密日誌或定位 metadata。</p>
+<p>「分享」要分清楚三件事：App 內點了按鈕、系統受理分享呼叫、外部家人真正接收並回應。主方案只觀測前兩者中平台實際支援的部分。若要研究家人互動價值，可用自願訪談或問卷；受訪者自述與產品事件分開呈現，不能寫成系統已蒐集的聊天數據。</p>
+<h3 id="architecture-heading-7">6. Expo 行動 demo 的技術棧</h3>
+<p><strong>建議用 Expo＋React Native＋TypeScript 做獨立手機 demo。</strong> 它用來驗證 iOS／Android 的操作、定位權限與圖片分享。現有 HTML／PWA 是流程與視覺規格來源；正式 yoxi App 採什麼技術仍以企業現況為準，並不因採用 Expo demo 而要求企業重寫 App。</p>
+<h4 id="architecture-heading-8">6.1 技術如何接在一起</h4>
+<p>圖中的裝置能力由 Expo SDK 提供接點，叫車與內容資料透過我們定義的服務介面取得；AI 金鑰與企業私鑰留在伺服器。</p>
+<figure class="diagram" id="diagram-expo-stack"><a href="assets/diagrams/expo-stack.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/expo-stack.svg" width="1060" height="1030" alt="Expo 行動 demo 技術棧，文字版見下方" loading="lazy"></a><figcaption>Expo 行動 demo 技術棧 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TB
+  UI[&quot;介面層&lt;br/&gt;React Native + TypeScript&quot;]
+  ROUTER[&quot;畫面導覽&lt;br/&gt;Expo Router&quot;]
+  DEVICE[&quot;裝置能力&lt;br/&gt;Location / FileSystem / SecureStore&quot;]
+  SHARE[&quot;圖片分享&lt;br/&gt;expo-sharing → 系統分享面板&quot;]
+  ADAPTER[&quot;服務介面層&lt;br/&gt;Ride / Places / Postcards&quot;]
+  MOCK[&quot;demo 資料來源&lt;br/&gt;固定景點、模擬行程與抵達&quot;]
+  API[&quot;正式候選 API&lt;br/&gt;Python FastAPI / HTTPS&quot;]
+  CLOUD[&quot;雲端運行&lt;br/&gt;Cloud Run + Firestore + Storage&quot;]
+  LINE[&quot;App 外：LINE&lt;br/&gt;本人傳圖、家人聊天&quot;]
+  BUILD[&quot;開發與安裝&lt;br/&gt;Development build / EAS 可選&quot;]
+  BUILD --&gt; UI
+  UI --&gt; ROUTER
+  UI --&gt; DEVICE
+  UI --&gt; SHARE
+  SHARE -.-&gt; LINE
+  UI --&gt; ADAPTER
+  ADAPTER --&gt; MOCK
+  ADAPTER -. &quot;正式串接時切換&quot; .-&gt; API
+  API --&gt; CLOUD
+</code></pre></details><h4 id="architecture-heading-9">6.2 選用理由與 demo 範圍</h4>
+<div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
+<thead>
+<tr>
+<th>層</th>
+<th>候選工具</th>
+<th>用在本案的地方</th>
+<th>選用理由／要驗的事</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>手機畫面</td>
+<td>React Native＋TypeScript</td>
+<td>景點、行程、明信片、圖鑑</td>
+<td>共用主要 UI 與資料型別；iOS／Android 仍各自實機驗證</td>
+</tr>
+<tr>
+<td>導覽</td>
+<td>Expo Router</td>
+<td>景點 → 行程 → 卡片、返回行為</td>
+<td>路由明確；不把現在 HTML DOM 直接當原生畫面</td>
+</tr>
+<tr>
+<td>定位</td>
+<td>expo-location</td>
+<td>前景取樣、精度、權限提示</td>
+<td>先不用背景追蹤；demo 模擬座標另標示</td>
+</tr>
+<tr>
+<td>卡面與檔案</td>
+<td>原生視圖／SVG 排版＋圖片輸出元件、expo-file-system</td>
+<td>已審底圖加字，輸出暫存 PNG／JPEG</td>
+<td>不逐次呼叫生圖；輸出元件須驗字型、照片與低記憶體情境</td>
+</tr>
+<tr>
+<td>對外分享</td>
+<td>expo-sharing</td>
+<td>分享裝置上的卡面檔案</td>
+<td>交給系統面板，使用者選 LINE；不建 LINE 內聊天功能</td>
+</tr>
+<tr>
+<td>裝置憑證</td>
+<td>expo-secure-store</td>
+<td>儲存登入所需小型憑證</td>
+<td>不放企業私鑰或模型金鑰，也不用來存整張照片</td>
+</tr>
+<tr>
+<td>API</td>
+<td>Python＋FastAPI，型別化 JSON 契約</td>
+<td>景點、到訪驗證、卡片、圖鑑</td>
+<td>可銜接既有 Python 工具；正式後端仍是待建的提案</td>
+</tr>
+<tr>
+<td>運行與資料</td>
+<td>Cloud Run、Firestore、Cloud Storage</td>
+<td>API、收錄紀錄、已審素材</td>
+<td>分開結構化資料與檔案；手機不直接寫權威里程或資格</td>
+</tr>
+<tr>
+<td>AI 產線</td>
+<td>Vertex AI／既有離線生成器</td>
+<td>草稿、候選圖與人工審核</td>
+<td>非叫車必要依賴；App 讀已審版本</td>
+</tr>
+<tr>
+<td>安裝與展示</td>
+<td>development build；EAS Build 可選</td>
+<td>自訂原生依賴及實機安裝</td>
+<td>EAS 是建置選項，不是 App 執行期後端；開發帳號及費用另估</td>
+</tr>
+</tbody>
+</table></div>
+<p>能力依官方文件核對（2026-09-29）：<a href="https://docs.expo.dev/router/introduction/">Router</a>、<a href="https://docs.expo.dev/versions/latest/sdk/location/">Location</a>、<a href="https://docs.expo.dev/versions/latest/sdk/filesystem/">FileSystem</a>、<a href="https://docs.expo.dev/versions/latest/sdk/sharing/">Sharing</a>、<a href="https://docs.expo.dev/versions/latest/sdk/securestore/">SecureStore</a>、<a href="https://fastapi.tiangolo.com/">FastAPI</a>、<a href="https://docs.expo.dev/develop/development-builds/introduction/">development builds</a>、<a href="https://docs.expo.dev/build/introduction/">EAS Build</a>。這是選型提案，不代表 repo 已有 Expo 專案或正式 API。</p>
+<p>手機可分享本機檔案，但 Expo 網頁端有不同限制；現有 <code>file://</code> HTML 能演示按鈕，不代表可等同驗證手機分享。真正的交付驗證要在安裝有 LINE 的裝置進行。卡面優先以成品圖片分享，不需先建立公開家庭網頁。</p>
+<h4 id="architecture-heading-10">6.3 從現有原型到正式接入</h4>
+<figure class="diagram" id="diagram-evolution"><a href="assets/diagrams/evolution.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/evolution.svg" width="1210" height="585" alt="從原型到正式接入，文字版見下方" loading="lazy"></a><figcaption>從原型到正式接入 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart LR
+  WEB[&quot;現有：HTML / PWA&lt;br/&gt;畫面、規則、素材與流程證據&quot;]
+  EXPO[&quot;下一步：Expo 手機 demo&lt;br/&gt;移植介面、測定位與分享&quot;]
+  CONTRACT[&quot;共同契約&lt;br/&gt;景點、行程、到訪、卡片資料&quot;]
+  MOCK[&quot;展示接點&lt;br/&gt;Mock 行程、明示模擬&quot;]
+  BACKEND[&quot;待建：正式應用服務&lt;br/&gt;授權、驗證、持久資料&quot;]
+  YOXI[&quot;企業接入&lt;br/&gt;既有 App 與授權出行服務&quot;]
+  WEB -. &quot;設計與規則移植&quot; .-&gt; EXPO
+  EXPO --&gt; CONTRACT
+  CONTRACT --&gt; MOCK
+  CONTRACT -. &quot;通過企業驗證後&quot; .-&gt; BACKEND
+  YOXI -.-&gt; BACKEND
+</code></pre></details><p>兩條路徑共用資料契約，不共用假成功：demo 的 <code>RideService</code> 可回傳模擬報價、候車與回程狀態；正式實作須替換成經核可的服務介接，另驗證權限、取消、錯誤和事件去重。未取得叫車 API 時，demo 明示模擬，不真的下單。</p>
+<p>既有 yoxi App 可由其原生團隊接同一組新 API；若企業希望嵌入 React Native 模組，再做 brownfield 相容性驗證。Expo 官方目前仍將此整合支援標為 alpha，不列為本次導入前提。<a href="https://docs.expo.dev/brownfield/overview/">官方文件</a>（2026-09-29）。</p>
+<h3 id="architecture-heading-11">7. 正式服務的可靠性</h3>
 <ul>
-<li>收卡、分享與資格逐筆驗證歸屬；編輯發布權限與使用者權限分開。</li>
+<li>收卡與資格由伺服器驗證歸屬；編輯發布權限與一般帳號權限分開。</li>
 <li>行程事件驗簽、去重、檢查順序；手機重送不重複發卡或回饋。</li>
-<li>AI 超時使用已審卡面與文字模板；背景工作失敗可恢復，不阻塞既有叫車。</li>
-<li>內容具來源與版本，支援撤架、替換與回退；監控生成費、傳輸量、錯誤及回應延遲。</li>
-<li>家人回應有刪除、回報與限流；正式接送的停靠、候車、超時與客服處理由企業流程承接。</li>
-<li><code>asia-east1</code> 是部署候選，不代表所有模型均能在台灣處理資料；逐型號核對區域，服務等級與復原目標待企業確認。</li>
+<li>AI 超時使用已審圖面或模板，不阻塞叫車與回程。</li>
+<li>內容具來源與版本，可撤架與回退；監控模型費、傳輸量及錯誤。</li>
+<li>App 內收藏可依規則刪除，但匯出到 LINE 的圖片副本不能由 App 撤回。</li>
+<li><code>asia-east1</code> 是部署候選，不代表所有模型都在台灣處理資料；逐型號核對區域。</li>
 </ul>
-<p>工程與內容資源見 <a href="#cost">04 章</a>。目前 web app 契約仍在 <a href="../../app/ARCHITECTURE.md">app/ARCHITECTURE.md</a>，本章不將它改寫成已存在的雲端系統。</p>
+<p>人力與成本見 <a href="#cost">04 章</a>。現有程式契約見 <a href="../../app/ARCHITECTURE.md">app/ARCHITECTURE.md</a>；本次只整理文件，不改 App 程式。</p>
 </article>
-<article id="flow" class="chapter" aria-label="流程設計"><div class="chapter-meta"><span>02 / 流程設計</span><a href="02-flow-design.md">Markdown 原稿 ↗</a></div><h2 id="flow-heading-1">流程設計｜接送、探索、收卡與家人回應</h2>
+<article id="flow" class="chapter" aria-label="流程設計"><div class="chapter-meta"><span>02 / 流程設計</span><a href="02-flow-design.md">Markdown 原稿 ↗</a></div><h2 id="flow-heading-1">流程設計｜收卡留在 App，聊天留在 LINE</h2>
 <blockquote>
-<p>對應：使用流程、服務流程與體驗規劃。<br />
-主流程依使用者提供的長輩出行情境；正式供給與 API 待企業確認。<br />
-保證收卡、款式、圖鑑與里程碑採公開規則，不使用機率或搶先機制。</p>
+<p>對應：使用流程、服務流程及資料應用。<br />
+核心：保證收卡與圖鑑由己方系統處理；對外分享後，家人互動留在 LINE。<br />
+前提：正式接送供給與 API 待企業確認；款式及里程碑採公開固定規則。</p>
 </blockquote>
 <h3 id="flow-heading-2">1. 正文草稿</h3>
-<p>長輩從推薦或自選景點開始，查看目的地與接送方案，在確認上下車點、候車安排與費用後，由 yoxi 接送前往。抵達後，使用者可在景點附近規劃的 100 m 探索範圍內步行；系統依位置與行程資料判斷到訪，將當次明信片加入可收錄清單。符合條件即能取得，不因其他人先到而減少名額。</p>
-<p>明信片以地方卡面為底，依常態、節慶、首訪與里程規則組合日期及紀念元素。使用者查看後可直接開啟 LINE 分享入口，把指定卡片傳給家人。子女透過分享頁查看及回應，回應再呈現在長輩端；圖鑑與里程碑則依真實收錄紀錄累積。</p>
-<p>這條流程以團隊提出的長輩圖查看與分享習慣作情境假設，製圖操作集中在明信片呈現，不要求長輩學習複雜編輯器。第一次體驗即可留下一張可分享的成果，後續到訪自然成為收藏；實際接受程度仍需受測者驗證。</p>
+<p>長輩從推薦或自選景點開始，查看目的地與接送方案，確認上下車點、候車安排與費用後，由 yoxi 接送前往。抵達後，可在景點附近規劃的 100 m 探索範圍內步行；系統依位置與授權行程資料判斷到訪，提供當次明信片。符合條件即能取得，不因其他人先到而減少名額。</p>
+<p>明信片以地方卡面為底，依常態、節慶、首訪與里程規則組合日期和紀念元素，同時保存至圖鑑。使用者預覽後可按分享，交由手機系統面板選擇 LINE，再自行選擇對象傳送。<strong>從選擇 LINE 起，操作就進入外部 App；子女在 LINE 看圖、回話或傳貼圖，長輩也在 LINE 看回應。</strong> 遊喜樂不接收這段聊天，也不要求家人回到 App 按讚或留言。</p>
+<p>這條流程承接團隊提出的長輩圖分享習慣。第一次出行就能留下可分享的成果，後續到訪形成收藏；家人回應是可能帶來的情感價值，是否發生及其效果須透過自願訪談驗證，不能由分享點擊直接推定。</p>
 <h3 id="flow-heading-3">2. 使用流程圖</h3>
-<figure class="diagram"><a href="assets/diagrams/flow.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/flow.svg" width="1120" height="1410" alt="flow：架構或流程圖，文字版見下方" loading="lazy"></a><figcaption>點圖可另開分頁放大；流程仍以正文說明為準。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TD
-  A[&quot;長輩選定 / 被推薦景點&quot;] --&gt; B[&quot;確認上下車點、去回程與候車安排&quot;]
-  B --&gt; C[&quot;本人確認費用並叫車&quot;]
-  C --&gt; D[&quot;去程接送&quot;]
-  D --&gt; E[&quot;抵達景點，司機依約候車&quot;]
-  E --&gt; F[&quot;100 m 規劃範圍內探索&lt;br/&gt;定位與行程證據驗證&quot;]
-  F --&gt; G[&quot;取得當次明信片&lt;br/&gt;符合條件保證可收錄&quot;]
-  G --&gt; H[&quot;依規則組合&lt;br/&gt;常態、節慶、首訪、里程&quot;]
-  H --&gt; I[&quot;查看卡片、選擇分享到 LINE&quot;]
-  I --&gt; J[&quot;子女開啟指定卡片分享頁&quot;]
-  J --&gt; K[&quot;在分享頁按讚 / 留言&quot;]
-  K --&gt; L[&quot;長輩查看回應&quot;]
-  H --&gt; M[&quot;圖鑑累積、公開里程碑樣式資格&quot;]
-  E --&gt; R[&quot;使用者確認回程&quot;]
-  R --&gt; S[&quot;回程接送與結算&quot;]
-</code></pre></details><p>回程不以分享或子女回應為前提。使用者可先返家再收看卡片；沒有家人回應、沒有分享或不允許通知，也能取得符合條件的明信片。</p>
+<p>圖鑑與回程各自分支，不等待分享結果。外部區域的箭頭表示人的互動，不表示資料回傳。</p>
+<figure class="diagram" id="diagram-flow"><a href="assets/diagrams/flow.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/flow.svg" width="980" height="1690" alt="App 內外使用流程，文字版見下方" loading="lazy"></a><figcaption>App 內外使用流程 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TD
+  subgraph APP[&quot;App 內：出行與收藏&quot;]
+    A[&quot;選定 / 被推薦景點&quot;] --&gt; B[&quot;確認上下車點與候車安排&quot;]
+    B --&gt; C[&quot;本人確認費用並叫車&quot;]
+    C --&gt; D[&quot;去程接送，抵達依約候車&quot;]
+    D --&gt; E[&quot;100 m 規劃範圍探索&lt;br/&gt;定位與行程證據驗證&quot;]
+    E --&gt; F[&quot;保證取得當次明信片&lt;br/&gt;固定規則組合款式&quot;]
+    F --&gt; G[&quot;保存圖鑑、計算里程碑資格&quot;]
+    F --&gt; H[&quot;預覽並選擇分享&quot;]
+    D --&gt; R[&quot;本人選擇回程&lt;br/&gt;接送與結算&quot;]
+  end
+  H -.-&gt; OS[&quot;系統分享面板&lt;br/&gt;自行選擇 LINE&quot;]
+  subgraph OUTSIDE[&quot;App 外：LINE，不回傳聊天資料&quot;]
+    I[&quot;長輩選對象並傳送圖片&quot;]
+    J[&quot;子女看圖、回話或傳貼圖&quot;]
+    K[&quot;長輩在 LINE 看回應&quot;]
+    I --&gt; J
+    J --&gt; K
+  end
+  OS --&gt; I
+</code></pre></details><p>即使沒有分享、分享中止或家人不回話，仍能保存卡片、累積圖鑑及安排回程。分享是自選出口，不是收卡或獎勵條件。</p>
 <h3 id="flow-heading-4">3. 各步驟需要的能力</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
@@ -315,46 +458,41 @@
 <tr>
 <td>選景點</td>
 <td>自選、興趣或已授權偏好</td>
-<td>已查核地方、交通與場域資訊，說明推薦依據</td>
+<td>已查核地方及推薦依據</td>
 </tr>
 <tr>
-<td>安排接送</td>
+<td>接送安排</td>
 <td>上下車點、去回程意圖</td>
-<td>查詢企業報價與候車條件，需本人確認</td>
+<td>企業報價與候車條件，本人確認後才下單</td>
 </tr>
 <tr>
-<td>去程與候車</td>
-<td>企業行程事件</td>
-<td>呈現目前狀態與聯絡入口，候車上限和費用依企業方案</td>
+<td>行程中</td>
+<td>企業授權事件</td>
+<td>狀態與聯絡入口；候車上限和費用依企業規則</td>
 </tr>
 <tr>
-<td>抵達探索</td>
-<td>場域位置、取樣座標、精度與時間戳</td>
-<td>判定有效到訪；資料不足時顯示可恢復的待驗證狀態</td>
+<td>抵達</td>
+<td>場域、取樣座標、精度與時間戳</td>
+<td>有效到訪；不足時保留可恢復的待驗證狀態</td>
 </tr>
 <tr>
-<td>當次製卡</td>
-<td>到訪、日期、交通、歷史收錄、里程</td>
-<td>固定款式、已審圖庫、程式疊字／紀念元素</td>
+<td>製卡與收藏</td>
+<td>到訪、日期、交通方式、收錄歷史</td>
+<td>已審底圖＋紀念元素，保存圖鑑及樣式資格</td>
 </tr>
 <tr>
-<td>分享</td>
-<td>本人選定卡片與公開欄位</td>
-<td>輸出分享成品或權限連結，交由使用者選收件人</td>
+<td>圖片分享</td>
+<td>本人預覽選定的圖文</td>
+<td>裝置產出檔案並開分享面板；僅記錄己方操作</td>
 </tr>
 <tr>
 <td>家人互動</td>
-<td>分享連結、回應身分與內容</td>
-<td>存於本服務，長輩端顯示回應，可刪除／回報</td>
-</tr>
-<tr>
-<td>累積</td>
-<td>有效卡片與里程紀錄</td>
-<td>圖鑑統計及符合公開條件的客製樣式資格</td>
+<td><strong>LINE 內的圖片與聊天</strong></td>
+<td><strong>外部平台處理，遊喜樂沒有回應資料輸入或儲存</strong></td>
 </tr>
 </tbody>
 </table></div>
-<p>「100 m」是本流程的探索範圍設計與原型參數，不是 GPS 精度保證，也不能證明整個範圍皆可安全步行。實際上架地點需確認停靠、入口與可走動動線；定位判斷需要精度、時間與場域條件，不能只看一次座標。</p>
+<p>「100 m」是探索範圍設計，不是 GPS 精度保證，也不能保證範圍皆安全可走。上架地點需確認停靠、入口與步行動線；到訪判斷須結合精度、時間及場域條件，不只看一次座標。</p>
 <h3 id="flow-heading-5">4. 明信片款式與累積規則</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
@@ -367,88 +505,138 @@
 <tbody>
 <tr>
 <td>基本取得</td>
-<td>有效到訪且符合收錄頻率者一定取得；不設共享名額</td>
+<td>有效到訪且符合收錄頻率就取得，不設共享名額</td>
 <td>固定規則已有 PoC，正式驗證待建</td>
 </tr>
 <tr>
 <td>收錄頻率</td>
-<td>先沿用同一人、同一地方、同一天一張，隔日可記一次回訪</td>
-<td>現況；正式時區與同日定義由後端統一</td>
+<td>同一人、同一地方、同一天一張，隔日可記回訪</td>
+<td>現況；正式時區由後端統一</td>
 </tr>
 <tr>
 <td>常態款</td>
 <td>依季節或交通方式選基本樣式</td>
-<td>目前為四季畫風及搭 yoxi 金框；將來可調整規則版本</td>
+<td>目前四季畫風及搭 yoxi 金框</td>
 </tr>
 <tr>
 <td>節慶款</td>
-<td>對應公開的節日區間，疊加節慶視覺</td>
-<td>現況；需維護年度資料，不以限量分配</td>
+<td>公開節日區間疊加視覺</td>
+<td>現況；年度資料需維護，不以限量分配</td>
 </tr>
 <tr>
 <td>首訪紀念</td>
-<td>首次收錄該地方時附紀念元素</td>
-<td>現況；正式版由帳號紀錄判定</td>
+<td>首次收錄地方附紀念元素</td>
+<td>現況；正式依帳號紀錄判定</td>
 </tr>
 <tr>
 <td>里程紀念</td>
-<td>已驗證累積里程跨越規則門檻時附紀念元素</td>
-<td>現況有示意；正式距離依企業事件</td>
+<td>驗證里程跨過規則門檻附紀念元素</td>
+<td>現況有示意，正式距離依企業事件</td>
 </tr>
 <tr>
 <td>圖鑑</td>
-<td>依獨立地方、卡款與回訪分開統計</td>
-<td>現況已有收藏與獎章；不可混算人數、地方數與卡片數</td>
+<td>地方、卡款與回訪分開統計</td>
+<td>不混算人數、地方數和卡片數</td>
 </tr>
 <tr>
-<td>里程碑客製獎勵</td>
-<td>可選相框／祝福排版／紀念樣式等，條件公開、符合即提供</td>
-<td>提案；樣式與門檻待選，不能宣稱現有 App 已提供</td>
+<td>里程碑客製樣式</td>
+<td>依公開條件提供相框／祝福排版等</td>
+<td>提案，樣式與門檻待選</td>
 </tr>
 </tbody>
 </table></div>
-<p>客製獎勵先以程式樣式為候選，不以現金獎池或每次重新生圖為必要條件。新的獎勵範圍若採用，需另更新產品基準；本次不加回曾移除的 App 功能。</p>
-<p>「當次專屬」由 visitId、日期、款式、交通方式、紀念元素與選填文字構成。底圖可以重用，不應向使用者宣稱每張都是即時重新繪製。生成失敗可先保留到訪及資格，提供基礎卡面，再補成品；不能悄悄吞掉本次收錄。</p>
-<h3 id="flow-heading-6">5. 核心服務時序</h3>
-<figure class="diagram"><a href="assets/diagrams/sequence.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/sequence.svg" width="1600" height="1742" alt="sequence：架構或流程圖，文字版見下方" loading="lazy"></a><figcaption>點圖可另開分頁放大；流程仍以正文說明為準。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>sequenceDiagram
+<p>款式、收錄與資格都不依子女回話或分享成功判定。客製樣式先以程式排版為候選，不以現金獎池或即時生圖為必要條件。</p>
+<p>「當次專屬」由 visitId、日期、款式、交通方式、紀念元素與選填文字構成，底圖可重用。若輸出失敗，先保存到訪及卡片資格，使用基礎圖面並可重試，不丟失本次收錄。</p>
+<h3 id="flow-heading-6">5. 分享與資料邊界</h3>
+<p>這張圖將「圖片離開 App」與「資料可否回來」分開。App 內事件可供產品分析，外部私訊沒有回傳線。</p>
+<figure class="diagram" id="diagram-share-boundary"><a href="assets/diagrams/share-boundary.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/share-boundary.svg" width="1000" height="830" alt="分享與資料邊界，文字版見下方" loading="lazy"></a><figcaption>分享與資料邊界 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart LR
+  subgraph OWN[&quot;我們能處理與量測&quot;]
+    CARD[&quot;卡片預覽與圖片輸出&quot;]
+    TAP[&quot;使用者點擊分享&quot;]
+    EVENT[&quot;己方事件&lt;br/&gt;輸出、點擊、呼叫狀態&quot;]
+    CARD --&gt; TAP
+    TAP --&gt; EVENT
+  end
+  TAP -. &quot;移交圖片&quot; .-&gt; OS[&quot;手機系統分享面板&quot;]
+  subgraph EXTERNAL[&quot;App 外：子女資料不回傳 yoxi&quot;]
+    LINE[&quot;LINE 自選對象並傳送&quot;]
+    CHAT[&quot;家人收圖與聊天&lt;br/&gt;收件人、已讀、回覆不回傳&quot;]
+    LINE --&gt; CHAT
+  end
+  OS --&gt; LINE
+</code></pre></details><div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
+<thead>
+<tr>
+<th>觀測項目</th>
+<th>可以怎麼說</th>
+<th>不可推論</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>卡片輸出成功</td>
+<td>裝置已產出可分享的檔案</td>
+<td>不是送出，也不是有人收到</td>
+</tr>
+<tr>
+<td><code>share_tapped</code></td>
+<td>使用者有分享意圖</td>
+<td>不知道選了 LINE 或哪一位家人</td>
+</tr>
+<tr>
+<td><code>share_invocation_resolved</code></td>
+<td>分享 API 呼叫返回，語意依平台記錄</td>
+<td>不等於傳送成功或已讀</td>
+</tr>
+<tr>
+<td>App 再次進入前景</td>
+<td>使用者回到 App</td>
+<td>不知道是取消、送出或只是切換程式</td>
+</tr>
+<tr>
+<td>家人回話、貼圖、已讀</td>
+<td><strong>不在產品事件中量測</strong></td>
+<td>不以返回 App、停留時間推估</td>
+</tr>
+</tbody>
+</table></div>
+<p>Expo <code>Sharing.shareAsync()</code> 開啟檔案分享面板，回傳 <code>Promise&lt;void&gt;</code>，不是收件確認。React Native 的文字分享 API 在 Android 會回傳 <code>sharedAction</code>，也不能把它當作家人接收或回應證據。<a href="https://docs.expo.dev/versions/latest/sdk/sharing/">Expo Sharing</a>、<a href="https://reactnative.dev/docs/share">React Native Share</a>（2026-09-29）。本案以圖片匯出為主，兩種 API 的回傳語意不混用。</p>
+<p>可用「點擊分享人數／看過可分享卡片的人數」觀察分享意圖，與有效到訪、回訪、再次打開圖鑑分開統計；報表不命名為「家人回覆率」。家人互動是否有價值，另做自願訪談或問卷，不收集聊天記錄作為操作前提。</p>
+<h3 id="flow-heading-7">6. 核心服務時序</h3>
+<figure class="diagram" id="diagram-sequence"><a href="assets/diagrams/sequence.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/sequence.svg" width="1600" height="1526" alt="核心服務時序，文字版見下方" loading="lazy"></a><figcaption>核心服務時序 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>sequenceDiagram
   actor U as 長輩
-  actor C as 子女
   participant A as App
   participant Y as yoxi 行程服務
   participant V as 到訪 / 卡片服務
-  participant P as 已審圖庫與規則
-  participant L as LINE
-  participant F as 家人分享頁
+  participant O as 系統分享面板
+  participant L as LINE（外部）
+  actor C as 子女
   U-&gt;&gt;A: 選景點並確認去回程方案
   A-&gt;&gt;Y: 經授權介面建立行程
   Y--&gt;&gt;A: 接送與候車狀態
   Y--&gt;&gt;V: 經驗證的行程事件
   A-&gt;&gt;V: 地方、位置精度、取樣時間
-  V-&gt;&gt;V: 判斷抵達，依到訪事件去重
-  V-&gt;&gt;P: 地方、日期、款式、紀念條件
-  P--&gt;&gt;V: 已審卡面與版本
-  V-&gt;&gt;V: 保存當次卡片、圖鑑與樣式資格
-  V--&gt;&gt;A: 明信片與收錄結果
-  U-&gt;&gt;A: 預覽後選擇分享
-  A-&gt;&gt;L: 開啟分享入口
+  V-&gt;&gt;V: 驗證與去重，保存卡片及圖鑑
+  V--&gt;&gt;A: 已審底圖、款式與紀念欄位
+  A-&gt;&gt;A: 組卡、預覽、輸出本機圖片
+  U-&gt;&gt;A: 選擇分享
+  A-&gt;&gt;O: 移交圖片並記錄呼叫狀態
+  U-&gt;&gt;O: 選擇 LINE
+  O-&gt;&gt;L: 交付圖片給外部 App
   U-&gt;&gt;L: 選對象並確認傳送
-  L--&gt;&gt;C: 收到卡片連結
-  C-&gt;&gt;F: 開啟指定卡片
-  F-&gt;&gt;V: 取得此卡公開內容
-  C-&gt;&gt;F: 選擇按讚或留言
-  F-&gt;&gt;V: 提交自有頁的回應
-  V--&gt;&gt;A: 顯示家人回應
-  U-&gt;&gt;A: 隨時可要求回程
+  L--&gt;&gt;C: 子女在 LINE 看圖
+  C-&gt;&gt;L: 在 LINE 回話或傳貼圖
+  L--&gt;&gt;U: 長輩在 LINE 看回應
+  U-&gt;&gt;A: 返回 App，可安排回程
   A-&gt;&gt;Y: 依企業流程安排回程
-</code></pre></details><p>時序以展示資料關係為主；回程與分享可以並行，正式端不等待 AI 或家人操作。LINE 聊天本身的按讚／留言不預設能回讀，回應功能設在自有分享頁。</p>
-<p>一般分享入口僅能記錄開啟動作，不能推論已傳送或已讀；若另外採 LIFF 的 <code>shareTargetPicker()</code>，可依其回傳判斷分享結果，但官方不提供收件人數。Messaging API webhook 處理的是官方帳號可接收的訊息，不是家人私聊的旁讀權限。依據：<a href="https://developers.line.biz/en/reference/liff/#share-target-picker">LIFF 分享</a>、<a href="https://developers.line.biz/en/docs/messaging-api/receiving-messages/">Messaging API 接收事件</a>（查閱 2026-09-29）。「一鍵」表示由卡片直接開啟分享，仍由使用者選擇對象及確認傳送。</p>
-<h3 id="flow-heading-7">6. 介面契約草稿</h3>
-<p>以下是提案方的候選介面，不是 yoxi 已公開 API 規格。</p>
+</code></pre></details><p>時序展示責任交接。家人聊天沒有進入卡片服務；回程可隨時安排，不必等待上述分享步驟。系統面板的返回值只依 SDK 能力處理，不補造傳送、收件、已讀或回覆事件。</p>
+<h3 id="flow-heading-8">7. 介面契約草稿</h3>
+<p>以下是新服務候選契約，不是 yoxi 已公開規格。LINE 外部聊天不需要為本案建立帳號或回應 API。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
 <tr>
 <th>介面</th>
-<th>重點欄位與限制</th>
+<th>欄位與限制</th>
 </tr>
 </thead>
 <tbody>
@@ -458,78 +646,68 @@
 </tr>
 <tr>
 <td><code>POST /v1/arrival-claims</code></td>
-<td>placeId、observedAt、accuracy、位置訊號及行程關聯；回傳驗證狀態</td>
+<td>placeId、observedAt、accuracy、位置訊號及授權行程關聯</td>
 </tr>
 <tr>
 <td><code>POST /v1/postcards</code></td>
-<td>有效 claimId＋冪等鍵；重送取得原卡，不重複計里程</td>
+<td>有效 claimId＋冪等鍵；重送取原卡、不重複計里程</td>
 </tr>
 <tr>
 <td><code>GET /v1/collection</code></td>
-<td>本人圖鑑、回訪與里程碑；數字從同一筆權威紀錄計算</td>
+<td>本人圖鑑、回訪與里程碑，數字來自權威紀錄</td>
 </tr>
 <tr>
-<td><code>POST /v1/shares</code></td>
-<td>本人卡片、公開欄位與效期；回傳可撤回的分享連結</td>
-</tr>
-<tr>
-<td><code>POST /v1/shares/:id/replies</code></td>
-<td>有權查看者的回應；需限流、內容處理與身分策略</td>
-</tr>
-<tr>
-<td><code>DELETE /v1/shares/:id</code></td>
-<td>本人撤回後連結不再提供內容，已另存副本不能遠端收回</td>
+<td><code>POST /v1/events</code></td>
+<td>白名單事件與版本；驗證呼叫者，拒收收件人或聊天欄位</td>
 </tr>
 </tbody>
 </table></div>
-<p>機密 token、完整行程與精確上下車地址不出現在分享網址。公開卡片與私人日誌分開授權；不以「有分享連結」給予帳號其他資料的存取權。</p>
-<h3 id="flow-heading-8">7. 異常流程</h3>
+<p>卡片匯出可在裝置處理，不另設公開分享網址或 <code>replies</code> API。只輸出使用者選定圖文；密鑰、日誌原文和精確地址不嵌入卡面。App 內刪除卡片不會刪掉 LINE 已傳出的副本。</p>
+<h3 id="flow-heading-9">8. 異常流程與 demo 驗收</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
 <tr>
 <th>情境</th>
-<th>體驗與系統處理</th>
+<th>處理方式</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>無車或來回方案不可供應</td>
-<td>清楚顯示可用選項；單程替代需本人重新確認，不假設同一司機能等候</td>
+<td>顯示可用方案；改單程須本人再確認</td>
 </tr>
 <tr>
-<td>報價改變／候車超時</td>
-<td>依企業規則提示與確認；卡片不左右費用或回程處理</td>
+<td>報價變更／候車超時</td>
+<td>依企業規則提示，卡片不左右費用或回程</td>
 </tr>
 <tr>
-<td>定位拒絕、精度不足</td>
-<td>可繼續查看內容與搭車；以授權行程事件或補驗流程處理收卡，不把手動定位當正式證據</td>
+<td>拒絕定位、精度不足</td>
+<td>可看內容與叫車；以授權行程證據或補驗處理收卡</td>
 </tr>
 <tr>
-<td>網路逾時或事件重複</td>
-<td>顯示處理中，回查同一請求；不重複叫車、收卡、加里程或發資格</td>
+<td>斷線、逾時、事件重送</td>
+<td>回查同一請求，不重複叫車、收卡或計里程</td>
 </tr>
 <tr>
-<td>AI／出圖服務失效</td>
-<td>取已審成品或基礎模板，資格保存；重試在背景進行</td>
+<td>出圖失敗</td>
+<td>保留卡片資格，以已審基本圖面重試</td>
 </tr>
 <tr>
-<td>LINE 未安裝或分享中止</td>
-<td>提供儲存圖片／複製連結候選；回到卡片，收藏照常保留</td>
+<td>分享取消或未安裝 LINE</td>
+<td>返回卡片，可選儲存圖片；不顯示假傳送成功</td>
 </tr>
 <tr>
-<td>子女不回應</td>
-<td>不影響卡片、回程或里程碑，不製造未讀壓力</td>
+<td>子女沒有回話</td>
+<td>外部互動未知，不影響圖鑑或回程</td>
 </tr>
 <tr>
-<td>分享遭轉傳或留言不當</td>
-<td>顯示的是有限卡片內容；提供撤回、回報及刪除流程</td>
+<td>圖片已被外部轉傳</td>
+<td>App 無法撤回副本；傳出前提供清楚預覽</td>
 </tr>
 </tbody>
 </table></div>
-<h3 id="flow-heading-9">8. Demo 與驗收範圍</h3>
-<p>建議先以一個景點演示選定、模擬去程與候車、100 m 抵達訊號、固定規則收卡、分享頁回應及回程；全程標明模擬行程。若正式 LINE 串接未建，分享與家人回應頁保持示意標示。</p>
-<p>核心驗收：同一到訪不重複發卡；回訪與首訪可區分；款式能說明原因；斷線可恢復；私人資料不外洩；分享與 AI 故障不阻塞回程。里程碑客製樣式先用一個公開條件示範，不新增複雜獎勵層級。</p>
-<p>現況依據：<a href="../../app/ARCHITECTURE.md">App 架構</a>、<a href="../../app/js/views/ride.js">行程程式</a>、<a href="../../app/js/views/explore-cards.js">卡片規則</a>、<a href="../../app/js/views/album-family.js">家人示意</a>。這些仍在迭代，交件時以選定版本核對。</p>
+<p>競賽 demo 先演示一個景點的選定、模擬去程／候車／回程與固定規則收卡。Expo 可接著在手機展示圖片輸出和系統分享面板，標明哪些能力真正在裝置執行、哪些行程及抵達訊號是模擬。子女在 LINE 的畫面可用情境示意說明，不做成 App 收到家人回應的假資料；實際傳送需由操作者自行選擇收件人與確認。</p>
+<p>驗收重點：同一到訪不重複收卡；首訪與回訪可區分；款式能說明原因；斷線可恢復；匯出不夾帶私密欄位；分享／AI 故障不阻塞回程。現有 <a href="../../app/js/views/album-family.js">家人示意程式</a> 是歷史概念畫面，不代表此版新增了聊天回傳服務。</p>
 </article>
 <article id="ai" class="chapter" aria-label="AI 技術與工具"><div class="chapter-meta"><span>03 / AI 技術與工具</span><a href="03-ai-and-tools.md">Markdown 原稿 ↗</a></div><h2 id="ai-heading-1">AI 技術與工具｜用模型擴大內容供給，用規則維持可信流程</h2>
 <blockquote>
@@ -540,6 +718,7 @@
 <h3 id="ai-heading-2">正文草稿</h3>
 <p>遊喜樂的 AI 解決兩個新增服務問題：一是持續製作具地方特色的內容與卡面，二是在有限的內容池中，提供符合使用者興趣、時間與移動條件的建議。文字模型協助整理來源與生成草稿，圖像模型製作可重用的插畫素材，推薦系統則根據已授權的資料挑選合適地方。使用者抵達後，系統從已審卡面組合當次日期、款式與紀念元素，讓長輩直接查看、保存及分享。</p>
 <p>AI 輸出不直接變成產品事實。地方歷史、開放資訊與圖像先經人工檢查；推薦只能從上架地方庫選取，不能編造景點、車資或優惠。符合到訪條件即取得卡片，款式與里程碑資格由公開的伺服器規則處理，不交由語言模型自由判斷。</p>
+<p>手機端的 Expo／React Native、定位、圖片輸出與分享 SDK 分工見 <a href="#architecture">01 章技術棧</a>。它們負責讓內容可使用、可帶出去分享；AI 只取得已授權且必要的內容與己方事件，不接收 LINE 私聊或子女回覆，也不以家人互動推斷推薦偏好。</p>
 <h3 id="ai-heading-3">工具選用與分工</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
 <thead>
@@ -598,7 +777,7 @@
 <p>Google 的結構化輸出可約束回傳欄位與格式；格式符合 schema 不代表內容正確，仍需自行驗證。<a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output">官方文件</a>（查閱 2026-09-29）</p>
 <p>文字嵌入把文本轉為可比較的向量，可用於檢索與相似度；它不保證推薦符合移動條件，也不等同已訓練個人化模型。<a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings">官方文件</a>（2026-09-29）</p>
 <h3 id="ai-heading-4">文案能不能請 AI 做？可以，但要拆開工序</h3>
-<figure class="diagram"><a href="assets/diagrams/ai-pipeline.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/ai-pipeline.svg" width="1100" height="520" alt="ai-pipeline：架構或流程圖，文字版見下方" loading="lazy"></a><figcaption>點圖可另開分頁放大；流程仍以正文說明為準。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart LR
+<figure class="diagram" id="diagram-ai-pipeline"><a href="assets/diagrams/ai-pipeline.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/ai-pipeline.svg" width="1100" height="520" alt="AI 內容產線，文字版見下方" loading="lazy"></a><figcaption>AI 內容產線 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart LR
   S[&quot;編輯選可信來源&lt;br/&gt;公告、地方文獻、合作方資料&quot;] --&gt; E[&quot;擷取片段與來源識別碼&quot;]
   E --&gt; G[&quot;AI 草稿&lt;br/&gt;文案、標籤、待查句子&quot;]
   G --&gt; V[&quot;程式格式檢查&lt;br/&gt;來源存在、欄位與版本&quot;]
@@ -640,6 +819,7 @@
 </table></div>
 <p>成本比較放在 <a href="#cost">04 章</a>：省下的是起稿與整理時間，審稿、重寫、查證與圖片淘汰仍需計入。不宣稱 AI 能完全替代城市編輯。</p>
 <h3 id="ai-heading-5">圖片：已有 PoC 與正式候選怎麼區分</h3>
+<p>整合後的 <a href="../../app/js/views/album-memory.js">回憶卡程式</a> 已能將到訪地方、自選照片與心情組合成模板示意，照片在本機處理及保存；這仍不是即時 AI 生圖或正式 LINE 回傳服務。既有圖庫與個人組卡是兩層能力，展示時分開說明。</p>
 <p>repo 已保存 DreamShaper 8＋ControlNet Canny 製作的部分卡面；產生器讀取授權照片，將輪廓資訊與圖生圖流程結合。這能約束構圖，但仍可能出錯，不能保證地標精確。依據：<a href="../../app/tools/gen-postcards.py">生成腳本</a>、<a href="../../app/assets/postcards/index.json">參數清單</a>、<a href="../../app/assets/postcards/README.md">素材說明</a>。模型來源：<a href="https://huggingface.co/Lykon/dreamshaper-8">DreamShaper 8</a>、<a href="https://huggingface.co/lllyasviel/control_v11p_sd15_canny">ControlNet Canny</a>（查閱 2026-09-29）。</p>
 <p>正式服務的工具比較如下；這是工程選擇，不表示已有盲評勝出者。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
@@ -716,7 +896,7 @@
 </article>
 <article id="cost" class="chapter" aria-label="成本與資源"><div class="chapter-meta"><span>04 / 成本與資源</span><a href="04-cost-and-resources.md">Markdown 原稿 ↗</a></div><h2 id="cost-heading-1">04｜遊喜樂內容、圖像與增量雲端成本</h2>
 <blockquote>
-<p><strong>本章只估什麼</strong>：遊喜樂新增功能的初始內容建庫、持續內容維護、AI 文案與圖片生成，以及承載這些工作所需的增量雲端。<br />
+<p><strong>本章估價範圍</strong>：遊喜樂新增功能的內容建庫與維護、AI 文案與圖片生成、必要增量雲端，以及功能接入的工程人時。<br />
 <strong>本章不估什麼</strong>：既有 yoxi 派車 app、帳號、支付、派遣、客服、全公司產品與工程團隊的整體成本。<br />
 <strong>估價邊界</strong>：這是一組可重算的範圍估算，不是完整預算，也不含稅、匯率波動、Points、正式地圖 API、EAS、商店帳號與另購授權。</p>
 </blockquote>
@@ -731,14 +911,20 @@
 <h3 id="cost-heading-3">2. 成本流程與範圍</h3>
 <p>產品主流程為：</p>
 <pre><code class="language-text">長輩選到／收到推薦景點
-→ yoxi 去程、候車與回程
+→ yoxi 去程接送、抵達後依約候車
 → 抵達後在 100 m 內探索
 → 伺服器定位驗證
-→ 保證取得當次明信片（常態／節慶／首訪／里程固定規則）
-→ LINE 分享給子女
-→ 按讚、留言
-→ 圖鑑與里程碑客製獎勵（提案；現況只有獎章）
+→ 保證取得當次明信片並收進圖鑑（常態／節慶／首訪／里程固定規則）
+→ 圖鑑累積與里程碑客製樣式（提案；現況只有獎章）
+
+回程分支：抵達後由本人依約安排回程，不等待分享或家人回話。
+
+使用者自選分享分支：
+→ app 製作分享圖並開啟系統分享面板
+→ 長輩在 LINE 自選對象並送出圖片
+→ 子女在 LINE 看圖、回話或貼圖（不回傳 yoxi）
 </code></pre>
+<p>分享面板之後是作業系統與 LINE 的外部互動。主方案不建子女回應頁，不要求子女帳號，也不建立家屬社交圖譜、按讚或留言 API。app 可記錄分享按鈕、分享呼叫狀態、檔案輸出成功及平台是否可用；使用者回到 app 只表示 App 再次進入前景，不能當成已送出、已收件或已讀。現有家人 mock 是歷史概念，若用於本次提案，只能另標為外部聊天情境示意，不作資料回傳證據。</p>
 <p>下列內容流程供應已查核的地方資料與卡面：</p>
 <pre><code class="language-text">公開資料、合作方供稿、授權照片
         │
@@ -754,8 +940,8 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <p>內容產線的增量雲端有四類：文字與圖像模型呼叫、批次生成工作、成品儲存與傳輸、監控與日誌。內容主表與使用者規模脫鉤；推薦與回顧另在第 8 節依實際活躍請求數估變動費。既有 app API、派遣資料庫與整體工程人力不放進本章。</p>
 <h4 id="cost-heading-4">2.1 從現有素材開始的最小試點</h4>
 <p>團隊先從已查核且已有授權卡面的地方中選 5 個（假設）。每地點沿用春、夏、秋、冬、搭 yoxi 抵達版共 5 款，因此試點可先用 <strong>25 張既有成品</strong>。節慶、首訪與里程紀念以固定規則選卡或程式疊字，不設獎池、不需逐次呼叫生成模型。</p>
-<p>試點不需要先聘專任城市編輯；由既有團隊做一次素材清單、授權、文字與 25 張卡面複核。人力先抓內容與授權整理 8–16 小時、逐張審圖與修正 4–8 小時（本稿新增假設）。卡面 hosting 部分計 25 張成品的儲存與實際傳輸；若每張 WebP 250 KB，原始量約 <strong>6.25 MB</strong>。到訪 API、卡片紀錄、分享與回應仍有運算及資料讀寫費，依第 8 節另列，不能只用圖片大小當試點全部雲端需求。</p>
-<p>試點仍需產品接入：5 個地方資料、卡面規則、100 m 定位驗證、明信片發放、LINE 分享連結、回應與圖鑑入口。這些增量工程人時在第 9 節另列。去程、候車、回程與費率沿用或介接企業既有能力；API 合約、車隊供給與價格須由企業確認，本稿不自行設定官方單價。</p>
+<p>試點不需要先聘專任城市編輯；由既有團隊做一次素材清單、授權、文字與 25 張卡面複核。人力先抓內容與授權整理 8–16 小時、逐張審圖與修正 4–8 小時（本稿新增假設）。卡面 hosting 部分計 25 張成品的儲存與實際傳輸；若每張 WebP 250 KB，原始量約 <strong>6.25 MB</strong>。到訪 API 與卡片紀錄仍有運算及資料讀寫費，依第 8 節另列，不能只用圖片大小當試點全部雲端需求。分享圖以裝置端輸出及系統分享面板為主，不另列子女回應資料庫或 LINE 私聊資料費。</p>
+<p>試點仍需產品接入：5 個地方資料、卡面規則、100 m 定位驗證、明信片發放、分享圖輸出、系統分享面板與圖鑑入口。這些增量工程人時在第 9 節另列。去程、候車、回程與費率沿用或介接企業既有能力；API 合約、車隊供給與價格須由企業確認，本稿不自行設定官方單價。</p>
 <h3 id="cost-heading-5">3. 內容量假設</h3>
 <p>最小試點採 5 個既有地方；60 個地方與持續維護量沿用 <code>pitch/docs/business.md</code>，只作擴城容量情境。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
@@ -1081,7 +1267,7 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 </code></pre>
 <p>建庫後每城約 300 張正式圖；若每張 WebP 250 KB，約 75 MB。每月新增 100 張，約 25 MB。純儲存量很小，真正可能放大的是 app 反覆瀏覽造成的傳輸，應以 CDN 帳單與快取命中率重算。</p>
 <p>Cloud Run、Storage 與 CDN 的區域單價會受部署地與流量方向影響，本稿不沿用舊文件為整個 app 估的 US$522／月。正式報價入口：<a href="https://cloud.google.com/run/pricing">Cloud Run 定價</a>、<a href="https://cloud.google.com/storage/pricing">Cloud Storage 定價</a>、<a href="https://cloud.google.com/cdn/pricing">Cloud CDN 定價</a>。</p>
-<p>完整新增服務還需加上「到訪／收藏／分享／回應 API 的 CPU 與記憶體使用量＋資料庫讀寫及儲存＋個人分享成品的儲存及傳輸＋推薦／回顧模型費」。資料庫以實際讀取數 × 讀取單價、寫入數 × 寫入單價及容量估算；流量和部署區域未知前不報精確總額。個人分享成品若每次生成新檔，須按件數、檔案大小與保存期計費，不能全部算入共用的 25 張底圖。</p>
+<p>完整新增服務還需加上「到訪／收藏／必要事件 API 的 CPU 與記憶體使用量＋其資料庫讀寫及儲存＋推薦／回顧模型費」。資料庫以實際讀取數 × 讀取單價、寫入數 × 寫入單價及容量估算；流量和部署區域未知前不報精確總額。主方案的分享圖在裝置端輸出給系統分享面板，不建分享、回應、按讚或留言 API，也不保存 LINE 收件人與私聊內容，因此不列相關資料庫與月維運費。若實作評估改為伺服器製圖，才另按暫存件數、檔案大小、保存期與傳輸量估算，並不得把暫存檔當成家人互動紀錄。</p>
 <h4 id="cost-heading-17">8.2 推薦與回顧的活躍請求變動費</h4>
 <p>完整方案仍有推薦理由與回顧文字，但這兩項應按真正送進模型的請求數計價，不用整個 app MAU 乘上一個固定總價。以下使用 Gemini 3.5 Flash-Lite Non-global 即時標價：輸入 US$0.33／百萬 token、輸出 US$2.75／百萬 token；不假設 Batch 折扣。</p>
 <pre><code class="language-text">推薦理由單次
@@ -1129,16 +1315,10 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <td>既有行程定位基礎設施</td>
 </tr>
 <tr>
-<td>LINE 分享連結、預覽與回流頁</td>
-<td>app／前端／後端</td>
-<td style="text-align:right">24–40</td>
-<td>LINE 付費服務與行銷投放</td>
-</tr>
-<tr>
-<td>按讚、留言、檢舉與基本管理狀態</td>
-<td>app／後端</td>
-<td style="text-align:right">56–88</td>
-<td>既有客服與大規模內容審查中心</td>
+<td>分享圖輸出、系統分享面板與平台測試</td>
+<td>app／設計／QA</td>
+<td style="text-align:right">16–24</td>
+<td>LINE 私聊、收件／已讀狀態與自有回應頁</td>
 </tr>
 <tr>
 <td>圖鑑、獎章與里程碑固定樣式</td>
@@ -1155,12 +1335,14 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <tr>
 <td><strong>合計</strong></td>
 <td>可由既有角色分擔</td>
-<td style="text-align:right"><strong>240–384 小時，30–48 人天</strong></td>
+<td style="text-align:right"><strong>176–280 小時，22–35 人天</strong></td>
 <td>以 8 小時／人天換算，非日曆工期</td>
 </tr>
 </tbody>
 </table></div>
-<p>來回候車所需 API、車隊供給、費率與商務條款都由企業確認；本表只抓遊喜樂的介接層，不自行估既有派車成本。若缺少可用 API，前述介接人時不含企業新增產品或派遣功能的工作。按讚留言若擴大到公開社群，另需評估審查、申訴與保留政策，不能只沿用上述基本狀態人時。</p>
+<p>合計下界為 <code>16＋24＋40＋16＋40＋40＝176 小時</code>，上界為 <code>24＋40＋64＋24＋64＋64＝280 小時</code>。分享出口的人時涵蓋圖片組版與輸出、系統分享 API 接入、不可用狀態及 iOS／Android 測試；不含子女帳號、家屬關係、回應頁、按讚留言或私聊資料。可量事件限於分享按鈕、呼叫狀態、檔案輸出及平台可用狀態；系統分享呼叫結束或回到 app 均不能記為送出。</p>
+<p>來回候車所需 API、車隊供給、費率與商務條款都由企業確認；本表只抓遊喜樂的介接層，不自行估既有派車成本。若缺少可用 API，前述介接人時不含企業新增產品或派遣功能的工作。若未來另案建立自有社群互動，須重新估身分、關係、審查、申訴、保留政策與月維運費，不併入本主方案。</p>
+<p>本表以已有 App 與可重用元件的功能接入為假設，不是從零移植整套 Expo App 的工期。競賽若另做獨立 Expo demo，先限於一條模擬叫車與收卡流程，盤點 UI 移植、定位／分享實機驗證、Mock 接點及安裝建置；能共用的工作不重複加總，尚未盤點前不承諾同一個總工時涵蓋兩種交付。</p>
 <h4 id="cost-heading-20">9.2 擴城內容產線</h4>
 <p>下表只在 60 地點與持續更新成立後採用；5 地點試點不需一次建齊。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
@@ -1217,7 +1399,7 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <p>上線後每月另留平台維護 8–16 小時、資料與成本檢查 4–8 小時、QA 4–8 小時（假設）。這些人時尚未換算現金，避免在沒有公司內部職級單價時製造不可靠的人力總價；城市編輯與外包仍依第 6 節另列。9.1 與 9.2 的資料結構、介接、監控及測試可有重用，不直接相加；由既有服務覆蓋程度重估增量。</p>
 <h3 id="cost-heading-21">10. 固定里程碑樣式獎勵</h3>
 <p>現況已有獎章；「圖鑑與里程碑客製獎勵」是後續提案。取得規則必須固定且可解釋，例如第一次抵達、累積距離跨過門檻或收進指定圖鑑後，伺服器直接發對應樣式。每次符合條件都保證取得，不採隨機抽卡。</p>
-<p>常態、節慶、首訪與里程紀念若只是在既有卡面疊框、戳記或文字，單次 AI 圖像費為 <strong>US$0</strong>；成本是一次性的設計、排版、規則設定與 QA，以及每次發放的少量資料讀寫。新增一款程式疊加樣式先抓設計與排版 8–16 小時、規則與測試 8–16 小時（本稿新增假設）。</p>
+<p>常態、節慶、首訪與里程紀念若只是在既有卡面疊框、戳記或文字，單次 AI 圖像費為 <strong>US$0</strong>；成本是一次性的設計、排版、規則設定與 QA，以及每次發放的少量資料讀寫。單款程式疊加樣式可拆為設計與排版 8–16 小時、規則與測試 8–16 小時（假設）。第 9.1 節的 40–64 小時已含基本圖鑑、獎章與首款里程碑樣式，這裡的拆分不再額外相加；超出試點範圍的新樣式才另估可重用部分與增量工時。</p>
 <p>若某里程碑需要一套預生成新圖，可用下式估算，仍在上架前審完，使用時只取成品：</p>
 <pre><code class="language-text">里程碑新圖一次成本
 = 樣式數 × 每款候選數 ×（選定模型輸出單價＋自動檢查費）
@@ -1338,6 +1520,7 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <li>舊 AI 單位成本與 24 變體：<code>pitch/docs/ai-architecture.md</code> §5.2–§5.4；本稿沒有回寫該檔。</li>
 <li>現行 5 款規則與既有 55 張成品：<code>app/assets/postcards/README.md</code>、<code>app/js/views/explore-cards.js</code> 的 <code>CARD_STYLES</code>。</li>
 <li>官方模型價格：<a href="https://cloud.google.com/vertex-ai/generative-ai/pricing">Vertex AI 生成式 AI 定價</a>（2026-09-29）。</li>
+<li>系統分享能力邊界：<a href="https://docs.expo.dev/versions/latest/sdk/sharing/">Expo Sharing</a>、<a href="https://reactnative.dev/docs/share">React Native Share</a>（2026-09-29）。</li>
 <li>本稿新增假設：每款 3 張候選、逐張檢視 1 分鐘主情境、路線 8 小時沿用月度工時、160 小時／人月、1 USD＝NT$32。</li>
 <li>5 地點試點、試點素材複核、主流程接入與固定里程碑樣式人時均為本稿新增假設。</li>
 </ul>
@@ -1350,7 +1533,7 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 狀態：原型與圖片可證明設計及部分素材製作，不能證明正式派車、真實家庭互動或留存成效。</p>
 </blockquote>
 <h3 id="evidence-heading-2">1. 可用於正文的補充說明</h3>
-<p>本方案提供可操作的 HTML／PWA 原型、畫面素材、收卡規則程式與 AI 圖像生成參數，供評審檢視從探索到出行、收藏與分享的體驗。正式服務架構以企業既有能力與新增模組分工呈現，並說明來回候車、家庭回應與里程碑樣式需要補齊的接點。</p>
+<p>本方案提供可操作的 HTML／PWA 原型、畫面素材、收卡規則程式與 AI 圖像生成參數，供評審檢視從探索到出行、收藏與分享的體驗。正式服務架構以企業既有能力與新增模組分工呈現，並說明來回候車、分享圖輸出、系統分享面板與里程碑樣式需要補齊的接點。長輩在 LINE 自選對象送圖，子女在 LINE 看圖、回話或貼圖；這段私聊不回傳 yoxi。</p>
 <p>AI 工具能力與單價取自供應商官方文件；使用動機研究保留為背景資料，不另替換團隊原有論述，也不宣稱本案已有留存改善。人力與使用量明標假設，後續以試點數據修正。</p>
 <h3 id="evidence-heading-3">2. 競賽與內部依據</h3>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
@@ -1427,6 +1610,31 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <td>不是雲端秘密管理或完整權限系統</td>
 </tr>
 <tr>
+<td><a href="https://docs.expo.dev/versions/latest/sdk/filesystem/">Expo FileSystem</a></td>
+<td>行動端檔案與暫存圖面管理</td>
+<td>不會自動把 React Native 畫面轉成圖片，仍需輸出元件</td>
+</tr>
+<tr>
+<td><a href="https://docs.expo.dev/build/introduction/">EAS Build</a></td>
+<td>development build 與安裝包的建置選項</td>
+<td>不是執行期後端，主方案不以購買 EAS 為前提</td>
+</tr>
+<tr>
+<td><a href="https://fastapi.tiangolo.com/">FastAPI</a></td>
+<td>Python 型別化 API 與 OpenAPI 文件能力</td>
+<td>本案的正式 API 尚未建置，企業可依既有框架接同一契約</td>
+</tr>
+<tr>
+<td><a href="https://docs.expo.dev/versions/latest/sdk/sharing/">Expo Sharing</a></td>
+<td>可檢查平台分享能力，並以 <code>shareAsync</code> 分享本機檔案；iOS／Android 支援本機檔案，web 另有瀏覽器與 HTTPS 等限制</td>
+<td><code>shareAsync</code> 回傳 <code>Promise&lt;void&gt;</code>，不提供已送出、收件人、已讀或 LINE 私聊內容</td>
+</tr>
+<tr>
+<td><a href="https://reactnative.dev/docs/share">React Native Share</a></td>
+<td>可開啟原生分享面板；回傳值可用於處理平台行為差異</td>
+<td>Android 總是回報 <code>Share.sharedAction</code>，不能據此推論使用者已送出、對方已收件或已讀</td>
+</tr>
+<tr>
 <td><a href="https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run">Cloud Run</a></td>
 <td>API 與背景工作的部署候選</td>
 <td>不表示已有正式服務或可用率實測</td>
@@ -1466,16 +1674,6 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <td>現有輪廓控制模型的來源</td>
 <td>不保證建築圖像與實景完全一致</td>
 </tr>
-<tr>
-<td><a href="https://developers.line.biz/en/reference/liff/#share-target-picker">LINE LIFF 分享介面</a></td>
-<td>可分享給使用者選定的好友／群組，回報分享結果</td>
-<td>不提供收件人數，不等於可讀家人私聊</td>
-</tr>
-<tr>
-<td><a href="https://developers.line.biz/en/docs/messaging-api/receiving-messages/">LINE 接收訊息事件</a></td>
-<td>核對官方帳號可接收的事件</td>
-<td>不代表分享後的私人聊天可回讀；子女互動設在自有頁</td>
-</tr>
 </tbody>
 </table></div>
 <p>Google 部分頁面已使用 Gemini Enterprise Agent Platform 名稱；本稿沿用 repo 的 Vertex AI 用語，實際模型 ID、區域與 SKU 以正式部署設定為準。</p>
@@ -1484,7 +1682,7 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <li><strong>Ryan, R. M., &amp; Deci, E. L.（2000）</strong>。<em>Self-Determination Theory and the Facilitation of Intrinsic Motivation, Social Development, and Well-Being.</em> American Psychologist, 55(1), 68–78。<a href="https://www.selfdeterminationtheory.org/SDT/documents/2000_RyanDeci_SDT.pdf">作者研究網站全文</a>。用途：自主、能力感與關係連結的背景依據，可供團隊原有使用動機論述參考。</li>
 <li><strong>Looyestyn, J., et al.（2017）</strong>。<em>Does gamification increase engagement with online programs? A systematic review.</em> PLOS ONE, 12(3), e0173403。<a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173403">期刊原文</a>。用途：支持將遊戲化視為值得測試的參與設計，也提醒長期效果需另驗證。</li>
 </ol>
-<p>兩篇均不能直接證明遊喜樂能增加多少留存或出行。主方案的接送、保證收卡與家人互動仍需實際驗證。</p>
+<p>兩篇均不能直接證明遊喜樂能增加多少留存或出行。主方案的接送、保證收卡，以及 App 外、LINE 內的家人互動仍需實際驗證。</p>
 <h3 id="evidence-heading-6">5. GitHub 與程式碼文件</h3>
 <p>Repo remote：<a href="https://github.com/Ricky610329/Yoxi_app_design">Ricky610329/Yoxi_app_design</a>。網址依本機 <code>git remote</code> 核對；本次未驗證未登入者可讀性，也未推送新文件。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="資料表，可左右捲動"><table>
@@ -1543,8 +1741,8 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 </tr>
 <tr>
 <td><a href="#flow">本次流程稿</a></td>
-<td>接送、收卡、分享、家人回應與里程碑</td>
-<td>正式接點與新增樣式仍是提案</td>
+<td>接送、收卡、系統分享出口與里程碑</td>
+<td>LINE 私聊不回傳 yoxi；正式接點與新增樣式仍是提案</td>
 </tr>
 </tbody>
 </table></div>
@@ -1561,6 +1759,7 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <p><img src="../../app/assets/shots/album.png" alt="收藏首頁與回顧入口" loading="lazy" class="prototype-shot" width="390" height="844" /></p>
 <p>來源：<code>app/assets/shots/album.png</code>。可展示收藏與回顧如何累積成個人內容；其中張數與里程是示範狀態，不是使用者研究數據。</p>
 <p>本次看過上述三張工作樹圖片；不改圖、不重拍正在調整的 App。此 Markdown 使用相對連結，檔案更新時畫面也會更新，因此交件 PDF 應使用固定版本的素材。</p>
+<p>Repo 內的家人回話、表情或回應狀態 mock 是歷史概念，不能把 App 造型直接當作 LINE 實際介面。本版展示若需要家人情境，另標「外部聊天情境示意」，不把該畫面當作已建置的子女回應頁、帳號或聊天資料管線，也不能用來主張 yoxi 取得送出、收件、已讀或私聊內容。分享面板關閉或使用者回到 app，都不等於圖片已送出。</p>
 <h3 id="evidence-heading-11">7. 素材來源與交件時的誠實標示</h3>
 <ul>
 <li>照片作者、授權與出處以 <a href="../../prototype/assets/photos/credits.js">credits.js</a> 與 <a href="../../app/assets/postcards/README.md">卡面說明</a> 為依據；裁切、改作及分享版本均需核對對應素材條件。</li>
@@ -1580,8 +1779,8 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <li>以官方文件核對 AI 標價、模型能力、Expo 開發與 brownfield 限制、LINE 分享及事件範圍。來源和查詢日期列在 <a href="#evidence">補充資料</a>。價格仍須在採購時重查。</li>
 <li>以十進位運算覆核 <a href="#cost">成本文件</a> 的公式；美元呈現至小數第二位。人力、內容量、匯率、token 用量與處理時間均屬假設。</li>
 </ul>
-<p>重點試算：5 款圖面初期模型費 US$36.91、每月 US$12.30；混合參考影像模型情境初期 US$44.20、每月 US$14.73，另計輸入影像及重試；每月內容文字模型費 US$3.26；個人化文字範例 US$31.55；最小試點介接 240–384 人時。這些是不同費用項目或替代情境，不能直接視為完整服務總價。</p>
-<h3 id="verification-heading-3">原型回歸</h3>
+<p>重點試算：5 款圖面初期模型費 US$36.91、每月 US$12.30；混合參考影像模型情境初期 US$44.20、每月 US$14.73，另計輸入影像及重試；每月內容文字模型費 US$3.26；個人化文字範例 US$31.55。最小試點介接已依外部分享方案重算為 <strong>176–280 人時</strong>，不含從零移植整套 Expo App。這些是不同費用項目或替代情境，不能直接視為完整服務總價。</p>
+<h3 id="verification-heading-3">原型回歸（初版紀錄）</h3>
 <p>共同工作區另有開發中的修改，因此在獨立工作樹及 <code>docs/competition-writing-scope</code> 分支驗證，程式基準為 <code>6b1ae4f</code>。撰稿前後皆執行：</p>
 <pre><code class="language-powershell">python prototype/tools/verify-quiet.py
 </code></pre>
@@ -1593,11 +1792,11 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <li>現有 HTML／Web App 與離線生成圖面，是可查看的概念證據。</li>
 <li>Expo 是獨立手機示範的候選工具；是否整合既有 yoxi App，要由企業依現有技術與串接條件決定。</li>
 <li>去程、候車待命、回程的正式供給、費率與 API 尚待企業確認。</li>
-<li>LINE 分享入口與自建家庭回應頁分開描述，不宣稱可讀取私人聊天室的按讚或留言。</li>
+<li>分享圖交給系統面板，由使用者選 LINE 和收件人；不建子女回應頁，不收子女身分、已讀、聊天或回覆。App 只記己方操作及平台可觀測的呼叫狀態。</li>
 <li>抵達取得卡片及里程碑使用固定規則；機率抽卡與抽獎討論只保留在備存文件，不列為本次主方案。</li>
 <li>低額模型費不等於服務零成本；人工審核、工程介接、定位驗證、資料庫、分享成品與維運須分列。</li>
 </ul>
-<h3 id="verification-heading-5">HTML 閱讀版檢查</h3>
+<h3 id="verification-heading-5">HTML 閱讀版檢查（初版紀錄）</h3>
 <ul>
 <li>入口：<a href="index.html">index.html</a>。八份 Markdown 轉為單頁文件，五張圖改用本機 SVG；早期討論預設折疊，列印時略過。</li>
 <li>Chrome 以 1440 px 桌面及 390 px 手機視窗檢查：正文無水平溢出，放大字體後仍無溢出；31 個表格保留資料，手機可在表格內左右捲動。</li>
@@ -1607,10 +1806,23 @@ AI 草稿與候選出處 ──→ 城市編輯查證、改寫、簽核
 <li>HTML 工作前後另跑兩次原型驗收，皆八段通過；報告內容與六條承諾數值一致。驗證仍限同一獨立工作樹的程式基準。</li>
 </ul>
 <p>重跑方式見 <a href="tools/README.md">維護說明</a>，瀏覽器檢查執行 <code>python pitch/writing/tools/check-reader.py</code>。截圖與 JSON 報告寫入系統暫存目錄，不納入正文交件。</p>
+<h3 id="verification-heading-6">main 整合後的本輪修訂</h3>
+<p>本輪從 <code>f22318c</code> 開出 <code>docs/share-boundary-expo-stack</code>，沿用已整合的原型與 App。只修改提案工作區及共用簡報中的分享立場，不更動 App 功能。</p>
+<ul>
+<li>修正正文、圖表、API、資料需求與成本，移除主方案中的自建家庭回應頁。圖鑑在有效收卡時累積，LINE 分享是獨立的自選分支。</li>
+<li>建議技術棧列出 Expo／React Native／TypeScript、Router、裝置 SDK、服務介面與 Python／FastAPI 後端候選；現有 HTML／PWA、手機 demo 與企業正式接入分別標示。</li>
+<li>補上服務分層、分享資料邊界、Expo 技術棧與正式接入路徑四張抽象圖；原有服務架構、使用流程、時序圖同步修正。</li>
+<li>試點工時下界為 <code>16＋24＋40＋16＋40＋40＝176</code>，上界為 <code>24＋40＋64＋24＋64＋64＝280</code>；其餘模型費公式未改。</li>
+<li>以整合後原型重跑前後驗收，皆八段通過；忽略輸出行序後整份報告相同，六條承諾數值保持一致。產生的 load 檔時間戳不納入文件提交。</li>
+<li>閱讀版為八章、九張 SVG、33 個表格；147 個檔案／章節連結檢查通過。Chrome 桌面及手機均驗過圖片載入、字體切換、章節定位、Expo 圖解捷徑及列印入口，無正文溢出、無外部資源請求。圖面文字另檢查專案禁用詞。</li>
+</ul>
 </article>
 <details class="archive" id="archive-panel"><summary>早期討論備存 · 不納入本次主方案</summary><article id="archive" class="chapter" aria-label="早期討論"><div class="chapter-meta"><span>備存 / 早期討論</span><a href="notes/optional-card-ideas.md">Markdown 原稿 ↗</a></div><h2 id="archive-heading-1">早期討論備存｜機率卡與套組抽獎（未納入主方案）</h2>
 <blockquote>
 <p><strong>以後續對齊為準</strong>：使用者最後指定主流程為接送、探索、保證取得固定規則明信片、LINE 家人互動與圖鑑里程碑。以下保留早期提問的推演，不是本次正文、採用決策或實作要求；也不應引用其中機率／獎池作主方案估算。</p>
+</blockquote>
+<blockquote>
+<p>分享邊界補註：本文的家人互動僅指 LINE 外部情境；目前主方案不建立自有回應頁、不蒐集子女私聊。現行定義以 <a href="#flow">流程稿</a> 為準。</p>
 </blockquote>
 <blockquote>
 <p>狀態：產品討論稿。基本收卡已有 PoC；回訪機率、距離／搭車加成、套組抽獎均為本次新增候選，尚未實作。<br />
@@ -1852,7 +2064,7 @@ p(n,d,r) = min(0.35, 0.05 + 0.03 × (n-1) × g(d) + 0.10 × r)
 <p>固定名額的活動例：2,000 個合格序號中，等機率、無放回選 20 個中獎序號，每個序號中獎率為 1%。若一人可持多個序號，個人的中獎率不等於 1%；若限制一人最多中一次並重新抽選，還需重新定義抽法。以上皆是假設，活動條款不能只寫模糊的「有機會中獎」。</p>
 <p>獎品不是 AI 成本；還有採購、履約、客服、稅務與活動系統投入。主方案的 <a href="#cost">04 章</a> 不納入本備存機制的獎池。若未來重新討論，抽獎資格與付費行程的關係、參與條件及企業活動規範需另外確認，本稿不作合法性結論。</p>
 <h3 id="archive-heading-12">8. 系統如何讓規則可核對</h3>
-<figure class="diagram"><a href="assets/diagrams/archived-cards.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/archived-cards.svg" width="900" height="1040" alt="archived-cards：架構或流程圖，文字版見下方" loading="lazy"></a><figcaption>點圖可另開分頁放大；流程仍以正文說明為準。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TD
+<figure class="diagram" id="diagram-archived-cards"><a href="assets/diagrams/archived-cards.svg" target="_blank" rel="noopener" aria-label="另開分頁放大圖表"><img src="assets/diagrams/archived-cards.svg" width="900" height="1040" alt="早期機率卡討論備存，文字版見下方" loading="lazy"></a><figcaption>早期機率卡討論備存 · 點圖可另開分頁放大，正文保留條件與假設。</figcaption></figure><details class="diagram-source"><summary>查看圖表文字與 Mermaid 原始碼</summary><pre><code>flowchart TD
   A[&quot;有效到訪與授權行程事件&quot;] --&gt; V[&quot;查權限、驗證、同日去重&quot;]
   V --&gt; P[&quot;讀取規則版本&lt;br/&gt;到訪次數、生活圈快照、搭車條件&quot;]
   P --&gt; O[&quot;計算本次公開機率&quot;]
