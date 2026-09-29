@@ -35,19 +35,21 @@ FONT = "Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif"
 
 # name: (source, Mermaid block index, pinned SHA-256, curated layout)
 SPECS = {
-    "service-layers.svg": ("pitch/writing/01-solution-architecture.md", 0,
-                           "d47185453750ca4d5db548a13411d92e444afca4286bbc38d882af45340bff74", "service-layers"),
-    "architecture.svg": ("pitch/writing/01-solution-architecture.md", 1,
+    "product-cycle.svg": ("pitch/writing/01-solution-architecture.md", 0,
+                          "ded54d60712bb5fe0bf0f1091a26e0a97301c7cc3723deb4aabeebcd06c50930", "product-cycle"),
+    "service-layers.svg": ("pitch/writing/01-solution-architecture.md", 1,
+                           "5ad97e69f567f8ea2adf729bd4799b0b39cb2b2ceee444371a73c747a4058ec1", "service-layers"),
+    "architecture.svg": ("pitch/writing/notes/technical-appendix.md", 0,
                          "89e73a561f99e3d811742999867bded3adbe4f629dde868bf8d40514f31cb68d", "architecture"),
-    "expo-stack.svg": ("pitch/writing/01-solution-architecture.md", 2,
+    "expo-stack.svg": ("pitch/writing/notes/technical-appendix.md", 1,
                        "5da9f3032d005d47d0c260c060b6ae9926264d6108914c641a150b19932291b5", "expo-stack"),
-    "evolution.svg": ("pitch/writing/01-solution-architecture.md", 3,
+    "evolution.svg": ("pitch/writing/notes/technical-appendix.md", 2,
                       "49ebf71bae09bf3409fabc5a33c07af691dc153015580cff2a6238e960b90f4d", "evolution"),
     "flow.svg": ("pitch/writing/02-flow-design.md", 0,
-                 "5f4f704e81b0681f47e35465ec8e6f056384bba94f2aa16b6e7e6ac89c2b00d7", "flow"),
-    "share-boundary.svg": ("pitch/writing/02-flow-design.md", 1,
+                 "6b8fa73008de92abf9642a5fb0c3a00e477c87a6aaf014814618c100b831df46", "flow"),
+    "share-boundary.svg": ("pitch/writing/notes/technical-appendix.md", 3,
                            "b0f4fb467020991fb10f47c608d569a126b54deb02eb41c0c7c8c54f755ff229", "share-boundary"),
-    "sequence.svg": ("pitch/writing/02-flow-design.md", 2,
+    "sequence.svg": ("pitch/writing/notes/technical-appendix.md", 4,
                      "fa143ac6b57b6b98d0382436e2f032017cd5d59405f0b73dd1937a851a51840d", "sequence"),
     "ai-pipeline.svg": ("pitch/writing/03-ai-and-tools.md", 0,
                        "3d83ecdb0dbef771d772ded3bb12720d77ca20bcac11ed823d9322657877a778", "ai-pipeline"),
@@ -168,33 +170,75 @@ def group_box(x: int, y: int, w: int, h: int, title: str) -> str:
             + text_block(x + 24, y + 36, title, size=21, weight=700, anchor="start"))
 
 
+def render_product_cycle(block: str, source: str, digest: str) -> str:
+    labels, edges = graph_parts(block)
+    boxes = {
+        "DISCOVER": (45, 120, 300, 82), "MOVE": (425, 120, 300, 82),
+        "ARRIVE": (805, 120, 300, 82), "COLLECT": (805, 340, 300, 82),
+        "MEMORY": (425, 340, 300, 82), "NEXT": (45, 340, 300, 82),
+        "SHARE": (425, 535, 300, 72),
+    }
+    body = [
+        text_block(35, 38, "產品價值循環：每次到訪都接上下一次探索", size=25,
+                   weight=700, anchor="start"),
+        group_box(20, 65, 1110, 390, "核心體驗"),
+        group_box(360, 475, 430, 155, "收藏後的自選延伸"),
+    ]
+    routes = {
+        ("DISCOVER", "MOVE"): "M 345 161 H 425",
+        ("MOVE", "ARRIVE"): "M 725 161 H 805",
+        ("ARRIVE", "COLLECT"): "M 955 202 V 340",
+        ("COLLECT", "MEMORY"): "M 805 381 H 725",
+        ("MEMORY", "NEXT"): "M 425 381 H 345",
+        ("NEXT", "DISCOVER"): "M 195 340 V 202",
+        ("MEMORY", "SHARE"): "M 575 422 V 535",
+    }
+    for a, b, label, dashed in edges:
+        body.append(routed_edge(routes[(a, b)], label, dashed=dashed))
+    for key, box in boxes.items():
+        fill = CREAM if key in {"DISCOVER", "MEMORY"} else (MIST if key == "SHARE" else WHITE)
+        body.append(node(*box, labels[key], fill=fill, size=18))
+    body.append(text_block(810, 602, "分享不影響收卡、回看或再次探索", size=15,
+                           weight=600, anchor="start"))
+    return base_svg(1150, 655, "遊喜樂產品價值循環", source, digest, "\n  ".join(body))
+
+
 def render_service_layers(block: str, source: str, digest: str) -> str:
     labels, edges = graph_parts(block)
     boxes = {
-        "UI": (330, 65, 390, 78), "SERVICE": (330, 215, 390, 78),
-        "DATA": (330, 365, 390, 78), "CONTENT": (35, 535, 390, 78),
-        "RIDE": (625, 535, 390, 78), "OUT": (330, 665, 390, 78),
-        "FAMILY": (330, 785, 390, 78),
+        "EXPERIENCE": (360, 75, 480, 82),
+        "EXPLORE": (45, 260, 330, 82), "VISIT": (435, 260, 330, 82),
+        "ALBUM": (825, 260, 330, 82),
+        "CONTENT": (45, 510, 330, 82), "DATA": (435, 510, 330, 82),
+        "YOXI": (825, 510, 330, 82),
     }
     body = [
-        text_block(35, 34, "責任分層：App 內收卡，聊天留在 LINE", size=25,
+        text_block(35, 38, "三個核心服務與共同支援能力", size=25,
                    weight=700, anchor="start"),
-        group_box(20, 45, 1010, 415, "遊喜樂與既有 yoxi"),
-        group_box(20, 480, 1010, 150, "支援與企業能力"),
-        group_box(20, 650, 1010, 230, "使用者主動分享後的外部區域"),
+        group_box(20, 55, 1160, 130, "共同的使用者結果"),
+        group_box(20, 215, 1160, 160, "核心服務"),
+        group_box(20, 465, 1160, 220, "共同支援"),
     ]
+    routes = {
+        ("EXPERIENCE", "EXPLORE"): "M 520 157 V 210 H 210 V 260",
+        ("EXPERIENCE", "VISIT"): "M 600 157 V 260",
+        ("EXPERIENCE", "ALBUM"): "M 680 157 V 210 H 990 V 260",
+        ("EXPLORE", "VISIT"): "M 375 301 H 435",
+        ("VISIT", "ALBUM"): "M 765 301 H 825",
+        ("CONTENT", "EXPLORE"): "M 45 551 H 30 V 301 H 45",
+        ("CONTENT", "ALBUM"): "M 210 592 V 650 H 1170 V 301 H 1155",
+        ("EXPLORE", "DATA"): "M 210 342 V 420 H 540 V 510",
+        ("VISIT", "DATA"): "M 600 342 V 510",
+        ("ALBUM", "DATA"): "M 990 342 V 420 H 660 V 510",
+        ("VISIT", "YOXI"): "M 700 342 V 450 H 990 V 510",
+    }
     for a, b, lab, dash in edges:
-        if (a, b) == ("CONTENT", "DATA"):
-            body.append(routed_edge("M 230 535 V 404 H 330", lab, 260, 394, dash))
-        elif (a, b) == ("UI", "RIDE"):
-            body.append(routed_edge("M 720 104 H 820 V 535", lab, 0, 0, dash))
-        else:
-            body.append(edge_between(boxes[a], boxes[b], lab, dash))
-    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"UI", "FAMILY"} else WHITE), size=18)
+        body.append(routed_edge(routes[(a, b)], lab, dashed=dash))
+    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"EXPERIENCE", "CONTENT"} else WHITE), size=17)
                 for k in boxes)
-    body.append(text_block(740, 748, "跨出 App 後沒有資料回傳線", size=15,
-                           weight=600, anchor="start"))
-    return base_svg(1050, 900, "遊喜樂責任分層", source, digest, "\n  ".join(body))
+    body.append(text_block(35, 730, "核心服務是產品職責；試點可先由同一個模組化後端支援。",
+                           size=16, weight=600, anchor="start"))
+    return base_svg(1200, 760, "遊喜樂核心服務分層", source, digest, "\n  ".join(body))
 
 
 def render_architecture(block: str, source: str, digest: str) -> str:
@@ -322,36 +366,42 @@ def render_evolution(block: str, source: str, digest: str) -> str:
 def render_flow(block: str, source: str, digest: str) -> str:
     labels, edges = graph_parts(block)
     boxes = {
-        "A": (90, 130, 430, 70), "B": (90, 245, 430, 70),
-        "C": (90, 360, 430, 70), "D": (90, 475, 430, 70),
-        "E": (90, 590, 430, 82), "F": (90, 720, 430, 82),
-        "G": (565, 720, 335, 82), "H": (90, 850, 430, 70),
-        "R": (565, 475, 335, 82), "OS": (290, 1080, 400, 82),
-        "I": (290, 1315, 400, 70), "J": (290, 1430, 400, 82),
-        "K": (290, 1560, 400, 70),
+        "ENTRY": (360, 85, 480, 76), "PLACE": (360, 210, 480, 76),
+        "WALK": (65, 350, 430, 82), "RIDE": (705, 350, 430, 82),
+        "ARRIVE": (360, 500, 480, 82), "CARD": (360, 640, 480, 82),
+        "ALBUM": (360, 780, 480, 82), "MEMORY": (65, 930, 430, 82),
+        "NEXT": (705, 930, 430, 82), "RETURN": (870, 505, 290, 72),
+        "SHARE": (870, 655, 290, 72),
     }
     body = [
-        text_block(35, 35, "使用流程：收藏與回程不等待分享結果", size=25, weight=700, anchor="start"),
-        group_box(30, 55, 920, 905, "App 內：出行與收藏"),
-        group_box(30, 1250, 920, 410, "App 外：LINE，不回傳聊天資料"),
+        text_block(35, 38, "完整旅程：從找到地方到再次探索", size=25, weight=700, anchor="start"),
+        group_box(20, 55, 1160, 1125, "核心旅程與自選延伸"),
     ]
     routes = {
-        ("D", "R"): ("M 520 510 H 565", "", 0, 0),
-        ("F", "G"): ("M 520 761 H 565", "", 0, 0),
-        ("H", "OS"): ("M 305 920 V 1080", "", 0, 0),
+        ("ENTRY", "PLACE"): "M 600 161 V 210",
+        ("PLACE", "WALK"): "M 480 286 V 315 H 280 V 350",
+        ("PLACE", "RIDE"): "M 720 286 V 315 H 920 V 350",
+        ("WALK", "ARRIVE"): "M 280 432 V 465 H 500 V 500",
+        ("RIDE", "ARRIVE"): "M 920 432 V 465 H 700 V 500",
+        ("ARRIVE", "CARD"): "M 600 582 V 640",
+        ("CARD", "ALBUM"): "M 600 722 V 780",
+        ("ALBUM", "MEMORY"): "M 500 862 V 895 H 280 V 930",
+        ("ALBUM", "NEXT"): "M 700 862 V 895 H 920 V 930",
+        ("MEMORY", "NEXT"): "M 495 971 H 705",
+        ("NEXT", "ENTRY"): "M 1135 971 H 1170 V 123 H 840",
+        ("ARRIVE", "RETURN"): "M 840 541 H 870",
+        ("CARD", "SHARE"): "M 840 681 H 870",
+        ("MEMORY", "SHARE"): "M 280 1012 V 1150 H 1145 V 727 H 1015",
     }
     for a, b, lab, dash in edges:
-        if (a, b) in routes:
-            path, route_label, lx, ly = routes[(a, b)]
-            body.append(routed_edge(path, route_label or lab, lx, ly, dash))
-        else:
-            body.append(edge_between(boxes[a], boxes[b], lab, dash))
-    body.extend(node(*boxes[k], labels[k], fill=(CREAM if k in {"F", "OS", "K"} else WHITE), size=18)
-                for k in boxes)
-    body.append(text_block(55, 1000, "分享出口", size=15, weight=700, anchor="start"))
-    body.append(text_block(55, 1035, "圖片交給系統面板後，App 不知道收件人、已讀或回覆。",
-                           size=15, anchor="start"))
-    return base_svg(980, 1690, "遊喜樂使用流程", source, digest, "\n  ".join(body))
+        body.append(routed_edge(routes[(a, b)], lab, dashed=dash))
+    for key, box in boxes.items():
+        fill = CREAM if key in {"ENTRY", "CARD", "MEMORY"} else (MIST if key in {"RETURN", "SHARE"} else WHITE)
+        body.append(node(*box, labels[key], fill=fill, size=(16 if key in {"RETURN", "SHARE"} else 18)))
+    body.append('<line x1="65" y1="1200" x2="145" y2="1200" class="edge dashed" marker-end="none"/>')
+    body.append(text_block(165, 1206, "虛線：需要時選擇的回程或分享；不阻塞收藏循環",
+                           size=16, weight=600, anchor="start"))
+    return base_svg(1200, 1240, "遊喜樂完整使用旅程", source, digest, "\n  ".join(body))
 
 
 def render_share_boundary(block: str, source: str, digest: str) -> str:
@@ -465,6 +515,7 @@ def render_archived_cards(block: str, source: str, digest: str) -> str:
 
 
 RENDERERS = {
+    "product-cycle": render_product_cycle,
     "service-layers": render_service_layers,
     "architecture": render_architecture,
     "expo-stack": render_expo_stack,

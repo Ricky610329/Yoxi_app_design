@@ -1,110 +1,124 @@
-# 八、補充資料｜參考來源、程式文件與原型佐證
+# 八、補充資料｜從一次出門，到一張留得住的城市記憶
 
-> 用途：供簡報附錄引用；每個來源說明能支持哪一個主張。
-> 查閱日：技術與研究來源於 2026-09-29 核對；競賽附件以 repo 既有保存紀錄為準。
-> 狀態：原型與圖片可證明設計及部分素材製作，不能證明正式派車、真實家庭互動或留存成效。
+> 本章把提案中的產品主張接回可檢查的來源：畫面證明目前原型能怎麼操作，程式文件說明規則如何落地，外部文獻只提供設計依據。原型不能替代真實派車、到訪辨識、使用者研究或營運數據。
+>
+> 外部研究與官方技術文件查閱日：2026-09-29。競賽資訊沿用 repo 既有保存紀錄；送件前仍應核對官方公告與附件是否更新。
 
-## 1. 可用於正文的補充說明
+## 1. 產品證據要回答的，是同一段生活如何一路走下去
 
-本方案提供可操作的 HTML／PWA 原型、畫面素材、收卡規則程式與 AI 圖像生成參數，供評審檢視從探索到出行、收藏與分享的體驗。正式服務架構以企業既有能力與新增模組分工呈現，並說明來回候車、分享圖輸出、系統分享面板與里程碑樣式需要補齊的接點。長輩在 LINE 自選對象送圖，子女在 LINE 看圖、回話或貼圖；這段私聊不回傳 yoxi。
+遊喜樂的核心不是多放一個景點頁，而是把原本彼此斷開的五個時刻接成一段可回來的城市關係：先看見一個地方，選擇走路或搭 yoxi；抵達後收下一張屬於這次造訪的明信片；卡片進入收藏，去過的地方逐漸形成城市足跡；之後再把自己的照片與心情做成回憶卡。搭車在這段路徑中有清楚的商業位置，步行也保留完整價值。
 
-AI 工具能力與單價取自供應商官方文件；使用動機研究保留為背景資料，不另替換團隊原有論述，也不宣稱本案已有留存改善。人力與使用量明標假設，後續以試點數據修正。
+這段敘事有三種不同強度的證據。第一種是「已可操作」：現有 HTML／PWA 原型可以走過探索、移動、抵達、收卡、收藏與製卡。第二種是「已寫成規則」：畫面、狀態、卡面與路由在程式中有共同來源，能由測試核對。第三種是「待驗證」：正式派車、可靠的到訪判定、個人化推薦、後端同步與長期使用效果都還不是現成能力，也不應由截圖推論。
 
-## 2. 競賽與內部依據
-
-| 資料 | 用途 | 版本／限制 |
+| 產品主張 | 現有佐證 | 證據邊界 |
 |---|---|---|
-| [競賽官方資料整理](../docs/competition.md) | 題目目標、要求、章節及資料使用邊界 | 檔內保存 2026-09-21 來源紀錄；本次官方網站／附件未能重新取得，不宣稱重新驗證時程 |
-| [產品工作簡報](../BRIEF.md) | 產品立場、數字與內容原則 | 本次僅讀；新增里程碑樣式尚未替換原產品基準 |
-| [內容與商業估算](../docs/business.md) | 初始地方量、更新量與編輯工時假設 | 04 章取其內容成本，不引用為平台全成本 |
-| [既有 AI 架構與試算](../docs/ai-architecture.md) | 歷史單位成本及較大圖庫情境 | 部分數字為 2026-09-23 基準；與現行五款圖庫分開 |
-| [資料應用提案](../docs/data-plan.md) | 資料候選、推薦特徵與抵達驗證 | 不是已收到的企業資料字典 |
+| 探索與叫車可以在同一個入口銜接 | `#/ride?mode=explore`、探索面板、`app/js/views/ride.js` | 是互動設計與前端原型；不是正式 yoxi App 已上線的功能 |
+| 使用者可依距離選擇步行或 yoxi | `/going/:id`、行程模組、`APP.explore.collect` | 步行、叫車與抵達目前都是 demo 狀態；真實服務需企業行程與定位接點 |
+| 抵達後一定有一張按規則生成的卡 | `explore-cards.js`、`explore-unlock.js`、`explore-face.js` | 規則與部分卡面已建；到訪防刷、內容權利與正式生成服務仍需驗證 |
+| 卡片會累積成收藏與城市足跡 | `/album`、`/postcards`、`/footprint`、`APP.footprintPlace` | 統計來自示範狀態與公式，不是實際使用者成果 |
+| 去過的地方可以再做成個人回憶卡 | `/lookback`、`app/js/views/album-memory.js` | 現行版本是本機模板與本機照片，保存在 localStorage，尚未接 AI 後端 |
 
-官方公開入口：[競賽官網](https://ht-hackathon.tw/tw/home)、[題目附件](https://cdn.bountyhunter.co/file-presign/d382a46c-1ca6-4363-8e03-1481260d5c9f.pdf)。這兩個連結沿用既有資料整理；送件時再確認能開啟及是否有新版。
+完整的服務責任、資料流、正式 API 候選與分享邊界集中在[技術附錄](notes/technical-appendix.md)，本章不重複展開。
 
-## 3. 官方技術與成本來源
+## 2. 五張畫面，連成一條可操作的產品路徑
 
-下列來源均查閱於 2026-09-29；服務價格與支援範圍仍需在正式採購時重查。
+以下圖片都直接引用工作樹中的 `app/assets/shots/`，並已於 2026-09-29 逐張檢視。它們證明現有原型的畫面與互動狀態，不證明真實位置、即時車資、正式派車或上線成效。
 
-| 來源 | 支持的主張 | 不用它推論什麼 |
+### 2.1 探索：先讓地方值得出發
+
+![探索入口同時保留步行、yoxi 與收藏線索](../../app/assets/shots/ride-cards.png)
+
+探索不是從叫車流程外另開一座內容島。畫面在同一個主頁面板呈現今天的地方、距離、步行時間、「用 yoxi」與收藏線索；使用者先因地方產生興趣，再決定移動方式。對應程式是 `app/js/views/ride.js` 的探索模式，產品契約見 [App 架構](../../app/ARCHITECTURE.md)。畫面中的地點與距離是原型資料，不能當作地方史或即時位置的外部證據。
+
+### 2.2 移動：近的地方走過去，遠的地方交給 yoxi
+
+![步行前往中的地圖與抵達提示](../../app/assets/shots/going.png)
+
+步行頁把注意力還給街道：保留路線、距離與抵達提示，不要求使用者一路盯著手機。搭車則沿用同一個地方與同一套收卡結果，由 `APP.ride.trip` 保存原型行程狀態。這能證明產品把兩種移動方式接到同一個目的地；地圖上的「模擬抵達」也清楚表示目前沒有用它主張真實定位驗證。
+
+### 2.3 抵達：這一次來過，變成一張明信片
+
+![步行抵達後可收下的地方明信片](../../app/assets/shots/unlock.png)
+
+抵達後，地點、日期、移動方式與當期規則共同決定卡片樣式。現行規則沒有抽籤：同樣條件會得到同樣結果；`app/js/views/explore-cards.js` 提供判定，`explore-unlock.js` 畫抵達與收卡流程，`explore-face.js` 讓解鎖頁與收藏頁使用同一張卡面。圖片上的「AI 生成示意」與底圖出處是交付時應保留的誠實標示。
+
+搭 yoxi 抵達時可呈現金框與同行紀念，但點數、門檻和出資方式仍是產品規則與商業假設，不能由 `unlock-ride.png` 推論企業已核准。正式版也需要伺服器端去重、到訪證據與版本紀錄，避免只相信手機端按鈕。
+
+### 2.4 收藏：卡片不是終點，而是城市足跡的入口
+
+![收藏首頁把明信片、回顧與城市足跡放在一起](../../app/assets/shots/album.png)
+
+收藏首頁把去過的地方整理成明信片、回憶卡、期間里程、獎章與城市足跡。`app/js/views/album.js` 讀取同一份到訪狀態；`APP.footprintPlace` 再把可辨識座標的卡片映射到足跡地圖。這種整理方式讓一次出門在之後仍有可看的內容，也讓「下次去哪裡」能從自己的空白處長出來。
+
+畫面中的張數、公里與比例都來自 demo 狀態或公式。足跡目前只涵蓋底圖能辨識的地方，不能拿來宣稱真實城市覆蓋率；計算限制記在 [App 架構的地點正規化說明](../../app/ARCHITECTURE.md)。
+
+### 2.5 回憶卡：讓使用者替自己的記憶加上一層意思
+
+![用去過的地方、本機照片與心情製作回憶卡](../../app/assets/shots/lookback.png)
+
+回憶卡從已造訪地點取模板，使用者可放入這台裝置上的照片並選一種心情，再保存成自己的卡。若今天沒有新足跡，畫面會明示改用最近去過的地方。這一步把制式明信片轉成個人敘事，也自然帶回「再去一次」的理由。
+
+目前實作是本機構圖模板，照片先在裝置端縮圖，再與心情、構圖提示一併寫入 localStorage；它沒有上傳照片，也沒有呼叫 AI 生圖服務。程式入口是 `app/js/views/album-memory.js`，狀態契約見 [App 架構](../../app/ARCHITECTURE.md)，操作說明見 [App README](../../app/README.md)。因此這張圖能證明製卡互動與本機保存，不能作為 AI 後端、跨裝置同步或雲端相簿已建置的證據。
+
+## 3. 程式碼如何支持這條敘事
+
+本機 remote 指向 [Ricky610329/Yoxi_app_design](https://github.com/Ricky610329/Yoxi_app_design)。本次只核對 remote 設定，沒有以未登入狀態驗證公開可讀性；對外送件時應改用評審可讀的固定 branch 或 commit permalink，並與交付版本一致。
+
+| 程式入口 | 可查到的證據 | 閱讀時要注意 |
 |---|---|---|
-| [Expo development builds](https://docs.expo.dev/develop/development-builds/introduction/) | development build 是測試自訂原生依賴的方式 | 不等於 yoxi 的 SDK 已相容 |
-| [Expo Router](https://docs.expo.dev/router/introduction/) | 跨平台檔案路由候選 | 不代表現有 HTML 畫面可直接轉成原生畫面 |
-| [Expo 既有原生 App 整合](https://docs.expo.dev/brownfield/overview/) | 可評估模組整合，官方標示 alpha 支援限制 | 不承諾正式 App 可以無改動嵌入 |
-| [Expo Location](https://docs.expo.dev/versions/latest/sdk/location/) | 定位能力、權限與平台限制 | 定位值不等於到訪或防刷的充分證據 |
-| [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) | 裝置端敏感小型資料儲存候選 | 不是雲端秘密管理或完整權限系統 |
-| [Expo FileSystem](https://docs.expo.dev/versions/latest/sdk/filesystem/) | 行動端檔案與暫存圖面管理 | 不會自動把 React Native 畫面轉成圖片，仍需輸出元件 |
-| [EAS Build](https://docs.expo.dev/build/introduction/) | development build 與安裝包的建置選項 | 不是執行期後端，主方案不以購買 EAS 為前提 |
-| [FastAPI](https://fastapi.tiangolo.com/) | Python 型別化 API 與 OpenAPI 文件能力 | 本案的正式 API 尚未建置，企業可依既有框架接同一契約 |
-| [Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) | 可檢查平台分享能力，並以 `shareAsync` 分享本機檔案；iOS／Android 支援本機檔案，web 另有瀏覽器與 HTTPS 等限制 | `shareAsync` 回傳 `Promise<void>`，不提供已送出、收件人、已讀或 LINE 私聊內容 |
-| [React Native Share](https://reactnative.dev/docs/share) | 可開啟原生分享面板；回傳值可用於處理平台行為差異 | Android 總是回報 `Share.sharedAction`，不能據此推論使用者已送出、對方已收件或已讀 |
-| [Cloud Run](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run) | API 與背景工作的部署候選 | 不表示已有正式服務或可用率實測 |
-| [結構化輸出](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output) | 約束模型輸出格式與欄位 | 結構正確不等於事實正確 |
-| [文字嵌入](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings) | 地方文本相似度與檢索 | 不直接證明個人化推薦品質 |
-| [Google 圖像能力](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/image/overview) | 依模型確認生成與編輯能力 | 不假設所有型號都支援參考圖 |
-| [生成式 AI 定價](https://cloud.google.com/vertex-ai/generative-ai/pricing) | 04 章文字與圖片 API 單價 | 不包含人工、儲存、傳輸或獎品 |
-| [Cloud Run 定價](https://cloud.google.com/run/pricing) | 依 CPU、記憶體與執行型態試算 | 不能直接套別區域範例當台灣帳單 |
-| [DreamShaper 8 模型頁](https://huggingface.co/Lykon/dreamshaper-8) | 現有生成工具使用的模型來源 | 不表示所有圖片內容已被模型供應商核可 |
-| [ControlNet Canny 模型頁](https://huggingface.co/lllyasviel/control_v11p_sd15_canny) | 現有輪廓控制模型的來源 | 不保證建築圖像與實景完全一致 |
+| [專案 README](../../README.md) | 產品定位、三條主線與入口 | 是持續演進中的專案總覽 |
+| [App README](../../app/README.md) | 開啟方式、demo 路徑、截圖對照與已知限制 | 明確說明派車、定位與狀態仍為模擬或本機資料 |
+| [App 架構](../../app/ARCHITECTURE.md) | 路由、狀態、模組 API、公式與測試契約 | 描述現有 web app；不是正式 yoxi 行動端契約 |
+| [探索與收卡規則](../../app/js/views/explore-cards.js) | 款式、節日、里程、回訪與收卡判定 | 固定規則可檢查；正式資格仍需後端核發 |
+| [抵達畫面](../../app/js/views/explore-unlock.js) | 抵達、翻卡、收進收藏與搭車樣式 | demo 按鈕不能替代真實到訪證據 |
+| [卡面共同來源](../../app/js/views/explore-face.js) | 生成成品、授權照片、濾鏡與替代插圖的優先順序 | 部分地點仍使用照片加濾鏡或插圖替代 |
+| [收藏與足跡](../../app/js/views/album.js) | 明信片、統計、足跡與回顧入口 | 數字是狀態與公式的輸出 |
+| [回憶卡](../../app/js/views/album-memory.js) | 本機照片、心情、模板與保存 | 現行版本沒有 AI 請求或雲端同步 |
+| [卡面產生腳本](../../app/tools/gen-postcards.py) 與 [生成參數](../../app/assets/postcards/index.json) | 現有示意卡的模型、種子、提示與參考照片 | 是素材製作可追溯性；不同環境未必位元級重現 |
+| [App 測試說明](../../app/tests/README.md) | 路由、DOM、公式、互動與瀏覽器驗收方法 | 測試通過只表示實作符合契約，不等於市場效果 |
+| [畫面總登記表](../../prototype/js/catalog.js) | 原型流程、變體、願景稿與概念稿的狀態 | 引用時要區分 `built`、`planned` 與概念畫面 |
 
-Google 部分頁面已使用 Gemini Enterprise Agent Platform 名稱；本稿沿用 repo 的 Vertex AI 用語，實際模型 ID、區域與 SKU 以正式部署設定為準。
+現有 repo 也保留家人回話與 LINE 造型的歷史 mock。它們不列入上述證據鏈，也不能用來主張已串接 LINE、已建立子女帳號，或能取得收件、已讀與私聊內容。
 
-## 4. 使用動機參考文獻
+## 4. 外部文獻只支持設計方向，不替產品效果背書
 
-1. **Ryan, R. M., & Deci, E. L.（2000）**。*Self-Determination Theory and the Facilitation of Intrinsic Motivation, Social Development, and Well-Being.* American Psychologist, 55(1), 68–78。[作者研究網站全文](https://www.selfdeterminationtheory.org/SDT/documents/2000_RyanDeci_SDT.pdf)。用途：自主、能力感與關係連結的背景依據，可供團隊原有使用動機論述參考。
-2. **Looyestyn, J., et al.（2017）**。*Does gamification increase engagement with online programs? A systematic review.* PLOS ONE, 12(3), e0173403。[期刊原文](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173403)。用途：支持將遊戲化視為值得測試的參與設計，也提醒長期效果需另驗證。
+Ryan 與 Deci 對自我決定理論的整理，把自主、能力感與關係連結視為理解動機的重要構面。本案據此提出一個設計推論：讓人自己選地方、選步行或搭車，並看見自己的收藏逐步形成，可能比只增加外部獎勵更接近長期的個人意義。這篇研究沒有測試 yoxi、城市探索或本提案，也沒有提供可直接套用的留存百分比。[Ryan & Deci, 2000，American Psychologist](https://www.selfdeterminationtheory.org/SDT/documents/2000_RyanDeci_SDT.pdf)
 
-兩篇均不能直接證明遊喜樂能增加多少留存或出行。主方案的接送、保證收卡，以及 App 外、LINE 內的家人互動仍需實際驗證。
+Looyestyn 等人的系統性回顧納入十五篇有對照條件的線上方案研究。結果顯示部分遊戲化設計與較高參與相關，但研究場景、組件與品質差異很大，長期結果也較不一致。對遊喜樂最合理的用法，是把明信片、獎章與足跡當成需要試點檢驗的設計，而不是先宣稱它們會帶來多少開啟或搭車。[Looyestyn et al., 2017，PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173403)
 
-## 5. GitHub 與程式碼文件
+因此，這兩篇文獻支持「為什麼值得測」，不支持「效果已經發生」。成效指標、觀測窗與停損條件以 [KPI 文件](../docs/kpi.md) 為準。
 
-Repo remote：[Ricky610329/Yoxi_app_design](https://github.com/Ricky610329/Yoxi_app_design)。網址依本機 `git remote` 核對；本次未驗證未登入者可讀性，也未推送新文件。
+## 5. 官方技術文件：用來界定可行路徑與限制
 
-| 入口 | 可查看的內容 | 證據邊界 |
+下列官方入口於 2026-09-29 可開啟。它們說明候選技術具備哪些能力，也同時提醒整合限制；並不表示現有 yoxi App 已採用這些元件。架構選擇與企業接法仍以實際技術現況為準，費率與用量試算集中在 [成本與資源](04-cost-and-resources.md)，本章不另抄單價。
+
+| 類別 | 官方文件 | 可支持的範圍 |
 |---|---|---|
-| [專案 README](../../README.md) | 專案入口與現況介紹 | 正在迭代，交件應固定版本 |
-| [App 使用說明](../../app/README.md) | 如何開啟可操作的 web app | 是體驗原型，不是正式派車客戶端 |
-| [App 架構契約](../../app/ARCHITECTURE.md) | 路由、模組、狀態、測試規則 | 描述現有 web app，非尚未建置的 Expo App |
-| [Catalog](../../prototype/js/catalog.js) | 畫面、流程、變體與產品演進登記 | 概念與已建畫面需看 state 區分 |
-| [卡片規則](../../app/js/views/explore-cards.js) | 現有款式、回訪與紀念規則 | 固定規則；客製里程碑樣式不是現有能力 |
-| [卡面生成腳本](../../app/tools/gen-postcards.py) | 現有圖像產生流程 | 執行需另外準備模型與環境，不宜直接在評審機器臨時生成 |
-| [生成參數](../../app/assets/postcards/index.json) | 提示、種子、模型與參考照片檔名 | 可追溯製作設定；不同環境未必位元級重現 |
-| [卡面素材說明](../../app/assets/postcards/README.md) | 已有圖像範圍與示意標示 | 部分尚未生成的地方有替代畫面 |
-| [App 測試說明](../../app/tests/README.md) | 驗收方法與執行方式 | 測試通過不等於真實營運成效 |
-| [本次流程稿](02-flow-design.md) | 接送、收卡、系統分享出口與里程碑 | LINE 私聊不回傳 yoxi；正式接點與新增樣式仍是提案 |
+| 手機 demo 與既有 App 評估 | [Expo development builds](https://docs.expo.dev/develop/development-builds/introduction/)、[Expo brownfield](https://docs.expo.dev/brownfield/overview/) | 可製作含原生依賴的測試版本；brownfield 文件明列仍有 alpha 支援與相容限制 |
+| 定位與圖片移交 | [Expo Location](https://docs.expo.dev/versions/latest/sdk/location/)、[Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)、[React Native Share](https://reactnative.dev/docs/share) | 可讀裝置定位並開啟系統分享流程；定位值不是充分到訪證據，分享 API 回傳也不能證明對方收件或閱讀 |
+| API 與背景工作 | [Cloud Run](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run)、[FastAPI](https://fastapi.tiangolo.com/) | 是部署與 API 實作候選；本案正式服務尚未建置 |
+| AI 內容管線 | [結構化輸出](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)、[文字嵌入](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)、[圖像生成與編輯](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/image/overview) | 可評估格式約束、文本檢索與圖像能力；格式正確不等於地方內容正確，模型、區域與權利條件需逐案確認 |
 
-如果提供評審 GitHub 連結，交件時再指定可讀分支或 commit permalink。僅有這次本機 commit 不能保證遠端可讀，不在附錄捏造已部署 demo 網址。
+現有示意卡的素材工具另有 [DreamShaper 8 模型頁](https://huggingface.co/Lykon/dreamshaper-8) 與 [ControlNet Canny 模型頁](https://huggingface.co/lllyasviel/control_v11p_sd15_canny) 可追溯。這只能說明現有素材如何產生，不能自動延伸成正式商用權利判定。
 
-## 6. 原型與模擬畫面
+## 6. 競賽、資料、商業與素材來源
 
-本機入口：[可操作 App](../../app/index.html)、[原型總覽](../../prototype/index.html)、[設計提案](../../prototype/proposal.html)。一般展示先依 App README 開啟；圖像及版面會隨開發變動，正式交件另存選定版本。
+| 來源 | 在本提案中支持什麼 | 仍需補什麼 |
+|---|---|---|
+| [競賽官方資料整理](../docs/competition.md) | 題目目標、交付要求與既有來源紀錄 | 官方入口與附件送件前再核對；本次沒有宣稱已重新取得附件 |
+| [產品工作簡報](../BRIEF.md) | 產品定位、數字紀律、AI 角色與敘事基準 | 版本仍會隨送件內容收斂 |
+| [資料應用提案](../docs/data-plan.md) | 地方、推薦、到訪與分析欄位候選 | 不是已取得的企業資料字典 |
+| [內容與商業估算](../docs/business.md) | 地方量、更新量、編輯工時與商業假設 | 不是公司現行成本或營運承諾 |
+| [AI 架構與試算](../docs/ai-architecture.md) | 內容管線、模型候選、用量與歷史成本基準 | 正式模型、區域、採購與治理仍待確認 |
+| [Roadmap](../docs/roadmap.md) | 分期範圍、依賴與守門指標 | 日期與資源需由企業排程校準 |
+| [競品比較](../docs/competitive.md) | 比較維度與差異化假設 | 產品功能與方案會變，送件前應重查 |
 
-### 探索與出行入口
+競賽公開入口沿用既有紀錄：[競賽官網](https://ht-hackathon.tw/tw/home)、[題目附件](https://cdn.bountyhunter.co/file-presign/d382a46c-1ca6-4363-8e03-1481260d5c9f.pdf)。若連結失效或內容更新，以主辦方最新公告為準。
 
-![探索地方、卡片與用 yoxi 入口](../../app/assets/shots/ride-cards.png)
+照片作者、授權與出處以 [credits.js](../../prototype/assets/photos/credits.js) 及 [卡面素材說明](../../app/assets/postcards/README.md) 為依據；裁切、改作與分享版本仍需逐張核對。地圖使用 repo 內的 OpenStreetMap 資料並保留署名，開放資料授權不等於所有圖磚、SDK 或營運服務都免費。企業提供、未授權公開的解題資料不放進 repo；示範欄位使用合成案例。AI 卡面、模擬行程、示意地點與尚未串接的功能都應在畫面或講稿中清楚標示。
 
-來源：`app/assets/shots/ride-cards.png`。可展示探索內容與叫車入口的相鄰關係。畫面中的「水利路老玻璃窯」等部分地點是原型情境素材，不用此畫面證明真實地方史、即時位置或實際報價；地圖署名保留在畫面上。
+## 7. 評審可以據此檢查什麼
 
-### 抵達收卡示意
+評審可從五張畫面順著實際路徑檢查產品是否連貫，再由程式入口核對畫面是否共用同一份規則與狀態；也可由生成參數、照片授權與官方文件追查素材和技術來源。這些材料足以證明團隊已把產品概念做成可操作、可讀、可測的原型。
 
-![搭車抵達後的卡片與紀念標記](../../app/assets/shots/unlock-ride.png)
-
-來源：`app/assets/shots/unlock-ride.png`。可展示 AI 卡面、金框、首訪與里程標記，以及收下操作。畫面已有 AI 示意與照片署名；點數為原型規則，不代表企業已核准發放。
-
-### 個人收藏
-
-![收藏首頁與回顧入口](../../app/assets/shots/album.png)
-
-來源：`app/assets/shots/album.png`。可展示收藏與回顧如何累積成個人內容；其中張數與里程是示範狀態，不是使用者研究數據。
-
-本次看過上述三張工作樹圖片；不改圖、不重拍正在調整的 App。此 Markdown 使用相對連結，檔案更新時畫面也會更新，因此交件 PDF 應使用固定版本的素材。
-
-Repo 內的家人回話、表情或回應狀態 mock 是歷史概念，不能把 App 造型直接當作 LINE 實際介面。本版展示若需要家人情境，另標「外部聊天情境示意」，不把該畫面當作已建置的子女回應頁、帳號或聊天資料管線，也不能用來主張 yoxi 取得送出、收件、已讀或私聊內容。分享面板關閉或使用者回到 app，都不等於圖片已送出。
-
-## 7. 素材來源與交件時的誠實標示
-
-- 照片作者、授權與出處以 [credits.js](../../prototype/assets/photos/credits.js) 與 [卡面說明](../../app/assets/postcards/README.md) 為依據；裁切、改作及分享版本均需核對對應素材條件。
-- 地圖沿用 repo 的 OpenStreetMap 資料及署名；資料來源、圖磚服務與行動端 SDK 是不同項目，不能把資料開放等同所有服務免費。
-- AI 卡面寫明「AI 生成示意」；模擬行程、示意地點與未串接的分享互動需能辨識。
-- 企業寄送的解題資料不放入 repo 或對外附錄；使用合成案例說明欄位與流程。
-- 04 章成本例是可重算的設計推演；不要標為實際上線數據或引用成企業官方方案。
+還不能由這些材料下結論的，包括正式派車可用性、真實到訪準確率、AI 推薦品質、跨裝置資料一致性、內容營運成本，以及開啟率、回訪、叫車轉換或收入改善。這些問題應交給試點、企業資料與預先定義的指標回答，而不是由 demo 數字或畫面觀感代替。
