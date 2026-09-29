@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1742" viewBox="0 0 1600 1742" role="img" aria-labelledby="title desc" data-source="pitch/writing/02-flow-design.md" data-source-sha256="164c112acad6afb008403af23788e7847b0dc3b829c5017268e7c62b0da85742">
+  <title id="title">遊喜樂主要系統時序</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 164c112acad6afb008403af23788e7847b0dc3b829c5017268e7c62b0da85742</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
+    <style>
+      text { font-family: Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif; fill: #062040; }
+      .node { fill: #FFFFFF; stroke: #062040; stroke-width: 2; rx: 8; }
+      .group { fill: #FCFDFF; stroke: #778AA4; stroke-width: 1.5; rx: 16; }
+      .edge { fill: none; stroke: #062040; stroke-width: 2; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+      .label-bg { fill: #FFFFFF; opacity: .96; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+<text class="" text-anchor="start" font-size="24" font-weight="700"><tspan x="40" y="38.0">主要系統時序</tspan></text>
+  <rect class="node" x="22" y="62" width="156" height="54" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="100.0" y="95.0">長輩</tspan></text>
+  <line x1="100" y1="116" x2="100" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="217" y="62" width="156" height="54" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="295.0" y="95.0">子女</tspan></text>
+  <line x1="295" y1="116" x2="295" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="412" y="62" width="156" height="54" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="490.0" y="95.0">App</tspan></text>
+  <line x1="490" y1="116" x2="490" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="607" y="62" width="156" height="54" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="685.0" y="95.0">yoxi 行程服務</tspan></text>
+  <line x1="685" y1="116" x2="685" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="802" y="62" width="156" height="54" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="880.0" y="95.0">到訪 / 卡片服務</tspan></text>
+  <line x1="880" y1="116" x2="880" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="997" y="62" width="156" height="54" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="1075.0" y="95.0">已審圖庫與規則</tspan></text>
+  <line x1="1075" y1="116" x2="1075" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="1192" y="62" width="156" height="54" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="1270.0" y="95.0">LINE</tspan></text>
+  <line x1="1270" y1="116" x2="1270" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect class="node" x="1387" y="62" width="156" height="54" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="1465.0" y="95.0">家人分享頁</tspan></text>
+  <line x1="1465" y1="116" x2="1465" y2="1707" stroke="#778AA4" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <line x1="100" y1="177" x2="490" y2="177" class="edge"/>
+  <rect class="label-bg" x="106" y="134" width="378" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="295.0" y="159.0">選景點並確認去回程方案</tspan></text>
+  <line x1="490" y1="249" x2="685" y2="249" class="edge"/>
+  <rect class="label-bg" x="496" y="206" width="183" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="587.5" y="231.0">經授權介面建立行程</tspan></text>
+  <line x1="685" y1="321" x2="490" y2="321" class="edge dashed"/>
+  <rect class="label-bg" x="496" y="278" width="183" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="587.5" y="303.0">接送與候車狀態</tspan></text>
+  <line x1="685" y1="393" x2="880" y2="393" class="edge dashed"/>
+  <rect class="label-bg" x="691" y="350" width="183" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="782.5" y="375.0">經驗證的行程事件</tspan></text>
+  <line x1="490" y1="465" x2="880" y2="465" class="edge"/>
+  <rect class="label-bg" x="496" y="422" width="378" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="685.0" y="447.0">地方、位置精度、取樣時間</tspan></text>
+  <path d="M 880 537 h 62 v 28 h -62" class="edge"/>
+  <text class="" text-anchor="start" font-size="17" font-weight="500"><tspan x="952" y="539.0">判斷抵達，依到訪事件</tspan><tspan x="952" y="559.0">去重</tspan></text>
+  <line x1="880" y1="609" x2="1075" y2="609" class="edge"/>
+  <rect class="label-bg" x="886" y="566" width="183" height="44" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="977.5" y="581.0">地方、日期、款式、</tspan><tspan x="977.5" y="601.0">紀念條件</tspan></text>
+  <line x1="1075" y1="681" x2="880" y2="681" class="edge dashed"/>
+  <rect class="label-bg" x="886" y="638" width="183" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="977.5" y="663.0">已審卡面與版本</tspan></text>
+  <path d="M 880 753 h 62 v 28 h -62" class="edge"/>
+  <text class="" text-anchor="start" font-size="17" font-weight="500"><tspan x="952" y="755.0">保存當次卡片、圖鑑與</tspan><tspan x="952" y="775.0">樣式資格</tspan></text>
+  <line x1="880" y1="825" x2="490" y2="825" class="edge dashed"/>
+  <rect class="label-bg" x="496" y="782" width="378" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="685.0" y="807.0">明信片與收錄結果</tspan></text>
+  <line x1="100" y1="897" x2="490" y2="897" class="edge"/>
+  <rect class="label-bg" x="106" y="854" width="378" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="295.0" y="879.0">預覽後選擇分享</tspan></text>
+  <line x1="490" y1="969" x2="1270" y2="969" class="edge"/>
+  <rect class="label-bg" x="496" y="926" width="768" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="880.0" y="951.0">開啟分享入口</tspan></text>
+  <line x1="100" y1="1041" x2="1270" y2="1041" class="edge"/>
+  <rect class="label-bg" x="106" y="998" width="1158" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="685.0" y="1023.0">選對象並確認傳送</tspan></text>
+  <line x1="1270" y1="1113" x2="295" y2="1113" class="edge dashed"/>
+  <rect class="label-bg" x="301" y="1070" width="963" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="782.5" y="1095.0">收到卡片連結</tspan></text>
+  <line x1="295" y1="1185" x2="1465" y2="1185" class="edge"/>
+  <rect class="label-bg" x="301" y="1142" width="1158" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="880.0" y="1167.0">開啟指定卡片</tspan></text>
+  <line x1="1465" y1="1257" x2="880" y2="1257" class="edge"/>
+  <rect class="label-bg" x="886" y="1214" width="573" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="1172.5" y="1239.0">取得此卡公開內容</tspan></text>
+  <line x1="295" y1="1329" x2="1465" y2="1329" class="edge"/>
+  <rect class="label-bg" x="301" y="1286" width="1158" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="880.0" y="1311.0">選擇按讚或留言</tspan></text>
+  <line x1="1465" y1="1401" x2="880" y2="1401" class="edge"/>
+  <rect class="label-bg" x="886" y="1358" width="573" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="1172.5" y="1383.0">提交自有頁的回應</tspan></text>
+  <line x1="880" y1="1473" x2="490" y2="1473" class="edge dashed"/>
+  <rect class="label-bg" x="496" y="1430" width="378" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="685.0" y="1455.0">顯示家人回應</tspan></text>
+  <line x1="100" y1="1545" x2="490" y2="1545" class="edge"/>
+  <rect class="label-bg" x="106" y="1502" width="378" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="295.0" y="1527.0">隨時可要求回程</tspan></text>
+  <line x1="490" y1="1617" x2="685" y2="1617" class="edge"/>
+  <rect class="label-bg" x="496" y="1574" width="183" height="22" rx="4"/>
+  <text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="587.5" y="1599.0">依企業流程安排回程</tspan></text>
+</svg>
