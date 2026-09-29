@@ -374,3 +374,11 @@
 另提供 `output/figures/遊喜樂_技術架構圖_SVG.zip`，內含五張獨立向量圖，供隊友組版使用。
 
 驗收：PDF 恰 8 頁、8 個書籤、26 個連結，無本機檔案連結或內容越界；逐頁查看圖表、文字及頁尾。修正深色節點字色、泳道分支順序、圖面層序及標題壓字，企業行程證據直接送後端與裝置定位合併核對。16 個 GitHub 路徑在 `f0151d6` 存在，工時合計與人天換算正確，禁用詞、Python 語法及 SVG XML／尺寸／字級檢查通過。原型前後八段 PASS，完整報告忽略行序後一致、六條承諾未變，驗收時間戳還原。交付 PDF 複製回主工作區，保留其 main 分支，未推送。
+
+## 2026-09-29 收齊尚未合併的分支（分支 `integration/all-to-main-20260929`）
+
+使用者要求把所有尚未合併的分支整合至本機 main。從最新 main `254e475` 建立隔離工作樹；文件鏈 `docs/share-boundary-expo-stack` → `docs/service-centered-proposal` → `docs/proposal-pdf` → `docs/proposal-eight-pages` → `docs/architecture-led-eight-pages` 已以 `c7d057a` 合併，保留兩邊工作紀錄。文件 146 個本機連結、桌機／手機閱讀互動與十張 SVG 來源檢查通過；三份 PDF 與原交付及來源 Git blob 逐位元一致，仍為 39／8／8 頁。
+
+另核對遠端追蹤分支 `origin/design/webapp-interactive-review` 的唯一提交 `36005ba`（21 檔）。兩底欄、探索歸叫車、推播入口與可拖面板等方向，已由 `b6aeb95` 起的雙主頁系列重做並持續修正；其未沿用的 `/ride?mode=today`、強制轉址舊探索路由、搬移 `tabPaths.explore` 與十景點清單，皆與目前 `/ride?mode=explore&area=`、四地區卡片及保留舊路由作對照的契約衝突。因此採 ours 策略記錄合併 ancestry，保留目前產品樹；不是把舊版 UI 或測試重新套上。確認叫車頁 `e33f0b6`、回憶卡光線 `c838fc9` 與新版探索面板均保留。
+
+PDF 與其固定 GitHub 引用保留原交付快照；本次只整合分支，不重建歷史 PDF。其他工作樹的既有未提交時間戳及 QA 暫存不納入；不推送遠端。
