@@ -861,11 +861,11 @@ function areaProgress(a) {
   return { done: a.cards.filter(function (id) { return S().has(id); }).length, total: a.cards.length };
 }
 function areaCard(id) { return (M().POSTCARDS || []).filter(function (p) { return p.id === id; })[0] || null; }
+/* 標題與進度排成一列；距離已經寫在正上方的地點資訊裡，這裡不重複（展開後整張面板不用捲） */
 function areaCardsHTML(a) {
-  const r = areaProgress(a), p = APP.place(a.id);
-  const d = p && p.dist != null ? '離你 ' + F.dist(p.dist) : DIST_TBD;
+  const r = areaProgress(a);
   return '<div class="ride-v2__section"><h2>' + esc(a.name) + '的卡片</h2>' +
-      '<p>收集 ' + r.done + '/' + r.total + ' · ' + esc(d) + '</p></div>' +
+      '<p>收集 ' + r.done + '/' + r.total + '</p></div>' +
     '<div class="ride-v2__stack" data-stack-size="' + a.cards.length + '">' + a.cards.map(function (id) {
       const c = areaCard(id);
       if (!c) return '';
@@ -890,6 +890,13 @@ function sheetMaxPx(sheet) {
   if (!isFinite(n)) return box;
   return /%$/.test(v) ? box * n / 100 : n;
 }
+/* 展開時卡片區的高度＝展開的高度扣掉收合態（到地點資訊為止）與上方間距。寫回 --ride-cards-h：
+   卡片照這個高度縮放，展開後不用捲；拖曳時面板只是露出多少，卡片不跟著變大小。 */
+function exploreCardsH(sheet) {
+  const cards = sheet.querySelector('[data-area-expanded]');
+  const gap = parseFloat(getComputedStyle(cards).marginTop) || 0;
+  return Math.max(0, Math.floor(sheetMaxPx(sheet) - exploreCollapsedH(sheet) - gap));
+}
 /* 標籤照資料寫：今天的地方＝MOCK.TODAY；預選的是最近的地區；其餘是使用者從地圖選的 */
 function areaLabel(a) {
   const today = M().TODAY;
@@ -899,7 +906,7 @@ function areaLabel(a) {
 function areaIntroHTML(a) {
   const p = APP.place(a.id);
   const hook = p.hook && p.hook.indexOf('收集於') !== 0 ? p.hook : p.type;
-  const meta = p.dist != null ? '離你 ' + F.dist(p.dist) + ' · 走路 ' + F.walkMin(p.dist) + ' 分鐘' : DIST_TBD;
+  const meta = p.dist != null ? '離你 ' + F.dist(p.dist) + ' · 搭 yoxi ' + F.rideMin(kmOf(p)) + ' 分鐘' : DIST_TBD;
   return '<div class="ride-v2__eyebrow">' + esc(areaLabel(a)) + '</div>' +
     '<div class="ride-v2__feature">' +
       '<span class="ride-v2__feature-art" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
@@ -954,7 +961,11 @@ function rideV2Mount(root, params, ctx) {
       spots: store().get('rideSpots') === false ? false : rideSpots(), max: 4,
       overlay: mapOverlay('explore'), onSpot: function (s) { selectArea(s.id, true); },
     };
-  }, markSelected);
+  }, function (map) { markSelected(map); fit(); });     /* 視窗改大小會重畫地圖：兩段高度跟著重量 */
+  function fit() {
+    sheet.style.setProperty('--sheet-min', exploreCollapsedH(sheet) + 'px');
+    sheet.style.setProperty('--ride-cards-h', exploreCardsH(sheet) + 'px');
+  }
   /* 三段：hidden 只剩拉把（看整張地圖）／collapsed 地點資訊／open 接著看卡片 */
   let state = 'collapsed';
   function setSheet(next) {
@@ -970,7 +981,7 @@ function rideV2Mount(root, params, ctx) {
     SHELL.injectArt(intro);
     SHELL.injectArt(expanded);
     SHELL.injectIcons(sheet);
-    sheet.style.setProperty('--sheet-min', exploreCollapsedH(sheet) + 'px');
+    fit();
     intro.querySelector('[data-act="expand-cards"]').onclick = function () { setSheet('open'); };
     intro.querySelector('[data-act="use-yoxi"]').onclick = function () { setDropoff(selected.id, 'e'); };
     expanded.querySelectorAll('[data-act="open-card"]').forEach(function (b) {
