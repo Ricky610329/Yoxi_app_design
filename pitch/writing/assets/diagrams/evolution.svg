@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1210" height="585" viewBox="0 0 1210 585" role="img" aria-labelledby="title desc" data-source="pitch/writing/notes/technical-appendix.md" data-source-sha256="49ebf71bae09bf3409fabc5a33c07af691dc153015580cff2a6238e960b90f4d">
+  <title id="title">技術演進路線</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 49ebf71bae09bf3409fabc5a33c07af691dc153015580cff2a6238e960b90f4d</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
+    <style>
+      text { font-family: Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif; fill: #062040; }
+      .node { fill: #FFFFFF; stroke: #062040; stroke-width: 2; rx: 8; }
+      .group { fill: #FCFDFF; stroke: #778AA4; stroke-width: 1.5; rx: 16; }
+      .edge { fill: none; stroke: #062040; stroke-width: 2; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+      .label-bg { fill: #FFFFFF; opacity: .96; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+<text class="" text-anchor="start" font-size="25" font-weight="700"><tspan x="35" y="40.0">從現有原型走向企業接入</tspan></text>
+  <text class="" text-anchor="start" font-size="16" font-weight="500"><tspan x="35" y="72.0">每一步都有可展示產物；虛線表示尚待驗證或授權。</tspan></text>
+  <path class="edge dashed" d="M 335 144.0 H 395.0 V 144.0 H 455"/><rect class="label-bg" x="335.5" y="115.0" width="119" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="395.0" y="132.0">設計與規則移植</tspan></text>
+  <path class="edge" d="M 755 144.0 H 815.0 V 144.0 H 875"/>
+  <path class="edge" d="M 1025.0 188 V 234.0 H 1025.0 V 280"/>
+  <path class="edge dashed" d="M 1025 188 V 415 H 605 V 460"/><rect class="label-bg" x="755.5" y="388" width="119" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="815" y="405.0">通過企業驗證後</tspan></text>
+  <path class="edge dashed" d="M 335 504 H 455"/>
+  <rect class="node" x="35" y="100" width="300" height="88" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="185.0" y="137.5">現有：HTML / PWA</tspan><tspan x="185.0" y="162.5">畫面、規則、素材與流程證據</tspan></text>
+  <rect class="node" x="455" y="100" width="300" height="88" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="605.0" y="137.5">下一步：Expo 手機 demo</tspan><tspan x="605.0" y="162.5">移植介面、測定位與分享</tspan></text>
+  <rect class="node" x="875" y="100" width="300" height="88" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="1025.0" y="137.5">共同契約</tspan><tspan x="1025.0" y="162.5">景點、行程、到訪、卡片資料</tspan></text>
+  <rect class="node" x="875" y="280" width="300" height="88" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="1025.0" y="317.5">展示接點</tspan><tspan x="1025.0" y="342.5">Mock 行程、明示模擬</tspan></text>
+  <rect class="node" x="455" y="460" width="300" height="88" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="605.0" y="497.5">待建：正式應用服務</tspan><tspan x="605.0" y="522.5">授權、驗證、持久資料</tspan></text>
+  <rect class="node" x="35" y="460" width="300" height="88" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="185.0" y="497.5">企業接入</tspan><tspan x="185.0" y="522.5">既有 App 與授權出行服務</tspan></text>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc" data-source="pitch/writing/01-solution-architecture.md" data-source-sha256="5ad97e69f567f8ea2adf729bd4799b0b39cb2b2ceee444371a73c747a4058ec1">
+  <title id="title">遊喜樂核心服務分層</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 5ad97e69f567f8ea2adf729bd4799b0b39cb2b2ceee444371a73c747a4058ec1</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
+    <style>
+      text { font-family: Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif; fill: #062040; }
+      .node { fill: #FFFFFF; stroke: #062040; stroke-width: 2; rx: 8; }
+      .group { fill: #FCFDFF; stroke: #778AA4; stroke-width: 1.5; rx: 16; }
+      .edge { fill: none; stroke: #062040; stroke-width: 2; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+      .label-bg { fill: #FFFFFF; opacity: .96; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+<text class="" text-anchor="start" font-size="25" font-weight="700"><tspan x="35" y="38.0">三個核心服務與共同支援能力</tspan></text>
+  <rect class="group" x="20" y="55" width="1160" height="130"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="44" y="91.0">共同的使用者結果</tspan></text>
+  <rect class="group" x="20" y="215" width="1160" height="160"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="44" y="251.0">核心服務</tspan></text>
+  <rect class="group" x="20" y="465" width="1160" height="220"/><text class="" text-anchor="start" font-size="21" font-weight="700"><tspan x="44" y="501.0">共同支援</tspan></text>
+  <path class="edge" d="M 520 157 V 210 H 210 V 260"/>
+  <path class="edge" d="M 600 157 V 260"/>
+  <path class="edge" d="M 680 157 V 210 H 990 V 260"/>
+  <path class="edge" d="M 375 301 H 435"/>
+  <path class="edge" d="M 765 301 H 825"/>
+  <path class="edge" d="M 45 551 H 30 V 301 H 45"/>
+  <path class="edge" d="M 210 592 V 650 H 1170 V 301 H 1155"/>
+  <path class="edge" d="M 210 342 V 420 H 540 V 510"/>
+  <path class="edge" d="M 600 342 V 510"/>
+  <path class="edge" d="M 990 342 V 420 H 660 V 510"/>
+  <path class="edge dashed" d="M 700 342 V 450 H 990 V 510"/>
+  <rect class="node" x="360" y="75" width="480" height="82" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="600.0" y="109.5">使用者體驗</tspan><tspan x="600.0" y="134.5">找到去處、方便前往、留下回憶</tspan></text>
+  <rect class="node" x="45" y="260" width="330" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="210.0" y="294.5">探索與推薦</tspan><tspan x="210.0" y="319.5">地方、路線、推薦理由</tspan></text>
+  <rect class="node" x="435" y="260" width="330" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="600.0" y="294.5">出行與到訪</tspan><tspan x="600.0" y="319.5">前往選擇、到訪核對</tspan></text>
+  <rect class="node" x="825" y="260" width="330" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="990.0" y="294.5">收藏與回憶</tspan><tspan x="990.0" y="319.5">明信片、回憶卡、足跡</tspan></text>
+  <rect class="node" x="45" y="510" width="330" height="82" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="210.0" y="544.5">內容與 AI 支援</tspan><tspan x="210.0" y="569.5">來源整理、草稿、卡面、排序</tspan></text>
+  <rect class="node" x="435" y="510" width="330" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="600.0" y="544.5">共同資料與規則</tspan><tspan x="600.0" y="569.5">內容版本、本人偏好、到訪與收藏</tspan></text>
+  <rect class="node" x="825" y="510" width="330" height="82" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="17" font-weight="500"><tspan x="990.0" y="544.5">既有 yoxi 能力</tspan><tspan x="990.0" y="569.5">帳號、行程、支付與回饋</tspan></text>
+  <text class="" text-anchor="start" font-size="16" font-weight="600"><tspan x="35" y="730.0">核心服務是產品職責；試點可先由同一個模組化後端支援。</tspan></text>
+</svg>

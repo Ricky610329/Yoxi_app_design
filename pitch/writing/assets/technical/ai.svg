@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="490" viewBox="0 0 760 490" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">AI 應用方法與人工閘門</title>
+  <desc id="diagram-desc">推薦、文字內容與圖像資產三條 AI 管線，包含來源、模型步驟、人工或規則檢查、發布位置與失敗回退。</desc>
+  <defs>
+    <style>text { font-family: Noto Sans TC, Microsoft JhengHei, PingFang TC, sans-serif; }.label { font-size: 16px; font-weight: 500; }.strong { font-size: 18px; font-weight: 700; }.title { font-size: 24px; font-weight: 800; }.line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }</style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#062040" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#778AA4" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="490" fill="#FCFDFF" />
+  <text x="28" y="37" font-size="24px" font-weight="800" fill="#062040" text-anchor="start">AI 應用方法與治理</text>
+  <rect x="520" y="16" width="212" height="32" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="626.0" y="38" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">提案架構／待接入能力</text>
+  <rect x="22" y="74" width="716" height="102" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="99" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">A 推薦</text>
+  <rect x="22" y="190" width="716" height="102" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="215" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">B 文字內容</text>
+  <rect x="22" y="306" width="716" height="102" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="36" y="331" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">C 圖像資產</text>
+  <path d="M 154 140 L 172 140" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 286 140 L 304 140" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 418 140 L 436 140" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 570 140 L 588 140" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="34" y="112" width="120" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="94.0" y="130.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="94.0" dy="0">已審地方＋</tspan>
+    <tspan x="94.0" dy="22">授權偏好</tspan>
+  </text>
+  <rect x="172" y="112" width="114" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="229.0" y="130.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="229.0" dy="0">規則篩選</tspan>
+    <tspan x="229.0" dy="22">與排序</tspan>
+  </text>
+  <rect x="304" y="112" width="114" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="361.0" y="130.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="361.0" dy="0">模型產生</tspan>
+    <tspan x="361.0" dy="22">短理由</tspan>
+  </text>
+  <rect x="436" y="112" width="134" height="56" rx="8" fill="#FFFFFF" stroke="#062040" stroke-width="1.5" />
+  <text x="503.0" y="130.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="503.0" dy="0">來源／格式</tspan>
+    <tspan x="503.0" dy="22">規則檢查</tspan>
+  </text>
+  <rect x="588" y="112" width="130" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="653.0" y="130.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="653.0" dy="0">App 呈現</tspan>
+    <tspan x="653.0" dy="22">失敗用模板</tspan>
+  </text>
+  <path d="M 170 256 L 196 256" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 332 256 L 358 256" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 494 256 L 520 256" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="34" y="228" width="136" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="102.0" y="257.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="102.0" dy="0">可信來源片段</tspan>
+  </text>
+  <rect x="196" y="228" width="136" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="264.0" y="246.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="264.0" dy="0">RAG／</tspan>
+    <tspan x="264.0" dy="22">結構化草稿</tspan>
+  </text>
+  <rect x="358" y="228" width="136" height="56" rx="8" fill="#062040" stroke="#062040" stroke-width="1.5" />
+  <text x="426.0" y="246.0" font-size="16px" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+    <tspan x="426.0" dy="0">編輯查核</tspan>
+    <tspan x="426.0" dy="22">人工發布閘門</tspan>
+  </text>
+  <rect x="520" y="228" width="198" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="619.0" y="246.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="619.0" dy="0">版本化地方庫</tspan>
+    <tspan x="619.0" dy="22">來源與版本可追溯</tspan>
+  </text>
+  <path d="M 154 372 L 172 372" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 286 372 L 304 372" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 418 372 L 436 372" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 570 372 L 588 372" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="34" y="344" width="120" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="94.0" y="362.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="94.0" dy="0">授權參考／</tspan>
+    <tspan x="94.0" dy="22">風格規則</tspan>
+  </text>
+  <rect x="172" y="344" width="114" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="229.0" y="373.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="229.0" dy="0">批次候選</tspan>
+  </text>
+  <rect x="304" y="344" width="114" height="56" rx="8" fill="#062040" stroke="#062040" stroke-width="1.5" />
+  <text x="361.0" y="373.0" font-size="16px" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+    <tspan x="361.0" dy="0">人工審圖</tspan>
+  </text>
+  <rect x="436" y="344" width="134" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="503.0" y="362.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="503.0" dy="0">成品圖庫</tspan>
+    <tspan x="503.0" dy="22">版本化發布</tspan>
+  </text>
+  <rect x="588" y="344" width="130" height="56" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="653.0" y="362.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="653.0" dy="0">依抵達規則</tspan>
+    <tspan x="653.0" dy="22">取用</tspan>
+  </text>
+  <rect x="22" y="420" width="716" height="52" rx="8" fill="#FCFDFF" stroke="#062040" stroke-width="1.5" />
+  <text x="380" y="436.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="380" dy="0">治理邊界｜模型不核定車資、到訪或點數。本人回憶 AI 為未來選配；</tspan>
+    <tspan x="380" dy="20">現況採本機模板。</tspan>
+  </text>
+</svg>

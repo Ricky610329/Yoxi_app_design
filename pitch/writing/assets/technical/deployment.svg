@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="285" viewBox="0 0 760 285" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">候選工具與部署對應</title>
+  <desc id="diagram-desc">App 或獨立 Expo 展示、FastAPI、Cloud Run、企業核可資料層，以及 AI 背景批次與人工簽核發布的候選部署。</desc>
+  <defs>
+    <style>text { font-family: Noto Sans TC, Microsoft JhengHei, PingFang TC, sans-serif; }.label { font-size: 16px; font-weight: 500; }.strong { font-size: 18px; font-weight: 700; }.title { font-size: 24px; font-weight: 800; }.line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }</style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#062040" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#778AA4" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="285" fill="#FCFDFF" />
+  <text x="28" y="37" font-size="24px" font-weight="800" fill="#062040" text-anchor="start">候選工具與部署對應</text>
+  <rect x="520" y="16" width="212" height="32" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="626.0" y="38" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">候選工具／全部待落地</text>
+  <text x="28" y="68" font-size="16px" font-weight="500" fill="#778AA4" text-anchor="start">模型版本可配置；正式服務仍須企業資安、帳號與資料治理核可。</text>
+  <path d="M 221 118 L 272 118" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 424 118 L 475 118" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="34" y="88" width="187" height="60" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="127.5" y="108.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="127.5" dy="0">App／PWA</tspan>
+    <tspan x="127.5" dy="22">或 Expo 獨立 demo</tspan>
+  </text>
+  <rect x="272" y="88" width="152" height="60" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="348.0" y="108.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="348.0" dy="0">FastAPI／API</tspan>
+    <tspan x="348.0" dy="22">Cloud Run 候選</tspan>
+  </text>
+  <rect x="475" y="88" width="251" height="60" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="600.5" y="108.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="600.5" dy="0">企業核可 DB＋Storage</tspan>
+    <tspan x="600.5" dy="22">正式有效紀錄與版本資產</tspan>
+  </text>
+  <path d="M 348 148 L 348 178 L 156 178 L 156 190" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <path d="M 234 220 L 260 220" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 390 220 L 416 220" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 546 220 L 572 220" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 648 190 L 648 164 L 601 164 L 601 148" class="line" stroke="#778AA4" stroke-width="2" marker-end="url(#arrow-muted)" />
+  <rect x="78" y="190" width="156" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="156.0" y="210.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="156.0" dy="0">背景批次 worker</tspan>
+    <tspan x="156.0" dy="22">排程、重試、成本記錄</tspan>
+  </text>
+  <rect x="260" y="190" width="130" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="325.0" y="210.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="325.0" dy="0">Gemini／Imagen</tspan>
+    <tspan x="325.0" dy="22">版本可配置</tspan>
+  </text>
+  <rect x="416" y="190" width="130" height="60" rx="8" fill="#062040" stroke="#062040" stroke-width="1.5" />
+  <text x="481.0" y="210.0" font-size="16px" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+    <tspan x="481.0" dy="0">編輯簽核</tspan>
+    <tspan x="481.0" dy="22">人工發布閘門</tspan>
+  </text>
+  <rect x="572" y="190" width="154" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="649.0" y="210.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="649.0" dy="0">發布資產</tspan>
+    <tspan x="649.0" dy="22">進入核可圖庫</tspan>
+  </text>
+</svg>
