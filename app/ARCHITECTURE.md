@@ -455,7 +455,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 
 **回憶卡（2026-09-29 追加）**：`js/views/album-memory.js` 與同名 CSS 負責 `/lookback`，沿用深藍底與完整明信片的視覺。`APP.album.memory.templates()` 優先取今天到訪地點；當日沒有記錄時，明示改用最近到訪地點。左右滑動模板，可選本機照片與三種光線（晴光／柔光／暮色，自繪圖示，不用笑臉；不問使用者心情），只有「做成我的卡」一個主要動作，沒有下拉選單或提示詞面板。照片在本機縮至長邊最多 1000 px、JPEG 壓縮後預覽；光線對應內部構圖提示、色調與短句。底圖署名印在卡面上（自己的照片不印）。這是構圖示意，尚未接 AI，必須明示。
 
-**一屏（2026-09-29）**：`/lookback` 整頁不捲。`.memory-stage` 以 `flex:1` 吃掉剩下的高度並設 `container-type:size`，卡片高 = min(舞台高, 舞台寬換算的高)、置中吸附；標題、光線、照片、製卡鈕、說明、收納列都是固定高。收納列「留住的回憶」一直在（沒有卡時是一句說明），收下第一張時卡片不會突然變小。卡片寬度 ≤ 240 px 時用 container query 收小郵戳與字級。
+**一屏（2026-09-29）**：`/lookback` 整頁不捲。`.memory-stage` 以 `flex:1` 吃掉剩下的高度並設 `container-type:size`，卡片高 = min(舞台高, 舞台寬換算的高)、置中吸附；標題、光線、照片、製卡鈕、狀態列、收納列都是固定高。頁面上沒有說明小字：狀態列平常是空的（先留一行高，按了才出回饋），收納列一直佔同一個高度（沒有卡時是空的、不畫分隔線），收下第一張時卡片不會突然變小。卡片寬度 ≤ 240 px 時用 container query 收小郵戳與字級。
 
 按製作才透過 `APP.state.setToday` 寫 `STATE.all.today.memoryCards`（陣列，每張 `{id, cardId, mood, prompt, date, photo?}`，mood 存光線的 key：`good` 晴光／`ok` 柔光／`low` 暮色，沿用舊欄位名讓舊卡讀得回來；photo 是本機 data URL）；核對 localStorage 實際寫入，容量不足則還原並提示，不誤報成功。卡片不計入抵達明信片、獎章、里程。重開保留原卡日期／照片／光線，清除足跡時隨 today 清空。`APP.album.memory` 提供 `places/templates/cards/draft/moods/save`。空收藏沒有製作按鈕，導回探索。沒有上傳、API key 或模擬下載成功。週頁只保留回顧和分享。
 

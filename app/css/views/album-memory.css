@@ -40,8 +40,6 @@
   .memory-face-credit { margin-top:0; }
 }
 
-.memory-meta { padding:var(--sp-1) var(--gutter) 0; color:var(--yoxi-slate-lite); font-size:var(--fs-xs); line-height:var(--lh-body); text-align:center; }
-
 /* 光線三選一：一條分段控制，選中的那格是奶油色 */
 .memory-tones { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-1); margin:var(--sp-3) var(--gutter) 0; padding:var(--sp-1); border:1px solid var(--yoxi-slate); border-radius:var(--r-pill); }
 .memory-tones button { display:flex; align-items:center; justify-content:center; gap:var(--sp-2); min-height:44px; border-radius:var(--r-pill); background:transparent; color:var(--yoxi-white); font-size:var(--fs-sm); transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
@@ -59,13 +57,12 @@
 .memory-bottom { padding:var(--sp-1) var(--gutter) 0; }
 .memory-bottom .btn-primary { width:100%; background:var(--yoxi-white); color:var(--yoxi-navy); }
 .memory-bottom .btn-primary:disabled { opacity:.65; }
-.memory-status { margin-top:var(--sp-2); text-align:center; font-size:var(--fs-cap); }
-.memory-honesty { color:var(--yoxi-slate-lite); text-align:center; font-size:var(--fs-xs); line-height:var(--lh-body); }
+/* 平常是空的，按了才有一句回饋；先留一行高，出字時卡片不會跳 */
+.memory-status { min-height:calc(var(--lh-body) * 1em); margin-top:var(--sp-2); text-align:center; font-size:var(--fs-cap); line-height:var(--lh-body); }
 
-/* 收納列：一行小卡橫向排，永遠佔同一個高度 */
+/* 收納列：一行小卡橫向排，永遠佔同一個高度；還沒有卡時連分隔線都不畫 */
 .memory-keeps { display:flex; align-items:center; gap:var(--sp-3); min-height:66px; margin:var(--sp-2) var(--gutter) 0; padding-top:var(--sp-2); border-top:1px solid color-mix(in srgb,var(--yoxi-slate) 60%,transparent); }
-.memory-keeps h2 { flex:none; color:var(--yoxi-slate-lite); font-size:var(--fs-cap); font-weight:var(--fw-bold); }
-.memory-keeps-empty { color:var(--yoxi-slate-lite); font-size:var(--fs-xs); }
+.memory-keeps:has([data-memory-saved]:empty) { border-top-color:transparent; }
 .memory-keeps > div { display:flex; flex:1; gap:var(--sp-2); min-width:0; overflow-x:auto; padding:var(--sp-1); scrollbar-width:none; }
 .memory-keeps > div::-webkit-scrollbar { display:none; }
 .memory-keeps button { position:relative; flex:0 0 44px; height:55px; overflow:hidden; padding:0; border:2px solid var(--yoxi-cream); border-radius:var(--r-img); background:var(--yoxi-cream); }

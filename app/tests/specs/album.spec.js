@@ -362,7 +362,6 @@ T.spec('album', function (t) {
     const faces = app.$$('[data-act="pick-memory-template"]');
     t.eq(faces.length, T0.places.length, '模板數＝可用到訪地點');
     t.eq(T0.today, false, '初始沒有今天新到訪，使用最近去過的地方');
-    t.includes(app.text('[data-memory-period]'), '最近去過', '畫面誠實說明最近到訪');
     t.ok(faces[0].classList.contains('is-selected') && faces[0].getAttribute('aria-pressed') === 'true', '第一張預選');
     t.ok(faces.every(function (f) { return app.STATE.has(f.getAttribute('data-card')); }), '沒有未收的模板');
     const tones = app.$$('[data-act="memory-mood"]');
@@ -381,7 +380,8 @@ T.spec('album', function (t) {
     t.eq(selected.getAttribute('data-memory-mood'), 'low', '心情直接改在卡片主體');
     t.ok(selected.querySelector('.memory-template-art'), '沒有自己的照片時使用地點模板');
     t.eq(JSON.stringify(app.STATE.all.today || {}), before, '換模板與心情都還沒寫入');
-    t.includes(app.text('[data-memory-status]'), '不會上傳', '說明照片只留本機');
+    t.eq(app.$$('main.view .memory-heading p, main.view .memory-keeps h2, main.view .memory-keeps p').length, 0, '標題下、收納列都沒有說明小字');
+    t.eq(app.text('[data-memory-status]'), '', '還沒按之前沒有說明小字');
   });
 
   t.test('/lookback 上傳自己的照片可替換模板、移除可還原；格式錯誤會顯示原因', async function (app) {

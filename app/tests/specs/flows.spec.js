@@ -192,7 +192,6 @@ T.spec('flows', function (t) {
     await app.at('/lookback');
     t.eq(app.text('.memory-heading h1'), '把這一刻，留成卡。', '推播打開回憶卡房間');
     t.eq(app.$('[data-act="pick-memory-template"].is-selected').getAttribute('data-card'), last.id, '剛收的地方是今日模板並預選');
-    t.includes(app.text('[data-memory-period]'), '今天去過', '明確說是今天的到訪');
     t.ok(!app.$('main.view[data-view] [data-act="share"]'), '製作頁沒有分享鍵');
     await app.click('[data-act="memory-mood"][data-mood="ok"]');
     t.ok(app.route().path === '/lookback', '選心情只改本頁，尚未儲存');
@@ -698,7 +697,7 @@ T.spec('flows', function (t) {
     await app.reset();
     await app.go('/lookback');
     const lookback = app.text('main.view[data-view]');
-    t.includes(lookback, '模板合成示意', '明確說是模板合成示意');
+    t.includes(app.text('[data-act="pick-memory-template"].is-selected .memory-demo-mark'), '構圖示意', '卡面標明是構圖示意（頁面上不另寫說明小字）');
     t.ok(lookback.indexOf('這個月') < 0 && lookback.indexOf('步數') < 0 && lookback.indexOf('公里') < 0,
       '沒有舊月累積、步數或里程文案');
     await app.go('/trip/done');

@@ -57,14 +57,14 @@ APP.view('lookback', {
   path:'/lookback', tab:null, status:'light', title:'回憶卡',
   render:function () {
     const T = templates();
-    return '<div class="memory-room" data-memory-page><header class="memory-top"><a href="#" data-back="/album?tab=journal" aria-label="返回收藏"><span class="ic-ondark" data-icon="close"></span></a><span>遊喜樂</span><span>'+esc(APP.fmt.todayMMDD())+'</span></header><div class="memory-body"><div class="memory-heading"><h1>把這一刻，留成卡。</h1><p data-memory-period>'+(T.today?'今天去過的地方，已經替你準備好了。':'今天還沒有新的足跡，先看看最近去過的地方。')+'</p></div>'+
+    return '<div class="memory-room" data-memory-page><header class="memory-top"><a href="#" data-back="/album?tab=journal" aria-label="返回收藏"><span class="ic-ondark" data-icon="close"></span></a><span>遊喜樂</span><span>'+esc(APP.fmt.todayMMDD())+'</span></header><div class="memory-body"><div class="memory-heading"><h1>把這一刻，留成卡。</h1></div>'+
     (T.places.length ? '<div class="memory-stage"><div class="memory-templates" data-memory-templates data-gallery role="region" aria-label="地點模板，左右滑動選擇">'+T.places.map(function(p,i){
       return '<button type="button" class="memory-face'+(!i?' is-selected':'')+'" data-act="pick-memory-template" data-card="'+esc(p.id)+'" data-memory-mood="good" aria-pressed="'+!i+'" aria-label="'+esc(p.name)+'模板">'+faceHTML(draft(p.id,'good'))+'</button>';
-    }).join('')+'</div></div><p class="memory-meta">'+(T.places.length>1?'左右滑，換一個地方':'這是你到訪的地方')+'</p>'+
+    }).join('')+'</div></div>'+
     '<div class="memory-tones" role="group" aria-label="這張卡的光線">'+moods.map((m,i)=>'<button type="button" data-act="memory-mood" data-mood="'+m.key+'" aria-pressed="'+!i+'"'+(!i?' class="is-on"':'')+'><span class="memory-tone-ic">'+m.svg+'</span>'+esc(m.label)+'</button>').join('')+'</div>'+
     '<div class="memory-photo-row"><label class="memory-photo" data-act="add-memory-photo" tabindex="0"><span data-icon="camera"></span><span data-photo-label>放一張自己的照片</span><input type="file" accept="image/jpeg,image/png,image/webp" data-memory-upload hidden></label><button type="button" class="memory-remove-photo" data-act="remove-memory-photo" hidden>移除照片</button></div>'+
-    '<div class="memory-bottom"><button class="btn-primary" type="button" data-act="make-memory">做成我的卡</button><p class="memory-status" data-memory-status role="status">照片只留在這台裝置，不會上傳。</p><p class="memory-honesty">模板合成示意，尚未連接 AI 生圖。</p></div>'+
-    '<section class="memory-keeps" data-memory-keeps><h2>留住的回憶</h2><p class="memory-keeps-empty" data-memory-keeps-empty>做好的卡會收在這裡</p><div data-memory-saved data-gallery></div></section>' : '<div class="memory-empty"><p>抵達一個地方、收下明信片，這裡就會有你的模板。</p><a class="btn-primary" href="#/ride?mode=explore" data-act="go-ride">去看看附近</a></div>')+'</div></div>';
+    '<div class="memory-bottom"><button class="btn-primary" type="button" data-act="make-memory">做成我的卡</button><p class="memory-status" data-memory-status role="status"></p></div>'+
+    '<section class="memory-keeps" data-memory-keeps aria-label="留住的回憶"><div data-memory-saved data-gallery></div></section>' : '<div class="memory-empty"><p>抵達一個地方、收下明信片，這裡就會有你的模板。</p><a class="btn-primary" href="#/ride?mode=explore" data-act="go-ride">去看看附近</a></div>')+'</div></div>';
   },
   mount:function(root) {
     root.querySelector('a[data-back]').setAttribute('data-up','');
@@ -81,7 +81,7 @@ APP.view('lookback', {
       root.querySelector('[data-act="remove-memory-photo"]').hidden=!photo;
       make.disabled=saved||busy; make.textContent=busy?'照片準備中…':saved?'已收進回憶卡':'做成我的卡';
     }
-    function resetResult(){saved=false;savedDraft=null;status.textContent='照片只留在這台裝置，不會上傳。';}
+    function resetResult(){saved=false;savedDraft=null;status.textContent='';}
     function choose(f,scroll){if(f!==selected){selected=f;resetResult();update();}if(scroll)track.scrollTo({left:f.offsetLeft-faces[0].offsetLeft,behavior:APP.reduceMotion()?'auto':'smooth'});}
     faces.forEach(f=>{f.onclick=()=>choose(f,true);});
     /* 卡片置中對齊：第一張在 scrollLeft 0 就置中，所以 choose() 的位移照舊；停下來時挑中心最近的那張 */
@@ -101,8 +101,8 @@ APP.view('lookback', {
     };
     root.querySelector('[data-act="remove-memory-photo"]').onclick=function(){++readToken;busy=false;photo='';resetResult();update();};
     function paintSaved(){
-      /* 收納列一直在（沒有卡時是一句說明），收下第一張時卡片不會突然變小 */
-      const list=cards();root.querySelector('[data-memory-keeps-empty]').hidden=!!list.length;
+      /* 收納列一直佔同一個高度（沒有卡時是空的），收下第一張時卡片不會突然變小 */
+      const list=cards();
       const host=root.querySelector('[data-memory-saved]');
       host.innerHTML=list.slice().reverse().map(d=>'<button type="button" data-act="open-memory" data-memory-id="'+esc(d.id)+'" aria-label="'+esc(K.cardById(d.cardId).name+'，'+moodOf(d.mood).label+'，'+d.date)+'">'+artHTML(d)+'</button>').join('');SHELL.injectArt(host);
       host.querySelectorAll('[data-act="open-memory"]').forEach(b=>{b.onclick=function(){
