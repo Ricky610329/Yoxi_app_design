@@ -226,10 +226,6 @@ const STORY = {
   p9:  '內灣線 1951 年通車，原本不是給人坐的 —— 它是為了把尖石山上的木材與水泥原料運下山。林業一停，人就走了。',
   p1:  '1913 年落成，是台灣還在使用的最老車站。屋頂的老虎窗與鐘塔是巴洛克混合德式的做法。',
 };
-const AGAIN = {
-  p11: '窯的後面有一道更矮的舊牆，是更早一代的窯留下來的。兩道牆之間差了二十年。',
-  p9:  '戲院後面那條沒招牌的巷子走到底，有一戶人家的門牌還是日文的。',
-};
 /* 明信片底圖照片的出處（作者、授權、來源連結）。明信片的卡面不論是生成的成品、還是照片＋濾鏡，
    都是從這張照片來的（CC 授權要署名），跟 /unlock 結果頁的那一行同一個來源（APP.explore.cardPhoto） */
 function photoCreditHTML(cardId) {
@@ -717,7 +713,6 @@ APP.view('postcard', {
               '<span class="alb-back__sign"><span class="alb-back__logo">yoxi</span> 城事</span>' +
             '</span>' +
           '</button>' +
-          '<p class="alb-hint">點一下翻到背面</p>' +
           photoCreditHTML(P.id) +
         '</div>' +
         '<div class="alb-pad alb-lede">' +
@@ -735,15 +730,7 @@ APP.view('postcard', {
             '<span class="row-nav__body"><span class="row-nav__sub">地點</span>' +
             '<span class="row-nav__title">' + esc(area) + '</span></span></div>' +
         '</div></div>' +
-        '<div class="alb-pad">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
-        '<div class="alb-pad alb-pad--end">' +
-          '<button class="btn-ghost" type="button" data-act="again">再來的話，可以看什麼</button>' +
-          '<div class="card card--pad alb-again u-hidden" data-again>' +
-            '<div class="alb-again__k">這裡的另一面</div>' +
-            '<p class="alb-again__t">' + esc(AGAIN[P.id] || '再走一次，光的角度會不一樣。') + '</p>' +
-          '</div>' +
-          '<p class="alb-foot">再去一次會再收一張那一天的明信片（一天一張），也會多知道一件事。</p>' +
-        '</div>' +
+        '<div class="alb-pad alb-pad--end">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
       '</div>';
   },
   mount: function (root, params, ctx) {
@@ -751,13 +738,11 @@ APP.view('postcard', {
     const P = cardById(params.id);
     if (!P) return;
     const card = root.querySelector('[data-flip]');
-    const hint = root.querySelector('.alb-hint');
     /* interact.js 在 document 上另有一個 [data-flip] 的委派（initFlip）；
        這裡自己翻、並擋掉冒泡，不然會翻兩次等於沒翻 */
     if (card) card.onclick = function (e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
       card.classList.toggle('is-flipped');
-      if (hint) hint.textContent = card.classList.contains('is-flipped') ? '點一下翻回正面' : '點一下翻到背面';
       /* 節日版的插畫：翻回正面再演一次 */
       if (!card.classList.contains('is-flipped')) APP.explore.festPlay(card);
     };
@@ -766,11 +751,6 @@ APP.view('postcard', {
     const share = root.querySelector('[data-act="share"]');
     /* card：system 的「傳給家人」帶著它去 #/elder?card=<id>，長輩圖先用這一張 */
     if (share) share.onclick = function () { APP.ui.share({ title: '分享這張', kind: 'postcard', id: P.id, card: P.id, v: visitOf(P.id, ctx) }); };
-    const again = root.querySelector('[data-act="again"]');
-    if (again) again.onclick = function () {
-      root.querySelector('[data-again]').classList.remove('u-hidden');
-      again.classList.add('u-hidden');
-    };
   },
 });
 

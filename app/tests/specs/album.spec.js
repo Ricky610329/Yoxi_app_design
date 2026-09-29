@@ -551,7 +551,10 @@ T.spec('album', function (t) {
     app.APP.ui.share = orig;
     t.eq(got && got.kind, 'postcard', 'kind=postcard');
     t.eq(got && got.id, 'p1', 'id=p1');
-    t.eq(app.text('.alb-hint'), '點一下翻回正面', '翻過去之後提示改寫翻回正面');
+    await app.click('[data-flip]');
+    t.ok(!app.$('[data-flip]').classList.contains('is-flipped'), '再點一下翻回正面');
+    /* 卡片底下不寫操作提示，頁尾不放「再來的話」與一天一張的說明 */
+    t.ok(!app.$('.alb-hint') && !app.$('[data-act="again"]'), '沒有翻面提示、沒有「再來的話」');
   });
 
   /* 背面的字級照正文走（標題 22、內文 16）：每一張都要排得進卡裡。

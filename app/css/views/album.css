@@ -326,9 +326,8 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 }
 .alb-back__logo { font-weight: var(--fw-heavy); font-style: italic; letter-spacing: 0; color: var(--yoxi-red); }
 
-.alb-hint { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-cap); color: var(--app-muted); }
 /* 明信片底圖照片的出處：一行小字，連結的命中區 44×44，不撐高這一行 */
-.alb-credit { margin-top: var(--sp-1); text-align: center; font-size: var(--fs-xs); color: var(--app-muted); }
+.alb-credit { margin-top: var(--sp-2); text-align: center; font-size: var(--fs-xs); color: var(--app-muted); }
 .alb-credit__a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -14px 0; padding: 0 var(--sp-1); color: var(--yoxi-navy); text-decoration: underline; }
 .alb-fact { padding: var(--sp-3) var(--sp-4); }
 .alb-fact .tile-icon [data-icon] { width: 22px; height: 22px; display: block; }
@@ -336,33 +335,11 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-fact .row-nav__title { font-size: var(--fs-body); }
 /* 卡片底下的標題、日期、那一句：跟卡片同一條中線 */
 .alb-lede { text-align: center; }
-/* 這一張的那一句（跟 /unlock 翻開之後的是同一句）：置中，上下各一個大引號。
-   引號是 ::before／::after，不進 textContent（測試比對 .alb-verse__t 的字）。 */
-.alb-verse { max-width: 20em; margin: var(--sp-5) auto 0; }
+/* 這一張的那一句（跟 /unlock 翻開之後的是同一句）：置中，不加大引號（太佔高度） */
+.alb-verse { max-width: 20em; margin: var(--sp-4) auto 0; }
 .alb-verse__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-med); line-height: var(--lh-story); letter-spacing: .06em; text-wrap: balance; }
-.alb-verse__t::before,
-.alb-verse__t::after {
-  display: block;
-  height: .5em;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: calc(var(--fs-display) * 1.8);
-  font-weight: var(--fw-reg);
-  line-height: 1;
-  color: var(--yoxi-slate-lite);
-}
-.alb-verse__t::before { content: '\201C'; margin-bottom: var(--sp-1); }
-.alb-verse__t::after { content: '\201D'; margin-top: var(--sp-2); }
 .alb-verse__by { display: block; margin-top: var(--sp-3); font-size: var(--fs-cap); letter-spacing: .08em; color: var(--app-muted); }
 .alb-verse__by::before { content: '——'; }
-.alb-again { margin-top: var(--sp-3); background: var(--yoxi-cream); border: 0; }
-.alb-again__k {
-  margin-bottom: 6px;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-heavy);
-  letter-spacing: .08em;
-  color: var(--yoxi-red);
-}
-.alb-again__t { font-size: var(--fs-body); line-height: 1.8; }
 
 /* ---- 獎章詳情 ---- */
 .alb-medal { padding: var(--sp-6) var(--sp-5) 28px; background: var(--yoxi-white); text-align: center; }
