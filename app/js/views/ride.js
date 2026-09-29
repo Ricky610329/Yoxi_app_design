@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 web app — ride（叫車區）
+   遊喜樂 web app — ride（叫車區）
 
    回答什麼：
       叫車這一條線在 app 裡真的走得完：叫車首頁預設搭車，面板內可切探索（F＋E）
@@ -22,7 +22,7 @@
       - 搭車地圖沒有探索景點。探索地圖同時最多 4 個景點。兩個模式的面板都可上下拉，
         最低收到只剩拉把（看整張地圖）；搭車點拉把拉回來，探索也可以點景點叫回來。
       - 收藏仍在底欄；沒有數字徽章、沒有未讀數字。
-     - 金色橫幅只在評分之後出現（評分與付款是 yoxi 的既有職責，城事排在它們後面）。
+     - 金色橫幅只在評分之後出現（評分與付款是 yoxi 的既有職責，遊喜樂排在它們後面）。
      - 行程地圖上不畫路線：這份原型沒有做路徑規劃，一條假的線等於一個沒算過的數字。
      - 車資、分鐘、公里、點數沒有一個是手寫的：全部 APP.fmt／STATE／MOCK 算。
      - 「略過下車地點，繼續叫車」拿掉：app 版的叫車需要目的地才算得出車資，
@@ -91,7 +91,7 @@ const PICKUPS = [
   { name: '水利路 46 巷 2 號', area: '新竹市東區' },
   { name: '水利路 44 巷 2 號', area: '新竹市東區' },
 ];
-/* 城事以外的一般行程（trips.html 的對照組；公里是資料，車資與點數用公式） */
+/* 遊喜樂以外的一般行程（trips.html 的對照組；公里是資料，車資與點數用公式） */
 const PLAIN_TRIPS = [
   { from: '東區', to: '竹北', date: '09.18', time: '08:42', km: 9.1 },
 ];
@@ -370,7 +370,7 @@ function validDate(iso) {
 }
 
 /* 限定版（金框＋和泰 Points +50）只給「走路到不了」的地方：搭車去 900 m 外的地方不該換到 50 點。
-   /unlock 決定金框、點數頁算城事解鎖回饋、收藏頁畫金框，全部用這一個判斷（門檻＝APP.fmt.WALK_MAX_M）。
+   /unlock 決定金框、點數頁算遊喜樂解鎖回饋、收藏頁畫金框，全部用這一個判斷（門檻＝APP.fmt.WALK_MAX_M）。
    STATE.points 是原型的算法（by==='ride' 的卡 × 50），app 的點數一律用 pointsRows／pointsTotal。 */
 function limitedPlace(p) { return !!p && p.dist != null && p.dist > F.WALK_MAX_M; }
 function limitedCard(cardId) {
@@ -487,7 +487,7 @@ function startTrip(d) {
   APP.nav.go('/trip');
 }
 
-/* 行程紀錄：搭車抵達的明信片（每一次收下都算，回訪也是）＋城事以外的一般行程（新到舊）。
+/* 行程紀錄：搭車抵達的明信片（每一次收下都算，回訪也是）＋遊喜樂以外的一般行程（新到舊）。
    round＝搭來回收下的（到家了才算，見 TRIP 的註解）；限定版只有第一次；回訪的歸因記在那一次（explore 的 visits） */
 function pastTrips() {
   const out = [];
@@ -509,9 +509,9 @@ function pastTrips() {
   return out;
 }
 
-/* 點數明細：每一趟的搭車回饋＋每張搭車卡的城事解鎖回饋。總數一律＝明細相加。
+/* 點數明細：每一趟的搭車回饋＋每張搭車卡的遊喜樂解鎖回饋。總數一律＝明細相加。
    place：這一列是哪個地方（通知中心要顯示地名，不從 name 字串裡拆）。距離不明的一趟算不出車資，不列搭車回饋。
-   來回：回程也是一趟車，另外一列搭車回饋（候車費不是車資，不回饋）；城事解鎖回饋照舊一張卡一次、只給走不到的地方。 */
+   來回：回程也是一趟車，另外一列搭車回饋（候車費不是車資，不回饋）；遊喜樂解鎖回饋照舊一張卡一次、只給走不到的地方。 */
 function pointsRows() {
   const rows = [];
   pastTrips().forEach(function (tr) {
@@ -523,7 +523,7 @@ function pointsRows() {
       }
     }
     if (tr.city && tr.limited) {
-      rows.push({ name: tr.to + ' · 抵達解鎖', src: '城事解鎖回饋', date: tr.date, place: tr.to, amt: RIDE_BONUS, city: true });
+      rows.push({ name: tr.to + ' · 抵達解鎖', src: '遊喜樂解鎖回饋', date: tr.date, place: tr.to, amt: RIDE_BONUS, city: true });
     }
   });
   rows.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (b.city ? 1 : 0) - (a.city ? 1 : 0); });
@@ -1044,7 +1044,7 @@ function rideV2Mount(root, params, ctx) {
       '<span class="ride-card-float__art" data-art="' + esc(c.art) + '" data-seed="' + M().POSTCARDS.indexOf(c) + '" data-card-art="' + esc(id) + '"></span>' +
       '<span class="ride-card-float__name">' + esc(c.name) + '</span><span class="ai-mark">AI 生成示意</span>';
     floating.querySelector('[data-card-back]').innerHTML =
-      '<span class="ride-card-float__back-mark">yoxi 城事</span><strong>' + esc(c.name) + '</strong>' +
+      '<span class="ride-card-float__back-mark">遊喜樂</span><strong>' + esc(c.name) + '</strong>' +
       '<span>' + (S().has(id) ? '已收藏' : '抵達後可以收下') + '</span>';
     SHELL.injectArt(floating);             /* 收下的那一款由 explore-face.js 自己疊上（它監看整台 .device） */
     floating.hidden = false;
@@ -1634,7 +1634,7 @@ APP.view('trip', {
       if (!TRIP.toRiding()) return;
       root.querySelector('[data-phase="matching"]').hidden = true;
       root.querySelector('[data-phase="riding"]').hidden = false;
-      document.title = '行程中 — yoxi 城事';
+      document.title = '行程中 — 遊喜樂';
     }
     if (t.phase === 'matching') {
       if (still() || TRIP.phase(t) === 'riding') toRiding();
@@ -1847,7 +1847,7 @@ APP.view('drawer', {
           '<nav>' +
             item('行程紀錄', '#/trips', 'open-trips') +
             item('付款設定') +
-            '<a class="drawer__item ride-drawer__new" href="#/settings" data-act="open-settings">城事設定<span class="ride-drawer__badge">新</span></a>' +
+            '<a class="drawer__item ride-drawer__new" href="#/settings" data-act="open-settings">遊喜樂設定<span class="ride-drawer__badge">新</span></a>' +
             item('優惠券') +
             item('好康任務') +
             item('客服中心') +
@@ -1902,7 +1902,7 @@ APP.view('points', {
         '</div></div>' +
         '<div class="ride-done__pad"><div class="card card--pad ride-pts__note">' +
           '和泰 Points 可以折抵 yoxi 車資、iRent 租車、HOTAI 購商城與汽車保養費用。<b>1 點 = 1 元。</b>' +
-          '搭車回饋每 <span class="num">' + FARE_PER_POINT + '</span> 元車資 1 點（來回的回程也算一趟，候車費不算車資）；搭車抵達城事的地方，另外回饋 <span class="num">' + RIDE_BONUS + '</span> 點。' +
+          '搭車回饋每 <span class="num">' + FARE_PER_POINT + '</span> 元車資 1 點（來回的回程也算一趟，候車費不算車資）；搭車抵達遊喜樂的地方，另外回饋 <span class="num">' + RIDE_BONUS + '</span> 點。' +
         '</div></div>' +
       '</div>';
   },
@@ -1943,7 +1943,7 @@ APP.view('notify', {
     const city = pointsRows().filter(function (r) { return r.city; })[0];
     if (city) {
       mine += row({ href: '#/points', act: 'open-points', icon: 'point', t: '和泰 Points +' + city.amt,
-                    sub: '城事解鎖回饋 · ' + city.place });
+                    sub: '遊喜樂解鎖回饋 · ' + city.place });
     }
     const news = function (t, sub) {
       return '<a class="row-nav" href="#" data-toast="' + TOAST_NA + '">' +
@@ -1987,7 +1987,7 @@ APP.view('trips', {
         '<span class="tile-icon"><span data-icon="tabRide"></span></span>' +
         '<span class="row-nav__body"><span class="row-nav__title">' + esc(tr.from) + ' → ' + esc(tr.to) + (tr.round ? ' · 來回' : '') + '</span>' +
           '<span class="row-nav__sub">' + esc(tr.date) + (tr.time ? ' ' + esc(tr.time) : '') +
-          ' · ' + (tr.km == null ? DIST_TBD : (tr.round ? '來回各 ' : '') + '<span data-km>' + kmText(tr.km) + '</span> 公里') + (tr.city ? ' · 城事' : '') +
+          ' · ' + (tr.km == null ? DIST_TBD : (tr.round ? '來回各 ' : '') + '<span data-km>' + kmText(tr.km) + '</span> 公里') + (tr.city ? ' · 遊喜樂' : '') +
           (tr.via && VIA_LABEL[tr.via] ? ' · <span data-via="' + esc(tr.via) + '">' + VIA_LABEL[tr.via] + '</span>' : '') + '</span></span>' +
         '<span class="u-row u-gap3">' +
           (tr.km == null ? '' : '<span class="num ride-trips__fare">$<span data-fare>' + tripFare(tr.round, tr.km) + '</span></span>') +

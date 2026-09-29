@@ -7,8 +7,8 @@
 
 | # | 交件 | 在哪 | 怎麼產生 | 規格 |
 |---|---|---|---|---|
-| 1 | 提案簡報 PDF | `deck/out/yoxi_城事_初賽提案.pdf` | `python pitch/deck/build-pdf.py` | 摘要頁 1（不計）＋正文 ≤ 15 頁＋附錄；≤ 15 MB；七大章節；yoxi 題四項 |
-| 2 | 方案說明影片 | YouTube 連結（不公開） | 向量動畫：`python pitch/video/build-video.py` → `video/out/draft.mp4`；正式版只換真人配音（`video/README.md`） | ≤ 3:00；標題 `yoxi_城事_2026 和泰 AI 黑客松`；連結 11/21 前有效 |
+| 1 | 提案簡報 PDF | `deck/out/yoxi_遊喜樂_初賽提案.pdf` | `python pitch/deck/build-pdf.py` | 摘要頁 1（不計）＋正文 ≤ 15 頁＋附錄；≤ 15 MB；七大章節；yoxi 題四項 |
+| 2 | 方案說明影片 | YouTube 連結（不公開） | 向量動畫：`python pitch/video/build-video.py` → `video/out/draft.mp4`；正式版只換真人配音（`video/README.md`） | ≤ 3:00；標題 `yoxi_遊喜樂_2026 和泰 AI 黑客松`；連結 11/21 前有效 |
 | 3 | 提案摘要（簡報第 1 頁） | `summary.md` → 已排進 `deck/index.html` 的摘要頁 | 同 1 | 欄位名稱與順序不能改 |
 
 佐證文件（簡報每個數字的出處）在 `docs/`：
@@ -39,7 +39,7 @@
 - [ ] `build-pdf.py` exit 0（頁數、大小、禁用詞三關都過）
 - [ ] PDF 用 Adobe Reader 或 Chrome 開一次，逐頁看：沒有裁掉的字、沒有變形的截圖、頁碼對
 - [ ] 影片 ≤ 3:00（`ffprobe` 看 duration），有聲音、字幕看得清
-- [ ] YouTube：隱私「不公開」、標題完全等於 `yoxi_城事_2026 和泰 AI 黑客松`、連結貼進報名表前自己用無痕視窗開一次
+- [ ] YouTube：隱私「不公開」、標題完全等於 `yoxi_遊喜樂_2026 和泰 AI 黑客松`、連結貼進報名表前自己用無痕視窗開一次
 
 **報名系統**
 - [ ] 步驟一「團隊基本資料」已送出、收到報名成功通知信（隊長須中華民國國籍；未成年附法定代理人同意書）

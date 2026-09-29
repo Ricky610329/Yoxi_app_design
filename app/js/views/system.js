@@ -1,10 +1,10 @@
 /* ==========================================================================
-   yoxi 城事 web app — system 區塊
-   /welcome（onboarding 三張）、/settings（城事設定）、
+   遊喜樂 web app — system 區塊
+   /welcome（onboarding 三張）、/settings（遊喜樂設定）、
    APP.ui.push（推播浮層）、APP.ui.share（分享面板）、#demo-panel（桌機 demo 工具）。
 
    回答什麼：
-   - 第一次打開的人三句話內知道城事是什麼（不搭車也會打開／發現到叫車一步／一天變明信片）。
+   - 第一次打開的人三句話內知道遊喜樂是什麼（不搭車也會打開／發現到叫車一步／一天變明信片）。
    - 用了你哪些資料、什麼時候找你、誰看得到什麼 —— 隱私敘事在設定頁實體化。
    - 現場 demo 要能自己觸發推播、模擬抵達、重設，不用改程式。
    從哪張原型來：
@@ -164,7 +164,7 @@ function push(opt) {
     '<a class="pushmock__card" href="#' + to + '" data-act="open-push">' +
       '<span class="pushmock__app">y</span>' +
       '<span>' +
-        '<span class="sys-push__meta">yoxi 城事 · 現在</span>' +
+        '<span class="sys-push__meta">遊喜樂 · 現在</span>' +
         '<span class="pushmock__t">' + esc(title) + '</span>' +
         '<span class="pushmock__b">' + esc(body) + '</span>' +
       '</span>' +
@@ -293,7 +293,7 @@ APP.ui.share = share;
    -------------------------------------------------------------------------- */
 const SLIDES = [
   { art: 'market', seed: 2, t: '不搭車的日子也會打開',
-    p: '一天一個離你家不遠的地方，走路就到。不出遠門的日子，城事也有東西給你看。' },
+    p: '一天一個離你家不遠的地方，走路就到。不出遠門的日子，遊喜樂也有東西給你看。' },
   { art: 'glass', seed: 1, t: '發現一個地方，叫車去那裡只有一步',
     p: '看到想去的地方，按「設為下車點」，叫車首頁就幫你填好。走得到的，就走路去。' },
   { art: 'moat', seed: 3, t: '一天走過的路，變成明信片',
@@ -309,7 +309,7 @@ APP.view('welcome', {
     return '' +
       '<div class="sys-welcome">' +
         '<div class="sys-welcome__bar">' +
-          '<span class="sys-welcome__brand">yoxi 城事</span>' +
+          '<span class="sys-welcome__brand">遊喜樂</span>' +
           '<button class="sys-welcome__skip" type="button" data-act="skip">略過</button>' +
         '</div>' +
         '<div class="sys-welcome__track" data-track>' +
@@ -384,7 +384,7 @@ APP.view('welcome', {
 });
 
 /* --------------------------------------------------------------------------
-   /settings：城事設定
+   /settings：遊喜樂設定
    -------------------------------------------------------------------------- */
 const DATA = [
   ['place',  '常用地點', '用來判斷哪些地方你常經過卻沒進去過；關掉就只推薦車站附近', 'place'],
@@ -437,14 +437,14 @@ APP.view('settings', {
   path: '/settings',
   tab: null,
   status: 'light',
-  title: '城事設定',
+  title: '遊喜樂設定',
   render: function () {
     return '' +
       '<header class="hdr-red">' +
         '<div class="hdr-red__bar">' +
           '<a class="hdr-red__close" href="#" data-back="/ride" aria-label="返回"><span data-icon="close"></span></a>' +
         '</div>' +
-        '<h1 class="hdr-red__title">城事設定</h1>' +
+        '<h1 class="hdr-red__title">遊喜樂設定</h1>' +
         '<p class="hdr-red__sub">決定我們用你的哪些資料，以及什麼時候找你</p>' +
       '</header>' +
       '<div class="scroll sys-set">' +
@@ -457,12 +457,12 @@ APP.view('settings', {
           '</div>' +
           '<div class="card card--pad sys-set__note">' +
             '<b>一天最多兩則。</b>我們不會為了讓你多打開 app 而多傳訊息給你。' +
-            '兩則都可以各自關掉，關掉之後城事還是照常運作。' +
+            '兩則都可以各自關掉，關掉之後遊喜樂還是照常運作。' +
           '</div>' +
         '</section>' +
 
         '<section class="sys-set__sec">' +
-          '<div class="sec"><h2 class="sec__t sec__t--sm">城事會用到的資料</h2><span class="sec__m">都可以單獨關掉</span></div>' +
+          '<div class="sec"><h2 class="sec__t sec__t--sm">遊喜樂會用到的資料</h2><span class="sec__m">都可以單獨關掉</span></div>' +
           '<div class="card">' +
             DATA.map(function (d) { return switchRow(d[0], d[1], d[2], d[3]); }).join('') +
           '</div>' +

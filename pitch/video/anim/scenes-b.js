@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 — 影片向量動畫：場景 B（第 8–13 格：ride、gold、night、ai、roadmap、end）
+   遊喜樂 — 影片向量動畫：場景 B（第 8–13 格：ride、gold、night、ai、roadmap、end）
    契約見 CONTRACT.md。所有屬性都是局部秒數 u 的函數；不用 CSS 動畫、rAF、亂數、Date。
    時間一律從 shot.subs（旁白句子的起訖）推，不手寫秒數：TTS 長度變了，動畫跟著走。
    數字一律讀 ctx.calc；顏色一律讀 ctx.C。
@@ -477,7 +477,7 @@ ANIM.scene('end', {
     S.foot = A.g(g, { opacity: 0 });
     ['yoxi：不搭車，也打開 yoxi —— 打造高頻互動的AI出行夥伴',
      '畫面為向量示意 · 明信片為 AI 生成示意 · 地圖資料 © OpenStreetMap 貢獻者（ODbL）',
-     'yoxi_城事_2026 和泰 AI 黑客松'].forEach((s, i) =>
+     'yoxi_遊喜樂_2026 和泰 AI 黑客松'].forEach((s, i) =>
       A.text(S.foot, 960, 850 + i * 40, s, { 'font-size': 22, fill: C.slateLite, 'text-anchor': 'middle' }));
   },
   update(u, ctx, shot) {

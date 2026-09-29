@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>yoxi 城事 — 不搭車的日子，也有理由打開 yoxi</title>
+<title>遊喜樂 — 不搭車的日子，也有理由打開 yoxi</title>
 <meta name="description" content="提給 yoxi 的產品提案：一天一個地方，走得到就走，走不到就用 yoxi 去。捲動式、可互動的介紹頁，file:// 直接開。">
 <!--
-  回答什麼：這個 app 是什麼、為什麼 yoxi 該做、怎麼接進叫車主業、AI 做什麼、怎麼分步上線。給第一次聽到「城事」的人看。
+  回答什麼：這個 app 是什麼、為什麼 yoxi 該做、怎麼接進叫車主業、AI 做什麼、怎麼分步上線。給第一次聽到「遊喜樂」的人看。
   動了什麼：只讀 ../prototype（tokens、icons、hsmap、地圖資料、照片授權）、../app/assets/shots（截圖）、../pitch/video（影片）。不改它們。
   刻意沒有的東西：CDN、webfont、框架、build、打卡／排名／倒數類的字（禁用詞見 AGENTS.md）、手寫的車資與分鐘（全部由 SITE_DATA.fmt 算）。
   結構固定（section 的 id、掛載點 id、載入順序）；文案與各段細節由 CONTRACT.md 分工。
@@ -21,7 +21,7 @@
 
 <header class="nav">
   <div class="wrap nav__in">
-    <a class="wordmark" href="#top"><b>yoxi</b> 城事</a>
+    <a class="wordmark" href="#top"><b>遊喜樂</b></a>
     <nav class="nav__links" aria-label="頁內導覽">
       <a href="#why" data-nav="why">為什麼</a>
       <a href="#idea" data-nav="idea">一句話</a>
@@ -47,7 +47,7 @@
   <div class="wrap hero__in">
     <p class="eyebrow" data-reveal>提給 yoxi（和泰叫車）的產品提案 · 2026 和泰 AI 黑客松</p>
     <h1 class="h1" data-reveal data-reveal-delay="80">不搭車的日子，<br>也有理由打開 <span class="em">yoxi</span>。</h1>
-    <p class="lead" data-reveal data-reveal-delay="160">「yoxi 城事」把叫車 app 變成一個不搭車也會打開的城市探索與收藏工具：一天一個離你不遠的地方，走得到就走，走不到就用 yoxi 去。到了才上色，收進你的城市。</p>
+    <p class="lead" data-reveal data-reveal-delay="160">「遊喜樂」把叫車 app 變成一個不搭車也會打開的城市探索與收藏工具：一天一個離你不遠的地方，走得到就走，走不到就用 yoxi 去。到了才上色，收進你的城市。</p>
     <div class="hero__chips" data-reveal data-reveal-delay="220">
       <span class="pill">一天一個地方</span>
       <span class="pill pill--navy">走得到就走</span>
@@ -72,7 +72,7 @@
       <h2 class="h2">叫車 app，只有要出門那一刻才被打開。</h2>
       <p class="lead">不搭車的日子，yoxi 就安靜了。題目問的是「不搭車，也打開 yoxi」。我們的答案不是再送一張券，而是給它一個跟車無關的理由。</p>
     </div>
-    <div id="w-week" data-reveal><!-- 內容 agent：一週開啟幾次的互動週曆條（現在的 yoxi ↔ 有了城事） --></div>
+    <div id="w-week" data-reveal><!-- 內容 agent：一週開啟幾次的互動週曆條（現在的 yoxi ↔ 有了遊喜樂） --></div>
   </div>
 </section>
 
@@ -162,7 +162,7 @@
     <div data-reveal>
       <p class="eyebrow">走不到才叫車</p>
       <h2 class="h2">3 公里是一條線。</h2>
-      <p class="lead">線的這一邊，城事是走路的理由；線的那一邊，它一鍵變成 yoxi 的下車點。內灣老街 <span data-fmt="km:28000">28</span> 公里，車資約 <span data-fmt="fare:28">$691</span>、<span data-fmt="min:28">65</span> 分，搭車回饋 <span data-fmt="pts:28">34</span> 點，走不到的地方搭車抵達另 +<span data-fmt="bonus">50</span> 點。</p>
+      <p class="lead">線的這一邊，遊喜樂是走路的理由；線的那一邊，它一鍵變成 yoxi 的下車點。內灣老街 <span data-fmt="km:28000">28</span> 公里，車資約 <span data-fmt="fare:28">$691</span>、<span data-fmt="min:28">65</span> 分，搭車回饋 <span data-fmt="pts:28">34</span> 點，走不到的地方搭車抵達另 +<span data-fmt="bonus">50</span> 點。</p>
       <p class="note">車資 75 + 22 × km、車程 3 + 2.2 × km 分、走路 m ÷ 75 分、每 20 元 1 點無條件捨去——都是 app 原型的公式，接上 yoxi 真實估價就能換。+50 是原型畫面的固定值；簡報建議依距離分 20／35／50 三級加每月上限。</p>
     </div>
     <div id="w-fare" data-reveal data-reveal-delay="120"><!-- 互動 agent：距離滑桿 → 走路分鐘／車資／車程／點數／主按鈕怎麼變 --></div>
@@ -182,7 +182,7 @@
         <div class="step" data-step="route"><span class="step__n">2</span><h3 class="h3">腳到不了的一段</h3><p>走得到的幾站，車一個字都不提。到了內灣老街，<span data-fmt="km:28000">28</span> 公里，才建議叫車。<span data-fmt="walkmax">3</span> 公里內叫你走路，超過才請你叫車。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
         <div class="step" data-step="ride-dropoff"><span class="step__n">3</span><h3 class="h3">按一下，下車點就填好了</h3><p>「設為下車點」把你帶回叫車首頁：下車點填好，車資約 <span data-fmt="fare:28">$691</span>、<span data-fmt="min:28">65</span> 分鐘，都是公式當場算的。按下去只是填好，還沒叫車。這一步是產品設計，不是 AI。</p><a class="step__link" href="../app/index.html#/place/neiwan" target="_blank" rel="noopener">在原型裡看 →</a></div>
         <div class="step" data-step="trip-riding"><span class="step__n">4</span><h3 class="h3">車上的時間也是內容時間</h3><p>坐車的 <span data-fmt="min:28">65</span> 分鐘，「這條路上」講內灣線為什麼是為了木材而蓋。原型裡的配對與行程是模擬的。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
-        <div class="step" data-step="trip-done-rated"><span class="step__n">5</span><h3 class="h3">先評分，再有獎勵</h3><p>行程結束先評分，金色橫幅才出現。評分是 yoxi 要的資料，城事排在它後面，不搶。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
+        <div class="step" data-step="trip-done-rated"><span class="step__n">5</span><h3 class="h3">先評分，再有獎勵</h3><p>行程結束先評分，金色橫幅才出現。評分是 yoxi 要的資料，遊喜樂排在它後面，不搶。</p><a class="step__link" href="../app/index.html#/route/rail" target="_blank" rel="noopener">在原型裡看 →</a></div>
         <div class="step" data-step="unlock-ride"><span class="step__n">6</span><h3 class="h3">搭 yoxi 抵達版，鑲金框</h3><p>走不到的地方搭車抵達，明信片多一圈金框。它是去遠方的理由，不是折價券。</p><a class="step__link" href="../app/index.html#/unlock/neiwan?ride=1" target="_blank" rel="noopener">在原型裡看 →</a></div>
         <div class="step" data-step="points"><span class="step__n">7</span><h3 class="h3">點數回流和泰 Points</h3><p>明細多兩列：搭車回饋 +<span data-fmt="pts:28">34</span>、抵達解鎖 +<span data-fmt="bonus">50</span>，總數等於明細相加。點數流回 yoxi、iRent、HOTAI 購。</p><a class="step__link" href="../app/index.html#/points" target="_blank" rel="noopener">在原型裡看 →</a></div>
       </div>
@@ -255,7 +255,7 @@
     <div class="section__head" data-reveal>
       <p class="eyebrow">叫車沒有變難用</p>
       <h2 class="h2">六條防護承諾，每一條都能當場重跑。</h2>
-      <p class="lead">城事全部加在叫車首頁之外；首頁只多一個可以關掉的圖層。關掉圖層，DOM 逐節點跟現況相同。</p>
+      <p class="lead">遊喜樂全部加在叫車首頁之外；首頁只多一個可以關掉的圖層。關掉圖層，DOM 逐節點跟現況相同。</p>
     </div>
     <div class="split">
       <div id="w-compare" data-reveal><!-- 互動 agent：叫車首頁圖層開／關對照（拖曳滑桿） --></div>
@@ -333,7 +333,7 @@
         <div class="card more__card more__card--pair">
           <span class="more__kind">初賽簡報</span><b class="more__t">給 yoxi 的提案</b>
           <span class="more__d">摘要一頁＋正文，七大章節；數字都能回溯到佐證文件。</span>
-          <span class="more__links"><a href="../pitch/deck/index.html" target="_blank" rel="noopener">HTML 版 →</a><a href="../pitch/deck/out/yoxi_城事_初賽提案.pdf" target="_blank" rel="noopener">PDF →</a></span></div>
+          <span class="more__links"><a href="../pitch/deck/index.html" target="_blank" rel="noopener">HTML 版 →</a><a href="../pitch/deck/out/yoxi_遊喜樂_初賽提案.pdf" target="_blank" rel="noopener">PDF →</a></span></div>
         <a class="card more__card" href="../prototype/variants.html" target="_blank" rel="noopener">
           <span class="more__kind">原型</span><b class="more__t">變體比較</b>
           <span class="more__d">同一個問題的幾種做法並排，刻意做壞的對照組也留著。</span><span class="more__go">打開 →</span></a>
@@ -354,7 +354,7 @@
   <div class="wrap" id="w-footer">
     <div class="foot">
       <div class="foot__brand">
-        <a class="wordmark" href="#top"><b>yoxi</b> 城事</a>
+        <a class="wordmark" href="#top"><b>遊喜樂</b></a>
         <p class="foot__line">一天一個地方。走得到就走，走不到就用 yoxi 去。</p>
       </div>
       <ul class="foot__credits">

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 介紹網站 — 明信片 SVG（window.postcardArt）
+   遊喜樂 介紹網站 — 明信片 SVG（window.postcardArt）
 
    抄自 prototype/js/shell.js 的 ARTS／MOTIFS／postcardArt；風格參數 ART 抄自 prototype/js/mock.js。
    那邊改了要同步這邊（介紹網站不載 mock.js／shell.js，因為它們會接管整頁的 body）。

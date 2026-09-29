@@ -81,7 +81,7 @@ A.PRIM.postcard(parent, {x, y, w, h, seed, gold, label})          // 明信片�
 A.PRIM.phone(parent, {x, y, s})    // 向量手機＋yoxi 叫車首頁；回傳 { g, setDropoff(text), screen }
 A.PRIM.car(parent, {x, y, s})      // 小車（朝右）；回傳 g
 A.PRIM.walker(parent, {x, y, s})   // 步行小點；回傳 g（有 .ring 可呼吸）
-A.PRIM.wordmark(parent, {x, y, size, anchor})     // 「yoxi 城事」字標
+A.PRIM.wordmark(parent, {x, y, size, anchor})     // 「遊喜樂」字標
 A.PRIM.statement(parent, {x, y, lines, size, anchor, fill, weight, lh})  // 大字（【】包住的字用紅色強調）；回傳 g，用 opacity 淡入
 A.PRIM.tag(parent, {x, y, text, fg, bg, size})    // 圓角小標籤；回傳 g
 A.PRIM.coin(parent, {x, y, r})     // 點數硬幣

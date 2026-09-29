@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 web app — album-family：傳到 LINE 給家人、家人的回應（全部是示意）
+   遊喜樂 web app — album-family：傳到 LINE 給家人、家人的回應（全部是示意）
    契約：app/ARCHITECTURE.md §3.3（store.shares／store.replies）、§3.5（分享面板的「傳到 LINE 給家人」）、§7、§8。
    載入順序：album.js 之後（用它的 APP.album._ 零件）；明信片那一次的樣子問 APP.explore.cardOrigin。
 
@@ -283,7 +283,7 @@ function shareBlockHTML(s, focus) {
       '<div class="fam-bubble fam-bubble--card">' +
         '<div class="fam-cardwrap fam-cardwrap--sm">' + cardArt(s.card, { v: s.v, size: 'sm' }) + '</div>' +
         (s.cap ? '<p class="fam-bubble__cap" data-share-cap>' + esc(s.cap) + '</p>' : '') +
-        '<p class="fam-bubble__line"><b>' + esc(p ? p.name : '') + '</b><small>yoxi 城事的明信片</small></p>' +
+        '<p class="fam-bubble__line"><b>' + esc(p ? p.name : '') + '</b><small>遊喜樂的明信片</small></p>' +
       '</div>' +
     '</div>' +
     (hearts.length
@@ -330,7 +330,7 @@ APP.view('line', {
   render: function (params, ctx) {
     const all = shares();
     const want = shareById(ctx.query.get('share'));
-    const top = topHTML({ mock: 'LINE 畫面示意 · 沒有真的傳出去', back: '/album', backLabel: '回到 yoxi 城事',
+    const top = topHTML({ mock: 'LINE 畫面示意 · 沒有真的傳出去', back: '/album', backLabel: '回到遊喜樂',
                           h1: true, title: FAMILY.group, sub: '群組 · 你和' + FAMILY.kids.map(function (k) { return k.name; }).join('、') });
     if (!all.length) {
       return '<div class="fam fam-line" data-line>' + top +

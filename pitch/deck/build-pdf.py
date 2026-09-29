@@ -6,7 +6,7 @@
     python pitch/deck/build-pdf.py --no-png   不輸出預覽 PNG
 
 輸出：
-    pitch/deck/out/yoxi_城事_初賽提案.pdf
+    pitch/deck/out/yoxi_遊喜樂_初賽提案.pdf
     pitch/deck/out/preview/p01.png …（每頁一張，960 寬）
 
 硬條件（任一不過 exit 1）：
@@ -30,7 +30,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 DECK = Path(__file__).resolve().parent
 HTML = DECK / 'index.html'
 OUT = DECK / 'out'
-PDF = OUT / 'yoxi_城事_初賽提案.pdf'
+PDF = OUT / 'yoxi_遊喜樂_初賽提案.pdf'
 PREVIEW = OUT / 'preview'
 MAX_MAIN = 15
 MAX_MB = 15

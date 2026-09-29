@@ -1,4 +1,4 @@
-# site/ — 「yoxi 城事」介紹網站的契約（並行做的人都照這份）
+# site/ — 「遊喜樂」介紹網站的契約（並行做的人都照這份）
 
 一頁式、捲動式、可互動的介紹網站，`file://` 直接開 `site/index.html`。**沒有 build、沒有框架、沒有 CDN、沒有 webfont、不連網**；
 只從 `../prototype`（tokens.css、icons.js、hsmap.js＋地圖資料、照片與授權）、`../app/assets/shots/`（web app 截圖）、`../pitch/video/out/draft.mp4`（影片）讀共用檔，**不改它們**。

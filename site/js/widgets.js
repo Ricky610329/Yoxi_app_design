@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 介紹網站 — 互動元件（互動 agent）
+   遊喜樂 介紹網站 — 互動元件（互動 agent）
 
    四個 widget，各自找掛載點，找不到就靜靜略過（頁面不能因為某段沒做而炸）：
    1. #hero-map    hero 背景：真實新竹街道＋一層霧，霧隨捲動在十個地方各開一個洞
@@ -484,7 +484,7 @@ function initFare() {
     let h;
     if (walk) {
       h = '<p class="wf__big">走路 <b>' + F.walkMin(m) + '</b> 分鐘</p>' +
-          '<p class="small muted">' + (TH) + ' 公里以內，城事是走路的理由；車一個字都不提。</p>' +
+          '<p class="small muted">' + (TH) + ' 公里以內，遊喜樂是走路的理由；車一個字都不提。</p>' +
           '<div class="wx-actions"><button type="button" class="btn" data-act="walk-to">走路前往</button>' +
           '<button type="button" class="btn btn--ghost" data-act="set-dropoff">設為下車點</button></div>';
     } else {
@@ -528,18 +528,18 @@ function initCompare() {
   const root = E('div', { 'class': 'wc' }, host);
   const labels = E('div', { 'class': 'wc__labels' }, root);
   E('span', { 'class': 'pill pill--navy' }, labels, '← 現況');
-  E('span', { 'class': 'pill' }, labels, '開了城事圖層 →');
+  E('span', { 'class': 'pill' }, labels, '開了遊喜樂圖層 →');
 
   /* 截圖本身已經畫了手機外框（430×912），所以不再套 .phone，免得框中有框 */
   const stage = E('div', { 'class': 'wc__stage' }, root);
   E('img', { src: D.links.thumbs('home'), alt: '叫車首頁現況（圖層關）', 'class': 'wc__img', draggable: 'false' }, stage);
   const after = E('div', { 'class': 'wc__after' }, stage);
-  E('img', { src: D.links.thumbs('variant-e-home'), alt: '叫車首頁開了城事圖層（景點常駐在地圖上）', 'class': 'wc__img', draggable: 'false' }, after);
+  E('img', { src: D.links.thumbs('variant-e-home'), alt: '叫車首頁開了遊喜樂圖層（景點常駐在地圖上）', 'class': 'wc__img', draggable: 'false' }, after);
   E('div', { 'class': 'wc__handle', 'aria-hidden': 'true' }, stage);
   const range = E('input', { type: 'range', min: 0, max: 100, step: 1, value: 50, 'class': 'wc__range',
-                             'aria-label': '對照分隔線：往左看更多「開了城事圖層」，往右看更多「現況」' }, stage);
+                             'aria-label': '對照分隔線：往左看更多「開了遊喜樂圖層」，往右看更多「現況」' }, stage);
 
-  const sw = E('div', { 'class': 'switch wc__switch', role: 'group', 'aria-label': '城事圖層' }, root);
+  const sw = E('div', { 'class': 'switch wc__switch', role: 'group', 'aria-label': '遊喜樂圖層' }, root);
   const bOff = E('button', { type: 'button', 'data-act': 'layer-off' }, sw, '圖層關');
   const bMid = E('button', { type: 'button', 'data-act': 'layer-split' }, sw, '對照');
   const bOn = E('button', { type: 'button', 'data-act': 'layer-on' }, sw, '圖層開');
@@ -552,7 +552,7 @@ function initCompare() {
     bOff.setAttribute('aria-pressed', v >= 100 ? 'true' : 'false');
     bOn.setAttribute('aria-pressed', v <= 0 ? 'true' : 'false');
     bMid.setAttribute('aria-pressed', v > 0 && v < 100 ? 'true' : 'false');
-    range.setAttribute('aria-valuetext', v >= 100 ? '全部是現況' : v <= 0 ? '全部是開了城事圖層' : '左 ' + v + '% 現況');
+    range.setAttribute('aria-valuetext', v >= 100 ? '全部是現況' : v <= 0 ? '全部是開了遊喜樂圖層' : '左 ' + v + '% 現況');
   }
   range.oninput = function () { set(range.value); };
   bOff.onclick = function () { set(100); };

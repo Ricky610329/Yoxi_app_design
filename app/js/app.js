@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 web app — 核心（window.APP）
+   遊喜樂 web app — 核心（window.APP）
    契約：app/ARCHITECTURE.md §3、§4、§9。改 API 先改那份文件。
 
    提供：view registry、hash router、nav（go/back/tab/current）、轉場、導覽後的焦點、
@@ -64,7 +64,7 @@ const KEYS = {
   dropoff:     { def: null,  kind: 'object?', group: 'footprint' },  /* { id, name, km, setAt, via:'k1'|'e'|'search'|'route' } */
   trip:        { def: null,  kind: 'object?', group: 'footprint' },  /* { placeId, phase:'matching'|'riding'|'waiting'|'returning'|'done', startedAt, rated, km, via, stars?, round?:true, collected?:true, backAt? }（waiting／returning 只有來回）；只有 APP.ride.trip 讀寫 */
   pushes:      { def: [],    kind: 'array',   group: 'footprint' },  /* [{ when:'am'|'pm', at:ISO }] */
-  rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊城事的景點（設定頁可關） */
+  rideSpots:   { def: true,  kind: 'boolean', group: 'pref' },       /* 叫車地圖上要不要疊遊喜樂的景點（設定頁可關） */
   rideRound:   { def: {},    kind: 'map',     group: 'footprint' },  /* '<明信片 id>#<第幾次>' → true：搭來回收下、而且到家了的那一次（行程紀錄寫「來回」、回程多一列搭車回饋；ride） */
   rideVia:     { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 第一次搭車收下的那一趟是從哪裡叫的（k1／e／route／search），行程紀錄的轉換歸因；回訪的記在 visits 的 via */
   cardStyle:   { def: {},    kind: 'map',     group: 'footprint' },  /* 明信片 id → 收下時照規則定下的款式 key（explore） */
@@ -766,7 +766,7 @@ function route(dir) {
   if (tab) b.setAttribute('data-tab', tab); else b.removeAttribute('data-tab');
   let title = def.title;
   try { if (typeof title === 'function') title = title(r.params, ctx); } catch (e) { title = ''; }
-  document.title = (title ? title + ' — ' : '') + 'yoxi 城事';
+  document.title = (title ? title + ' — ' : '') + '遊喜樂';
   setStatus(def.status || 'dark');
   renderTabbar();
 

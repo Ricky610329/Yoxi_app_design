@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 介紹網站 — 資料與公式（window.SITE_DATA）
+   遊喜樂 介紹網站 — 資料與公式（window.SITE_DATA）
 
    公式與 app/js/app.js 的 APP.fmt 同一套；改了那邊要同步這邊。
    地點對得上 prototype/assets/map/hs-places.js（座標）與 prototype/assets/photos/credits.js（實景照片與授權）；
@@ -73,7 +73,7 @@ const links = {
   variants: '../prototype/variants.html',
   vision: '../prototype/vision.html',
   deckHtml: '../pitch/deck/index.html',
-  deckPdf: '../pitch/deck/out/yoxi_城事_初賽提案.pdf',
+  deckPdf: '../pitch/deck/out/yoxi_遊喜樂_初賽提案.pdf',
   video: '../pitch/video/out/draft.mp4',
   videoPoster: '../pitch/video/out/board/01-s01-quiet.png',
   shots: name => '../app/assets/shots/' + name + '.png',
@@ -98,7 +98,7 @@ window.SITE_DATA = { fmt, WALK_MAX_M, RIDE_BONUS, places, far, links,
 const D = window.SITE_DATA;
 if (!D) return;
 
-/* 為什麼：一週七天。ride:true 是有叫車的那兩天（兩態都一樣，城事沒有多叫一趟車）。 */
+/* 為什麼：一週七天。ride:true 是有叫車的那兩天（兩態都一樣，遊喜樂沒有多叫一趟車）。 */
 D.week = {
   days: [
     { d: '一', why: '今天的地方' },
@@ -111,7 +111,7 @@ D.week = {
   ],
   now:  '要出門才打開。不搭車的日子，yoxi 就安靜了。',
   with: '每天都有一個跟車無關的理由；叫車的那兩天還在，而且走不到的地方多了一個叫車的理由。',
-  kpi:  '目標：非叫車開啟週活躍率比對照組高 5 個百分點（假設）。驗證：新竹試辦 12 週，隨機留 10% 對照組看不到任何城事入口，比兩組的差距。',
+  kpi:  '目標：非叫車開啟週活躍率比對照組高 5 個百分點（假設）。驗證：新竹試辦 12 週，隨機留 10% 對照組看不到任何遊喜樂入口，比兩組的差距。',
 };
 
 /* AI 的四個角色（ai-architecture.md §1 表、§2 規格、§8.2 原型現況） */
@@ -141,8 +141,8 @@ D.ai = [
 /* 五步路線圖（roadmap.md §1.2；catalog.js ROADMAP）。時間都是建議；目標值都是假設。 */
 D.roadmap = [
   { n: 0, name: '記錄與獎章', when: '2027 Q1 · 新竹 12 週', flag: '叫車首頁不動、tab bar 不動',
-    line: '搭車抵達一個城事地方，行程結束頁多一張明信片；地方頁「設為下車點」；抽屜裡每天一張「今天的地方」卡。',
-    do: '抽屜多一個「城事」入口；早上一則可關的推播；評分之後的金色橫幅；和泰 Points 明細多一列；地方詳情頁 {walkmax} km 外的主按鈕是「設為下車點」。',
+    line: '搭車抵達一個遊喜樂地方，行程結束頁多一張明信片；地方頁「設為下車點」；抽屜裡每天一張「今天的地方」卡。',
+    do: '抽屜多一個「遊喜樂」入口；早上一則可關的推播；評分之後的金色橫幅；和泰 Points 明細多一列；地方詳情頁 {walkmax} km 外的主按鈕是「設為下車點」。',
     keep: 'tab bar、叫車主畫面、叫車關鍵路徑 4 下都不動。',
     pre: '沒有前提，今天就能上。',
     gate: '守門：叫車成功率、配對時間、取消率、評分填寫率、客服進線，任一變差就關橫幅與「設為下車點」。停損：第 6 週北極星與對照組差距不到 1 個百分點（假設），只留記錄與獎章。',

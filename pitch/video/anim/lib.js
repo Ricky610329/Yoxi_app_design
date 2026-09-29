@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 — 影片向量動畫的共用程式庫（契約見 CONTRACT.md；場景檔不要改這裡）
+   遊喜樂 — 影片向量動畫的共用程式庫（契約見 CONTRACT.md；場景檔不要改這裡）
 
    舞台：<svg id="stage" viewBox="0 0 1920 1080">
      #bg（滿版底色）→ #mapLayer（真實新竹街道，所有鏡頭之下）→ #shots（每格一個 <g class="shot">）→ #ui（字幕條、署名）
@@ -247,12 +247,11 @@ PRIM.walker = function (parent, o) {
   return grp;
 };
 
-/* 字標「yoxi 城事」 */
+/* 字標「遊喜樂」 */
 PRIM.wordmark = function (parent, o) {
   const size = o.size || 96, anchor = o.anchor || 'start';
   const t = el('text', { x: o.x, y: o.y, 'font-family': FONT, 'font-size': size, 'font-weight': 900, 'text-anchor': anchor, 'letter-spacing': r2(-size * .02) }, parent);
-  el('tspan', { text: 'yoxi', fill: C.redLogo }, t);
-  el('tspan', { text: ' 城事', fill: o.dark ? C.white : C.navy }, t);
+  el('tspan', { text: '遊喜樂', fill: o.dark ? C.white : C.navy }, t);
   return t;
 };
 

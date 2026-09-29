@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 介紹網站 — 各段的內容互動（內容 agent）
+   遊喜樂 介紹網站 — 各段的內容互動（內容 agent）
    #w-week 週曆條（.switch 兩態＋捲到一半自動切一次）、#w-ai 四張可展開的卡、#w-roadmap 五步時間軸。
    資料在 js/data.js 的 SITE_DATA.week／ai／roadmap；找不到掛載點或資料就略過。
    按鈕一律 <button>，展開用 aria-expanded＋aria-controls，可鍵盤操作。
@@ -24,7 +24,7 @@ function initWeek() {
       '<div class="week__bar">' +
         '<div class="switch" role="group" aria-label="切換一週的樣子">' +
           '<button type="button" data-week="now" aria-pressed="true">現在的 yoxi</button>' +
-          '<button type="button" data-week="with" aria-pressed="false">有了城事</button>' +
+          '<button type="button" data-week="with" aria-pressed="false">有了遊喜樂</button>' +
         '</div>' +
         '<p class="week__legend xs"><span class="week__dot" aria-hidden="true"></span>有叫車的那天</p>' +
       '</div>' +

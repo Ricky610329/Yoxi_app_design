@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 介紹網站 — 各段自己的樣式（內容 agent）
+   遊喜樂 介紹網站 — 各段自己的樣式（內容 agent）
    週曆條、三張主線卡、scrolly 步驟連結、AI 卡、六條承諾、路線圖、影片、更多入口、頁尾。
    只用 tokens.css 的變數與 site.css 的 --site-*；不寫 hex；圓角只用 --r-*。
    ========================================================================== */
@@ -28,7 +28,7 @@
 .week__car { display: none; position: absolute; top: 26px; right: -4px; width: 26px; height: 26px; border-radius: var(--r-pill); background: var(--yoxi-white); box-shadow: var(--sh-card); place-items: center; }
 .week__car svg { width: 18px; height: 18px; }
 .week__day.is-ride .week__slot { background: var(--yoxi-white); }
-/* 有了城事 */
+/* 有了遊喜樂 */
 .week[data-state="with"] .week__slot { background: var(--yoxi-cream); border-color: transparent; }
 .week[data-state="with"] .week__day.is-ride .week__slot { background: var(--yoxi-red-soft); }
 .week[data-state="with"] .week__app, .week[data-state="with"] .week__off { display: none; }

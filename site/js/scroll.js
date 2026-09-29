@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 介紹網站 — 捲動框架（window.SITE）
+   遊喜樂 介紹網站 — 捲動框架（window.SITE）
 
    做四件事，全部靠 IntersectionObserver 與 rAF 節流的 scroll，不用任何 library：
    1. reveal：[data-reveal] 進入視窗加 .is-in（?reveal=all 或 prefers-reduced-motion 時全部立刻顯示）

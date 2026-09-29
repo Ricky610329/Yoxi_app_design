@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-yoxi 城事 — 初賽方案說明影片（向量動畫版）的產生管線。
+遊喜樂 — 初賽方案說明影片（向量動畫版）的產生管線。
 
 影片本身是 anim/index.html 這支向量動畫：每一格畫面都是時間 t 的純函數（ANIM.seek(t)，契約見 anim/CONTRACT.md）。
 本腳本做四件事：檢查鏡頭表 → TTS（或真人配音）量長度 → 寫 anim/timeline.js → 用 headless Chrome 逐格截圖餵給 ffmpeg。
@@ -775,7 +775,7 @@ def write_storyboard(data, tl, audio_dir):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>城事影片分鏡</title>
+<title>遊喜樂影片分鏡</title>
 <!-- 由 pitch/video/build-video.py 從 shots.json 產生，不要手改。縮圖＝向量動畫在每格 %d%% 處的畫面（out/board/）。顏色讀 prototype/css/tokens.css 的變數。 -->
 <link rel="stylesheet" href="../../prototype/css/tokens.css">
 <style>
@@ -807,7 +807,7 @@ def write_storyboard(data, tl, audio_dir):
 </head>
 <body>
 <header>
-  <h1>yoxi 城事 · 方案說明影片分鏡</h1>
+  <h1>遊喜樂 · 方案說明影片分鏡</h1>
   <p>總長 %s（%.1f 秒，%s），%d 個鏡頭 · 上限 3:00 · 向量動畫（pitch/video/anim/）· 旁白與數字的真相在 shots.json／script.md</p>
 </header>
 <main>%s
@@ -951,7 +951,7 @@ def parse_only(spec, n):
 
 
 def main():
-    ap = argparse.ArgumentParser(description='yoxi 城事影片（向量動畫）產生管線；說明見檔頭。')
+    ap = argparse.ArgumentParser(description='遊喜樂影片（向量動畫）產生管線；說明見檔頭。')
     ap.add_argument('--no-tts', action='store_true', help='不跑 TTS，靜音＋依字數估秒數')
     ap.add_argument('--rate', type=int, default=2, help='TTS 語速（-10～10，預設 2）')
     ap.add_argument('--only', default='', help='只算這些格，例如 3,5-7 → out/preview.mp4')

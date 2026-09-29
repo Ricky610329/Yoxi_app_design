@@ -1,5 +1,5 @@
 /* ==========================================================================
-   yoxi 城事 web app — explore 區塊：/unlock/:id 抵達 → 收集 → 翻卡
+   遊喜樂 web app — explore 區塊：/unlock/:id 抵達 → 收集 → 翻卡
    契約：app/ARCHITECTURE.md §3、§7、§8。只用 APP.view() 註冊，不改 app.js。
    載入順序：explore-fx.js（APP.fx）→ explore-cards.js（款式規則、收下）→ explore-verse.js（翻開之後的那一句）→ explore.js（頁面零件）→ 這支。
 
@@ -145,7 +145,7 @@ function faceHTML(p, d) {
   return '<div class="ex-face' + (key ? ' ex-face--' + esc(key) : '') + (gen ? ' ex-face--gen' : '') + '">' + base +
       (key === 'watercolor' || key === 'ink'
         ? '<svg class="ex-face__paper" aria-hidden="true" focusable="false"><rect width="100%" height="100%" filter="url(#exf-paper)"/></svg>' : '') +
-      (key === 'ink' ? '<span class="ex-face__seal" aria-hidden="true">城事</span>' : '') +
+      (key === 'ink' ? '<span class="ex-face__seal" aria-hidden="true">遊喜樂</span>' : '') +
       (key === 'gold' ? '<span class="ex-face__holo" aria-hidden="true"></span>' : '') +
     '</div>';
 }
@@ -290,7 +290,7 @@ function renderUnlock(params) {
             '<div class="ex-flip" data-flip>' +
               (got ? '' :
                 '<div class="ex-flip__back" aria-hidden="true">' +
-                  '<span class="ex-back__dot"></span><span class="ex-back__mark">yoxi</span><span class="ex-back__sub">城事</span>' +
+                  '<span class="ex-back__dot"></span><span class="ex-back__mark">遊喜樂</span>' +
                 '</div>') +
               '<div class="postcard ex-flip__front' + (gold ? ' postcard--gold' : '') + '" data-final-card' +
                   (style ? ' data-style="' + esc(style.key) + '"' : '') + '>' +

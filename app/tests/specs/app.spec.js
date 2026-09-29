@@ -89,7 +89,7 @@ T.spec('app', function (t) {
     await app.go('/place/glass-kiln');
     t.eq(b.getAttribute('data-route'), '/place/:id', 'body[data-route] 是 pattern');
     t.eq(app.route().params && app.route().params.id, 'glass-kiln', 'nav.current().params.id');
-    t.ok(/yoxi 城事/.test(app.doc.title), 'document.title 帶「— yoxi 城事」：' + app.doc.title);
+    t.ok(/遊喜樂/.test(app.doc.title), 'document.title 帶「— 遊喜樂」：' + app.doc.title);
   });
 
   function tabbarShown(app) {
