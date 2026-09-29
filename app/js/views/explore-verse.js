@@ -14,6 +14,7 @@
    提供（APP.explore）：
      VERSES               句子表：{ 卡片 id: { 款式、節日或 'gold+節日' 的 key: 句子 } }，句子是字串（沒有署名）或 [句子, 作者, 篇名]
      verseOf(cardId, r)   這一張翻開之後的那一句 → { text, by, title } 或 null（r 要有 style，festival 可有可無）
+     verseLines(text)     那一句逢逗號句號斷行 → [{ t, p }]（明信片頁與 /unlock 都一個短句一行、句尾標點懸在行外）
    寫句子的規矩：
      - 引用的古典詩詞一律寫出作者與篇名，只引公版的，一字一字對過；其他是自己寫的，不掛任何人的名字；
      - 地方的事實要跟 prototype/js/mock.js 的 STORY／WRITTEN 對得上（鐘塔、窯口、油桐、河津櫻…），不編沒有出處的史實；
@@ -419,10 +420,23 @@ function verseOf(cardId, r) {
   return typeof v === 'string' ? { text: v, by: '', title: '' } : { text: v[0], by: v[1] || '', title: v[2] || '' };
 }
 
+/**
+ * 那一句排成題字：逢逗號、句號斷行，一個短句一行（明信片頁與 /unlock 共用）。
+ *   回傳：[{ t（字）, p（句尾標點，畫面上懸在行外） }]；每一行的 t＋p 接起來就是原句，字不增不減
+ */
+function verseLines(text) {
+  const s = String(text || '');
+  return (s.match(/[^，；。！？]+[，；。！？]*/g) || [s]).map(function (l) {
+    const m = l.match(/^([\s\S]*?)([，；。！？]*)$/);
+    return { t: m[1], p: m[2] };
+  });
+}
+
 APP.explore = Object.assign(APP.explore, {
   VERSES: VERSES,
   VERSE_MAX: VERSE_MAX,
   verseOf: verseOf,
+  verseLines: verseLines,
 });
 
 })();

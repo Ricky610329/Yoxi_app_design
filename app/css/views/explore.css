@@ -971,9 +971,14 @@
 .ex-unlock__style { display: grid; justify-items: center; gap: 2px; margin: 0 0 var(--sp-3); }
 .ex-unlock__sname { font-size: var(--fs-title); font-weight: var(--fw-heavy); letter-spacing: .14em; }
 .ex-unlock[data-style="gold"] .ex-unlock__sname { color: var(--gold-lite); }
-.ex-verse { display: grid; justify-items: center; gap: var(--sp-1); margin-top: var(--sp-2); max-width: 22em; text-align: center; }
-.ex-verse__t { font-size: var(--fs-sm); line-height: var(--lh-story); letter-spacing: .06em; opacity: .9; text-wrap: balance; }
-.ex-verse__by { font-size: var(--fs-xs); letter-spacing: .08em; opacity: .6; }
+.ex-verse { display: grid; justify-items: center; gap: var(--sp-1); width: 100%; margin-top: var(--sp-2); max-width: 22em; text-align: center; }
+/* 那一句跟明信片頁（album.css 的 .alb-verse）同一種題字排法：明體細字、字距放鬆、一個短句一行，
+   台灣的逗號句號畫在字格正中，句尾標點懸出去一半，置中的是字。
+   寬度要撐滿（stretch、上面的 width:100%）：照內容縮的話，懸出去的半格讓最長那行差一點放不下，被折成兩行 */
+.ex-verse__t { justify-self: stretch; font-family: var(--app-serif); font-size: var(--fs-body); font-weight: var(--fw-reg); line-height: var(--lh-story); letter-spacing: .16em; opacity: .9; }
+.ex-verse__l { display: block; text-wrap: balance; }
+.ex-verse__p { margin-right: -.5em; }
+.ex-verse__by { font-family: var(--app-serif); font-size: var(--fs-xs); letter-spacing: .12em; opacity: .6; }
 .ex-verse__by::before { content: '——'; }
 .ex-credit { margin: calc(var(--sp-2) * -1) 0 var(--sp-2); font-size: var(--fs-xs); opacity: .6; }
 .ex-credit__a { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; color: inherit; text-decoration: underline; }

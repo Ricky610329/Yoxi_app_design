@@ -335,10 +335,15 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-fact .row-nav__title { font-size: var(--fs-body); }
 /* 卡片底下的標題、日期、那一句：跟卡片同一條中線 */
 .alb-lede { text-align: center; }
-/* 這一張的那一句（跟 /unlock 翻開之後的是同一句）：置中，不加大引號（太佔高度） */
-.alb-verse { max-width: 20em; margin: var(--sp-4) auto 0; }
-.alb-verse__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-med); line-height: var(--lh-story); letter-spacing: .06em; text-wrap: balance; }
-.alb-verse__by { display: block; margin-top: var(--sp-3); font-size: var(--fs-cap); letter-spacing: .08em; color: var(--app-muted); }
+/* 這一張的那一句（跟 /unlock 翻開之後的是同一句）：排成題在卡片下面的字，不加大引號（太佔高度）。
+   明體細字、字距放鬆，一個短句一行（album.js 的 verseLinesHTML），上面一道短細線跟日期隔開。
+   台灣的逗號句號畫在字格正中，句尾標點用負的右邊界懸出去一半，整行的字才在中線上 */
+.alb-verse { max-width: 22em; margin: var(--sp-5) auto var(--sp-2); }
+.alb-verse::before { content: ''; display: block; width: var(--sp-5); height: 1px; margin: 0 auto var(--sp-4); background: var(--yoxi-slate-lite); }
+.alb-verse__t { display: block; font-family: var(--app-serif); font-size: var(--fs-lead); font-weight: var(--fw-reg); line-height: 2; letter-spacing: .16em; }
+.alb-verse__l { display: block; text-wrap: balance; }
+.alb-verse__p { margin-right: -.5em; }
+.alb-verse__by { display: block; margin-top: var(--sp-3); font-family: var(--app-serif); font-size: var(--fs-cap); letter-spacing: .12em; color: var(--app-muted); }
 .alb-verse__by::before { content: '——'; }
 
 /* ---- 獎章詳情 ---- */

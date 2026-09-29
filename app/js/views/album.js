@@ -241,8 +241,12 @@ function photoCreditHTML(cardId) {
 function verseHTML(cardId, origin) {
   const v = APP.explore && APP.explore.verseOf ? APP.explore.verseOf(cardId, origin) : null;
   if (!v) return '';
+  /* 一個短句一行（像題字），句尾標點另包一層讓 CSS 懸在行外；字不增不減，textContent 還是原句 */
+  const lines = APP.explore.verseLines(v.text).map(function (l) {
+    return '<span class="alb-verse__l">' + esc(l.t) + (l.p ? '<span class="alb-verse__p">' + esc(l.p) + '</span>' : '') + '</span>';
+  }).join('');
   return '<p class="alb-verse" data-verse>' +
-    '<span class="alb-verse__t">' + esc(v.text) + '</span>' +
+    '<span class="alb-verse__t">' + lines + '</span>' +
     (v.by ? '<span class="alb-verse__by">' + esc(v.by) + (v.title ? '〈' + esc(v.title) + '〉' : '') + '</span>' : '') +
   '</p>';
 }
