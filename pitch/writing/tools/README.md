@@ -20,3 +20,14 @@ python pitch/writing/tools/check-reader.py
 版面在 `assets/reader.css`，導覽、放大字體與列印行為在 `assets/reader.js`。圖表與原型圖片可另開檢視；HTML 內同一份文件的連結轉為章節定位，其他程式文件維持原始檔連結。
 
 列印採 A4；一般正文、圖表與參考資料會列印，早期討論備存不列入。列印對話框可選擇另存 PDF。
+
+## 可獨立分享的 PDF
+
+```powershell
+python -m pip install PyMuPDF Pillow
+python pitch/writing/tools/build-pdf.py
+```
+
+需本機 Chrome／Edge。輸出為 `output/pdf/遊喜樂_方案架構與落地評估.pdf`，包含封面、五個主要章節與兩份附錄；內部驗收與早期備存不納入。程式加入目錄頁碼、章節書籤、可跳轉的章節連結及頁尾，檢查空白頁、越界內容與本機檔案連結，並在 `tmp/pdfs/` 產生逐頁 PNG、聯絡表和報告供視覺驗收。匯出後仍須檢視圖片，不能只依自動檢查交件。
+
+此版封面日期為 2026-09-29，程式文件連結固定到 GitHub 的 `f0151d6`，對應這次服務循環重寫。後續內容更新時須同步調整 `build-pdf.py` 中的日期、章節定位與來源版本。PDF 內嵌字型、原型畫面與向量圖，可單獨閱讀；只有開啟外部參考資料時需要網路。
