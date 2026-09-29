@@ -31,3 +31,15 @@ python pitch/writing/tools/build-pdf.py
 需本機 Chrome／Edge。輸出為 `output/pdf/遊喜樂_方案架構與落地評估.pdf`，包含封面、五個主要章節與兩份附錄；內部驗收與早期備存不納入。程式加入目錄頁碼、章節書籤、可跳轉的章節連結及頁尾，檢查空白頁、越界內容與本機檔案連結，並在 `tmp/pdfs/` 產生逐頁 PNG、聯絡表和報告供視覺驗收。匯出後仍須檢視圖片，不能只依自動檢查交件。
 
 此版封面日期為 2026-09-29，程式文件連結固定到 GitHub 的 `f0151d6`，對應這次服務循環重寫。後續內容更新時須同步調整 `build-pdf.py` 中的日期、章節定位與來源版本。PDF 內嵌字型、原型畫面與向量圖，可單獨閱讀；只有開啟外部參考資料時需要網路。
+
+## 八頁精簡版
+
+來源為 `pitch/writing/eight-pages.md`，每個 `<!-- page: 標題 -->` 分隔一頁；依序為架構、流程、AI、工具、成本、資源、原型、參考資料。正文直接起頁，不另加封面。修改後執行：
+
+```powershell
+python pitch/writing/tools/build-eight-pages.py
+```
+
+依賴同上，另需本目錄 `requirements.txt` 的 markdown-it-py。產出 `pitch/writing/eight-pages.html` 與 `output/pdf/遊喜樂_方案精簡版_8頁.pdf`；版面在 `assets/eight-pages.css`。HTML 須保留 repo 相對路徑，PDF 可獨立分享。
+
+工具檢查八個來源分頁、內容與頁尾間距、橫向溢出、圖片載入、PDF 恰八頁、頁碼及本機連結；並寫入八個章節書籤。`tmp/pdfs/eight-pages/` 保存逐頁 PNG、聯絡表與報告，交件前須視覺檢查。日期及 GitHub 來源版本固定於這次交付，更新內容時同步核對。
