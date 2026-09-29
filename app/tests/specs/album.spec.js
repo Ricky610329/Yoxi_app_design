@@ -365,7 +365,11 @@ T.spec('album', function (t) {
     t.includes(app.text('[data-memory-period]'), '最近去過', '畫面誠實說明最近到訪');
     t.ok(faces[0].classList.contains('is-selected') && faces[0].getAttribute('aria-pressed') === 'true', '第一張預選');
     t.ok(faces.every(function (f) { return app.STATE.has(f.getAttribute('data-card')); }), '沒有未收的模板');
-    t.eq(app.$$('[data-act="memory-mood"]').length, 3, '心情是三個小選項');
+    const tones = app.$$('[data-act="memory-mood"]');
+    t.eq(tones.map(function (b) { return (b.textContent || '').trim(); }).join('／'), '晴光／柔光／暮色', '三選一是光線，不是心情');
+    t.ok(tones.every(function (b) { return b.querySelector('svg') && !b.querySelector('[data-icon^="mood"]'); }), '光線用自己的圖示，沒有笑臉');
+    ['開心', '平靜', '放鬆'].forEach(function (w) { t.ok(app.text('main.view[data-view]').indexOf(w) < 0, '畫面上沒有「' + w + '」'); });
+    t.includes(app.text('[data-act="pick-memory-template"].is-selected [data-memory-credit]'), app.APP.explore.cardPhoto(faces[0].getAttribute('data-card')).author, '卡面印底圖作者');
     t.eq(app.$$('[data-act="make-memory"]').length, 1, '只有一個主要動作');
     t.eq(app.$$('main.view select, main.view [data-act="preview-memory"], main.view [data-act="save-memory"]').length, 0, '沒有表單選單或分開預覽／儲存');
     if (faces[1]) {
@@ -394,6 +398,7 @@ T.spec('album', function (t) {
     const jpeg = selected.querySelector('.memory-own-photo').getAttribute('src');
     t.ok(/^data:image\/jpeg;base64,/.test(jpeg), '圖片在本機縮圖後轉成 JPEG');
     t.includes(app.text('[data-photo-label]'), '換一張', '上傳後可替換');
+    t.ok(!selected.querySelector('[data-memory-credit]'), '自己的照片不印底圖署名');
     t.ok(!app.$('[data-act="remove-memory-photo"]').hidden, '移除照片可用');
     t.eq(app.STATE.count(), count0, '上傳不改原明信片');
     t.eq(app.STATE.points, points0, '上傳不改點數');
@@ -456,6 +461,47 @@ T.spec('album', function (t) {
     await app.click(backLink);
     await app.at('/album');
     t.eq(JSON.stringify(app.STATE.all.today || {}), before, '離開而未做成卡不寫入');
+  });
+
+  /* 一屏：卡片吃剩下的高度，其他列固定。量桌機外框（狀態列 54px）與矮手機；收納列一直在，做了卡也不會把按鈕擠出去 */
+  t.test('/lookback 一屏：桌機外框與 375×667 都不用捲，卡片、光線、製卡鈕、收納列都在畫面內（做了三張也一樣）', async function (app) {
+    const fr = app.win.frameElement;
+    const size = async function (w, h) {
+      fr.style.width = w ? w + 'px' : ''; fr.style.height = h ? h + 'px' : '';
+      fr.getBoundingClientRect();
+      await app.tick(60);
+      app.APP.fitDevice();
+      await app.tick(60);
+    };
+    const fits = function (msg) {
+      const body = app.$('main.view .memory-body'), bottom = app.$('main.view .memory-room').getBoundingClientRect().bottom;
+      t.ok(body && body.scrollHeight <= body.clientHeight + 1, msg + '：不用捲 ' + (body && body.scrollHeight) + ' ≤ ' + (body && body.clientHeight));
+      ['[data-act="pick-memory-template"].is-selected', '[data-act="memory-mood"]', '[data-act="make-memory"]', '[data-memory-keeps]'].forEach(function (sel) {
+        const r = app.$(sel).getBoundingClientRect();
+        t.ok(r.height > 0 && r.bottom <= bottom + 1, msg + '：' + sel + ' 底 ' + Math.round(r.bottom) + ' ≤ ' + Math.round(bottom));
+      });
+      const face = app.$('[data-act="pick-memory-template"].is-selected').getBoundingClientRect();
+      t.ok(face.height >= 150, msg + '：卡片高 ' + Math.round(face.height));
+    };
+    try {
+      for (const sz of [[1280, 720], [375, 667]]) {
+        const tag = sz.join('×');
+        await app.reset();
+        await size(sz[0], sz[1]);
+        await app.go('/lookback');
+        fits(tag + ' 還沒做卡');
+        const faces = app.$$('[data-act="pick-memory-template"]');
+        for (let i = 0; i < 3 && i < faces.length; i++) {
+          await app.click(faces[i]);
+          await app.click('[data-act="make-memory"]');
+        }
+        t.eq(app.$$('[data-act="open-memory"]').length, Math.min(3, faces.length), tag + '：三張小卡');
+        fits(tag + ' 做了三張');
+      }
+    } finally {
+      await size(null, null);
+      await app.reset();
+    }
   });
 
   /* 3. 覆蓋率算出來 */
