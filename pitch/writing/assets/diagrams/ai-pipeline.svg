@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520" role="img" aria-labelledby="title desc" data-source="pitch/writing/03-ai-and-tools.md" data-source-sha256="3d83ecdb0dbef771d772ded3bb12720d77ca20bcac11ed823d9322657877a778">
+  <title id="title">AI 文案編審管線</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 3d83ecdb0dbef771d772ded3bb12720d77ca20bcac11ed823d9322657877a778</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
+    <style>
+      text { font-family: Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif; fill: #062040; }
+      .node { fill: #FFFFFF; stroke: #062040; stroke-width: 2; rx: 8; }
+      .group { fill: #FCFDFF; stroke: #778AA4; stroke-width: 1.5; rx: 16; }
+      .edge { fill: none; stroke: #062040; stroke-width: 2; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+      .label-bg { fill: #FFFFFF; opacity: .96; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+<text class="" text-anchor="start" font-size="24" font-weight="700"><tspan x="35" y="40.0">AI 文案編審管線</tspan></text>
+  <path class="edge" d="M 345 151.0 H 372.5 V 151.0 H 400"/>
+  <path class="edge" d="M 700 151.0 H 727.5 V 151.0 H 755"/>
+  <path class="edge" d="M 905.0 197 V 250 H 195.0 V 310"/>
+  <path class="edge" d="M 345 356.0 H 372.5 V 356.0 H 400"/>
+  <path class="edge" d="M 700 356.0 H 727.5 V 356.0 H 755"/><rect class="label-bg" x="702.5" y="327.0" width="50" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="727.5" y="344.0">核准</tspan></text>
+  <path class="edge" d="M 550.0 402 V 470 H 20 V 151.0 H 45"/><rect class="label-bg" x="150.0" y="445" width="50" height="25" rx="4"/><text class="" text-anchor="middle" font-size="14" font-weight="500"><tspan x="175" y="462.0">不足</tspan></text>
+  <rect class="node" x="45" y="105" width="300" height="92" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="195.0" y="144.5">編輯選可信來源</tspan><tspan x="195.0" y="169.5">公告、地方文獻、合作方資料</tspan></text>
+  <rect class="node" x="400" y="105" width="300" height="92" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="550.0" y="157.0">擷取片段與來源識別碼</tspan></text>
+  <rect class="node" x="755" y="105" width="300" height="92" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="905.0" y="144.5">AI 草稿</tspan><tspan x="905.0" y="169.5">文案、標籤、待查句子</tspan></text>
+  <rect class="node" x="45" y="310" width="300" height="92" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="195.0" y="349.5">程式格式檢查</tspan><tspan x="195.0" y="374.5">來源存在、欄位與版本</tspan></text>
+  <rect class="node" x="400" y="310" width="300" height="92" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="550.0" y="349.5">人工核對</tspan><tspan x="550.0" y="374.5">事實、時間、地點、語氣</tspan></text>
+  <rect class="node" x="755" y="310" width="300" height="92" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="905.0" y="362.0">發布已審內容</tspan></text>
+</svg>

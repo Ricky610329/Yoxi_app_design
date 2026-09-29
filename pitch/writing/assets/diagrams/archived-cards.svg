@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1040" viewBox="0 0 900 1040" role="img" aria-labelledby="title desc" data-source="pitch/writing/notes/optional-card-ideas.md" data-source-sha256="ed7b42faafef5d2914d5b97f6e3052fad8c6bf1b13da0ef5c6ef56baca3177ae">
+  <title id="title">備存卡片規則流程</title>
+  <desc id="desc">由原始 Mermaid 區塊離線產生；來源雜湊 ed7b42faafef5d2914d5b97f6e3052fad8c6bf1b13da0ef5c6ef56baca3177ae</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#062040"/></marker>
+    <style>
+      text { font-family: Montserrat, Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif; fill: #062040; }
+      .node { fill: #FFFFFF; stroke: #062040; stroke-width: 2; rx: 8; }
+      .group { fill: #FCFDFF; stroke: #778AA4; stroke-width: 1.5; rx: 16; }
+      .edge { fill: none; stroke: #062040; stroke-width: 2; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+      .label-bg { fill: #FFFFFF; opacity: .96; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+<text class="" text-anchor="start" font-size="24" font-weight="700"><tspan x="35" y="40.0">備存卡片規則流程</tspan></text>
+  <path class="edge" d="M 450.0 143 V 166.5 H 450.0 V 190"/>
+  <path class="edge" d="M 450.0 268 V 291.5 H 450.0 V 315"/>
+  <path class="edge" d="M 450.0 393 V 416.5 H 450.0 V 440"/>
+  <path class="edge" d="M 450.0 518 V 541.5 H 450.0 V 565"/>
+  <path class="edge" d="M 450.0 643 V 666.5 H 450.0 V 690"/>
+  <path class="edge" d="M 450.0 768 V 791.5 H 450.0 V 815"/>
+  <path class="edge" d="M 450.0 893 V 916.5 H 450.0 V 940"/>
+  <rect class="node" x="210" y="65" width="480" height="78" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="110.0">有效到訪與授權行程事件</tspan></text>
+  <rect class="node" x="210" y="190" width="480" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="235.0">查權限、驗證、同日去重</tspan></text>
+  <rect class="node" x="210" y="315" width="480" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="347.5">讀取規則版本</tspan><tspan x="450.0" y="372.5">到訪次數、生活圈快照、搭車條件</tspan></text>
+  <rect class="node" x="210" y="440" width="480" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="485.0">計算本次公開機率</tspan></text>
+  <rect class="node" x="210" y="565" width="480" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="610.0">伺服器隨機抽取</tspan></text>
+  <rect class="node" x="210" y="690" width="480" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="722.5">發卡帳本</tspan><tspan x="450.0" y="747.5">結果、機率、來源事件與版本</tspan></text>
+  <rect class="node" x="210" y="815" width="480" height="78" style="fill:#FFFFFF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="860.0">套組判定與資格去重</tspan></text>
+  <rect class="node" x="210" y="940" width="480" height="78" style="fill:#FBEBDF"/><text class="" text-anchor="middle" font-size="16" font-weight="500"><tspan x="450.0" y="985.0">固定名額活動抽選與履約</tspan></text>
+</svg>
