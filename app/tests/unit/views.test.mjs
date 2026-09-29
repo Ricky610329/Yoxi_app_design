@@ -175,7 +175,8 @@ test('recentCards：照收下的先後，最後收的在前；同一天、跨年
   assert.equal(ids(again.APP.album.recentCards(4)), 'p12,p10,p9,p11', '重新載入後順序不變');
 });
 
-/* 今天（'MM.DD'）落在週回顧的哪一段：demo 的步數到 9/21 為止，本週＝9/15–21、上週＝9/8–14 */
+/* 今天（'MM.DD'）落在週回顧的哪一段：既有 demo 資料到 9/21，本週＝9/15–21、上週＝9/8–14。
+   steps 暫留為內部換算來源；產品 UI 只呈現 km。 */
 const SLOTS = [
   { slot: 'now', today: '09.16' },
   { slot: 'after', today: '09.24' },
@@ -188,20 +189,29 @@ for (const c of SLOTS) {
     const W = APP.album.weekStats;
     const before = W();
     const month = MOCK.HEALTH_STEPS.month;
+    const spk = MOCK.LOOKBACK.steps / MOCK.LOOKBACK.km;
     assert.equal(APP.fmt.todayMMDD(), c.today, '注入的今天');
     assert.equal(before.month, 9);
-    assert.deepEqual([before.now.from, before.now.to, before.prev.from, before.prev.to], [15, 21, 8, 14], '範圍固定：步數的最後一天往前 7 天');
+    assert.deepEqual([before.now.from, before.now.to, before.prev.from, before.prev.to], [15, 21, 8, 14], '範圍固定：資料最後一天往前 7 天');
     let sum = 0;
     for (let d = before.now.from; d <= before.now.to; d++) sum += month[d - 1] || 0;
-    assert.equal(before.now.steps, sum, '本週步數＝HEALTH_STEPS 相加');
+    assert.equal(before.now.steps, sum, 'legacy steps＝HEALTH_STEPS 相加');
+    const round1 = (n) => Math.round(n * 10) / 10;
+    assert.equal(before.now.km, round1(before.now.days.reduce((n, d) => n + d.km, 0)),
+      '本週 km＝七個已取一位小數的每日公里相加');
+    assert.equal(before.now.days.length, 7, '本週固定七日');
+    before.now.days.forEach((d) => {
+      assert.equal(d.km, round1(d.steps / spk), d.day + ' 日的 km 由步數換算後取一位小數');
+    });
     APP.explore.collect('glass-kiln');
     const after = W();
     assert.equal(after.now.places, before.now.places + (c.slot === 'now' ? 1 : 0), '本週地方數');
     assert.equal(after.prev.places, before.prev.places + (c.slot === 'prev' ? 1 : 0), '上週地方數');
     assert.equal(ids(after.now.after), c.slot === 'after' ? 'p11' : '', '範圍之後才收的另外放');
     assert.equal(after.now.cards.some((p) => p.id === 'p11'), c.slot === 'now', '本週的卡');
-    assert.deepEqual([after.now.km, after.now.steps, after.now.from, after.now.to], [before.now.km, before.now.steps, 15, 21], '公里、步數、範圍不因收卡而變');
-    assert.deepEqual([after.prev.km, after.prev.steps], [before.prev.km, before.prev.steps], '上週的公里、步數不變');
+    assert.deepEqual([after.now.km, after.now.steps, after.now.from, after.now.to], [before.now.km, before.now.steps, 15, 21], '公里、內部來源、範圍不因收卡而變');
+    assert.deepEqual(after.now.days.map((d) => d.km), before.now.days.map((d) => d.km), '每日公里不因收卡而變');
+    assert.deepEqual([after.prev.km, after.prev.steps], [before.prev.km, before.prev.steps], '上週距離與內部來源不變');
   });
 }
 

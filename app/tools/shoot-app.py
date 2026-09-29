@@ -36,7 +36,6 @@ except ImportError:
 
 APP = Path(__file__).resolve().parent.parent
 FRAME = APP / 'tests' / 'fixtures' / 'shot-frame.html'
-INDEX = APP / 'index.html'
 OUT = APP / 'assets' / 'shots'
 
 PHONE_W, PHONE_H = 390, 844
@@ -200,9 +199,8 @@ def shoot(chrome, only):
         stem, route = DESKTOP
         if not only or stem in only:
             tmp = raw / (stem + '.png')
-            uri = INDEX.as_uri() + '?still=1#' + route
-            # 桌機外框：直接開 index.html（第一次開會先 onboarding，所以 run 不了 localStorage——
-            # 改用 hash 直達 /ride：app 只在 '/' 導去 /welcome）
+            # 跟手機共用 fixture 初始化 onboarded，避免根路由被首次導覽攔到歡迎頁。
+            uri = frame_uri(route, None) + '&w=' + str(DESK_W) + '&h=' + str(DESK_H)
             if chrome_shot(chrome, uri, tmp, DESK_W, DESK_H):
                 with Image.open(tmp) as im:
                     if im.size != (DESK_W, DESK_H):

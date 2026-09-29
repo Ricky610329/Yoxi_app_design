@@ -564,9 +564,12 @@ T.spec('system', function (t) {
     const saved = app.storage('state');
     t.ok(saved && Object.keys(saved.cards).length === 0, '寫進 localStorage');
     await app.go('/album');
-    t.eq(app.text('[data-stat="places"]'), '0', '收藏頁：去過的地方 0');
-    t.eq(app.text('[data-stat="km"]'), '0', '收藏頁：公里 0');
+    t.eq(app.$$('[data-stat="places"], [data-stat="km"]').length, 0, '收藏頁不再放重複的地方／公里統計');
+    t.eq(A.album.visitedPlaces().length, 0, '內部去過的地方 0');
     t.eq(app.$$('main.view .postcard--locked').length, app.$$('main.view [data-card]').length, '書架全部是灰的');
+    await app.go('/footprint');
+    t.eq(app.text('[data-coverage]'), '0', '城市足跡覆蓋率 0');
+    t.eq(app.$$('.citycolor__band').length, 0, '城市顏色 0 道');
     await app.reload();
     t.eq(app.STATE.count(), 0, '重載之後還是 0');
     await app.go('/points');

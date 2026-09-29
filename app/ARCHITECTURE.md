@@ -1,4 +1,4 @@
-# yoxi 城事 web app — 架構契約
+# 遊喜樂 web app — 架構契約
 
 這份文件是 `app/` 的單一契約。並行做各區塊的人（或 agent）只讀這份就能開工；
 改了契約要先改這裡。人看的說明在 `app/README.md`（做完再寫）。
@@ -17,7 +17,7 @@
 | 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
 | 地圖歸誰 | **F＋E** 同頁切模式 | 叫車首頁是真實新竹地圖（`HSMAP` paper）；搭車不顯示景點，探索同時最多 **4** 個景點，可設為下車點 |
 | 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
-| 收藏組織 | 摘要式首頁 | 「我的明信片」主卡（張數＋最近三張疊卡，點了進 `/postcards`，收下的每一格都點得進詳情）、兩張統計卡（「去過的地方」＝不重複的地點數）、「回顧」一列（今天的回顧 → `/lookback`、這一週 → `/week`、城市足跡 → `/footprint`）、獎章精選卡；390×844（含狀態列，桌機外框就是這個）一屏、不用捲 |
+| 收藏組織 | 摘要式首頁 | 「我的明信片」主卡（張數＋最近三張疊卡，點了進 `/postcards`）、「回顧」三入口（鎖＝私密今天、分享＝週里程、地圖＝城市足跡）、獎章精選卡；不重複放累積統計，390×844 含狀態列一屏、不用捲 |
 | 獎章呈現 | **X4** 勳章牆（六角金屬章，章面是地標線稿） | 首頁放大最近收下的一枚＋一列小章＋「顯示全部」→ `/badges` 三欄章牆；沒有進度環、沒有集點卡；還在路上的寫「收集 4/8」 |
 | 進度獎勵 | 只有獎章（「收集 n/m」） | 2026-09-27 做過 `/rewards` 相框與稱號，同一天使用者拿掉：已經有獎章，再一套收集的東西是重複的，收藏首頁也因為它要捲。不要再加回來，除非使用者改主意 |
 | 探索敘事 | **X2** 缺口導向 | 頂部仍是「今天的地方」一張大卡；下面是「你還沒有 ○○ 類」的缺口區塊、這個月的路線、還沒去的地方 |
@@ -115,7 +115,7 @@ APP.view('place', {
   path: '/place/:id',            // 或 ['/place/:id', '/place']；:id 進 params
   tab: 'explore',                // 'ride' | 'explore' | 'album' | null（null＝不顯示 tab bar，全螢幕流程）
   status: 'light',               // 狀態列字色：'light'（在紅／深底上）| 'dark'
-  title: p => '地方詳情',        // 字串或函式；document.title = `${title} — yoxi 城事`
+  title: p => '地方詳情',        // 字串或函式；document.title = `${title} — 遊喜樂`
   root: false,                   // true＝tab 根（back 不會離開 app）
   render(params, ctx) { return `<header …>…`; },   // 純函式，回 HTML 字串，不碰 DOM
   mount(root, params, ctx) { … return () => cleanup; },  // 綁事件（element.onclick）、跑 INTERACT.init*、畫地圖
@@ -206,7 +206,7 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   `state:change` 由 `APP.state` 自己發（見上），統計、設定開關、demo 面板靠它更新（底欄不聽這些事件，也沒有小紅點）。
 - id 認不得的 `trip`／`dropoff`（舊版資料、手改）：`APP.ride.trip` 讀的時候一律當作沒有行程（任何畫面都一樣）；`/ride`、`/trip`、`/trip/done` 的 mount 與 `arrive()` 再真的清掉，不會卡住叫車。
 - 「清除我的足跡」（system）＝`APP.state.batch(() => { APP.state.wipe(); APP.store.clear('footprint'); })`：STATE 的明信片、公里、日誌，加上 store 裡 footprint 類的鍵（`dropoff`、`trip`、`rideVia`、`rideRound`、`cardStyle`、`cardMarks`、`visits`、`shares`、`replies`、`pushes`、`tabPaths`）回到預設；保留 pref（`onboarded`、`fxMute`、`rideSpots`、`demoDate`）與 `STATE.settings`。
-- 每日回顧結束時用 `APP.state.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情與照片。
+- 每日回顧結束時用 `APP.state.setToday` 多寫 `date:'MM.DD'`；收藏首頁只認今天的心情；照片留在私人回顧頁。
 
 ### 3.4 格式與公式（不准手寫數字）
 ```js
@@ -398,7 +398,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream／orbit；樣子 glow／soft／star／spark／shard／leaf（會翻面閃光的金箔）／orbit（繞中心轉的光軌））、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音；金框的燙金用 `foil(秒)`、`crown()`）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
 - 明信片的卡面（explore 提供，`explore-face.js`）：`APP.explore.cardFace(cardId, key)` → `{ gen, photo, credit }`——疊法只有這一個，`/unlock` 的卡面與收藏的卡都照它；`postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片（明信片自己的 → 對照表的地點 → 這張卡所在地點的；出處也從它來）；`cardStyleOf(cardId)`（explore-cards.js）收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡照收下那天的月份補季節的畫風）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore-face.js 監看整台 `.device`（`#view` 與掛在上面的浮層、懸浮小卡）自動疊上 `<img class="card-gen">`，畫面不用自己呼叫，順序跟 `/unlock` 卡面一樣：生成的成品 → 沒有成品或載不到：底圖照片＋那一款的 SVG 濾鏡（`.card-gen--photo`，先排成 220 px 寬套濾鏡再縮放到容器，容器加 `.card-photo-host` 藏起底下的插圖）→ 都沒有才留插圖（還沒收的不疊）。收藏裡顯示明信片的地方都要帶 `data-card-art`（含週回顧的卡與封面）；明信片詳情寫底圖照片的出處（`data-credit`，作者、授權、連結）
 - 節日版的插畫（explore 提供，`explore-fest.js`＋`css/views/explore-fest.css`）：`APP.explore.festHTML(key)` → 一層 `.fest[data-fest=key]`（inline SVG、`aria-hidden`、`pointer-events: none`），由 `cardOrigin().marks`／`marksHTML` 放在卡面上、`.postcard__foot` 前面（地名壓在圖上）。春節一串鞭炮由下往上炸開、端午龍舟在浪上起伏、中秋右上角月亮＋底下玉兔來回跳、賞櫻左上角櫻花樹＋落花。只放在卡片四周：主角至少五分之一卡寬、卡片正中央不擋、主角的範圍加起來不超過卡片一半（`explore.spec.js` 量）。`APP.explore.festPlay(root, { restart })` 加 `.is-live` 才動，約 5 秒停在收尾的樣子（WCAG 2.2.2）；`/unlock` 翻開時開始、明信片頁打開與翻回正面時各演一次；`APP.reduceMotion()`（含 `?still=1`）不動，直接是靜止的構圖。顏色全在 CSS（tokens），SVG 裡沒有色碼。
-- 長輩圖（album，`/elder`）：圖就是收下的那張明信片——`elderImage(p, 祝福)` 疊法跟明信片頁一樣（`data-card-art` 的成品或照片＋濾鏡、金框＋角標＋金粉、`cardOrigin().marks` 的節日插畫與遠行戳），3:4，上面壓一句大字，底下一條寫日期地點、底圖照片的作者與授權（`[data-elder-credit]`，這張圖會傳出去）與 yoxi 城事。換地方時整張換、選好的祝福留著；節日插畫打開與換地方各動一次。
+- 長輩圖（album，`/elder`）：圖就是收下的那張明信片——`elderImage(p, 祝福)` 疊法跟明信片頁一樣（`data-card-art` 的成品或照片＋濾鏡、金框＋角標＋金粉、`cardOrigin().marks` 的節日插畫與遠行戳），3:4，上面壓一句大字，底下一條寫日期地點、底圖照片的作者與授權（`[data-elder-credit]`，這張圖會傳出去）與 遊喜樂。換地方時整張換、選好的祝福留著；節日插畫打開與換地方各動一次。
 - 金框卡在哪裡顯示都有金框和金粉（explore 提供，`explore-gold.js`）：在「畫金框的那個元素」加 `data-gold-aura`，金粉就從它的邊緣冒出來（照元素的旋轉角度）。`[data-card-art]` 的金框卡沒人標的話，`paintCardArt` 自己補 `data-gold-aura`＋`.card-gold`（通用的框，explore.css）；框畫在外層的（明信片詳情整張卡、叫車的浮起來小卡）由畫面自己標在外層，`paintCardArt` 看到祖先標了就不再補。`/unlock` 翻開之後（`finish()`）才標，翻開前不洩底。整台手機一張 `canvas.gold-aura`（掛 `.device`、z-index 97、`pointer-events:none`、`aria-hidden`）；金粉裁在卡片的捲動範圍裡，被別的東西蓋住的邊不冒（`elementFromPoint`）；卡片移動時金粉被「跟著卡片走的空氣」帶著、有慣性（`APP.fx.gold.step` 是純函式）。樣子：細金粉、會翻會閃的金箔、細長四芒閃光、暗底的散景；相對空氣動得快的金粉拉出變淡的尾巴；每張卡每 4.8 秒有一道斜光掃過框、從亮的地方多灑一把（每張卡錯開）。`APP.reduceMotion()` 時不建 canvas（框照舊）；看不到金框卡時不跑 rAF。測試用：`APP.fx.gold.tracked()`、`particles()`
 - `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `/unlock/:id`（行程進行中不行）；搭 yoxi → `APP.ride.trip.arriveAt(placeId)`（這一趟在這裡結束、取代原本的行程；距離不明的 km 是 null，跟一般叫車一樣）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
@@ -428,7 +428,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/unlock/:id` | 抵達 → 收集 → 翻卡（每一次來都收一張，`data-visit` 是第幾次、回訪寫「第 N 次來」；今天收過就直接看今天那一張；款式照 `cardRule`；搭 yoxi 抵達是金框，問 `APP.ride.trip.arrivedAt`；`?ride=1` 只是入口記號；`data-at` 1 抵達／2 翻卡／3 結果） | null | `unlock.html` | explore |
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |
-| `/album` | 收藏（明信片主卡、統計、「回顧」一列、獎章精選卡；390×844 含狀態列不用捲；`?tab=journal／week／badges` 舊連結落在這頁、對應那一塊亮一下，再用 `replaceQuery('')` 拿掉） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
+| `/album` | 收藏（明信片主卡、「回顧」三入口、獎章精選卡；390×844 含狀態列不用捲；`?tab=journal／week／badges` 舊連結落在這頁、對應那一塊亮一下，再用 `replaceQuery('')` 拿掉） | album | `variant-s3-album.html`、`album.html`、`variant-x4-badges.html` | album |
 | `/postcards` | 明信片子頁，標題「明信片」（收下的／還沒去的兩段，收下的每一格連到詳情，左上返回） | album | 新 | album |
 | `/badges` | 全部獎章（三欄六角章牆） | album | 新（參考 `variant-x4-badges.html`） | album |
 | `/postcard/:id` | 明信片詳情（翻面）；`?v=<第幾次>` 看回訪的那一張，收過兩張以上底下一排「每一次來」；家人的回應（`APP.family.repliesHTML`） | album | `postcard.html` | album |
@@ -436,10 +436,10 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/family/:id` | 子女的手機：在 LINE 裡點開那張明信片（示意）：喜歡、三句快速回覆、自己打一句；`?share` 沒給或對不上用這張卡最近的一次，沒傳過是空狀態 | null | 新（參考 `vision-family-a／b.html`） | album（album-family.js） |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
 | `/footprint` | 城市足跡（真實地圖＋霧、覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |
-| `/lookback` | 每日回顧四幕（只有你） | null | `lookback.html` | album |
-| `/week` | 週回顧（可分享） | album | `week.html` | album |
+| `/lookback` | 今天的回顧：單頁當日里程、可選照片與心情；明確儲存後返回收藏（只有你） | null | `lookback.html` | album |
+| `/week` | 週回顧：七日里程圖、期間內收卡、分享（不顯示步數或比較排名） | album | `week.html` | album |
 | `/elder` | 長輩圖（`?card=<id>` 把那張排第一並預選） | album | `elder.html` | album |
-| `/settings` | 城事設定（隱私開關、重設、demo 工具） | null | `settings.html` | system |
+| `/settings` | 遊喜樂設定（隱私開關、重設、demo 工具） | null | `settings.html` | system |
 | `/*` | 404：一句話＋回叫車 | null | 新 | core |
 
 **返回規則**（2026-09-25）：
@@ -449,6 +449,8 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 - 探索舊路由的保底去處（找不到頁、先不去了、已收過的「回探索」、`/routes` 的關閉）是 `/ride?mode=explore(&area=<id>)`，不是舊的 `/explore`。
 
 ## 9. 桌機／手機
+
+**收藏整理（2026-09-29）**：首頁只做明信片、私人回顧、週摘要、地理足跡與獎章索引，移除重複累積統計。今日距離讀 `MOCK.LOOKBACK.km`；週距離沿用固定示意週期，舊 `HEALTH_STEPS` 僅為唯讀示意資料轉換來源，`weekStats().now.days[].km` 提供公里，介面不顯示或另存步數。照片／心情選擇先留在頁面，只有 `save-lookback` 透過 `APP.state.setToday` 儲存；直接返回不更動記錄。足跡維持原地理範圍與覆蓋公式，配色僅在 app 覆寫。
 
 - 桌機：寬度 ≥ 560，而且（有 hover 加細指標，或高度 ≥ 700）——手機橫放（844×390、觸控）算手機。JS 的 `DESKTOP_MQ` 與 app.css 的兩個 `@media` 要同步。沿用 `.stage > .device` 手機外框（390×844），縮放量的是 `.stage` 實際的 padding；狀態列顯示真實時間；旁邊 `#demo-panel`（高度上限＝縮放後外框的高度，太高就在面板裡捲）。
 - 手機（其餘）：`.device` 滿版（100vw × 100dvh，無圓角、無瀏海、隱藏原型狀態列與 home indicator），`#demo-panel` 隱藏。

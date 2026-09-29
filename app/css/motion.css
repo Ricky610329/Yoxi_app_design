@@ -125,11 +125,6 @@
 
 /* app/css/views/album.css */
 :where(html[data-motion="full"]:not([data-still])) .alb-v2 .is-landed { animation-duration: var(--t-scene) !important; }
-:where(html[data-motion="full"]:not([data-still])) .alb-lb .lookback__act.is-on { animation-duration: var(--t-scene) !important; }
-:where(html[data-motion="full"]:not([data-still])) .alb-lb .zigzag__path { animation-duration: 0s !important; }
-:where(html[data-motion="full"]:not([data-still])) .alb-zz__stop { transition-duration: var(--t-base), var(--t-slow) !important; }
-:where(html[data-motion="full"]:not([data-still])) .alb-lb:not([data-lb-run]) .alb-zz__stop--last.is-hit .alb-zz__ping { animation-duration: var(--t-scene) !important; }
-:where(html[data-motion="full"]:not([data-still])) .alb-lb__route { transition-duration: var(--t-slow) !important; }
 
 /* app/css/views/album-family.css */
 :where(html[data-motion="full"]:not([data-still])) .fam-heart { transition-duration: var(--t-fast), var(--t-fast) !important; }

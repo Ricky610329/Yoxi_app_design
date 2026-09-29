@@ -1,9 +1,9 @@
 /* ==========================================================================
-   yoxi 城事 web app — album 區塊（收藏 tab）
+   遊喜樂 web app — album 區塊（收藏 tab）
    契約：app/ARCHITECTURE.md §0（S3 路線書架＋X4 勳章牆、隱私分軌、長輩圖是分享選項）、§3、§5、§8。
 
    這支註冊九個 view：
-     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近收下的三張疊卡，最後收的在最上面，點了進 /postcards）、統計兩格、
+     /album           收藏首頁（雙主頁版）。「我的明信片」主卡（張數＋最近收下的三張疊卡，最後收的在最上面，點了進 /postcards）、
                       「回顧」一列三格（今天的回顧 → /lookback、這一週 → /week、城市足跡 → /footprint）、
                       獎章精選卡（最近收下的一枚放大＋其餘一列小章＋「顯示全部」）。
                       390×844（含狀態列，桌機外框就是這個尺寸）一屏放得下、不用捲。
@@ -14,7 +14,7 @@
                       家人的回應（示意）由 album-family.js 的 APP.family.repliesHTML 畫。來源：postcard.html。
      /badge/:id       獎章詳情。來源：badge.html。
      /footprint       城市足跡：真實地圖＋霧、覆蓋率用固定範圍算、城市顏色由去過的地方算。來源：fogmap.html、concept-map-footprint.html。
-     /lookback        每日回顧四幕（只有你）。來源：lookback.html。
+     /lookback        單頁當日里程、照片與心情（只有你）。來源：lookback.html。
      /week            週回顧（唯一可分享的匯總）。來源：week.html。
      /elder           長輩圖（?card=<明信片 id>：從哪一張分享過來，那一張排第一）。圖就是收下的那張明信片（畫風、金框、節日版）＋大字祝福。來源：elder.html。
    子頁的返回鍵都走 subMount（見「子頁的返回鍵」）：從上一層點進來就照歷史退一格，
@@ -32,7 +32,7 @@
    - 金框卡不管在哪裡顯示（疊卡、/postcards、詳情、獎章的組成卡、每日回顧、週回顧）都是金框，畫框的那個元素標 data-gold-aura，
      金粉由 explore-gold.js 畫（契約 §7）；長輩圖整張就是那張明信片，金框卡的長輩圖也是金框、有金粉。
    - 城市足跡不寫「多久沒回去會變淡」：app 沒有記回訪，寫了就是假的。
-   - 回顧不靠計時器自動翻頁：每一幕都等使用者按「下一步」或做選擇。
+   - 回顧沒有分幕；選擇照片與心情後按儲存才寫入。
    - 數字一律從 STATE／MOCK／APP.fmt 算；步幅＝LOOKBACK.steps ÷ LOOKBACK.km，不另寫常數。
    ========================================================================== */
 
@@ -305,14 +305,18 @@ function weekStats() {
   };
   function range(a, b) {
     const days = [];
-    for (let d = a; d <= b; d++) days.push({ day: d, steps: d >= 1 ? (month[d - 1] || 0) : 0 });
+    for (let d = a; d <= b; d++) {
+      const steps = d >= 1 ? (month[d - 1] || 0) : 0;
+      days.push({ day: d, steps: steps, km: spk ? Math.round(steps / spk * 10) / 10 : 0 });
+    }
     const steps = days.reduce(function (s, x) { return s + x.steps; }, 0);
     const cards = inKeys(mm * 100 + a, mm * 100 + b);
     /* 地方數跟收藏首頁同一個算法：同一個地方的兩張卡算一個 */
     const places = cards.map(function (p) { return visitKey(p.id); })
       .filter(function (k, i, arr) { return arr.indexOf(k) === i; }).length;
     return { from: a, to: b, days: days, steps: steps,
-             km: spk ? Math.round(steps / spk * 10) / 10 : 0, cards: cards, places: places };
+             km: Math.round(days.reduce(function (s, d) { return s + d.km; }, 0) * 10) / 10,
+             cards: cards, places: places };
   }
   const now = range(end - 6, end);
   /* 範圍之後才收的：不算進本週，只拿來寫那一行說明 */
@@ -446,7 +450,7 @@ function todayLook() {
 }
 
 /* 回顧一列三格：今天的回顧（只有你、沒有分享）、這一週、城市足跡。
-   數字都現算：步數＝LOOKBACK、地方數＝weekStats、覆蓋率＝足跡同一個公式。 */
+   數字都現算：里程＝LOOKBACK／weekStats、覆蓋率＝足跡同一個公式。 */
 function albumV2LookHTML() {
   const t = todayLook();
   const L = M().LOOKBACK || {};
@@ -458,17 +462,14 @@ function albumV2LookHTML() {
       '<strong>' + o.t + '</strong><small' + (o.attr || '') + '>' + o.s + '</small></a>';
   };
   const ic = function (name) { return '<span class="alb-v2__look-ic" data-icon="' + name + '"></span>'; };
-  const todayTop = (t.photo ? '<span class="alb-v2__look-pic" data-art="' + esc(t.photo) + '" data-seed="2" data-look-photo></span>' : '') +
-    (t.mood ? '<span class="alb-v2__look-ic" data-icon="' + t.mood.icon + '" data-mood-now="' + t.mood.k + '"></span>' :
-      t.photo ? '' : ic('steps')) +
-    '<span class="alb-v2__look-lock" data-icon="lock" role="img" aria-label="只有你看得到"></span>';
+  const todayTop = ic('lock');
   return '<section class="alb-v2__look" data-look aria-label="回顧">' +
     tile({ k: 'journal', href: '#/lookback', act: 'go-lookback', top: todayTop, t: '今天的回顧',
            attr: ' data-look-today',
-           s: t.done ? esc(t.mood ? t.mood.t : '看過了') : '走了 ' + APP.fmt.num(L.steps || 0) + ' 步' }) +
-    tile({ k: 'week', href: '#/week', act: 'go-week', top: ic('route'), t: '這一週',
-           s: '去了 <span class="num" data-look-week>' + w.now.places + '</span> 個地方' }) +
-    tile({ k: 'footprint', href: '#/footprint', act: 'go-footprint', top: ic('place'), t: '城市足跡',
+           s: esc(L.km || 0) + ' 公里' + (t.mood ? '<span data-mood-now="' + t.mood.k + '">' + esc(t.mood.t) + '</span>' : '') }) +
+    tile({ k: 'week', href: '#/week', act: 'go-week', top: ic('share'), t: '這一週',
+           s: '<span class="num" data-look-week>' + w.now.km + '</span> 公里' }) +
+    tile({ k: 'footprint', href: '#/footprint', act: 'go-footprint', top: ic('viewMap'), t: '城市足跡',
            s: '點亮 <span class="num" data-look-cov>' + cov + '</span>%' }) +
   '</section>';
 }
@@ -479,7 +480,7 @@ function albumV2Render() {
   /* 每去一次收一張：圖鑑算的是不同的明信片（got），回訪收下的另外寫一句 */
   const again = APP.explore.recentVisits().length - got.length;
   return '<div class="alb alb-v2 alb-v2--home"><div class="scroll alb-scroll alb-v2__scroll">' +
-      '<header class="alb-v2__header"><span class="alb-v2__brand">yoxi 城事</span><h1>收藏</h1>' +
+      '<header class="alb-v2__header"><span class="alb-v2__brand">遊喜樂</span><h1>收藏</h1>' +
         '<p>走過的地方，都留在這裡。</p></header>' +
       '<a class="alb-v2__hero" href="#/postcards" data-act="go-postcards">' +
         '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
@@ -498,10 +499,6 @@ function albumV2Render() {
             (x.v === 1 && isFresh(p) ? '<span class="postcard__new">新</span>' : '') + '</span>';
         }).join('') + '</div>' +
       '</a>' +
-      '<div class="alb-v2__stats">' +
-        '<div class="alb-v2__stat"><span>去過的地方</span><strong data-stat="places">' + visitedPlaces().length + '</strong><small>個地方</small></div>' +
-        '<div class="alb-v2__stat"><span>留下的距離</span><strong data-stat="km">' + esc(APP.explore.totalKm()) + '</strong><small>公里</small></div>' +
-      '</div>' +
       albumV2LookHTML() +
       albumV2MedalsHTML() +
     '</div></div>';
@@ -687,7 +684,7 @@ APP.view('postcard', {
     const dist = pl && pl.dist != null ? pl.dist : null;
     const how = ride
       ? (dist != null ? '搭 yoxi ' + APP.fmt.km(dist) + ' 公里' : '搭 yoxi 抵達')
-      : (dist != null ? '走路 ' + APP.fmt.num(dist / 1000 * stepsPerKm()) + ' 步' : '走路抵達');
+      : (dist != null ? '移動 ' + APP.fmt.km(dist) + ' 公里' : '走路抵達');
     const byText = ride ? '搭 yoxi 抵達' : '走路抵達';
     const date = origin.dateText;
     const nth = origin.first ? '第一次來' : '第 ' + origin.v + ' 次來';
@@ -843,7 +840,7 @@ function cityColors() {
 APP.view('footprint', {
   path: '/footprint',
   tab: 'album',
-  status: 'dark',
+  status: 'light',
   title: '城市足跡',
   render: function () {
     const bands = cityColors();
@@ -862,12 +859,12 @@ APP.view('footprint', {
           '</span>' +
         '</div>' +
         '<div class="sec alb-fp__sec"><h2 class="sec__t sec__t--sm">你的城市顏色</h2>' +
-          '<span class="sec__m">由你去過的地方決定</span></div>' +
+          '<span class="sec__m">' + visitedPlaces().length + ' 個地方</span></div>' +
         (bands.length
           ? '<div class="citycolor" data-citycolor>' + bands.map(function (b) {
               return '<span class="citycolor__band" data-n="' + b.n + '" style="background:' + esc(b.c) + ';flex-grow:' + b.n + '"></span>';
             }).join('') + '</div>' +
-            '<p class="alb-foot">每一道顏色取自你收下的明信片。同一種風景去得越多，那一道越寬。</p>'
+            '<p class="alb-foot">收下的明信片，拼成你的城市配色。</p>'
           : '<p class="alb-fp__nocolor" data-citycolor-empty>還沒有顏色。去過一個地方，這裡就多一道。</p>') +
       '</div>' +
     '</div>';
@@ -925,10 +922,10 @@ function tintSeen(m, fog) {
   const defs = document.createElementNS(NS, 'defs');
   const grad = document.createElementNS(NS, 'radialGradient');
   grad.setAttribute('id', 'albSeenTint');
-  [['.5', '1'], ['1', '0']].forEach(function (st) {
+  [['.55', '1'], ['1', '0']].forEach(function (st) {
     const s2 = document.createElementNS(NS, 'stop');
     s2.setAttribute('offset', st[0]);
-    s2.setAttribute('stop-color', 'var(--yoxi-cream)');
+    s2.setAttribute('stop-color', 'var(--yoxi-cream-deep)');
     s2.setAttribute('stop-opacity', st[1]);
     grad.appendChild(s2);
   });
@@ -942,7 +939,7 @@ function tintSeen(m, fog) {
     c.setAttribute('cy', p.py.toFixed(1));
     c.setAttribute('r', R.toFixed(1));
     c.setAttribute('fill', 'url(#albSeenTint)');
-    c.setAttribute('opacity', '.85');
+    c.setAttribute('opacity', '.55');
     g.appendChild(c);
   });
   svg.insertBefore(g, fogRect);
@@ -950,218 +947,56 @@ function tintSeen(m, fog) {
 
 /* ================================================================ /lookback */
 
-/* 之字形：轉折點 3,000、5,000，之後每 5,000 步一折；最後一段照比例畫到今天的步數。
-   drawn(v)＝走到 v 步時線畫到全長的幾成：數字往上跳時線頭跟著數字走，數到 3,000 剛好轉彎。 */
-function zigzagGeom(steps) {
-  const marks = [0, 3000, 5000];
-  while (marks[marks.length - 1] < steps) marks.push(marks[marks.length - 1] + 5000);
-  const X0 = 40, X1 = 252, Y0 = 272, DY = 66;
-  const pts = [[X0, Y0]];
-  const at = [0];
-  const len = [];
-  for (let i = 1; i < marks.length; i++) {
-    const a = marks[i - 1], b = marks[i];
-    const f = Math.max(0, Math.min(1, (steps - a) / (b - a)));
-    const from = pts[pts.length - 1];
-    const to = [from[0] + (((i % 2) ? X1 : X0) - from[0]) * f, from[1] - DY * f];
-    pts.push(to);
-    at.push(Math.min(steps, b));
-    len.push(Math.hypot(to[0] - from[0], to[1] - from[1]));
-    if (f < 1) break;
-  }
-  const total = len.reduce(function (s, x) { return s + x; }, 0) || 1;
-  return {
-    pts: pts, at: at,
-    drawn: function (v) {
-      let got = 0;
-      for (let i = 1; i < at.length; i++) {
-        if (v >= at[i]) { got += len[i - 1]; continue; }
-        got += len[i - 1] * Math.max(0, (v - at[i - 1]) / (at[i] - at[i - 1]));
-        break;
-      }
-      return Math.min(1, got / total);
-    },
-  };
-}
-
-/* 線上只放點不放字：地名擠進 15px 的圓只剩兩個字，最後一段短的時候點還會疊在一起。
-   地名整串寫在步數底下（.alb-lb__route）。 */
-function zigzag(G) {
-  const d = G.pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(0) + ' ' + p[1].toFixed(0); }).join(' ');
-  const n = G.pts.length - 1;
-  return '<svg class="zigzag" viewBox="0 0 300 300" aria-hidden="true">' +
-    '<path class="zigzag__path" pathLength="640" d="' + d + '"/>' +
-    G.pts.slice(1).map(function (p, i) {
-      const last = i === n - 1;
-      const x = p[0].toFixed(0), y = p[1].toFixed(0);
-      return '<g class="alb-zz__stop' + (last ? ' alb-zz__stop--last' : '') + '" data-zz-at="' + G.at[i + 1] + '">' +
-        (last ? '<circle cx="' + x + '" cy="' + y + '" r="9" class="alb-zz__ping"/>' : '') +
-        '<circle cx="' + x + '" cy="' + y + '" r="' + (last ? 9 : 5) + '" class="alb-zz__dot"/></g>';
-    }).join('') +
-  '</svg>';
-}
-
-/* 步數往上跳：刻意慢，這是回顧不是載入條（lookback.html 同速）。等幕 1 淡入一點再開始。 */
-const LB_COUNT_MS = 2600;
-const LB_COUNT_DELAY = 360;
-
+/* 當日回顧只留一頁；選擇先暫存於本頁，按儲存才寫入 STATE。 */
 APP.view('lookback', {
-  path: '/lookback',
-  tab: null,
-  status: 'light',
-  title: '今天的回顧',
+  path: '/lookback', tab: null, status: 'light', title: '今天的回顧',
   render: function () {
     const L = M().LOOKBACK;
-    const A = STATE.all;
-    /* 「今天多了一張」只說今天收的：lastCard 不會自己清掉，九月一日收的卡不能到二十五日還說是今天的 */
-    const lastC = A.lastCard ? STATE.card(A.lastCard) : null;
-    const last = lastC && lastC.date === APP.fmt.todayMMDD() ? cardById(A.lastCard) : null;
-    let act2;
-    if (last) {
-      const owner = badgeOfCard(last.id);
-      const r = owner ? STATE.badge(owner.id) : null;
-      const gold = goldCard(last.id);
-      act2 = '<div class="alb-lb__card"><div class="postcard' + (gold ? ' card-gold" data-gold-aura' : '"') + '>' +
-          '<div data-art="' + esc(last.art) + '" data-seed="1" data-card-art="' + esc(last.id) + '" style="position:absolute;inset:0"></div>' +
-          '<span class="ai-mark">AI 生成示意</span>' +
-          '<span class="postcard__foot"><span class="postcard__name">' + esc(last.name) + '</span></span>' +
-        '</div></div>' +
-        '<h2 class="unlock__title alb-lb__t">今天多了一張</h2>' +
-        (r ? '<p class="unlock__sub">〈' + esc(r.name) + '〉這枚獎章，' + badgeProg(r) + '</p>' : '');
-    } else {
-      act2 = '<div class="lookback__steps alb-lb__km"><span data-lb-km>' + esc(A.km) + '</span></div>' +
-        '<div class="lookback__unit">公里 · 這個月移動的</div>' +
-        '<h2 class="unlock__title alb-lb__t">今天沒有新的卡，路還是走了</h2>' +
-        '<p class="unlock__sub">走過的路都還在。</p>';
-    }
-    return '<div class="lookback alb-lb" data-lb>' +
-      '<div class="lookback__top"><span>' + esc(dateLabel()) + '</span>' +
-        '<a class="alb-lb__exit" href="#" data-back="/album?tab=journal">先離開</a></div>' +
-      '<div class="lookback__body">' +
-        '<div class="lookback__act" data-lb-act="0">' +
-          zigzag(zigzagGeom(L.steps)) +
-          '<div class="lookback__steps" data-lb-steps>' + APP.fmt.num(L.steps) + '</div>' +
-          '<div class="lookback__unit">步 · ' + esc(L.km) + ' 公里</div>' +
-          ((L.places || []).length ? '<p class="alb-lb__route">經過 ' +
-            L.places.map(function (p) { return '<span class="alb-lb__place">' + esc(p) + '</span>'; }).join('<span class="alb-lb__sep" aria-hidden="true"></span>') +
-          '</p>' : '') +
-        '</div>' +
-        '<div class="lookback__act" data-lb-act="1">' + act2 + '</div>' +
-        '<div class="lookback__act" data-lb-act="2">' +
-          '<h2 class="unlock__title alb-lb__t">今天你拍了這些</h2>' +
-          '<p class="unlock__sub alb-lb__sub">選一張放進今天的日誌，也可以跳過</p>' +
+    return '<div class="alb-journal" data-lb>' +
+      '<div class="alb-journal__top"><a href="#" data-back="/album?tab=journal" aria-label="返回收藏"><span class="ic-ondark" data-icon="close"></span></a>' +
+        '<span>' + esc(dateLabel()) + '</span><span data-icon="lock" role="img" aria-label="只有你看得到"></span></div>' +
+      '<div class="scroll alb-journal__body"><h1>今天的回顧</h1>' +
+        '<div class="alb-journal__distance"><strong class="num" data-lb-km>' + esc(L.km) + '</strong><span>公里</span></div>' +
+        '<p class="alb-journal__route">' + (L.places || []).map(esc).join(' · ') + '</p>' +
+        '<p class="alb-journal__note">當日里程示意</p>' +
+        '<section><h2>留一張風景 <small>可略過</small></h2>' +
           '<div class="alb-lb__photos">' + (L.photos || []).map(function (a, i) {
-            return '<button class="postcard alb-lb__photo" type="button" data-act="photo" data-photo="' + i + '" aria-label="第 ' + (i + 1) + ' 張">' +
+            return '<button class="postcard alb-lb__photo" type="button" data-act="photo" data-photo="' + i + '" aria-pressed="false" aria-label="第 ' + (i + 1) + ' 張">' +
               '<div data-art="' + esc(a) + '" data-seed="' + (i + 2) + '" style="position:absolute;inset:0"></div></button>';
-          }).join('') + '</div>' +
-          '<button class="btn-link alb-lb__skip" type="button" data-act="skip-photo">今天沒什麼想留的，跳過</button>' +
-        '</div>' +
-        '<div class="lookback__act" data-lb-act="3">' +
-          '<h2 class="unlock__title alb-lb__t">今天的城市，感覺如何？</h2>' +
-          '<div class="mood">' + MOODS.map(function (m) {
-            return '<button class="mood__btn" type="button" data-act="mood" data-mood="' + m.k + '" aria-label="' + esc(m.t) + '">' +
-              '<span data-icon="' + m.icon + '"></span></button>';
-          }).join('') + '</div>' +
-          '<p class="unlock__sub alb-lb__sub">只有你看得到。這一頁沒有分享。</p>' +
-        '</div>' +
-      '</div>' +
-      '<div class="lookback__foot">' +
-        '<button class="btn-primary alb-lb__next" type="button" data-act="next">下一步</button>' +
-      '</div>' +
-    '</div>';
+          }).join('') + '</div><p class="alb-journal__note">AI 生成示意</p></section>' +
+        '<section><h2>今天的心情 <small>可略過</small></h2><div class="alb-journal__moods">' + MOODS.map(function (m) {
+          return '<button type="button" data-act="mood" data-mood="' + m.k + '" aria-pressed="false"><span data-icon="' + m.icon + '"></span><span>' + esc(m.t) + '</span></button>';
+        }).join('') + '</div></section>' +
+        '<p class="alb-journal__privacy">照片與心情只留給自己。</p>' +
+        '<button class="btn-primary" type="button" data-act="save-lookback">儲存回顧</button>' +
+      '</div></div>';
   },
   mount: function (root) {
-    const html = document.documentElement;
-    const still = html.hasAttribute('data-still');
-    const acts = root.querySelectorAll('[data-lb-act]');
-    const next = root.querySelector('[data-act="next"]');
-    let idx = 0;
-    const T0 = STATE.all.today || {};
-    let photo = T0.date === APP.fmt.todayMMDD() ? T0.photo : null;   /* 別天選的照片不帶進今天 */
-    let timer = null;
-
-    /* 幕 1：數字從 0 往上跳，線頭跟著數字畫、走到的點才冒出來；數完地名才淡入。
-       HTML 本來就是終值（定格、減少動態效果、JS 停掉都停在完整畫面），這裡只負責從 0 演回終值。 */
-    const lb = root.querySelector('[data-lb]');
-    const L = M().LOOKBACK;
-    const G = zigzagGeom(L.steps);
-    const num = root.querySelector('[data-lb-steps]');
-    const path = root.querySelector('.zigzag__path');
-    const stops = root.querySelectorAll('[data-zz-at]');
-    let raf = 0, landTimer = null;
-    function paint(v) {
-      num.textContent = APP.fmt.num(Math.round(v));
-      path.style.strokeDashoffset = (640 * (1 - G.drawn(v))).toFixed(1);
-      stops.forEach(function (s) { s.classList.toggle('is-hit', v >= Number(s.getAttribute('data-zz-at'))); });
+    const day = APP.fmt.todayMMDD();
+    const T = STATE.all.today || {};
+    let photo = T.date === day && T.photo != null ? T.photo : null;
+    let mood = T.date === day ? T.mood || null : null;
+    function paint() {
+      root.querySelectorAll('[data-act="photo"]').forEach(function (b) {
+        const on = Number(b.getAttribute('data-photo')) === photo;
+        b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on));
+      });
+      root.querySelectorAll('[data-act="mood"]').forEach(function (b) {
+        const on = b.getAttribute('data-mood') === mood;
+        b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on));
+      });
     }
-    function landCount() {
-      if (raf) cancelAnimationFrame(raf);
-      clearTimeout(landTimer);
-      raf = 0; landTimer = null;
-      paint(L.steps);
-      lb.removeAttribute('data-lb-run');
-    }
-    function runCount() {
-      lb.setAttribute('data-lb-run', '');
-      paint(0);
-      const t0 = performance.now() + LB_COUNT_DELAY;
-      const tick = function (now) {
-        const p = Math.max(0, Math.min(1, (now - t0) / LB_COUNT_MS));
-        if (p >= 1) { landCount(); return; }
-        paint(L.steps * (1 - Math.pow(1 - p, 3)));
-        raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
-      /* 背景分頁、headless 的虛擬時間會停掉 rAF：時間到了不管畫到哪都落在終值 */
-      landTimer = setTimeout(landCount, LB_COUNT_DELAY + LB_COUNT_MS + 200);
-    }
-
-    function show(i) {
-      if (i !== 0 && lb.hasAttribute('data-lb-run')) landCount();
-      idx = i;
-      acts.forEach(function (a, n) { a.classList.toggle('is-on', n === i); });
-      root.querySelector('[data-lb]').setAttribute('data-lb-at', String(i));
-      /* 幕 3 自己有「跳過」；幕 4 可以先不選 */
-      next.classList.toggle('u-hidden', i === 2);
-      next.textContent = i === 3 ? '先不選' : '下一步';
-      next.setAttribute('data-act', i === 3 ? 'no-mood' : 'next');
-    }
-    function finish(mood) {
-      /* date：STATE.today 本身沒有日期；記下是哪一天看的，收藏首頁「今天的回顧」只認今天的心情與照片 */
-      const day = APP.fmt.todayMMDD();
-      const patch = { photo: photo, done: true, date: day };
-      /* 「先不選」：今天稍早選過的心情留著；別天留下來的清掉，不然它會被當成今天的 */
-      if (mood) patch.mood = mood;
-      else if ((STATE.all.today || {}).date !== day) patch.mood = null;
-      APP.state.setToday(patch);
-      APP.nav.go('/album?tab=journal', { replace: true });
-    }
-
-    next.onclick = function () {
-      if (idx === 3) { finish(null); return; }
-      if (idx < 3) show(idx + 1);
-    };
     root.querySelectorAll('[data-act="photo"]').forEach(function (b) {
-      b.onclick = function () {
-        photo = Number(b.getAttribute('data-photo'));
-        root.querySelectorAll('[data-act="photo"]').forEach(function (x) { x.classList.toggle('is-on', x === b); });
-        show(3);
-      };
+      b.onclick = function () { const v = Number(b.getAttribute('data-photo')); photo = photo === v ? null : v; paint(); };
     });
-    root.querySelector('[data-act="skip-photo"]').onclick = function () { photo = null; show(3); };
     root.querySelectorAll('[data-act="mood"]').forEach(function (b) {
-      b.onclick = function () {
-        root.querySelectorAll('[data-act="mood"]').forEach(function (x) { x.classList.toggle('is-on', x === b); });
-        const k = b.getAttribute('data-mood');
-        if (still || APP.reduceMotion()) finish(k);
-        else { clearTimeout(timer); timer = setTimeout(function () { finish(k); }, 360); }
-      };
+      b.onclick = function () { const v = b.getAttribute('data-mood'); mood = mood === v ? null : v; paint(); };
     });
-
-    /* 定格（縮圖）：全部到位，直接停在最後一幕 */
-    show(still ? 3 : 0);
-    if (!still && !APP.reduceMotion()) runCount();
-    return function () { clearTimeout(timer); clearTimeout(landTimer); if (raf) cancelAnimationFrame(raf); };
+    root.querySelector('[data-act="save-lookback"]').onclick = function () {
+      APP.state.setToday({ photo: photo, mood: mood, done: true, date: day });
+      APP.nav.go('/album?tab=journal', { replace: true });
+    };
+    paint();
   },
 });
 
@@ -1174,38 +1009,19 @@ APP.view('week', {
   title: '這一週',
   render: function () {
     const w = weekStats();
-    const N = w.now, P = w.prev;
-    const days = N.days.map(function (d, i) { return { now: d, prev: P.days[i] }; });
-    const maxSteps = Math.max.apply(null, days.map(function (x) { return Math.max(x.now.steps, x.prev.steps); }).concat([1]));
-    const wd = function (day) {
-      return day >= 1 ? '日一二三四五六'.charAt(new Date(YEAR(), w.month - 1, day).getDay()) : '';
-    };
-    const cmp = function (k, label, fmtv) {
-      const a = N[k], b = P[k];
-      const mx = Math.max(a, b, 1);
-      return '<div class="alb-cmp" data-cmp="' + k + '">' +
-        '<div class="alb-cmp__k">' + label + '</div>' +
-        '<div class="alb-cmp__bars">' +
-          '<span class="alb-cmp__bar alb-cmp__bar--now" style="width:' + (a / mx * 100).toFixed(1) + '%"></span>' +
-          '<span class="alb-cmp__bar alb-cmp__bar--prev" style="width:' + (b / mx * 100).toFixed(1) + '%"></span>' +
-        '</div>' +
-        '<div class="alb-cmp__v"><b class="num" data-now>' + fmtv(a) + '</b><small data-prev>' + fmtv(b) + '</small></div>' +
-      '</div>';
-    };
+    const N = w.now;
+    const maxKm = Math.max.apply(null, N.days.map(function (d) { return d.km; }).concat([1]));
     const shown = N.cards.slice(-6);
     return header({ title: '這一週', back: '/album', action: shareBtn() }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
-        '<p class="ai-note">明信片與插圖都是 AI 依地點生成的示意圖；明信片的底圖是實景照片，出處寫在每張明信片裡。</p>' +
-        '<div class="alb-pad"><div class="card alb-cover">' +
-          (shown.length
-            ? '<div class="alb-cover__grid">' + shown.slice(-3).map(function (p) {
-                return '<span class="alb-cover__cell" data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-wide data-card-art="' + esc(p.id) + '"></span>';
-              }).join('') + '</div>'
-            : '') +
-          '<div class="alb-cover__txt">' +
-            '<div class="alb-cover__range">' + esc(mdLabel(w.month, N.from)) + ' – ' + esc(mdLabel(w.month, N.to)) + '</div>' +
-            '<div class="alb-cover__t">這一週你去了 <span class="num" data-week-places>' + N.places + '</span> 個地方</div>' +
-          '</div>' +
+        '<div class="alb-pad"><div class="card alb-week-summary">' +
+          '<div class="alb-cover__range">' + esc(mdLabel(w.month, N.from)) + ' – ' + esc(mdLabel(w.month, N.to)) + '</div>' +
+          '<p class="alb-week-summary__label">這一週的里程</p>' +
+          '<div class="alb-week-summary__km"><strong class="num" data-week-km>' + N.km + '</strong><span>公里</span></div>' +
+          '<div class="alb-distance-days" aria-label="七日里程">' + N.days.map(function (d) {
+            return '<div class="alb-distance-days__col" data-day-km data-day="' + d.day + '" data-km="' + d.km + '" aria-label="' + esc(mdLabel(w.month, d.day)) + '，' + d.km.toFixed(1) + ' 公里">' +
+              '<span class="num">' + d.km.toFixed(1) + '</span><div class="alb-distance-days__track"><i style="height:' + (d.km / maxKm * 100).toFixed(1) + '%"></i></div><small>' + d.day + '日</small></div>';
+          }).join('') + '</div><p class="alb-foot">里程示意 · 單位：公里</p>' +
         '</div>' +
         /* 範圍之後才收的卡：不偷偷算進本週，照實說一句（見 weekStats） */
         (N.after.length
@@ -1213,26 +1029,8 @@ APP.view('week', {
               N.after.length + '</span> 張，還沒算進這一週。</p>'
           : '') +
         '</div>' +
-        '<div class="alb-pad"><div class="card card--pad">' +
-          '<div class="sec"><h2 class="sec__t sec__t--sm">跟上週比</h2>' +
-            '<span class="sec__m">' + esc(mdLabel(w.month, P.from)) + ' – ' + esc(mdLabel(w.month, P.to)) + '</span></div>' +
-          cmp('places', '地方', function (v) { return String(v); }) +
-          cmp('km', '公里', function (v) { return String(v); }) +
-          cmp('steps', '步數', function (v) { return APP.fmt.num(v); }) +
-          '<div class="alb-days">' + days.map(function (x) {
-            return '<span class="alb-days__col">' +
-              '<span class="alb-days__pair">' +
-                '<i class="alb-days__bar alb-days__bar--prev" style="height:' + (x.prev.steps / maxSteps * 100).toFixed(1) + '%"></i>' +
-                '<i class="alb-days__bar alb-days__bar--now" style="height:' + (x.now.steps / maxSteps * 100).toFixed(1) + '%"></i>' +
-              '</span><small>' + wd(x.now.day) + '</small></span>';
-          }).join('') + '</div>' +
-          '<div class="u-row u-gap4 alb-legend">' +
-            '<span class="u-row"><i class="alb-legend__sw alb-legend__sw--now"></i>本週</span>' +
-            '<span class="u-row"><i class="alb-legend__sw alb-legend__sw--prev"></i>上週</span>' +
-          '</div>' +
-        '</div></div>' +
         (shown.length
-          ? '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">這一週收的卡</h2></div>' +
+          ? '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">這一週收的卡</h2><span class="sec__m"><span data-week-places>' + N.places + '</span> 個地方</span></div>' +
             '<div class="hscroll alb-weekcards">' + shown.map(function (p) {
               const gold = goldCard(p.id);
               return '<a class="alb-weekcard" href="#/postcard/' + esc(p.id) + '" data-card="' + esc(p.id) + '">' +
@@ -1240,7 +1038,7 @@ APP.view('week', {
                   (gold ? ' data-gold-aura' : '') + '></span>' +
                 '<span class="alb-weekcard__t">' + esc(p.name) + '</span></a>';
             }).join('') + '</div></div>'
-          : '<div class="alb-pad"><p class="alb-foot">這一週還沒有新的卡，走過的路都算。</p></div>') +
+          : '<div class="alb-pad"><p class="alb-foot">這一週收卡的地方：<span data-week-places>' + N.places + '</span> 個。還沒有新的卡。</p></div>') +
         '<div class="alb-pad">' +
           '<a class="card alb-row" href="#/elder" data-act="go-elder">' +
             '<span class="tile-icon tile-icon--md"><span data-icon="elder"></span></span>' +
@@ -1249,7 +1047,7 @@ APP.view('week', {
         '</div>' +
         '<div class="alb-pad alb-pad--end"><p class="privacy-note alb-left">' +
           '<span data-icon="lock" style="width:14px;height:14px"></span>' +
-          '心情與日誌不會出現在這一頁，分享出去的只有去過的地方與走了多少。</p></div>' +
+          '分享只有地方與里程，心情留給自己。</p></div>' +
       '</div>';
   },
   mount: function (root, params, ctx) {
@@ -1287,13 +1085,13 @@ function elderCards(ctx) {
 
 /* 長輩圖的那一張圖＝收下的那張明信片本身（跟明信片頁同一套）：成品或照片＋那一款的濾鏡（data-card-art）、
    金框與角標、節日版會動的插畫、遠行戳（cardOrigin().marks），再壓一句大字祝福。3:4，景色整張看得到。
-   底下一條跟明信片的地名那一條一樣高（節日插畫的兔子、浪都對齊它）：日期與地點、底圖照片的署名、yoxi 城事。
+   底下一條跟明信片的地名那一條一樣高（節日插畫的兔子、浪都對齊它）：日期與地點、底圖照片的署名、遊喜樂。
    這張圖會傳出去：一定帶「AI 生成示意」與底圖的作者、授權（CC 授權要署名）。還沒收過任何一張：只有祝福的字。 */
 function elderImage(p, cap) {
   const big = '<div class="alb-elder__cap"><div class="alb-elder__big" data-elder-big>' + esc(cap) + '</div></div>';
   if (!p) {
     return '<div class="alb-elder alb-elder--empty" data-elder>' + big +
-      '<div class="alb-elder__foot"><span class="alb-elder__small" data-elder-small>新竹</span><span class="alb-elder__sig">yoxi 城事</span></div></div>';
+      '<div class="alb-elder__foot"><span class="alb-elder__small" data-elder-small>新竹</span><span class="alb-elder__sig">遊喜樂</span></div></div>';
   }
   const o = APP.explore.cardOrigin(p.id);
   const ph = APP.explore.cardPhoto ? APP.explore.cardPhoto(p.id) : null;
@@ -1307,7 +1105,7 @@ function elderImage(p, cap) {
       '<div class="alb-elder__foot">' +
         '<span class="alb-elder__small" data-elder-small>' + esc(YEAR() + '.' + o.date + ' · ' + p.name) + '</span>' +
         (ph ? '<span class="alb-elder__credit" data-elder-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') + '</span>' : '') +
-        '<span class="alb-elder__sig">yoxi 城事</span>' +
+        '<span class="alb-elder__sig">遊喜樂</span>' +
       '</div>' +
     '</div>';
 }

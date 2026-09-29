@@ -70,19 +70,11 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 /* 金框的疊卡：白邊換金邊、外面一圈淡淡的金光；金粉從這一圈冒出來（explore-gold.js） */
 .alb-v2__stack-art.is-gold { border-color: var(--gold); box-shadow: var(--sh-lift), 0 0 14px color-mix(in srgb, var(--gold) 45%, transparent); }
 /* 統計兩格：只放一個數字，高度收到內容那麼高（原本 128px 的空白讓給下面的「回顧」一列，首頁仍是一屏） */
-.alb-v2__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-3) var(--gutter) 0; }
-.alb-v2__stat { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-card); background: var(--yoxi-mist); }
-.alb-v2__stat span, .alb-v2__stat small { display: block; font-size: var(--fs-cap); }
-.alb-v2__stat span { font-weight: var(--fw-bold); }
-.alb-v2__stat strong { display: inline-block; margin-top: var(--sp-1); color: var(--yoxi-red); font-size: var(--fs-display); line-height: 1; }
-.alb-v2__stat small { display: inline-block; margin-left: var(--sp-1); color: var(--app-muted); }
-
-/* 回顧一列三格（今天的回顧／這一週／城市足跡）：白底細框＝可以按（統計格是霧色底、不能按）；
-   圖示海軍藍。今天的回顧右上一個鎖：只有你看得到，這一格沒有分享。 */
+/* 三個入口分別是私密回顧、可分享的週摘要、地理足跡。 */
 .alb-v2__look { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); padding: var(--sp-3) var(--gutter) 0; }
 .alb-v2__look-tile {
   position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 44px;
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-4) var(--sp-3);
   border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
   background: var(--yoxi-white); box-shadow: var(--sh-card); color: var(--yoxi-navy);
 }
@@ -92,6 +84,7 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__look-lock { position: absolute; top: var(--sp-2); right: var(--sp-2); width: 14px; height: 14px; display: block; color: var(--app-muted); }
 .alb-v2__look-tile strong { margin-top: var(--sp-1); font-size: var(--fs-sm); line-height: var(--lh-tight); white-space: nowrap; }
 .alb-v2__look-tile small { margin-top: 2px; overflow: hidden; color: var(--app-muted); font-size: var(--fs-xs); line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; }
+.alb-v2__look-tile [data-mood-now] { display: block; margin-top: var(--sp-1); }
 main.view .alb-v2__look-ic > svg, main.view .alb-v2__look-lock > svg { width: 100%; height: 100%; display: block; }
 /* 舊連結 ?tab=journal 等落在首頁：那一塊亮一下（海軍藍外框淡出），定格與減少動態效果時不動 */
 .alb-v2 .is-landed { animation: alb-land var(--t-scene) var(--ease-out) both; }
@@ -336,74 +329,60 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 .alb-fp__cov { display: block; font-size: var(--fs-h1); line-height: 1; color: var(--yoxi-red); }
 .alb-fp__covk { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
 .alb-fp__sec { margin: var(--sp-4) 0 var(--sp-2); }
-.alb-fp .citycolor { height: 28px; }
+.alb-fp .citycolor { height: 36px; gap: 3px; }
 .alb-fp__nocolor { padding: var(--sp-3) var(--sp-4); border: 1px dashed var(--yoxi-slate-lite); border-radius: var(--r-img); color: var(--app-muted); font-size: var(--fs-cap); line-height: var(--lh-body); }
 
-/* ---- 每日回顧（深色底；幕與幕之間用 --t-scene） ---- */
-.alb-lb { z-index: 5; }
-.alb-lb .lookback__top { padding-top: calc(var(--statusbar-h) + var(--sp-2)); }
-.alb-lb .lookback__act.is-on { animation: alb-scene var(--t-scene) var(--ease-out) both; }
-@keyframes alb-scene { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-/* 「先離開」：字不變，連結本身撐到 44×44（負邊距抵掉，頁首高度不變） */
-.alb-lb__exit {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 44px; min-height: 44px; margin: calc(var(--sp-3) * -1) calc(var(--sp-2) * -1);
-  padding: 0 var(--sp-2);
-  color: var(--yoxi-white); opacity: .8; font-weight: var(--fw-bold);
-}
-.alb-lb__t { font-size: var(--fs-title); }
-.alb-lb__sub { margin-bottom: var(--sp-5); }
-.alb-lb__km { font-size: calc(var(--fs-display) * 1.3); }
-.alb-lb__card { width: 170px; margin: 0 auto 28px; }
-.alb-lb__photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.alb-lb__photo { aspect-ratio: 1 / 1; }
-.alb-lb__photo.is-on { box-shadow: 0 0 0 3px var(--yoxi-white); }
-.alb-lb__skip { justify-content: center; width: 100%; margin-top: var(--sp-5); color: var(--yoxi-white); opacity: .7; }
-.alb-lb__next { background: var(--yoxi-white); color: var(--yoxi-navy); }
-.alb-lb .mood__btn { color: var(--yoxi-white); }
-/* 幕 1 的線由 JS 跟著數字畫（album.js runCount）：關掉 chengshi.css 那條固定 2.6s 的 draw，
-   沒有 JS 在跑的時候（定格、減少動態效果）線就是畫滿的 */
-.alb-lb .zigzag__path { animation: none; stroke-dashoffset: 0; }
-.alb-lb .lookback__steps { font-variant-numeric: tabular-nums; }
-.alb-zz__stop { transform-box: fill-box; transform-origin: center; transition: opacity var(--t-base) var(--ease-out), transform var(--t-slow) var(--ease-bump); }
-.alb-lb[data-lb-run] .alb-zz__stop:not(.is-hit) { opacity: 0; transform: scale(.3); }
-.alb-zz__dot { fill: var(--yoxi-white); }
-.alb-zz__stop--last .alb-zz__dot { fill: var(--yoxi-red); stroke: var(--yoxi-white); stroke-width: 3; }
-/* 數到終點那一下：紅點外擴散一圈，只一次 */
-.alb-zz__ping { fill: none; stroke: var(--yoxi-red); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
-.alb-lb:not([data-lb-run]) .alb-zz__stop--last.is-hit .alb-zz__ping { animation: alb-zz-ping var(--t-scene) var(--ease-out); }
-@keyframes alb-zz-ping { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(3); } }
-/* 地名不寫在線上，整串放在步數底下；數完才淡入 */
-.alb-lb__route { margin-top: var(--sp-4); font-size: var(--fs-sm); line-height: 1.6; opacity: .7; transition: opacity var(--t-slow) var(--ease-out); }
-.alb-lb[data-lb-run] .alb-lb__route { opacity: 0; }
-.alb-lb__place { font-weight: var(--fw-bold); white-space: nowrap; }
-.alb-lb__sep { display: inline-block; width: 4px; height: 4px; margin: 0 var(--sp-2); border-radius: var(--r-pill); background: currentColor; vertical-align: middle; opacity: .6; }
+/* 足跡：暖沙色陸地、墨藍灰霧、水藍河道；只覆寫此頁。 */
+.alb-fp { --map-fog: color-mix(in srgb, var(--yoxi-navy) 78%, var(--yoxi-slate)); --map-explored: var(--yoxi-cream-deep); }
+.alb-fp [data-layer="land"] { fill: var(--yoxi-cream-deep); }
+.alb-fp [data-layer="fog"] { fill: var(--map-fog); opacity: .9; }
+.alb-fp [data-layer="park"] { fill: color-mix(in srgb, var(--yoxi-navy) 28%, var(--yoxi-cream)); stroke: none; }
+.alb-fp [data-layer="waterArea"] { fill: var(--map-water); stroke: var(--yoxi-slate); }
+.alb-fp [data-layer="roadMajor"], .alb-fp [data-layer="roadMinor"] { stroke: var(--yoxi-white); }
+.alb-fp [data-layer="label"] { fill: var(--yoxi-white); stroke: var(--yoxi-navy); stroke-width: 2px; }
+.alb-fp [data-layer="credit"] { fill: var(--yoxi-white); opacity: 1; }
 
-/* ---- 這一週（本週／上週：同色系明度差） ---- */
-.alb-cover { overflow: hidden; }
-.alb-cover__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; height: 150px; }
-.alb-cover__cell { position: relative; overflow: hidden; }
-.alb-cover__txt { padding: var(--sp-4); }
-.alb-cover__range { font-size: var(--fs-xs); font-weight: var(--fw-heavy); letter-spacing: .08em; color: var(--yoxi-red); }
-.alb-cover__t { margin-top: 5px; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
-.alb-cmp { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); }
-.alb-cmp__k { font-size: var(--fs-cap); color: var(--app-muted); }
-.alb-cmp__bars { display: flex; flex-direction: column; gap: 3px; }
-.alb-cmp__bar { display: block; height: 8px; min-width: 2px; border-radius: var(--r-btn); background: var(--yoxi-red); }
-.alb-cmp__bar--prev { opacity: .32; }
-.alb-cmp__v { text-align: right; line-height: 1.2; }
-.alb-cmp__v b { display: block; font-size: var(--fs-body); }
-.alb-cmp__v small { display: block; font-size: var(--fs-xs); color: var(--app-muted); }
-.alb-days { display: flex; gap: var(--sp-2); height: 110px; margin-top: var(--sp-4); }
-.alb-days__col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.alb-days__col small { font-size: var(--fs-xs); color: var(--app-muted); }
-.alb-days__pair { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
-.alb-days__bar { width: 38%; border-radius: var(--r-btn) var(--r-btn) 0 0; background: var(--yoxi-red); }
-.alb-days__bar--prev { opacity: .32; }
-.alb-legend { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--app-muted); }
-.alb-legend > span { gap: 6px; }
-.alb-legend__sw { width: 12px; height: 12px; border-radius: var(--r-btn); background: var(--yoxi-red); }
-.alb-legend__sw--prev { opacity: .32; }
+/* 私人回顧：一頁可選、明確儲存，短螢幕自然捲動。 */
+.alb-journal { display: flex; flex: 1; flex-direction: column; min-height: 0; background: var(--yoxi-navy); color: var(--yoxi-white); }
+.alb-journal__top { display: flex; flex: none; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: calc(var(--statusbar-h) + var(--sp-2)) var(--gutter) var(--sp-2); font-size: var(--fs-cap); }
+.alb-journal__top a { display: grid; place-items: center; width: 44px; height: 44px; color: var(--yoxi-white); }
+.alb-journal__top a [data-icon] { display: block; width: 20px; height: 20px; }
+.alb-journal__top > [data-icon] { width: 18px; height: 18px; }
+.alb-journal__top [data-icon] svg path { fill: currentColor; }
+.alb-journal__body { padding: var(--sp-2) var(--gutter) var(--sp-6); }
+.alb-journal h1 { font-size: var(--fs-title); }
+.alb-journal__distance { display: flex; align-items: baseline; gap: var(--sp-3); margin-top: var(--sp-4); }
+.alb-journal__distance strong { font-size: calc(var(--fs-display) * 2); font-weight: var(--fw-heavy); line-height: 1; }
+.alb-journal__distance > span { font-size: var(--fs-body); }
+.alb-journal__route { margin-top: var(--sp-3); font-size: var(--fs-sm); line-height: var(--lh-body); }
+.alb-journal__note { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--yoxi-slate-lite); }
+.alb-journal section { margin-top: var(--sp-5); }
+.alb-journal h2 { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); font-size: var(--fs-body); }
+.alb-journal h2 small { font-size: var(--fs-xs); font-weight: var(--fw-med); color: var(--yoxi-slate-lite); }
+.alb-lb__photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+.alb-lb__photo { aspect-ratio: 4 / 3; width: 100%; min-height: 44px; }
+.alb-lb__photo.is-on { outline: 3px solid var(--yoxi-cream-deep); outline-offset: 3px; }
+.alb-journal__moods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+.alb-journal__moods button { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-1); border: 1px solid var(--yoxi-slate); border-radius: var(--r-card); background: var(--yoxi-navy); color: var(--yoxi-white); font-size: var(--fs-sm); }
+.alb-journal__moods [data-icon] { width: 26px; height: 26px; }
+.alb-journal__moods [data-icon] svg { width: 100%; height: 100%; }
+.alb-journal__moods button.is-on { background: var(--yoxi-cream); color: var(--yoxi-navy); border-color: var(--yoxi-cream); }
+.alb-journal__privacy { margin: var(--sp-4) 0; color: var(--yoxi-slate-lite); font-size: var(--fs-cap); }
+.alb-journal .btn-primary { width: 100%; background: var(--yoxi-white); color: var(--yoxi-navy); }
+.alb-journal button:focus-visible, .alb-journal a:focus-visible { outline: 3px solid var(--yoxi-cream-deep); outline-offset: 3px; }
+
+/* 七日摘要：一個里程總數、一組每日距離。 */
+.alb-week-summary { padding: var(--sp-5) var(--sp-4) var(--sp-3); margin-top: var(--sp-4); background: var(--yoxi-cream); }
+.alb-cover__range { font-size: var(--fs-cap); font-weight: var(--fw-bold); color: var(--app-muted); }
+.alb-week-summary__label { margin-top: var(--sp-4); font-size: var(--fs-sm); }
+.alb-week-summary__km { display: flex; align-items: baseline; gap: var(--sp-2); margin-top: var(--sp-1); }
+.alb-week-summary__km strong { font-size: calc(var(--fs-display) * 1.6); line-height: 1; }
+.alb-week-summary__km > span { font-size: var(--fs-sm); }
+.alb-distance-days { display: flex; gap: var(--sp-2); height: 144px; margin-top: var(--sp-5); }
+.alb-distance-days__col { display: flex; flex: 1; min-width: 0; flex-direction: column; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); }
+.alb-distance-days__track { display: flex; flex: 1; align-items: flex-end; width: 100%; min-height: 0; }
+.alb-distance-days__track i { display: block; width: 100%; background: var(--yoxi-navy); border-radius: var(--r-btn) var(--r-btn) 0 0; }
+.alb-distance-days__col small { font-size: var(--fs-xs); color: var(--app-muted); }
 .alb-weekcards { padding-bottom: 2px; }
 .alb-weekcard { width: 76px; flex: none; text-align: center; }
 .alb-weekcard__pic { position: relative; display: block; width: 76px; height: 76px; border-radius: var(--r-img); overflow: hidden; }

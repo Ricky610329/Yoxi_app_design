@@ -84,7 +84,8 @@ T.spec('flows', function (t) {
     t.eq(S.count(), n0 + 1, 'STATE.count() 8 → 9');
     t.eq(S.card(card) && S.card(card).note, '窯的牆還是溫的', 'card.note 是那句話');
     t.eq(S.card(card) && S.card(card).by, 'walk', 'by walk');
-    t.eq(app.text('[data-stat="places"]'), String(n0 + 1), '統計「去過的地方」+1');
+    t.eq(app.text('[data-stat="cards"]'), String(n0 + 1), '明信片摘要 +1');
+    t.eq(app.$$('[data-stat="places"], [data-stat="km"]').length, 0, '收藏首頁沒有重複的地方／距離統計');
     t.ok(!app.$('#tabbar .tabbar__dot'), '底欄沒有提示小圓點');
     const b1 = S.badge('b5');
     t.eq(b1.done, b0.done + 1, '〈' + b0.name + '〉收集 +1');
@@ -174,7 +175,7 @@ T.spec('flows', function (t) {
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   }, { timeout: 20000 });
 
-  t.test('流程 C 晚上的回顧（非 still）：收一張 → 晚上推播 → 四幕 → 日誌 → 這一週 → 長輩圖', async function (app) {
+  t.test('流程 C 晚上的回顧（非 still）：收一張 → 晚上推播 → 單頁回顧 → 這一週 → 長輩圖', async function (app) {
     await app.reset({ still: false });
     const A = app.APP, S = app.STATE;
     t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
@@ -187,20 +188,18 @@ T.spec('flows', function (t) {
     t.ok(app.$('.device > .pushmock[data-push="pm"]'), '晚上推播浮層');
     await app.click('.pushmock [data-act="open-push"]');
     await app.at('/lookback');
-    const lb = function () { return app.$('[data-lb]').getAttribute('data-lb-at'); };
-    t.eq(lb(), '0', '第一幕：步數');
-    /* 非 still：步數從 0 往上跳，等它數完再比 */
-    await app.waitFor(function () { return app.text('[data-lb-steps]') === A.fmt.num(app.MOCK.LOOKBACK.steps); }, 5000, '步數數到 LOOKBACK.steps');
-    t.includes(app.text('[data-lb-act="0"]'), A.fmt.num(app.MOCK.LOOKBACK.steps), '步數＝LOOKBACK.steps');
-    await app.click('[data-act="next"]');
-    t.eq(lb(), '1', '第二幕');
-    t.includes(app.text('[data-lb-act="1"]'), last && last.name, '第二幕是剛收的那張');
-    await app.click('[data-act="next"]');
-    t.eq(lb(), '2', '第三幕：照片');
+    t.ok(app.$('[data-lb]'), '單頁回顧');
+    t.eq(app.text('[data-lb-km]'), String(app.MOCK.LOOKBACK.km), '當日距離＝LOOKBACK.km');
+    t.eq(app.$$('[data-lb-act], [data-lb-steps], [data-act="next"]').length, 0, '沒有四幕與步數流程');
+    t.ok(app.text('main.view[data-view]').indexOf('步數') < 0 && app.text('main.view[data-view]').indexOf('走路') < 0,
+      '回顧沒有步數／走路文案');
+    t.ok(app.text('main.view[data-view]').indexOf(last && last.name) < 0, '不重複剛收的明信片摘要');
     await app.click('[data-act="photo"][data-photo="1"]');
-    t.eq(lb(), '3', '第四幕：心情');
     t.ok(!app.$('main.view[data-view] [data-act="share"]'), '回顧沒有分享鍵');
     await app.click('[data-act="mood"][data-mood="good"]');
+    t.ok(app.route().path === '/lookback', '選心情只改本頁，尚未儲存');
+    t.ok(!S.all.today || S.all.today.mood !== 'good', 'STATE 尚未寫入選擇');
+    await app.click('[data-act="save-lookback"]');
     await app.at('/album');
     t.eq(app.route().path, '/album', '回到收藏');
     t.eq(S.all.today.mood, 'good', 'STATE.today.mood');
@@ -692,11 +691,13 @@ T.spec('flows', function (t) {
 
   /* ============================================================ 5. 亂按 QA 回報（一項一條；這裡只留跨區塊的） */
 
-  t.test('QA 9／10：回顧的公里寫「移動的」；/trip/done 沒行程頁首寫「行程」、評過分的星數重整還在', async function (app) {
+  t.test('QA 9／10：回顧只記當日距離；/trip/done 沒行程頁首寫「行程」、評過分的星數重整還在', async function (app) {
     await app.reset();
     await app.go('/lookback');
-    t.includes(app.text('[data-lb-act="1"]'), '這個月移動的', '第二幕文案');
-    t.ok(app.text('[data-lb-act="1"]').indexOf('這個月走過的') < 0, '不再寫「這個月走過的」');
+    t.eq(app.text('[data-lb-km]'), String(app.MOCK.LOOKBACK.km), '當日公里來自 LOOKBACK.km');
+    const lookback = app.text('main.view[data-view]');
+    t.ok(lookback.indexOf('這個月') < 0 && lookback.indexOf('步數') < 0 && lookback.indexOf('走路') < 0,
+      '沒有月累積、步數或走路文案');
     await app.go('/trip/done');
     t.eq(app.text('.hdr-red__title'), '行程', '沒行程：頁首「行程」');
     t.includes(app.text('main.view[data-view]'), '目前沒有行程', '內文維持');
@@ -827,7 +828,7 @@ T.spec('flows', function (t) {
     const samples = [
       ['/ride', '.route-input__label'],
       ['/notify', '.row-nav__sub'],
-      ['/album', '.alb-v2__stat small'],
+      ['/album', '[data-look-today]'],
       ['/explore', '.sec__m'],
       ['/place/lake', '.ex-foot__note'],
       ['/points', '.row-nav__sub'],
