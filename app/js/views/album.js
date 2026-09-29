@@ -688,6 +688,7 @@ APP.view('postcard', {
     const byText = ride ? '搭 yoxi 抵達' : '走路抵達';
     const date = origin.dateText;
     const nth = origin.first ? '第一次來' : '第 ' + origin.v + ' 次來';
+    const area = pl && pl.area ? pl.area : '新竹';
 
     return header({ title: '明信片', back: '/postcards', action: shareBtn() }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
@@ -702,18 +703,24 @@ APP.view('postcard', {
             origin.marks +
             '<span class="postcard__foot"><span class="postcard__name alb-big__name">' + esc(P.name) + '</span>' +
               '<span class="postcard__date">' + esc(date) + '</span></span>' +
+            /* 背面照真的明信片排：左上地點、右上郵票蓋郵戳（郵戳是收下那天）、標題、一行日期、細線、那段話、右下落款 */
             '<span class="postcard__back alb-big__back">' +
+              '<span class="alb-back__head">' +
+                '<span class="alb-back__kicker">明信片 · ' + esc(area) + '</span>' +
+                '<span class="alb-back__stamp" aria-hidden="true"><span>yoxi</span></span>' +
+                '<span class="alb-back__mark" aria-hidden="true"><span>新竹</span><span>' + esc(origin.date) + '</span></span>' +
+              '</span>' +
               '<b>' + esc(P.name) + '</b>' +
               '<small>' + esc(date) + ' · ' + byText + ' · ' + nth + '</small>' +
-              '<p>' + esc(storyOf(P.id)) + '</p>' +
+              '<p class="alb-back__story">' + esc(storyOf(P.id)) + '</p>' +
               (origin.note ? '<p class="alb-big__note">「' + esc(origin.note) + '」</p>' : '') +
-              '<span class="postcard__stamp">yoxi</span>' +
+              '<span class="alb-back__sign"><span class="alb-back__logo">yoxi</span> 城事</span>' +
             '</span>' +
           '</button>' +
           '<p class="alb-hint">點一下翻到背面</p>' +
           photoCreditHTML(P.id) +
         '</div>' +
-        '<div class="alb-pad">' +
+        '<div class="alb-pad alb-lede">' +
           '<h1 class="alb-h1">' + esc(P.name) + '</h1>' +
           '<p class="alb-sub" data-visit-sub>' + esc(date) + ' · ' + byText + ' · ' + nth + '</p>' +
           verseHTML(P.id, origin) +
@@ -726,7 +733,7 @@ APP.view('postcard', {
             '<span class="row-nav__title" data-how>' + esc(how) + '</span></span></div>' +
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="place"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">地點</span>' +
-            '<span class="row-nav__title">' + esc(pl && pl.area ? pl.area : '新竹') + '</span></span></div>' +
+            '<span class="row-nav__title">' + esc(area) + '</span></span></div>' +
         '</div></div>' +
         '<div class="alb-pad">' + '<div class="sec"><h2 class="sec__t sec__t--sm">這張屬於</h2></div>' + ownerHTML + '</div>' +
         '<div class="alb-pad alb-pad--end">' +
@@ -744,11 +751,13 @@ APP.view('postcard', {
     const P = cardById(params.id);
     if (!P) return;
     const card = root.querySelector('[data-flip]');
+    const hint = root.querySelector('.alb-hint');
     /* interact.js 在 document 上另有一個 [data-flip] 的委派（initFlip）；
        這裡自己翻、並擋掉冒泡，不然會翻兩次等於沒翻 */
     if (card) card.onclick = function (e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
       card.classList.toggle('is-flipped');
+      if (hint) hint.textContent = card.classList.contains('is-flipped') ? '點一下翻回正面' : '點一下翻到背面';
       /* 節日版的插畫：翻回正面再演一次 */
       if (!card.classList.contains('is-flipped')) APP.explore.festPlay(card);
     };

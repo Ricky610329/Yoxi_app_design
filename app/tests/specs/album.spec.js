@@ -365,7 +365,11 @@ T.spec('album', function (t) {
     t.includes(app.text('[data-memory-period]'), '最近去過', '畫面誠實說明最近到訪');
     t.ok(faces[0].classList.contains('is-selected') && faces[0].getAttribute('aria-pressed') === 'true', '第一張預選');
     t.ok(faces.every(function (f) { return app.STATE.has(f.getAttribute('data-card')); }), '沒有未收的模板');
-    t.eq(app.$$('[data-act="memory-mood"]').length, 3, '心情是三個小選項');
+    const tones = app.$$('[data-act="memory-mood"]');
+    t.eq(tones.map(function (b) { return (b.textContent || '').trim(); }).join('／'), '晴光／柔光／暮色', '三選一是光線，不是心情');
+    t.ok(tones.every(function (b) { return b.querySelector('svg') && !b.querySelector('[data-icon^="mood"]'); }), '光線用自己的圖示，沒有笑臉');
+    ['開心', '平靜', '放鬆'].forEach(function (w) { t.ok(app.text('main.view[data-view]').indexOf(w) < 0, '畫面上沒有「' + w + '」'); });
+    t.includes(app.text('[data-act="pick-memory-template"].is-selected [data-memory-credit]'), app.APP.explore.cardPhoto(faces[0].getAttribute('data-card')).author, '卡面印底圖作者');
     t.eq(app.$$('[data-act="make-memory"]').length, 1, '只有一個主要動作');
     t.eq(app.$$('main.view select, main.view [data-act="preview-memory"], main.view [data-act="save-memory"]').length, 0, '沒有表單選單或分開預覽／儲存');
     if (faces[1]) {
@@ -394,6 +398,7 @@ T.spec('album', function (t) {
     const jpeg = selected.querySelector('.memory-own-photo').getAttribute('src');
     t.ok(/^data:image\/jpeg;base64,/.test(jpeg), '圖片在本機縮圖後轉成 JPEG');
     t.includes(app.text('[data-photo-label]'), '換一張', '上傳後可替換');
+    t.ok(!selected.querySelector('[data-memory-credit]'), '自己的照片不印底圖署名');
     t.ok(!app.$('[data-act="remove-memory-photo"]').hidden, '移除照片可用');
     t.eq(app.STATE.count(), count0, '上傳不改原明信片');
     t.eq(app.STATE.points, points0, '上傳不改點數');
@@ -458,6 +463,47 @@ T.spec('album', function (t) {
     t.eq(JSON.stringify(app.STATE.all.today || {}), before, '離開而未做成卡不寫入');
   });
 
+  /* 一屏：卡片吃剩下的高度，其他列固定。量桌機外框（狀態列 54px）與矮手機；收納列一直在，做了卡也不會把按鈕擠出去 */
+  t.test('/lookback 一屏：桌機外框與 375×667 都不用捲，卡片、光線、製卡鈕、收納列都在畫面內（做了三張也一樣）', async function (app) {
+    const fr = app.win.frameElement;
+    const size = async function (w, h) {
+      fr.style.width = w ? w + 'px' : ''; fr.style.height = h ? h + 'px' : '';
+      fr.getBoundingClientRect();
+      await app.tick(60);
+      app.APP.fitDevice();
+      await app.tick(60);
+    };
+    const fits = function (msg) {
+      const body = app.$('main.view .memory-body'), bottom = app.$('main.view .memory-room').getBoundingClientRect().bottom;
+      t.ok(body && body.scrollHeight <= body.clientHeight + 1, msg + '：不用捲 ' + (body && body.scrollHeight) + ' ≤ ' + (body && body.clientHeight));
+      ['[data-act="pick-memory-template"].is-selected', '[data-act="memory-mood"]', '[data-act="make-memory"]', '[data-memory-keeps]'].forEach(function (sel) {
+        const r = app.$(sel).getBoundingClientRect();
+        t.ok(r.height > 0 && r.bottom <= bottom + 1, msg + '：' + sel + ' 底 ' + Math.round(r.bottom) + ' ≤ ' + Math.round(bottom));
+      });
+      const face = app.$('[data-act="pick-memory-template"].is-selected').getBoundingClientRect();
+      t.ok(face.height >= 150, msg + '：卡片高 ' + Math.round(face.height));
+    };
+    try {
+      for (const sz of [[1280, 720], [375, 667]]) {
+        const tag = sz.join('×');
+        await app.reset();
+        await size(sz[0], sz[1]);
+        await app.go('/lookback');
+        fits(tag + ' 還沒做卡');
+        const faces = app.$$('[data-act="pick-memory-template"]');
+        for (let i = 0; i < 3 && i < faces.length; i++) {
+          await app.click(faces[i]);
+          await app.click('[data-act="make-memory"]');
+        }
+        t.eq(app.$$('[data-act="open-memory"]').length, Math.min(3, faces.length), tag + '：三張小卡');
+        fits(tag + ' 做了三張');
+      }
+    } finally {
+      await size(null, null);
+      await app.reset();
+    }
+  });
+
   /* 3. 覆蓋率算出來 */
   t.test('/footprint 覆蓋率是 0–100 的數字、沒有景點圖釘', async function (app) {
     await app.reset();
@@ -505,6 +551,31 @@ T.spec('album', function (t) {
     app.APP.ui.share = orig;
     t.eq(got && got.kind, 'postcard', 'kind=postcard');
     t.eq(got && got.id, 'p1', 'id=p1');
+    t.eq(app.text('.alb-hint'), '點一下翻回正面', '翻過去之後提示改寫翻回正面');
+  });
+
+  /* 背面的字級照正文走（標題 22、內文 16）：每一張都要排得進卡裡。
+     量 offsetTop／offsetWidth（排版位置，不受 rotateY 影響）；手寫的那句故意給很長，看截行有沒有接住 */
+  t.test('明信片背面：每一張的字都排得進卡裡（內文不截、落款在卡內、地點不壓到郵戳）', async function (app) {
+    const ids = app.MOCK.POSTCARDS.map(function (p) { return p.id; });
+    const extra = ids.filter(function (id) { return !app.STATE.card(id); });
+    const long = '老街的粄條很好吃，下次要帶媽媽一起來，順便去看那座吊橋，走到對岸再走回來';
+    await app.reset({ cards: extra.map(function (id, k) { return { id: id, note: k === 0 ? long : '' }; }) });
+    for (let k = 0; k < ids.length; k++) {
+      await app.go('/postcard/' + ids[k]);
+      const back = app.$('.alb-big__back');
+      const story = app.$('.alb-back__story');
+      const sign = app.$('.alb-back__sign');
+      const kick = app.$('.alb-back__kicker');
+      const mark = app.$('.alb-back__mark');
+      if (!back || !story || !sign || !kick || !mark) { t.fail(ids[k] + ' 背面少了元素'); continue; }
+      const padB = parseFloat(app.win.getComputedStyle(back).paddingBottom);
+      t.ok(sign.offsetTop + sign.offsetHeight <= back.clientHeight - padB + 1,
+        ids[k] + ' 落款在卡內：' + (sign.offsetTop + sign.offsetHeight) + ' ≤ ' + (back.clientHeight - padB));
+      t.ok(story.scrollHeight <= story.clientHeight + 1, ids[k] + ' 背面那段話沒被截掉：' + story.scrollHeight + ' ≤ ' + story.clientHeight);
+      t.ok(kick.offsetLeft + kick.offsetWidth <= mark.offsetLeft, ids[k] + ' 地點那行不壓到郵戳');
+      if (ids[k] === extra[0]) t.includes(app.text('.alb-big__note'), long, ids[k] + ' 手寫的那一句在背面（太長就截行）');
+    }
   });
 
   /* 金框的框要看得到：畫在 ::after（插圖上面），不是被 --sh-lift 蓋掉、被滿版插圖遮住的 inset 陰影 */

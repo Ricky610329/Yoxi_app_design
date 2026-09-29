@@ -145,7 +145,7 @@ function push(opt) {
     to = '/ride?mode=explore&area=' + encodeURIComponent((M.TODAY && M.TODAY.id) || 'glass-kiln');
   } else {
     title = '把去過的地方，做成一張回憶卡';
-    body = '選一個地方，讓心情決定畫面';
+    body = '選一個地方，再挑一種光線';
     to = '/lookback';
   }
 

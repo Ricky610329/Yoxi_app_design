@@ -37,7 +37,7 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 
 ### 雙主頁的叫車面板
 
-- `#/ride` 預設是一般搭車地圖與叫車欄位；搭車面板跟探索一樣上下拉：往下拉收到只剩拉把（整張地圖露出來），往上拉或點拉把回到叫車欄位，拖曳時跟手、放開後接續動畫。面板頂端的「探索」切到 `#/ride?mode=explore`，地圖顯示四個附近地點，並依 `APP.place(id).dist` 預選最近的地區。探索面板收合態用一張精簡地點卡顯示名稱、短句、距離與步行分鐘，動作是「用 yoxi」及「收集」；上拉或點「收集」時保留完整地點卡與兩個動作，卡片堆接在下方，內容過長可捲動。點卡片開啟可翻面的懸浮小卡，不進地點詳情頁。地區只從地圖圖釘切換，不另設附近地區清單。選點後網址寫成 `#/ride?mode=explore&area=<地點 id>`；往下拉只收合面板，仍留在探索。探索面板有三段：展開（卡片）／收合（地點卡）／只剩拉把。兩個模式的地圖都一開始就畫成最大可見高度、貼齊上緣，面板收放不縮放地圖；定位鈕與地圖署名跟著貼到可見範圍底邊（`ride.js` 的 `mountFullMap`／`bindDragSheet`）。從地圖點選會把面板帶回收合態（只剩拉把時也會叫回來）；切回「搭車」清除探索 query。
+- `#/ride` 預設是一般搭車地圖與叫車欄位；搭車面板跟探索一樣上下拉：往下拉收到只剩拉把（整張地圖露出來），往上拉或點拉把回到叫車欄位，拖曳時跟手、放開後接續動畫。面板頂端的「探索」切到 `#/ride?mode=explore`，地圖顯示四個附近地點，並依 `APP.place(id).dist` 預選最近的地區。探索面板收合態用一張精簡地點卡顯示名稱、短句、「離你 N m · 搭 yoxi N 分鐘」（`fmt.dist`＋`fmt.rideMin(fmt.km(dist))`），動作是「用 yoxi」及「收集」；上拉或點「收集」時保留完整地點卡與兩個動作，卡片區接在下方（標題與「收集 n/N」一列）。展開的面板不捲：卡片區是定高 `--ride-cards-h`（JS 量＝展開高度 `--sheet-max` 扣掉收合態與間距，視窗改大小時重量），卡片堆是 size container，卡寬照張數、高度放不下就照高度縮；拖曳時卡片不跟著變大小。點卡片開啟可翻面的懸浮小卡，不進地點詳情頁。地區只從地圖圖釘切換，不另設附近地區清單。選點後網址寫成 `#/ride?mode=explore&area=<地點 id>`；往下拉只收合面板，仍留在探索。探索面板有三段：展開（卡片）／收合（地點卡）／只剩拉把。兩個模式的地圖都一開始就畫成最大可見高度、貼齊上緣，面板收放不縮放地圖；定位鈕與地圖署名跟著貼到可見範圍底邊（`ride.js` 的 `mountFullMap`／`bindDragSheet`）。從地圖點選會把面板帶回收合態（只剩拉把時也會叫回來）；切回「搭車」清除探索 query。
 - 手勢與可及性（2026-09-25 review）：拉把是 `<button class="sheet__grip" data-act="toggle-sheet" aria-expanded>`，44 px 高（面板 padding-top 0，只剩拉把時高 44）；移動 ≤ 8 px 算點一下，超過就照拖的方向（加放手速度）換段；只認主要指標的左鍵、`setPointerCapture`，失焦或 `lostpointercapture` 就作廢回原段；拖曳一開始就拿掉 `is-collapsed`，卡片堆跟著手長出來。視窗改大小（ResizeObserver＋resize）整張地圖重畫。探索模式的上車點只留 pin、不畫地址標籤；地點卡的標籤是「今天的地方／離你最近／你選的地方」（照 `MOCK.TODAY`）。懸浮小卡掛在 `.device`（`data-overlay`），用 `APP.ui.a11yDialog`。已經有下車點時不放「機場接送」（可按數）。
 - 四組展示對應：`glass-kiln → p11,p17`、`market → p1,p2,p7,p20`、`moat → p3,p19`、`hill → p6,p21`。群組只定義卡片歸屬，收集與公里數仍由 `STATE`／`MOCK`／`APP.fmt` 計算；卡片不連地點詳情。
 - 舊 `/place/:id`、探索與回顧路由仍能直接開啟，供既有資料和流程對照；新底欄和叫車卡片面板不導向它們。
@@ -71,7 +71,7 @@ app/
   js/views/explore.js       探索（X2）、探索地圖、地方詳情（K1）、前往中、路線列表／詳情
   js/views/explore-unlock.js 抵達與翻卡（/unlock）
   js/views/album.js         收藏（數據摘要＋X4 六角章）、明信片子頁、全部獎章、明信片（?v=第幾次）、獎章、城市足跡、週回顧、長輩圖
-  js/views/album-memory.js  回憶卡：到訪地點模板、可選本機照片與心情、一鍵製作並保存；同名 CSS
+  js/views/album-memory.js  回憶卡：到訪地點模板、可選本機照片與光線、一鍵製作並保存；同名 CSS
   js/views/album-family.js  傳到 LINE 給家人、家人的回應（示意）：/line、/family/:id、APP.family（樣式在 css/views/album-family.css）
   assets/icons/             PWA 圖示（Pillow 產生；不連網）
   assets/postcards/         明信片五款的成品（<明信片 id>-<款式>.jpg，480×640；目前 p1–p11，清單在 explore-face.js 的 POSTCARD_GEN）＋ index.json（底圖、提示詞、種子）；不進 sw 預先快取，由 sw 在執行期 cache-first 存（看過一次離線也有），載不到時卡面退回照片＋SVG 濾鏡
@@ -439,7 +439,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/family/:id` | 子女的手機：在 LINE 裡點開那張明信片（示意）：喜歡、三句快速回覆、自己打一句；`?share` 沒給或對不上用這張卡最近的一次，沒傳過是空狀態 | null | 新（參考 `vision-family-a／b.html`） | album（album-family.js） |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
 | `/footprint` | 城市足跡（真實道路留白、已訪非道路區域上色，覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |
-| `/lookback` | 回憶卡：左右滑動到訪地點模板，可加自己的照片與心情，一鍵製作保存 | null | `lookback.html` | album-memory |
+| `/lookback` | 回憶卡：左右滑動到訪地點模板，可加自己的照片、挑光線，一鍵製作保存；整頁不捲 | null | `lookback.html` | album-memory |
 | `/week` | 週回顧：七日里程圖、期間內收卡、分享（不顯示步數或比較排名） | album | `week.html` | album |
 | `/elder` | 長輩圖（`?card=<id>` 把那張排第一並預選） | album | `elder.html` | album |
 | `/settings` | 遊喜樂設定（隱私開關、重設、demo 工具） | null | `settings.html` | system |
@@ -453,9 +453,11 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 
 ## 9. 桌機／手機
 
-**回憶卡（2026-09-29 追加）**：`js/views/album-memory.js` 與同名 CSS 負責 `/lookback`，沿用深藍底與完整明信片的視覺。`APP.album.memory.templates()` 優先取今天到訪地點；當日沒有記錄時，明示改用最近到訪地點。左右滑動模板，可選本機照片與三種心情，只有「做成我的卡」一個主要動作，沒有下拉選單或提示詞面板。照片在本機縮至長邊最多 1000 px、JPEG 壓縮後預覽；心情對應內部構圖提示、色調與短句。這是構圖示意，尚未接 AI，必須明示。
+**回憶卡（2026-09-29 追加）**：`js/views/album-memory.js` 與同名 CSS 負責 `/lookback`，沿用深藍底與完整明信片的視覺。`APP.album.memory.templates()` 優先取今天到訪地點；當日沒有記錄時，明示改用最近到訪地點。左右滑動模板，可選本機照片與三種光線（晴光／柔光／暮色，自繪圖示，不用笑臉；不問使用者心情），只有「做成我的卡」一個主要動作，沒有下拉選單或提示詞面板。照片在本機縮至長邊最多 1000 px、JPEG 壓縮後預覽；光線對應內部構圖提示、色調與短句。底圖署名印在卡面上（自己的照片不印）。這是構圖示意，尚未接 AI，必須明示。
 
-按製作才透過 `APP.state.setToday` 寫 `STATE.all.today.memoryCards`（陣列，每張 `{id, cardId, mood, prompt, date, photo?}`，photo 是本機 data URL）；核對 localStorage 實際寫入，容量不足則還原並提示，不誤報成功。卡片不計入抵達明信片、獎章、里程。重開保留原卡日期／照片／心情，清除足跡時隨 today 清空。`APP.album.memory` 提供 `places/templates/cards/draft/moods/save`。空收藏沒有製作按鈕，導回探索。沒有上傳、API key 或模擬下載成功。週頁只保留回顧和分享。
+**一屏（2026-09-29）**：`/lookback` 整頁不捲。`.memory-stage` 以 `flex:1` 吃掉剩下的高度並設 `container-type:size`，卡片高 = min(舞台高, 舞台寬換算的高)、置中吸附；標題、光線、照片、製卡鈕、說明、收納列都是固定高。收納列「留住的回憶」一直在（沒有卡時是一句說明），收下第一張時卡片不會突然變小。卡片寬度 ≤ 240 px 時用 container query 收小郵戳與字級。
+
+按製作才透過 `APP.state.setToday` 寫 `STATE.all.today.memoryCards`（陣列，每張 `{id, cardId, mood, prompt, date, photo?}`，mood 存光線的 key：`good` 晴光／`ok` 柔光／`low` 暮色，沿用舊欄位名讓舊卡讀得回來；photo 是本機 data URL）；核對 localStorage 實際寫入，容量不足則還原並提示，不誤報成功。卡片不計入抵達明信片、獎章、里程。重開保留原卡日期／照片／光線，清除足跡時隨 today 清空。`APP.album.memory` 提供 `places/templates/cards/draft/moods/save`。空收藏沒有製作按鈕，導回探索。沒有上傳、API key 或模擬下載成功。週頁只保留回顧和分享。
 
 **收藏整理（2026-09-29）**：首頁三格以回憶卡張數、週里程、城市點亮比例為主，圖標分別對應製卡、里程與地圖。`ResizeObserver` 依三格最窄可用空間統一數字字級，離頁清理。獎章保留主章＋小章原設計並放大。週距離沿用固定示意週期，舊 `HEALTH_STEPS` 僅為唯讀示意資料轉換來源，`weekStats().now.days[].km` 提供公里，介面不顯示或另存步數。足跡維持原地理範圍與覆蓋公式，灰色未訪區與品牌色已訪區都放在道路下方，道路保持清楚；繪製邏輯僅在 app 覆寫。
 

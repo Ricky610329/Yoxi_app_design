@@ -121,7 +121,9 @@ T.spec('ride', function (t) {
     const nearest = areas.reduce(function (a, b) { return app.APP.place(a).dist <= app.APP.place(b).dist ? a : b; });
     t.eq(app.route().query.get('area'), nearest, '探索預選最近地區');
     t.includes(app.text('.ride-v2__feature'), app.APP.place(nearest).name, '底部顯示最近地點');
-    t.includes(app.text('.ride-v2__feature'), String(app.APP.fmt.walkMin(app.APP.place(nearest).dist)), '步行分鐘由公式算');
+    const F = app.APP.fmt, nd = app.APP.place(nearest).dist;
+    t.includes(app.text('.ride-v2__feature'), '離你 ' + F.dist(nd) + ' · 搭 yoxi ' + F.rideMin(F.km(nd)) + ' 分鐘', '搭 yoxi 分鐘由公式算');
+    t.ok(app.text('.ride-v2__feature').indexOf('走路') < 0, '地點資訊不寫走路分鐘');
     t.ok(app.$('[data-act="use-yoxi"]') && app.$('[data-act="expand-cards"]'), '用 yoxi 與收集兩個動作');
     await app.click('[data-act="mode-ride"]');
     t.eq(app.route().query.get('mode'), null, '切回搭車清除探索模式');
@@ -859,6 +861,39 @@ T.spec('ride', function (t) {
       resize('760px');
       await app.waitFor(function () { const s = app.$('.spot.is-selected'); return s && filled(); }, 3000, '探索重畫後仍標著選到的景點');
       t.eq(app.$$('main.view .spot').length, 4, '探索重畫後還是四顆景點');
+      t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    } finally {
+      fr.style.height = h0;
+    }
+  }, { timeout: 15000 });
+
+  t.test('探索上拉：卡片照剩下的高度縮，整張面板不用捲（兩張、四張、矮的手機）', async function (app) {
+    const fr = app.win.frameElement, h0 = fr.style.height;
+    const fits = function (msg) {
+      const s = app.$('.ride-sheet'), sr = s.getBoundingClientRect(), st = app.$('.ride-v2__stack').getBoundingClientRect();
+      t.ok(!s.classList.contains('is-collapsed'), msg + '：展開');
+      t.eq(app.win.getComputedStyle(s).overflowY, 'hidden', msg + '：展開的面板不捲');
+      t.ok(s.scrollHeight <= s.clientHeight + 1, msg + '：內容 ' + s.scrollHeight + ' ≤ 面板 ' + s.clientHeight);
+      t.ok(st.bottom <= sr.bottom + 1, msg + '：卡片堆在面板裡 ' + Math.round(st.bottom) + ' ≤ ' + Math.round(sr.bottom));
+      const out = app.$$('.ride-v2__card').filter(function (c) {
+        const r = c.getBoundingClientRect();
+        return r.height < 60 || r.top < st.top - 1 || r.bottom > st.bottom + 1;
+      });
+      t.eq(out.length, 0, msg + '：每張卡都在卡片堆裡、沒有縮到看不見');
+    };
+    try {
+      for (const area of ['glass-kiln', 'market']) {
+        await app.reset();
+        await app.go('/ride?mode=explore&area=' + area);
+        await app.click('[data-act="expand-cards"]');
+        fits(area);
+      }
+      /* 矮的手機：改 iframe 高度、補發 resize（原因見上一個測試），地圖重畫時卡片區重量 */
+      const before = app.$('.ride-sheet').style.getPropertyValue('--ride-cards-h');
+      fr.style.height = '667px';
+      app.win.dispatchEvent(new app.win.Event('resize'));
+      await app.waitFor(function () { return app.$('.ride-sheet').style.getPropertyValue('--ride-cards-h') !== before; }, 3000, '改高之後卡片區重量');
+      fits('667 高');
       t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
     } finally {
       fr.style.height = h0;

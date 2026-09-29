@@ -128,7 +128,7 @@ T.spec('system', function (t) {
     app.APP.ui.push({ when: 'pm' });
     await app.waitFor(function () { return pushmock(app); }, 2000, '.pushmock');
     t.eq(app.text('.pushmock__t'), '把去過的地方，做成一張回憶卡', 'pm 標題');
-    t.includes(app.text('.pushmock'), '選一個地方，讓心情決定畫面', 'pm 內文');
+    t.includes(app.text('.pushmock'), '選一個地方，再挑一種光線', 'pm 內文');
     t.eq(app.$('.pushmock__time').textContent, '21:30', '晚上 21:30');
     await app.click('.pushmock [data-act="open-push"]');
     await app.at('/lookback');

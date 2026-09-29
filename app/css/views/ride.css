@@ -116,16 +116,26 @@
 .ride-v2__actions { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); margin-top: var(--sp-3); }
 .ride-v2__actions .btn-primary, .ride-v2__actions .btn-ghost { min-height: 50px; }
 .ride-v2__actions .btn-ghost { padding: 0 var(--sp-4); border: 1px solid var(--yoxi-navy); }
-.ride-v2__expanded { margin-top: var(--sp-4); padding-top: var(--sp-3); padding-bottom: var(--sp-5); border-top: 1px solid var(--yoxi-line); }
-.ride-v2__section h2 { margin: var(--sp-2) 0 var(--sp-1); font-size: var(--fs-title); }
-.ride-v2__section p { margin: 0 0 var(--sp-4); color: var(--app-muted); font-size: var(--fs-sm); line-height: var(--lh-body); }
-.ride-v2__stack { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 220px; padding: var(--sp-3) 0 var(--sp-4); }
-.ride-v2__card { position: relative; flex: none; width: 48%; padding: var(--sp-2); border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: var(--yoxi-paper); box-shadow: var(--sh-lift); text-align: left; transition: transform var(--t-base) var(--ease-out); }
-.ride-v2__card + .ride-v2__card { margin-left: -10%; }
-.ride-v2__stack[data-stack-size="3"] .ride-v2__card { width: 38%; }
-.ride-v2__stack[data-stack-size="4"] .ride-v2__card { width: 31%; }
-.ride-v2__stack[data-stack-size="3"] .ride-v2__card + .ride-v2__card,
-.ride-v2__stack[data-stack-size="4"] .ride-v2__card + .ride-v2__card { margin-left: -8%; }
+/* 展開後整張面板不捲：卡片區是定高（--ride-cards-h，JS 量＝展開高度扣掉地點資訊），標題一列，其餘給卡片堆 */
+.ride-v2__sheet:not(.is-collapsed) { overflow: hidden; }
+.ride-v2__expanded { display: flex; flex-direction: column; height: var(--ride-cards-h, 320px); margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--yoxi-line); }
+.ride-v2__section { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
+.ride-v2__section h2 { margin: 0; font-size: var(--fs-title); line-height: var(--lh-tight); }
+.ride-v2__section p { flex: none; margin: 0; color: var(--app-muted); font-size: var(--fs-sm); }
+/* 卡片堆吃掉剩下的高度、是 size container：卡寬照張數（兩張 48%、三張 38%、四張 31%），
+   高度放不下就照高度縮（卡高＝4:5 插圖＋內距＋框線＋一行名字 ≤ 100cqh）；疊的量跟著卡寬 */
+.ride-v2__stack {
+  --card-max: 48%; --card-lap: .21;
+  display: flex; flex: 1 1 0; min-height: 0; justify-content: center; align-items: center; width: 100%;
+  padding: var(--sp-3) 0 var(--sp-4); container-type: size;
+}
+.ride-v2__stack[data-stack-size="3"] { --card-max: 38%; }
+.ride-v2__stack[data-stack-size="4"] { --card-max: 31%; --card-lap: .26; }
+.ride-v2__card {
+  --card-w: min(var(--card-max), calc((100cqh - var(--sp-2) * 3 - 2px - var(--fs-cap) * 1.35) * .8 + var(--sp-2) * 2 + 2px));
+  position: relative; flex: none; width: var(--card-w); padding: var(--sp-2); border: 1px solid var(--yoxi-line); border-radius: var(--r-card); background: var(--yoxi-paper); box-shadow: var(--sh-lift); text-align: left; transition: transform var(--t-base) var(--ease-out);
+}
+.ride-v2__card + .ride-v2__card { margin-left: calc(var(--card-w) * var(--card-lap) * -1); }
 .ride-v2__card:nth-child(odd) { transform: rotate(-4deg); }
 .ride-v2__card:nth-child(even) { transform: rotate(4deg); }
 .ride-v2__card:hover, .ride-v2__card:focus-visible { z-index: 8; transform: translateY(-8px) rotate(0); }
@@ -134,7 +144,7 @@
 .ride-v2__card:not(.is-collected) .ride-v2__card-art > :first-child { filter: grayscale(1); opacity: .65; }
 /* 角標放左下：chengshi.css 的 .ai-mark 有 top，要清掉，不然上下都貼住、半透明的底色會拉成整張卡那麼高 */
 .ride-v2__card .ai-mark { position: absolute; top: auto; bottom: var(--sp-1); left: var(--sp-1); z-index: 2; }
-.ride-v2__card strong { display: block; margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: 1.35; }
+.ride-v2__card strong { display: block; margin-top: var(--sp-2); overflow: hidden; font-size: var(--fs-cap); line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; }
 
 .ride-card-float[hidden] { display: none; }
 .ride-card-float { position: absolute; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: var(--sp-4); background: var(--yoxi-navy-60); }
