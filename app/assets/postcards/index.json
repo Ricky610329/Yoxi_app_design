@@ -768,5 +768,1295 @@
   "cfg": 7.5,
   "prompt": "woodcut relief print of an old glass workshop building, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
   "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p12-gold": {
+  "card": "p12",
+  "style": "gold",
+  "photo": "p12-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a small rural railway station building, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.815,
+  "blank": [
+   [
+    334,
+    227,
+    362,
+    252
+   ],
+   [
+    397,
+    220,
+    427,
+    247
+   ],
+   [
+    467,
+    214,
+    498,
+    241
+   ],
+   [
+    542,
+    209,
+    573,
+    237
+   ],
+   [
+    618,
+    204,
+    650,
+    233
+   ],
+   [
+    623,
+    334,
+    690,
+    368
+   ],
+   [
+    714,
+    334,
+    737,
+    368
+   ],
+   [
+    542,
+    345,
+    568,
+    362
+   ],
+   [
+    518,
+    358,
+    531,
+    388
+   ],
+   [
+    696,
+    358,
+    709,
+    390
+   ]
+  ]
+ },
+ "p12-ink": {
+  "card": "p12",
+  "style": "ink",
+  "photo": "p12-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 11,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a small rural railway station building, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.815,
+  "blank": [
+   [
+    334,
+    227,
+    362,
+    252
+   ],
+   [
+    397,
+    220,
+    427,
+    247
+   ],
+   [
+    467,
+    214,
+    498,
+    241
+   ],
+   [
+    542,
+    209,
+    573,
+    237
+   ],
+   [
+    618,
+    204,
+    650,
+    233
+   ],
+   [
+    623,
+    334,
+    690,
+    368
+   ],
+   [
+    714,
+    334,
+    737,
+    368
+   ],
+   [
+    542,
+    345,
+    568,
+    362
+   ],
+   [
+    518,
+    358,
+    531,
+    388
+   ],
+   [
+    696,
+    358,
+    709,
+    390
+   ]
+  ]
+ },
+ "p12-oil": {
+  "card": "p12",
+  "style": "oil",
+  "photo": "p12-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a small rural railway station building, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.815,
+  "blank": [
+   [
+    334,
+    227,
+    362,
+    252
+   ],
+   [
+    397,
+    220,
+    427,
+    247
+   ],
+   [
+    467,
+    214,
+    498,
+    241
+   ],
+   [
+    542,
+    209,
+    573,
+    237
+   ],
+   [
+    618,
+    204,
+    650,
+    233
+   ],
+   [
+    623,
+    334,
+    690,
+    368
+   ],
+   [
+    714,
+    334,
+    737,
+    368
+   ],
+   [
+    542,
+    345,
+    568,
+    362
+   ],
+   [
+    518,
+    358,
+    531,
+    388
+   ],
+   [
+    696,
+    358,
+    709,
+    390
+   ]
+  ]
+ },
+ "p12-watercolor": {
+  "card": "p12",
+  "style": "watercolor",
+  "photo": "p12-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a small rural railway station building, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.815,
+  "blank": [
+   [
+    334,
+    227,
+    362,
+    252
+   ],
+   [
+    397,
+    220,
+    427,
+    247
+   ],
+   [
+    467,
+    214,
+    498,
+    241
+   ],
+   [
+    542,
+    209,
+    573,
+    237
+   ],
+   [
+    618,
+    204,
+    650,
+    233
+   ],
+   [
+    623,
+    334,
+    690,
+    368
+   ],
+   [
+    714,
+    334,
+    737,
+    368
+   ],
+   [
+    542,
+    345,
+    568,
+    362
+   ],
+   [
+    518,
+    358,
+    531,
+    388
+   ],
+   [
+    696,
+    358,
+    709,
+    390
+   ]
+  ]
+ },
+ "p12-woodcut": {
+  "card": "p12",
+  "style": "woodcut",
+  "photo": "p12-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a small rural railway station building, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.815,
+  "blank": [
+   [
+    334,
+    227,
+    362,
+    252
+   ],
+   [
+    397,
+    220,
+    427,
+    247
+   ],
+   [
+    467,
+    214,
+    498,
+    241
+   ],
+   [
+    542,
+    209,
+    573,
+    237
+   ],
+   [
+    618,
+    204,
+    650,
+    233
+   ],
+   [
+    623,
+    334,
+    690,
+    368
+   ],
+   [
+    714,
+    334,
+    737,
+    368
+   ],
+   [
+    542,
+    345,
+    568,
+    362
+   ],
+   [
+    518,
+    358,
+    531,
+    388
+   ],
+   [
+    696,
+    358,
+    709,
+    390
+   ]
+  ]
+ },
+ "p13-gold": {
+  "card": "p13",
+  "style": "gold",
+  "photo": "p13-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a rural railway platform with a long canopy, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "blank": [
+   [
+    [
+     450,
+     207
+    ],
+    [
+     604,
+     168
+    ],
+    [
+     605,
+     222
+    ],
+    [
+     450,
+     243
+    ]
+   ],
+   [
+    478,
+    247,
+    550,
+    258
+   ]
+  ]
+ },
+ "p13-ink": {
+  "card": "p13",
+  "style": "ink",
+  "photo": "p13-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a rural railway platform with a long canopy, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "blank": [
+   [
+    [
+     450,
+     207
+    ],
+    [
+     604,
+     168
+    ],
+    [
+     605,
+     222
+    ],
+    [
+     450,
+     243
+    ]
+   ],
+   [
+    478,
+    247,
+    550,
+    258
+   ]
+  ]
+ },
+ "p13-oil": {
+  "card": "p13",
+  "style": "oil",
+  "photo": "p13-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 13,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a rural railway platform with a long canopy, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "blank": [
+   [
+    [
+     450,
+     207
+    ],
+    [
+     604,
+     168
+    ],
+    [
+     605,
+     222
+    ],
+    [
+     450,
+     243
+    ]
+   ],
+   [
+    478,
+    247,
+    550,
+    258
+   ]
+  ]
+ },
+ "p13-watercolor": {
+  "card": "p13",
+  "style": "watercolor",
+  "photo": "p13-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a rural railway platform with a long canopy, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "blank": [
+   [
+    [
+     450,
+     207
+    ],
+    [
+     604,
+     168
+    ],
+    [
+     605,
+     222
+    ],
+    [
+     450,
+     243
+    ]
+   ],
+   [
+    478,
+    247,
+    550,
+    258
+   ]
+  ]
+ },
+ "p13-woodcut": {
+  "card": "p13",
+  "style": "woodcut",
+  "photo": "p13-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a rural railway platform with a long canopy, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "blank": [
+   [
+    [
+     450,
+     207
+    ],
+    [
+     604,
+     168
+    ],
+    [
+     605,
+     222
+    ],
+    [
+     450,
+     243
+    ]
+   ],
+   [
+    478,
+    247,
+    550,
+    258
+   ]
+  ]
+ },
+ "p14-gold": {
+  "card": "p14",
+  "style": "gold",
+  "photo": "p14-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a red brick museum building, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p14-ink": {
+  "card": "p14",
+  "style": "ink",
+  "photo": "p14-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a red brick museum building, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p14-oil": {
+  "card": "p14",
+  "style": "oil",
+  "photo": "p14-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 11,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a red brick museum building, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p14-watercolor": {
+  "card": "p14",
+  "style": "watercolor",
+  "photo": "p14-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a red brick museum building, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p14-woodcut": {
+  "card": "p14",
+  "style": "woodcut",
+  "photo": "p14-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a red brick museum building, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p15-gold": {
+  "card": "p15",
+  "style": "gold",
+  "photo": "p15-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of close-up of gloved hands shaping a glowing molten glass flower with long steel tongs at a workbench, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly, face, head, hair, portrait, person, man, woman, beard, eyes",
+  "crop_box": [
+   0.409,
+   0.432,
+   0.6925,
+   1.0
+  ]
+ },
+ "p15-ink": {
+  "card": "p15",
+  "style": "ink",
+  "photo": "p15-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of close-up of gloved hands shaping a glowing molten glass flower with long steel tongs at a workbench, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly, face, head, hair, portrait, person, man, woman, beard, eyes",
+  "crop_box": [
+   0.409,
+   0.432,
+   0.6925,
+   1.0
+  ]
+ },
+ "p15-oil": {
+  "card": "p15",
+  "style": "oil",
+  "photo": "p15-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of close-up of gloved hands shaping a glowing molten glass flower with long steel tongs at a workbench, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly, face, head, hair, portrait, person, man, woman, beard, eyes",
+  "crop_box": [
+   0.409,
+   0.432,
+   0.6925,
+   1.0
+  ]
+ },
+ "p15-watercolor": {
+  "card": "p15",
+  "style": "watercolor",
+  "photo": "p15-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of close-up of gloved hands shaping a glowing molten glass flower with long steel tongs at a workbench, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly, face, head, hair, portrait, person, man, woman, beard, eyes",
+  "crop_box": [
+   0.409,
+   0.432,
+   0.6925,
+   1.0
+  ]
+ },
+ "p15-woodcut": {
+  "card": "p15",
+  "style": "woodcut",
+  "photo": "p15-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of close-up of gloved hands shaping a glowing molten glass flower with long steel tongs at a workbench, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly, face, head, hair, portrait, person, man, woman, beard, eyes",
+  "crop_box": [
+   0.409,
+   0.432,
+   0.6925,
+   1.0
+  ]
+ },
+ "p16-gold": {
+  "card": "p16",
+  "style": "gold",
+  "photo": "p16-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a seaside embankment with waves and tidal flats, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p16-ink": {
+  "card": "p16",
+  "style": "ink",
+  "photo": "p16-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a seaside embankment with waves and tidal flats, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p16-oil": {
+  "card": "p16",
+  "style": "oil",
+  "photo": "p16-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a seaside embankment with waves and tidal flats, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p16-watercolor": {
+  "card": "p16",
+  "style": "watercolor",
+  "photo": "p16-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a seaside embankment with waves and tidal flats, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p16-woodcut": {
+  "card": "p16",
+  "style": "woodcut",
+  "photo": "p16-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a seaside embankment with waves and tidal flats, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p17-gold": {
+  "card": "p17",
+  "style": "gold",
+  "photo": "p17-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of an old brick kiln corridor with brick arches, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p17-ink": {
+  "card": "p17",
+  "style": "ink",
+  "photo": "p17-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of an old brick kiln corridor with brick arches, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p17-oil": {
+  "card": "p17",
+  "style": "oil",
+  "photo": "p17-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of an old brick kiln corridor with brick arches, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p17-watercolor": {
+  "card": "p17",
+  "style": "watercolor",
+  "photo": "p17-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of an old brick kiln corridor with brick arches, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p17-woodcut": {
+  "card": "p17",
+  "style": "woodcut",
+  "photo": "p17-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of an old brick kiln corridor with brick arches, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p18-gold": {
+  "card": "p18",
+  "style": "gold",
+  "photo": "p18-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.85,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a river estuary with sand flats at low tide, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p18-ink": {
+  "card": "p18",
+  "style": "ink",
+  "photo": "p18-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 11,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a river estuary with sand flats at low tide, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p18-oil": {
+  "card": "p18",
+  "style": "oil",
+  "photo": "p18-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 101,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a river estuary with sand flats at low tide, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p18-watercolor": {
+  "card": "p18",
+  "style": "watercolor",
+  "photo": "p18-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 101,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a river estuary with sand flats at low tide, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p18-woodcut": {
+  "card": "p18",
+  "style": "woodcut",
+  "photo": "p18-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 101,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a river estuary with sand flats at low tide, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p19-gold": {
+  "card": "p19",
+  "style": "gold",
+  "photo": "p19-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a moat canal lined with trees, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p19-ink": {
+  "card": "p19",
+  "style": "ink",
+  "photo": "p19-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a moat canal lined with trees, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p19-oil": {
+  "card": "p19",
+  "style": "oil",
+  "photo": "p19-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 101,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a moat canal lined with trees, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p19-watercolor": {
+  "card": "p19",
+  "style": "watercolor",
+  "photo": "p19-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a moat canal lined with trees, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p19-woodcut": {
+  "card": "p19",
+  "style": "woodcut",
+  "photo": "p19-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 23,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a moat canal lined with trees, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p20-gold": {
+  "card": "p20",
+  "style": "gold",
+  "photo": "brick-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a red brick colonial government building, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p20-ink": {
+  "card": "p20",
+  "style": "ink",
+  "photo": "brick-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a red brick colonial government building, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p20-oil": {
+  "card": "p20",
+  "style": "oil",
+  "photo": "brick-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a red brick colonial government building, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p20-watercolor": {
+  "card": "p20",
+  "style": "watercolor",
+  "photo": "brick-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a red brick colonial government building, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p20-woodcut": {
+  "card": "p20",
+  "style": "woodcut",
+  "photo": "brick-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 3,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a red brick colonial government building, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p21-gold": {
+  "card": "p21",
+  "style": "gold",
+  "photo": "p21-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a red brick arch at the entrance of a forest trail, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.143,
+  "blank": [
+   [
+    140,
+    267,
+    334,
+    342
+   ]
+  ]
+ },
+ "p21-ink": {
+  "card": "p21",
+  "style": "ink",
+  "photo": "p21-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a red brick arch at the entrance of a forest trail, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.143,
+  "blank": [
+   [
+    140,
+    267,
+    334,
+    342
+   ]
+  ]
+ },
+ "p21-oil": {
+  "card": "p21",
+  "style": "oil",
+  "photo": "p21-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a red brick arch at the entrance of a forest trail, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.143,
+  "blank": [
+   [
+    140,
+    267,
+    334,
+    342
+   ]
+  ]
+ },
+ "p21-watercolor": {
+  "card": "p21",
+  "style": "watercolor",
+  "photo": "p21-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 11,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a red brick arch at the entrance of a forest trail, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.143,
+  "blank": [
+   [
+    140,
+    267,
+    334,
+    342
+   ]
+  ]
+ },
+ "p21-woodcut": {
+  "card": "p21",
+  "style": "woodcut",
+  "photo": "p21-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a red brick arch at the entrance of a forest trail, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly",
+  "crop_x": 0.143,
+  "blank": [
+   [
+    140,
+    267,
+    334,
+    342
+   ]
+  ]
+ },
+ "p22-gold": {
+  "card": "p22",
+  "style": "gold",
+  "photo": "p22-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 42,
+  "steps": 32,
+  "strength": 0.72,
+  "cn_scale": 0.8,
+  "cfg": 7.0,
+  "prompt": "golden hour illustration of a lake with an arched bridge and green hills, warm glowing sunlight, gilded highlights, luminous sky, detailed painterly digital art, cinematic lighting, magical atmosphere, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p22-ink": {
+  "card": "p22",
+  "style": "ink",
+  "photo": "p22-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.75,
+  "cfg": 7.5,
+  "prompt": "ink wash painting of a lake with an arched bridge and green hills, sumi-e, black ink on rice paper, expressive calligraphic brush strokes, misty atmosphere, generous empty space, monochrome grayscale, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p22-oil": {
+  "card": "p22",
+  "style": "oil",
+  "photo": "p22-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 7,
+  "steps": 32,
+  "strength": 0.8,
+  "cn_scale": 0.75,
+  "cfg": 7.0,
+  "prompt": "oil painting of a lake with an arched bridge and green hills, thick impasto brushstrokes, palette knife texture, impressionism, vivid warm colors, visible canvas texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p22-watercolor": {
+  "card": "p22",
+  "style": "watercolor",
+  "photo": "p22-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 101,
+  "steps": 32,
+  "strength": 0.82,
+  "cn_scale": 0.7,
+  "cfg": 7.0,
+  "prompt": "watercolor painting of a lake with an arched bridge and green hills, wet-on-wet, loose transparent washes, pigment pooling at the edges, white paper showing through, soft pastel palette, travel sketchbook illustration, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
+ },
+ "p22-woodcut": {
+  "card": "p22",
+  "style": "woodcut",
+  "photo": "p22-1.jpg",
+  "model": "Lykon/dreamshaper-8",
+  "controlnet": "lllyasviel/control_v11p_sd15_canny",
+  "seed": 101,
+  "steps": 32,
+  "strength": 0.9,
+  "cn_scale": 0.9,
+  "cfg": 7.5,
+  "prompt": "woodcut relief print of a lake with an arched bridge and green hills, linocut, bold carved black lines, flat blocks of color, limited palette of indigo, vermilion red and cream, rough paper texture, masterpiece",
+  "negative": "photo, photograph, photorealistic, 3d render, text, letters, watermark, signature, logo, frame, border, pagoda, extra buildings, lowres, blurry, jpeg artifacts, deformed, disfigured, extra limbs, ugly"
  }
 }

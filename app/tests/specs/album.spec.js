@@ -915,47 +915,48 @@ T.spec('album', function (t) {
     t.eq(app.$('.alb-v2__stack-art--0').getAttribute('data-card'), 'p12', '跨年新收的在最上面');
   });
 
-  /* 5c. 還沒生成成品的明信片（p12–p22）：收下之後在收藏裡是實景照片＋畫風濾鏡，不是插圖 */
-  t.test('十八尖山的防空洞（p21，沒有生成成品）：收藏各處都是照片＋收下的畫風，詳情寫照片出處', async function (app) {
+  /* 5c. p12–p22 以前沒有成品，收藏裡是實景照片＋畫風濾鏡；現在 22 張都有成品。
+         照片＋濾鏡留著當成品載不到（離線、還沒快取）時的退路：跟成品同一張照片，出處也照它寫 */
+  t.test('十八尖山的防空洞（p21）：收藏各處是收下那一款的成品；載不到才退回照片＋畫風濾鏡；詳情寫照片出處', async function (app) {
     await app.reset();
     const A = app.APP;
     T.helpers.collect(app, 'hill', { style: 'oil' });
     const ph = A.explore.cardPhoto('p21');
-    t.eq(A.explore.postcardSrc('p21', 'oil'), '', '前提：p21 沒有生成成品');
+    const want = A.explore.postcardSrc('p21', 'oil');
+    t.eq(want, 'assets/postcards/p21-oil.jpg', '前提：p21 有油畫的成品');
     t.ok(ph && ph.file === 'p21-1.jpg', '前提：p21 有自己的實景照片');
-    const photoOf = function (sel) {
+    const genOf = function (sel) {
       const img = app.$(sel + ' > img.card-gen');
-      return !!img && img.classList.contains('card-gen--photo') && img.getAttribute('src').endsWith('p21-1.jpg') &&
+      return !!img && !img.classList.contains('card-gen--photo') && img.getAttribute('src') === want &&
         img.getAttribute('data-style') === 'oil';
     };
     await app.go('/postcards');
     await app.tick(60);
     const cell = '[data-group="got"] [data-card="p21"] [data-card-art]';
-    t.ok(photoOf(cell), '/postcards：照片＋油畫');
+    t.ok(genOf(cell), '/postcards：油畫的成品');
+    t.includes(app.text('main.view[data-view]'), '實景照片', '頁底說明寫底圖是實景照片');
+    /* 成品載不到：同一個 <img> 換成底圖照片、套油畫濾鏡 */
     const img = app.$(cell + ' > img.card-gen');
-    t.ok(img && /exf-oil/.test(app.win.getComputedStyle(img).filter), '套的是油畫濾鏡：' + (img && app.win.getComputedStyle(img).filter));
+    img.dispatchEvent(new app.win.Event('error'));
+    await app.tick(60);
+    t.ok(img.classList.contains('card-gen--photo') && img.getAttribute('src').endsWith('p21-1.jpg') &&
+      img.getAttribute('data-style') === 'oil', '載不到：換成照片＋油畫');
+    t.ok(/exf-oil/.test(app.win.getComputedStyle(img).filter), '套的是油畫濾鏡：' + app.win.getComputedStyle(img).filter);
     t.ok(app.doc.getElementById('exf-oil'), '濾鏡定義放進文件了（不用先開過 /unlock）');
     t.eq(app.win.getComputedStyle(app.$(cell + ' > .postcard__art')).visibility, 'hidden', '底下的插圖藏起來（不從濾鏡的柔邊透出來）');
-    t.includes(app.text('main.view[data-view]'), '實景照片', '頁底說明寫底圖是實景照片');
     await app.go('/album');
     await app.tick(60);
     t.eq(app.$('.alb-v2__stack-art--0').getAttribute('data-card'), 'p21', '收藏首頁最上面是剛收的 p21');
-    t.ok(photoOf('.alb-v2__stack-art--0'), '疊卡也是照片＋油畫');
+    t.ok(genOf('.alb-v2__stack-art--0'), '疊卡也是油畫的成品');
     await app.go('/postcard/p21');
     await app.tick(60);
-    t.ok(photoOf('[data-flip] [data-card-art]'), '詳情也是照片＋油畫');
-    t.includes(app.text('[data-credit]'), ph.author, '詳情寫照片作者');
+    t.ok(genOf('[data-flip] [data-card-art]'), '詳情也是油畫的成品');
+    t.includes(app.text('[data-credit]'), ph.author, '詳情寫照片作者（成品是從那張照片生成的）');
     t.includes(app.text('[data-credit]'), ph.licence, '詳情寫授權');
     const a = app.$('[data-credit] a');
     t.ok(a && a.getAttribute('href') === ph.source && a.getAttribute('target') === '_blank', '出處連到原始頁面');
     t.noDeadButtons(app, '/postcard/p21');
     t.ok(t.countTappables(app) <= 10, '可按數 ' + t.countTappables(app) + ' ≤ 10');
-    /* 有成品的卡照舊用成品，也寫照片出處（成品是從那張照片生成的） */
-    await app.go('/postcard/p1');
-    await app.tick(60);
-    const gen = app.$('[data-flip] [data-card-art] > img.card-gen');
-    t.ok(gen && !gen.classList.contains('card-gen--photo'), 'p1 用生成的成品');
-    t.includes(app.text('[data-credit]'), '底圖照片', 'p1 也寫底圖照片出處');
     /* 週回顧的卡以前只有插圖（沒有 data-card-art）：現在也是收下的那一款 */
     await app.go('/week');
     await app.tick(60);

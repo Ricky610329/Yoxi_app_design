@@ -3,6 +3,7 @@
    不像瀏覽器測試只跑得到今天那一種。畫面與流程仍在 tests/specs/*.spec.js。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
 import { loadApp, memoryStorage } from './helpers.mjs';
 
 const STATE_KEY = 'yoxi-chengshi-v1-2';
@@ -329,12 +330,28 @@ test('cardFace：卡面的疊法只有一個——成品 → 底圖照片＋濾�
   assert.ok(p1.photo, '成品載不到時退回的底圖照片也在');
   assert.equal(p1.credit, E.cardPhoto('p1'), '出處＝cardPhoto');
   const p21 = E.cardFace('p21', 'oil');
-  assert.equal(p21.gen, '', 'p21 沒有生成成品');
-  assert.ok(p21.photo.endsWith('p21-1.jpg'), 'p21 用自己的實景照片');
+  assert.equal(p21.gen, 'assets/postcards/p21-oil.jpg', 'p21 也有成品（22 張都生成了）');
+  assert.ok(p21.photo.endsWith('p21-1.jpg'), 'p21 載不到成品時退回自己的實景照片');
   assert.equal(E.cardFace('p1', 'nope').gen, '', '不認得的款式沒有成品');
   assert.deepEqual([E.cardFace('nope', 'oil').gen, E.cardFace('nope', 'oil').photo, E.cardFace('nope', 'oil').credit], ['', '', null], '都沒有：插圖');
   /* 每一張明信片都有底圖照片（明信片自己的 → 對照表的地點 → 所在地點的），/unlock 與收藏看到的是同一張 */
   const all = APP.places().map((p) => p.card).filter(Boolean);
   assert.ok(all.length > 0);
   for (const c of all) assert.ok(E.cardPhoto(c), c + ' 有底圖照片');
+});
+
+test('明信片成品：每一張明信片的每一款都有檔案，index.json 記著底圖、提示詞與種子', () => {
+  const { APP, MOCK } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards', 'explore-face'] });
+  const E = APP.explore;
+  const dir = new URL('../../assets/postcards/', import.meta.url);
+  const idx = JSON.parse(readFileSync(new URL('index.json', dir), 'utf8'));
+  for (const c of MOCK.POSTCARDS) {
+    for (const d of E.CARD_STYLES) {
+      const file = c.id + '-' + d.key + '.jpg';
+      assert.equal(E.postcardSrc(c.id, d.key), 'assets/postcards/' + file, c.id + ' ' + d.key + '：POSTCARD_GEN 有這一張');
+      assert.ok(existsSync(new URL(file, dir)), file + '：檔案在');
+      const m = idx[c.id + '-' + d.key];
+      assert.ok(m && m.photo && m.prompt && m.seed != null, file + '：index.json 有底圖、提示詞、種子');
+    }
+  }
 });

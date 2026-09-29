@@ -846,7 +846,7 @@ T.spec('explore', function (t) {
     t.eq(E.postcardSrc('p11', 'ink'), 'assets/postcards/p11-ink.jpg', '成品路徑');
     t.eq(E.postcardSrc('p11', 'nope'), '', '不認得的款式沒有成品');
     t.eq(E.postcardSrc('zz', 'ink'), '', '不認得的明信片沒有成品');
-    t.eq(E.postcardSrc('p22', 'ink'), '', '還沒生成的明信片沒有成品（卡面退回照片＋濾鏡）');
+    t.eq(E.postcardSrc('p22', 'ink'), 'assets/postcards/p22-ink.jpg', '22 張都有成品（最後一張 p22 也是）');
     app.MOCK.POSTCARDS.forEach(function (c) {
       t.ok(E.cardPhoto(c.id), c.id + ' 有底圖照片');
     });

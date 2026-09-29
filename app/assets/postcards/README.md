@@ -1,6 +1,6 @@
 # 明信片成品（AI 生成）
 
-明信片各五款，對應五種畫風。目前生成了 p1–p11（55 張）；p12–p22 還沒生成，畫面上退回「實景照片＋SVG 濾鏡」的示意，補的時候跑 `app/tools/gen-postcards.py` 再更新 `explore-face.js` 的 `POSTCARD_GEN`。
+明信片各五款，對應五種畫風。22 張全部生成了（110 張）：p1–p11 在 Mac（MPS）上生成，p12–p22 在 2026-09-29 用 NVIDIA 顯示卡（CUDA）補齊。成品載不到（離線、還沒快取）時，畫面退回「實景照片＋SVG 濾鏡」的示意。新增明信片時跑 `app/tools/gen-postcards.py`，再更新 `explore-face.js` 的 `POSTCARD_GEN`。
 
 哪一款不是抽的，全部照規則（2026-09-27 拿掉機率）：
 
@@ -19,6 +19,10 @@
 - **底圖**：`prototype/assets/photos/` 的實景照片（Wikimedia Commons）。作者與授權在 `credits.js`，畫面上每張卡都會顯示。
 - **模型**：`Lykon/dreamshaper-8`（Stable Diffusion 1.5 微調，CreativeML OpenRAIL-M）＋ `lllyasviel/control_v11p_sd15_canny`（ControlNet 1.1）。img2img 加上照片的 Canny 邊緣來固定構圖，所以建築會留在原來的位置，只有畫風改變。
 - **產生器**：`app/tools/gen-postcards.py`。每張的底圖、提示詞、種子與參數都寫在 `index.json`，可以重現。
+- **p12–p22 多做的三件事**（參數都記在 `index.json`）：
+  - **挑種子**：每一款先生成五個種子的候選（`--try`），一張一張看過，挑筆觸、光線、構圖最好的那個（`PICK`）；同一組參數換種子，差別常常比換參數還大。
+  - **先補掉招牌字**：九讚頭的站名牌、橫山的站名牌、防空洞步道的石碑，模型畫中文只會畫成亂碼，所以生成前先把字塗成招牌的底色（`BLANK`，記在 `blank`）。畫面上是素面的牌子。
+  - **重新取景**：九讚頭框站房的雨棚與後面的山（`crop_x`）、防空洞把紅磚圓拱置中、春池玻璃只框夾鉗、手套與玻璃花（`crop_box`，不讓老師傅的臉進畫面）。
 
 ## 誠實標示
 

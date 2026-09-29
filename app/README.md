@@ -141,7 +141,7 @@ python app/tools/shoot-app.py        # 每條 route 用手機寬度拍一張（a
 - **地圖只有新竹 11×12 km**（OSM 抓一次、離線）。內灣在 28 km 外，不在底圖範圍，行程與路線上的內灣會夾到地圖邊緣。
 - **城市足跡少算八張卡**：22 張明信片裡有 8 張（合興、九讚頭、橫山、玻璃工藝博物館、春池玻璃、舊社的矽砂場、水源地的窯口、頭前溪河口）對不到地圖座標，收了也不進覆蓋率。
 - **PWA 要 http(s)**：`file://` 能用不能裝；區網 http 也不能裝，要 localhost 或 https。
-- 明信片成品（`assets/postcards/`，目前 p1–p11 共 11 張 × 5 款；p12–p22 還沒生成，卡面用照片＋濾鏡示意）是本機用 Stable Diffusion 依實景照片生成的示意（`tools/gen-postcards.py`），標「AI 生成示意」；地圖景點與列表縮圖仍是程式畫的插圖。三個虛構地點用同類實景當底圖（見 `assets/postcards/README.md`）。
+- 明信片成品（`assets/postcards/`，22 張 × 5 款共 110 張；離線載不到時卡面用照片＋濾鏡示意）是本機用 Stable Diffusion 依實景照片生成的示意（`tools/gen-postcards.py`），標「AI 生成示意」；地圖景點與列表縮圖仍是程式畫的插圖。三個虛構地點用同類實景當底圖（見 `assets/postcards/README.md`）。
 - 狀態只存在這台瀏覽器的 localStorage，換裝置或清資料就重來。
 
 ## 授權

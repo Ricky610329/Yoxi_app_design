@@ -553,7 +553,7 @@ APP.view('postcards', {
       (todo.length
         ? '<section class="alb-v2__cards" data-group="todo"><h2>還沒去的 ' + todo.length + ' 張</h2>' + grid(todo, false) + '</section>'
         : '') +
-      '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，底圖是當地的實景照片（還沒生成好的先用濾鏡處理），' +
+      '<p class="alb-foot alb-v2__note">明信片是 AI 依地點生成的示意圖，底圖是當地的實景照片（離線載不到時用照片加濾鏡代替），' +
         '照片出處寫在每張明信片裡。沒有期限，也不用照順序。</p>' +
     '</div></div>';
   },
