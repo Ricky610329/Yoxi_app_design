@@ -21,6 +21,8 @@ T.spec('ride', function (t) {
     t.ok(n <= T.tapMax(path), path + ' 可按數 ' + n + ' ≤ ' + T.tapMax(path));
     t.eq(app.errors.length, 0, path + ' 錯誤：' + app.errors.join('；'));
   }
+  /* 叫車首頁「叫車前往」→ 確認叫車頁「確認叫車」 */
+  const callRide = T.helpers.callRide;
 
   /* ---------------------------------------------------------------- 1. render */
   ROUTES.forEach(function (path) {
@@ -293,7 +295,7 @@ T.spec('ride', function (t) {
     await app.go('/ride');
     app.APP.ride.setDropoff('neiwan', 'e');
     await app.at('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     const A = app.APP;
     const km = A.fmt.km(A.place('neiwan').dist);
@@ -519,7 +521,7 @@ T.spec('ride', function (t) {
     t.eq(A.store.get('trip'), null, '收過的那一趟在 /ride 安靜清掉');
     A.ride.setDropoff('moat', 'e');
     await app.waitFor(function () { return app.$('[data-act="call-ride"]'); }, 2000, '叫車鈕');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     t.ok(!app.$('.app-confirm'), '新的一趟不再問「上一趟還沒收」');
     t.eq(A.store.get('trip').placeId, 'moat', '新行程');
@@ -564,13 +566,13 @@ T.spec('ride', function (t) {
     t.eq(app.route().path, '/unlock/neiwan', '沒有被拉回 /ride');
   });
 
-  t.test('叫車前的確認框開著時離開了 /ride：再按「直接叫車」不會覆蓋待解鎖的行程', async function (app) {
+  t.test('叫車前的確認框開著時離開了確認叫車頁：再按「直接叫車」不會覆蓋待解鎖的行程', async function (app) {
     const done = T.fixtures.trip({ phase: 'done', rated: true });
     const drop = T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' });
     await app.reset({ store: { trip: done, dropoff: drop } });
     const A = app.APP;
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     t.ok(app.$('.app-confirm'), '確認框開著');
     const no = app.$('.app-confirm [data-act="confirm-no"]');
     await app.go('/album');
@@ -587,20 +589,20 @@ T.spec('ride', function (t) {
     await app.reset({ store: { trip: done, dropoff: drop } });
     const A = app.APP, W = app.win;
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     t.ok(app.$('.app-confirm'), '確認框開著');
     (app.doc.activeElement || app.doc.body).dispatchEvent(new W.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await app.tick(60);
     t.ok(!app.$('.app-confirm'), 'Esc 關掉確認框');
-    t.eq(app.route().path, '/ride', 'Esc：留在 /ride');
+    t.eq(app.route().path, '/ride/confirm', 'Esc：留在確認叫車頁');
     t.eq(A.store.get('trip').placeId, 'neiwan', 'Esc：沒有叫車');
-    await app.click('[data-act="call-ride"]');
+    await app.click('[data-act="confirm-ride"]');
     const scrim = app.$('.app-confirm');
     if (scrim) scrim.click();
     await app.tick(60);
     t.ok(!app.$('.app-confirm'), '點遮罩關掉確認框');
     t.eq(A.store.get('trip').placeId, 'neiwan', '點遮罩：沒有叫車');
-    await app.click('[data-act="call-ride"]');
+    await app.click('[data-act="confirm-ride"]');
     await app.click('.app-confirm [data-act="confirm-no"]');
     await app.at('/trip');
     t.eq(A.store.get('trip').placeId, 'lake', '按了「直接叫車」才叫');
@@ -650,13 +652,16 @@ T.spec('ride', function (t) {
     await app.waitFor(function () { return app.route().path === '/ride' && hist(app) === i0 && app.$('[data-act="call-ride"]'); }, 3000, '選好 → 退回 /ride');
     t.eq(A.store.get('dropoff').id, 'market', 'dropoff=market');
     await app.click('[data-act="call-ride"]');
+    await app.at('/ride/confirm');
+    t.eq(hist(app), i0 + 1, '確認叫車頁在下一格');
+    await app.click('[data-act="confirm-ride"]');
     await app.at('/trip');
-    t.eq(hist(app), i0 + 1, '/trip 在下一格');
+    t.eq(hist(app), i0 + 1, '/trip 取代確認叫車頁（還是下一格）');
     await app.click('[data-act="cancel-trip"]');
     await app.click('[data-act="confirm-yes"]');
     await app.waitFor(function () { return app.route().path === '/ride' && hist(app) === i0 && app.$('[data-act="call-ride"]'); }, 3000, '取消 → 退回 /ride');
     t.eq(A.store.get('trip'), null, 'trip 清掉');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     A.ride.arrive();
     await app.at('/trip/done');
@@ -873,6 +878,10 @@ T.spec('ride', function (t) {
       await app.go('/ride');
       t.includes(app.text('.ride-drop__meta'), '距離待確認', '/ride 下車點寫距離待確認');
       t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-min]'), '/ride 沒有車資與分鐘');
+      await app.go('/ride/confirm');
+      t.includes(app.text('[data-cars]'), '距離待確認', '確認叫車頁的車種寫距離待確認');
+      t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-fare-lo]'), '確認叫車頁沒有車資');
+      checkPage(app, '/ride/confirm 距離不明');
       await app.go('/ride?mode=explore&area=moat');
       t.includes(app.text('[data-area-intro]'), '距離待確認', '探索地點卡寫距離待確認');
       t.ok(app.text('[data-area-intro]').indexOf('0 m') < 0, '不寫 0 m');
@@ -901,7 +910,7 @@ T.spec('ride', function (t) {
     const A = app.APP;
     t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip', 4000);
     if (!A.reduceMotion()) {
       t.eq(A.store.get('trip').phase, 'matching', '一開始是配對中');
@@ -971,6 +980,15 @@ T.spec('ride', function (t) {
     need('[data-act="open-points"]', '抽屜點數鈕');
     await app.go('/ride');
     need('.ride-sheet [data-act="toggle-sheet"]', '拉把');
+    app.APP.store.set('trip', null);
+    app.APP.store.set('dropoff', T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' }));
+    await app.go('/ride/confirm');
+    need('main.view .ride-cf__back', '確認叫車頁返回');
+    need('[data-pin="pickup"] .ride-cf-pin__label', '上車點標籤');
+    need('[data-pin="dest"] .ride-cf-pin__label', '下車點標籤');
+    need('.ride-cf__tab[data-toast]', '預約');
+    need('[data-act="pick-car"]', '車種');
+    need('.ride-cf__opt', '付款那一列');
     t.eq(sizes.length, 0, '小於 44：' + sizes.join('、'));
   });
 
@@ -1067,7 +1085,7 @@ T.spec('ride', function (t) {
     await app.go('/place/neiwan');
     await app.click('[data-place-foot] [data-act="set-dropoff"]');
     await app.at('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     t.eq(A.store.get('trip').via, 'k1', 'trip.via＝dropoff.via');
     await app.click('main.view [data-act="arrive"]');
@@ -1088,6 +1106,8 @@ T.spec('ride', function (t) {
   }, { timeout: 15000 });
 
   /* ================================================================ 7. 來回（去程 → 司機候車 → 回程）
+     叫車首頁的「單程／來回」入口 2026-09-29 拿掉了（yoxi 原本的流程沒有）；行程 module 還支援來回，
+     這裡用 fixture 或 APP.ride.trip.start(id, via, { round: true }) 建一趟。
      狀態機與公式的各種情況在 tests/unit/trip.test.mjs（node）；這裡驗畫面、流程、可按數與返回。 */
   function roundTrip(phase, extra) {
     return T.fixtures.trip(Object.assign({ phase: phase, round: true, via: 'e' }, extra || {}));
@@ -1095,59 +1115,26 @@ T.spec('ride', function (t) {
   const LAKE = function () { return T.fixtures.dropoff({ id: 'lake', name: '青草湖的舊戲院地基', km: 6.4, via: 'e' }); };
   function money(app, sel) { return Number(app.text(sel)); }
 
-  t.test('來回：選好下車點才有「單程／來回」（預設單程、掃碼讓位）；選來回 → 車資、叫車鈕跟著換；叫了車就回到單程', async function (app) {
+  t.test('叫車首頁沒有「單程／來回」（跟 yoxi 一樣）：選好下車點下一步就是叫車前往，掃碼一直都在', async function (app) {
     await app.reset();
     const A = app.APP, R = A.ride, F = A.fmt;
     await app.go('/ride');
-    t.ok(!app.$('[data-round-pick]'), '還沒選下車點：沒有單程／來回');
-    t.ok(app.$('main.view .ride-fab--scan'), '掃碼還在');
     R.setDropoff('lake', 'e');
-    await app.waitFor(function () { return app.$('[data-round-pick]'); }, 3000, '單程／來回出現');
-    const km = F.km(A.place('lake').dist), f = R.roundFare(km);
-    t.eq(app.text('.ride-round__on'), '單程', '預設單程');
-    t.ok(app.$('[data-act="pick-round"]') && !app.$('[data-act="pick-oneway"]'), '可按的只有「來回」那一格');
-    t.ok(!app.$('main.view .ride-fab--scan'), '這一刻掃碼讓位');
-    t.eq(money(app, '[data-fare]'), F.fare(km), '單程車資＝fare(km)');
-    t.includes(app.text('[data-act="call-ride"]'), '叫車前往', '單程的叫車鈕文字不變');
-    checkPage(app, '/ride 單程／來回（單程）');
+    await app.waitFor(function () { return app.$('[data-act="call-ride"]'); }, 3000, '叫車鈕');
+    const km = F.km(A.place('lake').dist);
+    t.ok(!app.$('[data-round-pick]') && !app.$('[data-act="pick-round"]') && !app.$('[data-act="pick-oneway"]'), '沒有單程／來回');
+    t.ok(app.$('main.view .ride-fab--scan'), '掃碼還在');
+    t.eq(money(app, '[data-fare]'), F.fare(km), '預估車資＝fare(km)');
+    t.includes(app.text('[data-act="call-ride"]'), '叫車前往', '叫車鈕寫叫車前往');
+    t.ok(app.text('main.view').indexOf('來回') < 0, '畫面上沒有來回');
+    checkPage(app, '/ride 下車點已填');
+  });
 
-    await app.click('[data-act="pick-round"]');
-    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '換成來回');
-    t.includes(app.text('.ride-round__on'), '來回', '選中來回');
-    t.eq(money(app, '[data-fare]'), f.total, '來回預估＝去程＋候車＋回程');
-    t.eq(money(app, '[data-fare-go]'), F.fare(km), '去程＝fare(km)');
-    t.eq(money(app, '[data-fare-back]'), F.fare(km), '回程＝fare(km)（一樣遠）');
-    t.eq(money(app, '[data-fare-wait]'), R.WAIT_FEE, '候車費＝常數');
-    t.eq(money(app, '[data-wait-max]'), R.WAIT_MAX_MIN, '司機最多等多久＝常數');
-    t.includes(app.text('[data-act="call-ride"]'), '來回', '叫車鈕寫來回');
-    t.eq(app.doc.activeElement, app.$('[data-act="call-ride"]'), '換完焦點在叫車鈕上');
-    checkPage(app, '/ride 單程／來回（來回）');
-
-    await app.click('[data-act="pick-oneway"]');
-    await app.waitFor(function () { return app.$('[data-act="pick-round"]'); }, 3000, '換回單程');
-    t.eq(money(app, '[data-fare]'), F.fare(km), '換回單程：車資回到 fare(km)');
-    t.ok(!app.$('[data-round-note]'), '單程沒有三段車資那一行');
-
-    await app.click('[data-act="pick-round"]');
-    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '再選來回');
-    await app.click('[data-act="call-ride"]');
-    await app.at('/trip');
-    const tr = A.store.get('trip');
-    t.ok(tr && tr.round === true && tr.placeId === 'lake' && tr.via === 'e', '叫的是來回（歸因照舊）');
-    await app.click('[data-act="cancel-trip"]');
-    await app.click('[data-act="confirm-yes"]');
-    await app.at('/ride');
-    t.eq(app.text('.ride-round__on'), '單程', '叫了車之後回到預設的單程');
-    await app.click('[data-act="clear-dropoff"]');
-    await app.waitFor(function () { return !app.$('[data-round-pick]'); }, 3000, '清掉下車點');
-    t.ok(app.$('main.view .ride-fab--scan'), '清掉下車點：掃碼回來');
-  }, { timeout: 15000 });
-
-  t.test('單程不變：不碰「來回」就叫車 → 行程沒有 round、去程沒有來回那一行、抵達直接到結算', async function (app) {
+  t.test('叫車（單程）→ 行程沒有 round、去程沒有來回那一行、抵達直接到結算', async function (app) {
     await app.reset({ store: { dropoff: LAKE() } });
     const A = app.APP;
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     t.eq('round' in A.store.get('trip'), false, '單程的行程沒有 round');
     t.ok(!app.$('[data-round-note]') && !app.$('[data-round-fare]'), '去程沒有來回的車資與說明');
@@ -1212,7 +1199,7 @@ T.spec('ride', function (t) {
     checkPage(app, '/trip/done 來回（評分後）');
   }, { timeout: 20000 });
 
-  t.test('來回全程：候車時收下（搭車、金框）→ 回程 → 到家 → 行程紀錄寫來回、點數多一列回程；返回鍵與歷史', async function (app) {
+  t.test('來回全程（行程 module 建的來回）：候車時收下（搭車、金框）→ 回程 → 到家 → 行程紀錄寫來回、點數多一列回程；返回鍵與歷史', async function (app) {
     await app.reset();
     const A = app.APP, R = A.ride, F = A.fmt;
     const km = F.km(A.place('neiwan').dist), card = A.place('neiwan').card;
@@ -1220,10 +1207,9 @@ T.spec('ride', function (t) {
     await app.go('/ride');
     const i0 = hist(app);
     R.setDropoff('neiwan', 'k1');
-    await app.waitFor(function () { return app.$('[data-act="pick-round"]'); }, 3000, '單程／來回');
-    await app.click('[data-act="pick-round"]');
-    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '來回');
-    await app.click('[data-act="call-ride"]');
+    await app.waitFor(function () { return app.$('[data-act="call-ride"]'); }, 3000, '叫車鈕');
+    R.trip.start('neiwan', 'k1', { round: true });
+    A.nav.go('/trip');
     await app.at('/trip');
     t.eq(hist(app), i0 + 1, '/trip 在下一格');
     R.arrive();
@@ -1344,14 +1330,6 @@ T.spec('ride', function (t) {
       return p;
     };
     try {
-      A.store.set('dropoff', T.fixtures.dropoff({ id: 'moat', name: '護城河的舊碼頭階梯', km: null, via: 'e' }));
-      await app.go('/ride');
-      await app.click('[data-act="pick-round"]');
-      await app.waitFor(function () { return app.$('[data-round-note]'); }, 3000, '來回');
-      t.includes(app.text('[data-round-note]'), '距離待確認', '/ride 來回：距離待確認');
-      t.ok(!app.$('main.view [data-fare]') && !app.$('main.view [data-fare-go]'), '/ride 沒有車資');
-      await app.click('[data-act="pick-oneway"]');
-      await app.waitFor(function () { return app.$('[data-act="pick-round"]'); }, 3000, '換回單程');
       A.store.set('trip', roundTrip('riding', { placeId: 'moat', km: null }));
       await app.go('/trip');
       t.includes(app.text('[data-phase="riding"]'), '距離待確認', '/trip 去程');
@@ -1370,7 +1348,7 @@ T.spec('ride', function (t) {
     }
   }, { timeout: 15000 });
 
-  t.test('/ride 可按數 ≤ 10：來回候車中＋待收、下車點＋待收＋單程／來回', async function (app) {
+  t.test('/ride 可按數 ≤ 10：來回候車中＋待收、到家＋待收＋下車點', async function (app) {
     const drop = LAKE();
     const cases = [
       ['來回去程', { trip: roundTrip('riding') }],
@@ -1387,11 +1365,136 @@ T.spec('ride', function (t) {
       t.ok(n <= 10, '/ride ' + c[0] + ' 可按數 ' + n + ' ≤ 10');
       t.noDeadButtons(app, '/ride ' + c[0]);
     }
-    await app.reset({ store: { trip: T.fixtures.trip({ phase: 'done', rated: true }), dropoff: drop } });
-    await app.go('/ride');
-    await app.click('[data-act="pick-round"]');
-    await app.waitFor(function () { return app.$('[data-act="pick-oneway"]'); }, 3000, '來回');
-    const n = t.countTappables(app);
-    t.ok(n <= 10, '/ride 下車點＋待收＋選了來回 可按數 ' + n + ' ≤ 10');
   }, { timeout: 15000 });
+
+  /* ================================================================ 8. 確認叫車（/ride/confirm，照 yoxi app）
+     叫車前往 → 這一頁（立即叫車／預約、車種、付款、確認叫車）→ /trip。這一頁不留在歷史裡。 */
+  function boxOf(el) { const r = el.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }
+  function overlap(a, b) { return !(a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t); }
+  function inside(a, b) { return a.l >= b.l - 0.5 && a.r <= b.r + 0.5 && a.t >= b.t - 0.5 && a.b <= b.b + 0.5; }
+
+  t.test('確認叫車頁：叫車前往 → 這一頁；車資＝公式、司機幾分鐘到＝PICKUP_MIN；換車種；確認叫車 → /trip，這一頁不留在歷史裡', async function (app) {
+    await app.reset({ store: { dropoff: LAKE() } });
+    const A = app.APP, R = A.ride, F = A.fmt;
+    await app.go('/ride');
+    const i0 = hist(app);
+    await app.click('[data-act="call-ride"]');
+    await app.at('/ride/confirm');
+    t.eq(hist(app), i0 + 1, '確認叫車頁在下一格');
+    t.eq(A.store.get('trip'), null, '還沒叫車：沒有行程');
+    const tb = app.$('#tabbar');
+    t.ok(!tb || tb.hidden, '沒有底欄');
+    checkPage(app, '/ride/confirm');
+    t.eq(t.countTappables(app), 10, '可按數剛好 10（選中的車種、立即叫車是字）');
+
+    /* 車資：多元＝fare(km)；跳表＝多元 × METER_RANGE、往外取到 10 元 */
+    const km = F.km(A.place('lake').dist), f = R.carFares(km);
+    t.eq(f.multi, F.fare(km), 'carFares：多元＝fare(km)');
+    t.eq(f.lo, Math.floor(F.fare(km) * R.METER_RANGE[0] / 10) * 10, 'carFares：跳表下限');
+    t.eq(f.hi, Math.ceil(F.fare(km) * R.METER_RANGE[1] / 10) * 10, 'carFares：跳表上限');
+    t.ok(f.lo <= f.multi && f.multi <= f.hi, '多元落在跳表範圍裡');
+    t.eq(R.carFares(null), null, '距離不明：null');
+    const card = function (id) { return app.$('[data-cars] [data-car="' + id + '"]'); };
+    const num = function (id, sel) { const e = card(id) && card(id).querySelector(sel); return e ? Number(e.textContent) : null; };
+    t.eq(num('any', '[data-fare-lo]'), f.lo, '不限車種：下限');
+    t.eq(num('any', '[data-fare-hi]'), f.hi, '不限車種：上限');
+    t.includes(card('any').textContent, '多元 $' + f.multi, '不限車種：寫多元的車資');
+    t.eq(num('meter', '[data-fare-lo]'), f.lo, '小黃：下限');
+    t.eq(num('meter', '[data-fare-hi]'), f.hi, '小黃：上限');
+    t.eq(num('multi', '[data-fare]'), f.multi, '多元計程車＝fare(km)');
+    const mins = app.$$('main.view [data-pickup-min]');
+    t.ok(mins.length === 4 && mins.every(function (e) { return Number(e.textContent) === R.PICKUP_MIN; }),
+      '幾分鐘到＝PICKUP_MIN（標籤＋三種車）');
+
+    /* 預設不限車種：選中的是字（aria-current），另外兩種是按鈕 */
+    t.ok(card('any').tagName !== 'BUTTON' && card('any').getAttribute('aria-current') === 'true', '預設不限車種、是字');
+    t.eq(app.$$('[data-cars] [data-act="pick-car"]').length, 2, '另外兩種是按鈕');
+    t.ok(app.$('.ride-cf__tab.is-on') && app.$('.ride-cf__tab.is-on').tagName !== 'BUTTON', '立即叫車是字');
+
+    /* 地圖：上車點與下車點兩個標籤，在地圖裡、不互相蓋住、不被返回鍵蓋住 */
+    const mapBox = boxOf(app.$('[data-confirm-map] .app-map'));
+    const back = boxOf(app.$('.ride-cf__back'));
+    const from = app.$('[data-pin="pickup"] .ride-cf-pin__label'), to = app.$('[data-pin="dest"] .ride-cf-pin__label');
+    t.includes(from.textContent, app.MOCK.USER.home, '上車點標籤＝家');
+    t.eq(app.text('[data-pin="dest"] [data-drop-name]'), A.place('lake').name, '下車點標籤＝地名');
+    t.ok(inside(boxOf(from), mapBox) && inside(boxOf(to), mapBox), '兩個標籤都在地圖裡');
+    t.ok(!overlap(boxOf(from), boxOf(to)), '兩個標籤不互相蓋住');
+    t.ok(!overlap(boxOf(from), back) && !overlap(boxOf(to), back), '標籤不被返回鍵蓋住');
+    t.eq(from.getAttribute('href'), '#/pickup', '點上車點標籤換上車點');
+    t.eq(to.getAttribute('href'), '#/dropoff', '點下車點標籤換下車點');
+
+    /* 換車種：就地重畫，焦點留在選中的那一張 */
+    await app.click('[data-act="pick-car"][data-car="meter"]');
+    t.ok(card('meter').classList.contains('is-on') && card('meter').tagName !== 'BUTTON', '選了小黃');
+    t.eq(app.doc.activeElement, card('meter'), '焦點在選中的那一張');
+    t.ok(card('any').tagName === 'BUTTON', '不限車種變回按鈕');
+    t.eq(num('meter', '[data-fare-lo]'), f.lo, '換了之後車資照樣是公式');
+    checkPage(app, '/ride/confirm（小黃）');
+
+    /* 確認叫車 → /trip（取代這一頁）；返回回到叫車首頁 */
+    await app.click('[data-act="confirm-ride"]');
+    await app.at('/trip');
+    const tr = A.store.get('trip');
+    t.ok(tr && tr.placeId === 'lake' && tr.via === 'e' && !('round' in tr), '叫的是單程、歸因照舊');
+    t.eq(hist(app), i0 + 1, '/trip 取代確認叫車頁');
+    A.nav.back();
+    await app.at('/ride');
+    t.eq(hist(app), i0, '返回回到叫車首頁（不是確認叫車頁）');
+    t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+  }, { timeout: 15000 });
+
+  t.test('確認叫車頁：連點只推一格、只叫一次；返回鍵回 /ride；沒有下車點、行程進行中都給回去的路', async function (app) {
+    await app.reset({ store: { dropoff: LAKE() } });
+    const A = app.APP;
+    await app.go('/ride');
+    const i0 = hist(app);
+    const call = app.$('[data-act="call-ride"]');
+    call.click(); call.click();
+    await app.at('/ride/confirm');
+    await app.tick(200);
+    t.eq(hist(app), i0 + 1, '連點叫車前往只推一格');
+    const go = app.$('[data-act="confirm-ride"]');
+    go.click(); go.click();
+    await app.at('/trip');
+    await app.tick(200);
+    t.eq(hist(app), i0 + 1, '連點確認叫車只換一次');
+    t.eq(A.store.get('trip').placeId, 'lake', '叫了這一趟');
+    A.store.set('trip', null);
+    A.store.set('dropoff', LAKE());
+    await app.go('/ride');
+    const i1 = hist(app);
+    await app.click('[data-act="call-ride"]');
+    await app.at('/ride/confirm');
+    await T.helpers.clickBack(app);
+    await app.at('/ride');
+    t.eq(hist(app), i1, '返回鍵退回原本那一格 /ride');
+    t.eq(A.store.get('trip'), null, '返回不會叫車');
+
+    await app.reset();
+    await app.go('/ride/confirm');
+    t.includes(app.text('main.view'), '還沒有下車點', '沒有下車點');
+    t.ok(app.$('main.view a[href="#/ride"]'), '回叫車');
+    checkPage(app, '/ride/confirm 沒有下車點');
+    await app.reset({ store: { trip: neiwanTrip('riding'), dropoff: LAKE() } });
+    await app.go('/ride/confirm');
+    t.includes(app.text('main.view'), '行程進行中', '行程進行中');
+    t.ok(app.$('main.view a[href="#/trip"]'), '回到行程');
+    checkPage(app, '/ride/confirm 行程進行中');
+    t.eq(app.APP.store.get('trip').placeId, 'neiwan', '沒有動到進行中的行程');
+  }, { timeout: 15000 });
+
+  t.test('確認叫車頁的地圖：玻璃窯跟家同一個座標 → 標籤一上一下；內灣超出底圖 → 目的地夾在邊緣；都在地圖裡', async function (app) {
+    const cases = [['glass-kiln', false], ['neiwan', true], ['moat', false], ['hill', false]];
+    for (const c of cases) {
+      await app.reset({ store: { dropoff: T.fixtures.dropoff({ id: c[0], name: c[0], km: null, via: 'e' }) } });
+      await app.go('/ride/confirm');
+      await app.tick(60);
+      const mapBox = boxOf(app.$('[data-confirm-map] .app-map'));
+      const from = app.$('[data-pin="pickup"] .ride-cf-pin__label'), to = app.$('[data-pin="dest"] .ride-cf-pin__label');
+      t.ok(inside(boxOf(from), mapBox) && inside(boxOf(to), mapBox), c[0] + '：兩個標籤都在地圖裡');
+      t.ok(!overlap(boxOf(from), boxOf(to)), c[0] + '：兩個標籤不互相蓋住');
+      t.eq(app.$('[data-pin="dest"]').classList.contains('is-edge'), c[1], c[0] + '：目的地' + (c[1] ? '' : '不') + '夾在邊緣');
+      t.eq(app.errors.length, 0, c[0] + ' 錯誤：' + app.errors.join('；'));
+    }
+  }, { timeout: 20000 });
 });

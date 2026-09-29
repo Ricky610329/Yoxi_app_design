@@ -28,8 +28,8 @@
 | 好友 | 不做 | 五個未決還在，不進 app |
 
 app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈）：
-- 叫車真的會「叫」：下車點填好 → 叫車 → 配對中 → 行程中（含「這條路上」內容卡）→ 行程完成 → 評分後金色橫幅 → 限定版解鎖 → 點數 +50。
-- 來回（2026-09-27）：選好下車點可選「來回 · 司機等你」→ 去程 → 司機候車（在 100 m 內走走、收下這一次的明信片）→ 回程 → 到家結算（去程＋候車費＋回程）。司機最多等幾分鐘、候車費是 ride.js 的常數，標「假設」（yoxi 沒有公開的來回產品與價格）；畫面上沒有計時器、沒有倒數。
+- 叫車真的會「叫」：下車點填好 → 叫車前往 → 確認叫車（`#/ride/confirm`：立即叫車／預約、車種與車資、付款、確認叫車，照 yoxi app 的那一頁）→ 配對中 → 行程中（含「這條路上」內容卡）→ 行程完成 → 評分後金色橫幅 → 限定版解鎖 → 點數 +50。確認叫車頁叫了車就換成 `/trip`（不留在歷史裡）；上一趟的明信片還沒收的確認框在這一頁的「確認叫車」才問。
+- 來回（2026-09-27；**2026-09-29 拿掉叫車首頁的「單程／來回 · 司機等你」入口**，跟 yoxi 原本的叫車流程一樣只有單程。下面的行程邏輯、`/trip` 的候車與回程、結算、行程紀錄都還在，只剩 `APP.ride.trip.start(id, via, { round: true })` 與測試會建來回；要整個拿掉或換個入口是之後的決定）：去程 → 司機候車（在 100 m 內走走、收下這一次的明信片）→ 回程 → 到家結算（去程＋候車費＋回程）。司機最多等幾分鐘、候車費是 ride.js 的常數，標「假設」（yoxi 沒有公開的來回產品與價格）；畫面上沒有計時器、沒有倒數。
 - 設定下車地點頁（`#/dropoff`）：清單＋搜尋，資料全部來自 `MOCK`。
 - 第一次開的 onboarding（三張，可略過）。
 - 推播是 app 內的浮層（早／晚各一則，一天最多兩則），由 demo 工具觸發。
@@ -358,7 +358,7 @@ T.spec('ride', function (t) {
 - `T.ROUTES`：§8 每條 route 一個範例網址（`{ path, area, flow?, expect? }`）；`T.routes({ area, extra, skip, root })` 從它挑。app.spec 拿它跟 `APP.routes()` 對帳，新增 route 沒放範例就 FAIL。
 - `T.tapMax(path)`：可按數上限（§6.3-4）。
 - `T.fixtures.trip(o)`／`T.fixtures.dropoff(o)`：store 的行程與下車點初值（§3.3 的形狀只在這裡）；`app.reset({ cards: [{ id, date, by, note, km }] })` 在 demo 的 8 張之外多收幾張（收完重載，跟真的收過一樣）。
-- `T.helpers`：`clickBack`、`histI`、`drag(app, grip, dy, {id, init, hold})`、`revealThrough`（非 still 的翻卡）、`seasonDate(app, 款式 key)`（那個季節的 `'YYYY-MM-DD'`，給 `store.demoDate` 指定 /unlock 的款式）。
+- `T.helpers`：`clickBack`、`callRide`（叫車前往 → 確認叫車）、`histI`、`drag(app, grip, dy, {id, init, hold})`、`revealThrough`（非 still 的翻卡）、`seasonDate(app, 款式 key)`（那個季節的 `'YYYY-MM-DD'`，給 `store.demoDate` 指定 /unlock 的款式）。
 node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …] | 'all', now, storage })` 照 index.html 的順序載真的 views（只跑到註冊與匯出，不 render），`now` 固定時間。
 純計算（公式、排序、款式規則、日期範圍）寫成 node 測試（`tests/unit/views.test.mjs`），瀏覽器 spec 只驗畫面與流程。
 - 斷言是軟的：失敗記下來繼續跑，任何一條失敗該 test 就 FAIL；例外與逾時（預設 8 s）也是 FAIL，附 stack 前兩行。
@@ -390,6 +390,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 需要 core 多給一個 helper 時：先在自己的 view 檔裡以 `APP.<area>.<fn>` 命名空間放（例 `APP.ride.setDropoff()`），
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
 - `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
+- `APP.ride.call()`：叫車首頁的「叫車前往」→ `#/ride/confirm`（行程進行中 → `#/trip`；沒有下車點只 toast）。`APP.ride.carFares(km)` → `{ multi, lo, hi }` 或 null（距離不明）：多元＝`APP.fmt.fare(km)`（跟行程中、結算頁同一個數），小黃／跳表多元＝多元 × `METER_RANGE`、往外取到 10 元；常數 `PICKUP_MIN`（司機幾分鐘到）與 `METER_RANGE` 是「假設」（yoxi 的派車估計與跳表範圍拿不到；倍數量自 yoxi app 截圖）
 - `APP.explore.collect(placeId, { note })`：收下這一次的明信片（explore 提供；/unlock 用）。**每一次來都收一張**：還沒收過寫進 STATE（圖鑑、獎章、去過的地方都認它），收過的（別天）記進 `store.visits`（第 N 次）；同一個地方同一天只收一張（`APP.explore.canCollect(地點或卡片 id)`，今天看 `store.demoDate`）；回傳有沒有收到一張。呼叫的人只給那一句話，其餘由它判斷：有搭 yoxi 抵達這裡的那一趟（`APP.ride.trip.arrivedAt`）就是搭車——公里用這一趟的、收下時 `APP.ride.trip.consume` 用掉它（連同 rideVia 歸因）；否則走路——公里用地方的距離，行程不碰（還沒領的限定版不會消失）。哪一款、蓋哪些郵戳照 `cardRule`（今天的日期，demo 可用 `store.demoDate` 撥）。經 `APP.state.collect` 寫進 STATE（日期也是 `cardRule` 的那一天；跟 app store 的寫入包成一次 state:change，寫完才發）；第一次的款式記進 `store.cardStyle[卡片 id]`、節日與里程記進 `store.cardMarks[卡片 id]`，回訪的全部記在那一筆 `store.visits`。測試要準備「收過了」的狀態用 `T.helpers.collect(app, placeId, { by, style, note })`（`style` 是四季的一款，會暫時撥 `demoDate`）或 `app.reset({ cards })`
 - `APP.explore.cardOrigin(cardId, v)`（explore 提供）：收下的那一張是怎麼來的（v 是第幾次，省略是第一次），還沒收或沒有這一次是 null：`{ id, v, visits, first, date:'MM.DD', ymd, dateText:'YYYY.MM.DD', note, km, by:'walk'|'ride', style, gold, limited, via, festival, mile, lines, marks }`。`gold`＝金框那一款或限定版；`limited` 只給第一次（回訪不再給限定版與 +50）；`festival`／`mile` 只認收下時記的（demo 一開始的 8 張沒有紀錄，就沒有節日版；第一次都蓋首訪戳）；
   另有 `visits(卡片或地點 id)`（這個地方收過的每一次，舊到新）、`recentVisits(n)`（全部收下的，最新的在前，照 `seq`）、`rideKm()`（搭 yoxi 去收明信片的累積公里：里程紀念看它）、`totalKm()`（收藏首頁「留下的距離」＝STATE.all.km＋回訪的公里）；`lines`＝為什麼是這一款（`ruleLines`；明信片頁不再念它，改念 `verseOf(卡片 id, cardOrigin)` 的那一句，接在標題底下 `[data-verse]`）；`marks`＝卡面的郵戳 HTML（`.card-marks`，樣式在 explore.css）；`limited`＝`APP.ride.limitedCard`；`via`＝`store.rideVia`。收藏、叫車的浮起來小卡、探索的「已收藏」一行都問它，不各自翻 STATE 的 by、store.cardStyle、store.rideVia
@@ -416,6 +417,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/ride` | 預設搭車；面板內 pill 切探索（`?mode=explore`），選地區再加 `&area=` | ride | `variant-f-home.html`、`variant-e-home.html`、`concept-map-home.html` | ride |
 | `/dropoff` | 設定下車地點（清單＋搜尋） | ride | 新（參考 `pickup.html` 版型） | ride |
 | `/pickup` | 設定上車地點 | ride | `pickup.html` | ride |
+| `/ride/confirm` | 確認叫車（照 yoxi app）：地圖上上車點（司機幾分鐘到）與下車點兩個標籤、立即叫車／預約、三種車（不限車種／小黃／跳表多元／多元計程車）與車資、付款那一列、確認叫車 → `/trip`（取代這一頁）；沒有下車點或行程進行中給回去的路 | null | 新（yoxi app 截圖） | ride |
 | `/trip` | 配對中→行程中（「這條路上」卡）；來回多「司機候車」（收下這一次的明信片、回程、取消回程）與「回程」兩段 | null | `ride.html`、`variant-k5-unlock.html`（回程） | ride |
 | `/trip/done` | 行程完成、評分、金色橫幅；來回到家才有，寫去程／候車／回程三段 | null | `ride-done.html` | ride |
 | `/drawer` | 側邊抽屜（覆蓋層） | ride | `drawer.html` | ride |

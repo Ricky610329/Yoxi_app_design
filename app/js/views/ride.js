@@ -3,16 +3,16 @@
 
    回答什麼：
       叫車這一條線在 app 裡真的走得完：叫車首頁預設搭車，面板內可切探索（F＋E）
-     → 設定下車地點 → 叫車 → 配對中 → 行程中（「這條路上」內容卡）→ 行程完成
-     → 評分之後才出現金色橫幅 → 限定版解鎖（explore 接手）→ 點數 +50。
-     來回（長輩最需要的那一種）：選好下車點之後可以選「來回 · 司機等你」→ 去程 → 抵達、司機在附近候車
-     （/trip 寫「司機最多等 N 分鐘」，主要動作是收下這一次的明信片）→「回程，載我回家」→ 到家 → 結算與評分。
-     車資＝去程＋候車費＋回程，每一段都用公式算；回程也有一列搭車回饋，行程紀錄寫「來回」。
+     → 設定下車地點 → 叫車前往 → 確認叫車（車種、車資，跟 yoxi 原本那一頁一樣）→ 配對中
+     → 行程中（「這條路上」內容卡）→ 行程完成 → 評分之後才出現金色橫幅 → 限定版解鎖（explore 接手）→ 點數 +50。
+     來回（去程 → 司機候車 → 回程）的行程邏輯還在（TRIP 的 round、/trip 的候車與回程、結算、行程紀錄），
+     但叫車首頁的「單程／來回 · 司機等你」入口在 2026-09-29 拿掉了：yoxi 原本的叫車流程沒有這個選項。
      旁邊掛著叫車 app 原本就有的幾頁：抽屜、和泰 Points、通知中心、行程紀錄、上車點。
 
    從哪張原型來：
       /ride        variant-f-home.html（面板內切模式）、variant-e-home.html（探索地點）、home.html（搭車 sheet）、
                   concept-map-home.html（真實地圖的中心與視野）、variant-k-ride.html（車資／分鐘公式）
+     /ride/confirm  新（照 yoxi app 的確認叫車頁：立即叫車／預約、車種清單、付款、確認叫車）
      /dropoff     新（版型參考 pickup.html）            /pickup     pickup.html
      /trip        ride.html                              /trip/done  ride-done.html
      /drawer      drawer.html                            /points     points.html
@@ -28,10 +28,11 @@
      - 「略過下車地點，繼續叫車」拿掉：app 版的叫車需要目的地才算得出車資，
        而且叫車首頁的可按數已經到 10（拉把是 <button>，也算一顆）。選好目的地之後「機場接送」讓位給叫車鈕；
        待收明信片的金色入口在時不放「清除」。
-     - 單程／來回的選擇只在「選好下車點、還沒叫車」時出現，預設單程：單程的叫車還是同一顆鈕、同樣的 tap 數。
-       它是一組兩格的切換（選中的那一格是字、不是按鈕，跟搭車／探索一樣），只多一顆可按；
-       這一刻右上角的「掃碼」讓位給它——掃碼跟這一次要叫的車無關（原型也沒有做那一頁，按了只有 toast），
-       可按數仍 ≤ 10（下車點＋待收明信片最擠的那一刻也是）。叫了車之後選擇收起來，掃碼回來。
+     - 叫車首頁沒有「單程／來回」：跟 yoxi 原本一樣，選好下車點下一步就是「叫車前往」。
+     - 確認叫車頁的地圖跟行程地圖一樣不畫路線（yoxi 原本畫了；這份原型沒有路徑規劃）：只有上車點與下車點兩個標籤，
+       視野框住兩點。司機幾分鐘到（PICKUP_MIN）與跳表的車資範圍（METER_RANGE）是「假設」，寫成檔頭的常數；
+       多元計程車的車資＝APP.fmt.fare(km)，跟行程中、結算頁同一個數。預約、付款、點數折抵、乘車備註只有 toast。
+       選中的車種、立即叫車是字、不是按鈕（跟搭車／探索一樣），整頁可按數剛好 10。
      - 來回沒有計時器、沒有倒數：候車寫成「司機最多等 N 分鐘」這一句靜態的話；候車費一趟固定一筆，
        不按分鐘跳錶（沒有一個會跑的數字要長輩盯著）。
      - 來回的等候上限與候車費是「假設」（yoxi 沒有公開的來回／候車產品與價目），寫成檔頭的常數。
@@ -40,7 +41,9 @@
    跨區塊提供（ARCHITECTURE.md §7）：
      APP.ride.setDropoff(placeId, via)   寫 store.dropoff → toast → #/ride（已在 /ride 就重畫）
      APP.ride.clearDropoff()
-     APP.ride.arrive()                   demo：行程直接抵達下一站（system 的 demo 面板用）：單程 → #/trip/done；
+     APP.ride.call()                     叫車前往：→ #/ride/confirm（行程進行中 → #/trip）
+     APP.ride.carFares(km)               確認叫車頁的車資 { multi, lo, hi }（距離不明是 null）
+     APP.ride.arrive()                  demo：行程直接抵達下一站（system 的 demo 面板用）：單程 → #/trip/done；
                                          來回的去程 → #/trip（司機候車）；候車、回程 → #/trip/done（到家）
      APP.ride.trip                       行程 module：store.trip 只有它讀寫（current／active／arrivedAt／pending／waiting／phase、
                                          start／toRiding／arrive／arriveAt／back／cancel／rate／consume／clear／clearBroken）
@@ -85,6 +88,13 @@ const FARE_PER_POINT = 20;
    長輩在多大的範圍內走走、收下這一次的明信片：跟走路抵達同一個數（explore.js 的 APP.explore.ARRIVE_RADIUS_M），這裡不另寫。 */
 const WAIT_MAX_MIN = 60;
 const WAIT_FEE = 100;
+/* 確認叫車頁（/ride/confirm）。yoxi 的派車估計與小黃跳表的範圍拿不到，下面兩個是「假設」：
+   - PICKUP_MIN：司機幾分鐘到上車點（variant-k-ride.html 的 PICKUP_MIN，同一個數）。三種車種寫同一個。
+   - METER_RANGE：小黃／跳表多元的預估範圍＝多元的車資 × 這兩個倍數，往外取到 10 元。
+     倍數量自 yoxi app 確認叫車頁的截圖（多元 $4240、小黃 $3920-$4640）。
+   不限車種兩種都派：範圍＝兩者合起來（多元落在跳表範圍裡，所以跟小黃一樣）。 */
+const PICKUP_MIN = 4;
+const METER_RANGE = [0.92, 1.09];
 const DRIVER = { name: '陳先生', plate: 'AHB-2836', car: 'TOYOTA Corolla Cross · 白色' };
 const PICKUPS = [
   { name: '水利路 46 巷 58 號', area: '新竹市東區' },
@@ -104,8 +114,8 @@ const DROP_LIMIT = 7;
 
 /* 上車點只活在這一次開 app（store 沒有這個鍵；契約 §3.3 不另開） */
 let pickupName = null;
-/* 單程或來回：叫車首頁上選的，跟上車點一樣只活在這一次開 app；叫了車就回到單程（預設） */
-let roundPick = false;
+/* 確認叫車頁選的車種（CARS 的 id），跟上車點一樣只活在這一次開 app */
+let carPick = 'any';
 
 /* ---------------------------------------------------------------- 小工具 */
 function M() { return window.MOCK; }
@@ -128,6 +138,17 @@ function roundFare(km) {
   if (km == null) return null;
   const go = F.fare(km);
   return { go: go, wait: WAIT_FEE, back: go, total: go + WAIT_FEE + go };
+}
+/* 確認叫車頁的車資：多元＝fare（行程中、結算頁同一個數）；小黃／跳表多元＝多元 × METER_RANGE，往外取到 10 元。
+   距離不明 → null（不寫車資，跟單程同一條） */
+function carFares(km) {
+  if (km == null) return null;
+  const multi = F.fare(km);
+  return {
+    multi: multi,
+    lo: Math.floor(multi * METER_RANGE[0] / 10) * 10,
+    hi: Math.ceil(multi * METER_RANGE[1] / 10) * 10,
+  };
 }
 /* 這一趟要付多少（單程＝fare、來回＝總數）；距離不明是 null */
 function tripFare(round, km) {
@@ -425,7 +446,6 @@ function setDropoff(placeId, via) {
 
 function clearDropoff() {
   store().set('dropoff', null);
-  roundPick = false;                 /* 沒有目的地就沒有「來回」可選；下一次選好目的地從單程開始 */
   const cur = APP.nav.current();
   if (cur && cur.path === '/ride') APP.nav.go('/ride', { replace: true, dir: 'none' });
 }
@@ -445,21 +465,36 @@ function arrive() {
 }
 
 /* confirm 開著的時候世界可能變了（瀏覽器返回、demo 抵達、別的入口改了下車點）：
-   回答回來時只在「還在叫車首頁的搭車模式、trip 與 dropoff 都沒變」才照做 */
+   回答回來時只在「還在確認叫車頁、trip 與 dropoff 都沒變」才照做 */
+const CONFIRM_PATH = '/ride/confirm';
 function rideSnapshot() {
   return JSON.stringify([TRIP.current(), store().get('dropoff')]);
 }
-function stillOnRide() {
+function stillOnConfirm() {
   const here = APP.nav.current();
-  return !!(here && here.path === '/ride' && here.query.get('mode') !== 'explore');
+  return !!(here && here.path === CONFIRM_PATH);
+}
+/* 這一次要叫的下車點（認得的地方），沒有就 null */
+function dropPlace() {
+  const d = store().get('dropoff');
+  return d && d.id ? APP.place(d.id) : null;
 }
 
+/* 叫車首頁的「叫車前往」：跟 yoxi 一樣先到確認叫車頁（車種、車資），在那裡按「確認叫車」才真的叫 */
 function callRide() {
   const here = APP.nav.current();
-  if (here && here.path === '/trip') return;     /* 連點：第一下已經到行程頁了 */
+  if (here && (here.path === '/trip' || here.path === CONFIRM_PATH)) return;   /* 連點：第一下已經換頁了 */
   if (TRIP.active()) { APP.nav.go('/trip'); return; }
+  if (!dropPlace()) { APP.ui.toast('先選一個下車點'); return; }
+  APP.nav.go(CONFIRM_PATH);
+}
+
+/* 確認叫車頁的「確認叫車」 */
+function confirmRide() {
+  if (!stillOnConfirm()) return;                  /* 連點：第一下已經到行程頁了 */
+  if (TRIP.active()) { APP.nav.go('/trip', { replace: true }); return; }
   const d = store().get('dropoff');
-  if (!d || !d.id || !APP.place(d.id)) { APP.ui.toast('先選一個下車點'); return; }
+  if (!dropPlace()) { APP.ui.toast('先選一個下車點'); return; }
   /* 上一趟的限定版還沒收：先問一次。先去解鎖 → 不建新 trip；直接叫車 → 新行程覆蓋舊的（契約 §3.3 只有一筆 trip）。
      APP.ui.confirm：按「直接叫車」是 false；按 Esc、點遮罩、導覽離開（core 的 dismissOverlays）是 null。
      叫車是有後果的動作，只認真的按了「直接叫車」（=== false）；null 什麼都不做。 */
@@ -471,7 +506,7 @@ function callRide() {
     APP.ui.confirm({ text: pend.limited ? '上一趟的限定明信片還沒收，要先去解鎖嗎？' : '上一趟的明信片還沒收，要先去收下嗎？',
                      yes: pend.limited ? '先去解鎖' : '先去收下', no: '直接叫車' }).then(function (yes) {
       asking = false;
-      if (!stillOnRide() || rideSnapshot() !== snap) return;
+      if (!stillOnConfirm() || rideSnapshot() !== snap) return;
       if (yes === true) APP.nav.go(pend.href.slice(1));
       else if (yes === false) startTrip(d);
     }, function () { asking = false; });
@@ -481,10 +516,10 @@ function callRide() {
 }
 
 let asking = false;
+/* 叫了車，確認叫車頁就換成行程頁（不留在歷史裡）：行程頁的上一格還是叫車首頁，取消、返回都回到那一格 */
 function startTrip(d) {
-  TRIP.start(d.id, d.via, { round: roundPick });   /* via：轉換歸因，這個下車點是從哪個入口設的 */
-  roundPick = false;                               /* 叫了車就回到預設的單程 */
-  APP.nav.go('/trip');
+  TRIP.start(d.id, d.via);                         /* via：轉換歸因，這個下車點是從哪個入口設的 */
+  APP.nav.go('/trip', { replace: true, dir: 'push' });
 }
 
 /* 行程紀錄：搭車抵達的明信片（每一次收下都算，回訪也是）＋遊喜樂以外的一般行程（新到舊）。
@@ -538,6 +573,7 @@ APP.ride = Object.assign(APP.ride || {}, {
   clearDropoff: clearDropoff,
   arrive: arrive,
   call: callRide,
+  carFares: carFares,
   pointsRows: pointsRows,
   pointsTotal: pointsTotal,
   pastTrips: pastTrips,
@@ -552,6 +588,8 @@ APP.ride = Object.assign(APP.ride || {}, {
   FARE_PER_POINT: FARE_PER_POINT,
   WAIT_MAX_MIN: WAIT_MAX_MIN,
   WAIT_FEE: WAIT_FEE,
+  PICKUP_MIN: PICKUP_MIN,
+  METER_RANGE: METER_RANGE,
 });
 
 /* ==========================================================================
@@ -577,19 +615,17 @@ function rideSpots() {
 }
 
 /* 地圖上的浮動鈕與上車點 pin（搭車與探索同一份）。
-   搭車：選單、掃碼、通知、定位＋上車點與地址標籤。noScan：選好下車點、還沒叫車時「掃碼」讓位給單程／來回（檔頭）。
+   搭車：選單、掃碼、通知、定位＋上車點與地址標籤。
    探索：選單、定位＋上車點；不帶地址標籤——家就在水利路，選到的景點常落在標籤底下被它蓋住。 */
-function mapOverlay(mode, noScan) {
+function mapOverlay(mode) {
   const ride = mode === 'ride';
   return '' +
     '<a class="fab fab--navy ride-fab ride-fab--menu" href="#/drawer" aria-label="選單" data-act="open-drawer">' +
       '<span data-icon="menu"></span></a>' +
-    (ride && !noScan
-      ? '<button class="fab ride-fab ride-fab--scan" type="button" aria-label="掃碼" data-toast="' + TOAST_NA + '">' +
-          '<span data-icon="scan"></span></button>'
-      : '') +
     (ride
-      ? '<a class="fab ride-fab ride-fab--bell" href="#/notify" aria-label="通知" data-act="open-notify">' +
+      ? '<button class="fab ride-fab ride-fab--scan" type="button" aria-label="掃碼" data-toast="' + TOAST_NA + '">' +
+          '<span data-icon="scan"></span></button>' +
+        '<a class="fab ride-fab ride-fab--bell" href="#/notify" aria-label="通知" data-act="open-notify">' +
           '<span data-icon="bell"></span></a>'
       : '') +
     '<button class="fab ride-fab ride-fab--loc" type="button" data-recenter aria-label="定位">' +
@@ -677,31 +713,6 @@ function keepClear(map) {
   });
 }
 
-/* 單程／來回的切換（選好下車點、還沒叫車時才有；預設單程）。選中的那一格是字、不是按鈕（跟搭車／探索一樣），
-   整組只多一顆可按。選來回時多一行：司機最多等多久（一句靜態的話，沒有計時器）與三段車資（每一段都是公式）。 */
-function roundPickHTML(km) {
-  const on = function (text) { return '<span class="ride-mode__active ride-round__on" aria-current="true">' + text + '</span>'; };
-  const f = roundFare(km);
-  return '<div class="pill-group pill-group--onwhite ride-round" role="group" aria-label="單程或來回" data-round-pick>' +
-      (roundPick ? '<button class="pill" type="button" data-act="pick-oneway">單程</button>' : on('單程')) +
-      (roundPick ? on('來回 · 司機等你')
-        : '<button class="pill" type="button" data-act="pick-round" aria-label="來回 · 司機等你、再載你回家">來回 · 司機等你</button>') +
-    '</div>' +
-    (roundPick
-      ? '<p class="ride-round__note" data-round-note>司機在那裡等你（最多 <span class="num" data-wait-max>' + WAIT_MAX_MIN + '</span> 分鐘），再載你回家' +
-          (f ? '：去程 $<span class="num" data-fare-go>' + f.go + '</span>＋候車 $<span class="num" data-fare-wait>' + f.wait +
-               '</span>＋回程 $<span class="num" data-fare-back>' + f.back + '</span>'
-             : ' · 車資' + DIST_TBD) + '</p>'
-      : '');
-}
-/* 換單程／來回：重畫叫車首頁（車資、叫車鈕的字跟著換）；重畫完焦點放在叫車鈕上、念出選了哪一個 */
-let roundFocus = false;
-function pickRound(v) {
-  roundPick = !!v;
-  roundFocus = true;
-  APP.nav.go('/ride', { replace: true, dir: 'none' });
-}
-
 function rideRender() {
   let trip = TRIP.current();
   const pend = TRIP.pending();
@@ -712,9 +723,8 @@ function rideRender() {
   const dp = tp || (d && d.id ? APP.place(d.id) : null);
   /* 公里：行程中用這一趟存的，否則現算；距離不明是 null → 不寫車資與分鐘 */
   const km = tp ? (trip.km != null ? trip.km : kmOf(tp)) : kmOf(dp);
-  /* 單程或來回：行程中照這一趟；還沒叫車照這裡選的。選好下車點、還沒叫車才出現選擇（掃碼讓位，見檔頭） */
-  const round = trip ? !!trip.round : roundPick;
-  const choose = !trip && !!dp;
+  /* 來回只會是進行中的那一趟（叫車首頁沒有選擇，見檔頭） */
+  const round = !!(trip && trip.round);
 
   const dropField = dp
     ? '<div class="route-input__field ride-drop"' + (tp ? ' data-trip-dest' : '') + '>' +
@@ -733,7 +743,7 @@ function rideRender() {
     : '<a class="route-input__field" href="#/dropoff" data-act="pick-dropoff">' +
         '<span class="route-input__value route-input__value--ph">要去哪裡？</span></a>';
 
-  const callText = trip ? '回到行程' : dp ? (round ? '來回叫車 · ' + dp.name : '叫車前往 ' + dp.name) : '選好下車點就可以叫車';
+  const callText = trip ? '回到行程' : dp ? '叫車前往 ' + dp.name : '選好下車點就可以叫車';
 
   return '' +
     '<div class="ride-map ride-map--full" data-ride-map>' + RIDE_CREDIT + '</div>' +
@@ -761,7 +771,6 @@ function rideRender() {
           '</div>' +
         '</div>' +
       '</div>' +
-      (choose ? roundPickHTML(km) : '') +
       /* 一屏一事：選好目的地之後下一步就是叫車，「機場接送」讓位給叫車鈕（可按數 ≤ 10，拉把也算一顆） */
       (dp || trip
         ? '<button class="btn-primary ride-call is-ready" type="button" data-act="call-ride">' + esc(callText) + '</button>'
@@ -796,25 +805,14 @@ function rideMount(root) {
     openH = Math.ceil(sheet.scrollHeight);
     sheet.style.setProperty('--ride-open-height', openH + 'px');
   }
-  /* 單程／來回的選擇在（render 決定）：掃碼讓位給它 */
-  const choose = !!root.querySelector('[data-round-pick]');
   const ctl = rideMap(root, sheet, function () {
-    return { spots: false, max: 4, overlay: mapOverlay('ride', choose) };
+    return { spots: false, max: 4, overlay: mapOverlay('ride') };
   }, measureOpen);
 
   const clr = root.querySelector('[data-act="clear-dropoff"]');
   if (clr) clr.onclick = function () { clearDropoff(); };
   const call = root.querySelector('[data-act="call-ride"]');
   if (call) call.onclick = function () { callRide(); };
-  const pr = root.querySelector('[data-act="pick-round"]');
-  if (pr) pr.onclick = function () { pickRound(true); };
-  const po = root.querySelector('[data-act="pick-oneway"]');
-  if (po) po.onclick = function () { pickRound(false); };
-  if (roundFocus) {
-    roundFocus = false;
-    if (call) call.focus();
-    if (choose) APP.ui.announce(roundPick ? '已選來回：司機等你、再載你回家' : '已選單程');
-  }
   /* 跟探索同一套拉法：跟手、放開接續動畫、點拉把切換 */
   let state = 'open';
   const stopDrag = bindDragSheet(sheet, {
@@ -1406,6 +1404,220 @@ APP.view('pickup', {
         backToRide();
       };
     });
+  },
+});
+
+/* ==========================================================================
+   /ride/confirm — 確認叫車（照 yoxi app 的那一頁）
+   地圖上兩個標籤：上車點（司機幾分鐘到）與下車點，點了換地方；面板是立即叫車／預約、車種、
+   付款那一列、確認叫車。叫了車這一頁就換成 /trip（不留在歷史裡）。
+   ========================================================================== */
+/* 三種車（yoxi 的名字與順序）。note(f)：車名底下那一行（f＝carFares(km)，距離不明是 null） */
+const CARS = [
+  { id: 'any', name: '不限車種',
+    note: function (f) { return f ? '車資：多元 $' + f.multi + '、小黃 $' + f.lo + '-$' + f.hi : '多元、小黃都可以派'; } },
+  { id: 'meter', name: '小黃／跳表多元', note: function () { return '依跳表收費，預估車資僅供參考。'; } },
+  { id: 'multi', name: '多元計程車', note: function () { return '上車前就確定車資，不跳表。'; } },
+];
+function carOf(id) { return CARS.filter(function (c) { return c.id === id; })[0] || CARS[0]; }
+/* 不寫色碼：顏色都在 ride.css（currentColor＋class） */
+const PENCIL = '<svg class="ride-cf-pin__edit" viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="M5 16.6V19h2.4l7.9-7.9-2.4-2.4Zm11.6-6.8 1.3-1.3a.9.9 0 0 0 0-1.3l-1.1-1.1a.9.9 0 0 0-1.3 0l-1.3 1.3Z"/>' +
+  '<path class="ride-cf__stroke" d="M4 21.2h16"/></svg>';
+const CASH = '<svg class="ride-cf__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.4"/>' +
+  '<path class="ride-cf__stroke ride-cf__stroke--on" d="M14.9 9.3c-.4-1-1.5-1.6-2.9-1.6-1.6 0-2.8.8-2.8 2.1s1.1 1.8 2.8 2.2c1.8.4 3 .9 3 2.2s-1.2 2.2-3 2.2c-1.5 0-2.7-.7-3.1-1.7M12 6v1.7M12 16.3V18"/></svg>';
+const NOTE = '<svg class="ride-cf__ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/>' +
+  '<path class="ride-cf__stroke ride-cf__stroke--on" d="M9.5 15.5l6-6"/></svg>';
+
+function carPriceHTML(c, f) {
+  if (!f) return '<span class="ride-car__price ride-car__price--tbd">' + DIST_TBD + '</span>';
+  return '<span class="ride-car__price num">' + (c.id === 'multi'
+    ? '$<span data-fare>' + f.multi + '</span>'
+    : '$<span data-fare-lo>' + f.lo + '</span>-$<span data-fare-hi>' + f.hi + '</span>') + '</span>';
+}
+/* 選中的那一種是字（aria-current），其他兩種是按鈕 */
+function carHTML(c, f) {
+  const body = '<span class="tile-icon tile-icon--lg ride-car__ic">' + icon('tabRide', 30) + '</span>' +
+    '<span class="ride-car__body">' +
+      '<span class="ride-car__top"><span class="ride-car__name">' + esc(c.name) + '</span>' + carPriceHTML(c, f) + '</span>' +
+      '<span class="ride-car__eta"><span class="num" data-pickup-min>' + PICKUP_MIN + '</span> 分鐘後抵達</span>' +
+      '<span class="ride-car__note">' + esc(c.note(f)) + '</span>' +
+    '</span>';
+  return c.id === carPick
+    ? '<div class="ride-car is-on" data-car="' + c.id + '" aria-current="true" tabindex="-1">' + body + '</div>'
+    : '<button class="ride-car" type="button" data-act="pick-car" data-car="' + c.id + '">' + body + '</button>';
+}
+function carsHTML(km) {
+  const f = carFares(km);
+  return CARS.map(function (c) { return carHTML(c, f); }).join('');
+}
+
+/* 地圖上的兩個標籤：上車點（左邊一格寫司機幾分鐘到）、下車點（左邊一格紅底白點）。點標籤換地方。
+   dot 是那個地點本身；標籤預設在點的上面，兩個疊在一起時下面那個翻到點的下面（placeConfirmPins） */
+function confirmPinsHTML(p) {
+  return '<div class="ride-cf-pin ride-cf-pin--from" data-pin="pickup" data-panlayer>' +
+      '<a class="ride-cf-pin__label" href="#/pickup" data-act="pick-pickup" aria-label="上車點 ' + esc(home()) + '，換上車點">' +
+        '<span class="ride-cf-pin__eta"><span class="num" data-pickup-min>' + PICKUP_MIN + '</span><span>分鐘</span></span>' +
+        '<span class="ride-cf-pin__t">' + esc(home()) + '</span>' + PENCIL + '</a>' +
+      '<span class="ride-cf-pin__dot"></span></div>' +
+    '<div class="ride-cf-pin ride-cf-pin--to" data-pin="dest" data-panlayer>' +
+      '<a class="ride-cf-pin__label" href="#/dropoff" data-act="pick-dropoff" aria-label="下車點 ' + esc(p.name) + '，換下車點">' +
+        '<span class="ride-cf-pin__mark"><span></span></span>' +
+        '<span class="ride-cf-pin__t" data-drop-name>' + esc(p.name) + '</span>' + PENCIL + '</a>' +
+      '<span class="ride-cf-pin__dot"></span></div>';
+}
+
+/* 視野框住上車點與下車點：兩點的中點放在「扣掉返回鍵、標籤、面板圓角」之後的可見範圍正中央，
+   寬度至少 2.4 km（跟叫車首頁一樣）。遠到框不住（上限 10 km；內灣 28 km 超出底圖）：
+   家留在畫面裡、中心往目的地挪，目的地夾在邊緣。下車點沒有經緯度：只看家。pad 是 px。 */
+const CONFIRM_SPAN = [2400, 10000];
+function confirmView(p, W, H, pad) {
+  const dLL = p && p.lat != null && p.lon != null ? [p.lat, p.lon] : null;
+  if (!dLL) return { center: HOME_LL, spanM: CONFIRM_SPAN[0], dLL: null };
+  const a = HSMAP.toM(HOME_LL[0], HOME_LL[1]), b = HSMAP.toM(dLL[0], dLL[1]);
+  const uw = Math.max(40, W - pad.l - pad.r), uh = Math.max(40, H - pad.t - pad.b);
+  const need = Math.max(CONFIRM_SPAN[0], Math.abs(a[0] - b[0]) * W / uw, Math.abs(a[1] - b[1]) * W / uh);
+  const span = Math.min(CONFIRM_SPAN[1], need);
+  const k = span / W;                               /* 公尺／px */
+  let mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+  if (need > span) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+    const reach = Math.min(uw, uh) * 0.3 * k;
+    mx = a[0] + dx / len * reach;
+    my = a[1] + dy / len * reach;
+  }
+  mx -= (pad.l + uw / 2 - W / 2) * k;
+  my -= (pad.t + uh / 2 - H / 2) * k;
+  return { center: HSMAP.toLL(mx, my), spanM: span, dLL: dLL };
+}
+
+/* 兩個點放到真實經緯度（夾在可見範圍裡，夾到的標 is-edge）；沒有經緯度的下車點放在可見範圍上緣的正中間、不畫點。
+   然後讓標籤不出界、不互相蓋住：量到的矩形疊在一起 → 下面那個翻到點的下面；左右出界 → 往裡推（--dx） */
+function placeConfirmPins(map, dLL, pad) {
+  const H = map.handle;
+  const clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+  function put(el, xy) {
+    if (!el) return;
+    const x = clamp(xy[0], pad.l, H.width - pad.r), y = clamp(xy[1], pad.t, H.height - pad.b);
+    el.classList.toggle('is-edge', x !== xy[0] || y !== xy[1]);
+    el.style.left = (x / H.width * 100).toFixed(2) + '%';
+    el.style.top = (y / H.height * 100).toFixed(2) + '%';
+  }
+  const from = map.el.querySelector('[data-pin="pickup"]');
+  const to = map.el.querySelector('[data-pin="dest"]');
+  put(from, H.project(HOME_LL[0], HOME_LL[1]));
+  if (dLL) put(to, H.project(dLL[0], dLL[1]));
+  else if (to) { to.classList.add('is-nogeo'); put(to, [H.width / 2, pad.t]); }
+
+  const box = map.el.getBoundingClientRect();
+  const labels = [from, to].filter(Boolean).map(function (pin) {
+    pin.classList.remove('is-below');
+    const l = pin.querySelector('.ride-cf-pin__label');
+    l.style.removeProperty('--dx');
+    return l;
+  });
+  const rect = function (el) { return el.getBoundingClientRect(); };
+  if (labels.length === 2) {
+    const a = rect(labels[0]), b = rect(labels[1]);
+    if (!(a.right + 6 < b.left || b.right + 6 < a.left || a.bottom + 6 < b.top || b.bottom + 6 < a.top)) {
+      const lower = rect(from).top >= rect(to).top ? from : to;
+      lower.classList.add('is-below');
+    }
+  }
+  labels.forEach(function (l) {
+    const r = rect(l);
+    const k = (r.width / l.offsetWidth) || 1;       /* 桌機外框會縮放：量到的是螢幕 px，--dx 要寫回 CSS px */
+    let dx = 0;
+    if (r.left < box.left + 8) dx = box.left + 8 - r.left;
+    else if (r.right > box.right - 8) dx = box.right - 8 - r.right;
+    if (dx) l.style.setProperty('--dx', (dx / k).toFixed(1) + 'px');
+  });
+}
+
+function confirmEmpty(title, text, link) {
+  return '<header class="hdr-plain ride-hdr-plain">' +
+      '<a href="#" data-back="/ride" class="ride-back" aria-label="返回"><span class="arrow arrow--left"></span></a>' +
+      '<span class="hdr-plain__title">確認叫車</span><span class="ride-back ride-back--ghost"></span>' +
+    '</header>' +
+    '<div class="app-empty"><div class="app-empty__card">' +
+      '<p class="app-empty__eyebrow">叫車</p><h1 class="app-empty__t">' + title + '</h1>' +
+      '<p class="app-empty__p">' + text + '</p>' + link +
+    '</div></div>';
+}
+
+APP.view('ride-confirm', {
+  path: CONFIRM_PATH, tab: null, status: 'dark', title: '確認叫車',
+  render: function () {
+    if (TRIP.active()) {
+      return confirmEmpty('行程進行中', '這一趟還沒結束，先回到行程。',
+        '<a class="btn-primary" href="#/trip" data-act="go-trip">回到行程</a>');
+    }
+    const p = dropPlace();
+    if (!p) {
+      return confirmEmpty('還沒有下車點', '選好下車點，就可以看車種與車資。',
+        '<a class="btn-primary" href="#/ride" data-act="go-ride">回叫車</a>');
+    }
+    return '' +
+      '<div class="ride-map ride-map--confirm" data-confirm-map>' +
+        '<a class="fab fab--navy ride-fab ride-cf__back" href="#" data-back="/ride" aria-label="返回">' +
+          '<span class="arrow arrow--left arrow--onred"></span></a>' +
+        RIDE_CREDIT +
+      '</div>' +
+      '<section class="sheet ride-cf" aria-label="確認叫車">' +
+        '<div class="sheet__handle"></div>' +
+        '<div class="ride-cf__when" role="group" aria-label="什麼時候叫車">' +
+          '<span class="ride-cf__tab is-on" aria-current="true">立即叫車</span>' +
+          '<button class="ride-cf__tab" type="button" data-toast="' + TOAST_NA + '">預約</button>' +
+        '</div>' +
+        '<div class="ride-cf__cars" data-cars role="group" aria-label="車種">' + carsHTML(kmOf(p)) + '</div>' +
+        '<div class="ride-cf__opts">' +
+          '<button class="ride-cf__opt" type="button" data-toast="' + TOAST_NA + '">' + CASH + '現金付款</button>' +
+          '<button class="ride-cf__opt" type="button" data-toast="' + TOAST_NA + '"><span class="ride-cf__ic" data-icon="point"></span>點數折抵</button>' +
+          '<button class="ride-cf__opt" type="button" data-toast="' + TOAST_NA + '">' + NOTE + '乘車備註</button>' +
+        '</div>' +
+        '<button class="btn-primary ride-cf__go" type="button" data-act="confirm-ride">確認叫車</button>' +
+      '</section>';
+  },
+  mount: function (root) {
+    dropBroken();
+    const host = root.querySelector('[data-confirm-map]');
+    const p = dropPlace();
+    if (!host || !p || TRIP.active()) return;
+    const km = kmOf(p);
+
+    /* ---- 地圖：量出返回鍵、標籤、面板圓角要讓出的地方，再決定中心與視野 ---- */
+    const back = host.querySelector('.ride-cf__back');
+    const hb = host.getBoundingClientRect(), bb = back.getBoundingClientRect();
+    const k = (hb.height / host.offsetHeight) || 1;
+    const W = host.clientWidth, H = host.clientHeight;
+    const LABEL = 64;                                 /* 標籤高＋它跟點之間的距離 */
+    const pad = { l: 28, r: 28, t: Math.min(H * 0.6, (bb.bottom - hb.top) / k + 8 + LABEL), b: 60 };   /* 下緣：面板圓角＋署名 */
+    const o = confirmView(p, W, H, pad);
+    const map = APP.map.mount(host, {
+      style: 'paper', center: o.center, spanM: o.spanM, spots: false, pan: true, overlay: confirmPinsHTML(p),
+    });
+    placeConfirmPins(map, o.dLL, pad);
+    SHELL.injectIcons(root);
+
+    /* ---- 車種：換一種就地重畫清單，焦點留在選中的那一張 ---- */
+    const box = root.querySelector('[data-cars]');
+    function bindCars() {
+      box.querySelectorAll('[data-act="pick-car"]').forEach(function (b) {
+        b.onclick = function () {
+          carPick = carOf(b.getAttribute('data-car')).id;
+          box.innerHTML = carsHTML(km);
+          SHELL.injectIcons(box);
+          bindCars();
+          const on = box.querySelector('.ride-car.is-on');
+          if (on) on.focus({ preventScroll: true });
+          APP.ui.announce('已選' + carOf(carPick).name);
+        };
+      });
+    }
+    bindCars();
+    root.querySelector('[data-act="confirm-ride"]').onclick = function () { confirmRide(); };
+
+    return function () { map.destroy(); };
   },
 });
 

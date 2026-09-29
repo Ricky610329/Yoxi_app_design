@@ -22,6 +22,8 @@ T.spec('flows', function (t) {
   /* 目前畫面裡看得到的返回鍵（<a data-back>）、非 still 的翻卡：harness 的 T.helpers */
   const clickBack = T.helpers.clickBack;
   const revealThrough = T.helpers.revealThrough;
+  /* 叫車首頁「叫車前往」→ 確認叫車頁「確認叫車」 */
+  const callRide = T.helpers.callRide;
 
   /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
@@ -122,7 +124,7 @@ T.spec('flows', function (t) {
     const call = app.$('[data-act="call-ride"]');
     t.ok(call && call.classList.contains('is-ready'), '叫車鈕 is-ready');
 
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     await app.waitFor(function () { const x = A.store.get('trip'); return x && x.phase === 'riding'; }, 3000, '配對 → 行程中');
     t.ok(!app.$('[data-phase="riding"]').hidden, '行程中區塊顯示');
@@ -228,7 +230,7 @@ T.spec('flows', function (t) {
     const A = app.APP, S = app.STATE;
     const pts0 = S.points;
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     await app.click('main.view [data-act="arrive"]');
     await app.at('/trip/done');
@@ -273,7 +275,7 @@ T.spec('flows', function (t) {
     await app.reset({ store: { trip: done, dropoff: drop } });
     let A = app.APP;
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     const modal = app.$('.app-confirm');
     t.includes(modal && modal.textContent, '上一趟的限定明信片還沒收', 'confirm 文案');
     await app.click('.app-confirm [data-act="confirm-yes"]');
@@ -286,7 +288,7 @@ T.spec('flows', function (t) {
     await app.reset({ store: { trip: done, dropoff: drop } });
     A = app.APP;
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.click('.app-confirm [data-act="confirm-no"]');
     await app.at('/trip');
     t.eq(A.store.get('trip').placeId, 'lake', '新 trip 覆蓋');
@@ -295,7 +297,7 @@ T.spec('flows', function (t) {
     /* 沒有待解鎖：不問 */
     await app.reset({ store: { dropoff: drop } });
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     t.ok(!app.$('.app-confirm'), '沒有待解鎖就不問');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
@@ -439,7 +441,7 @@ T.spec('flows', function (t) {
     /* 行程：配對 → 行程中由計時器切換 */
     await app.reset({ still: false, store: { dropoff: T.fixtures.dropoff({ id: 'lake', name: 'x', km: 6.4, setAt: now(), via: 'e' }) } });
     await app.go('/ride');
-    await app.click('[data-act="call-ride"]');
+    await callRide(app);
     await app.at('/trip');
     /* 不斷言「剛載入一定是 matching」：virtual time 下轉場＋畫地圖可能就吃掉 1.2 s（時間競賽）。
        phase 由 trip.startedAt 推導（APP.ride.trip.phase），這裡只要求：現在是配對中或行程中、畫面跟 phase 一致、最後會到行程中。
@@ -453,7 +455,7 @@ T.spec('flows', function (t) {
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   }, { timeout: 120000 });
 
-  t.test('縫合 f：連按兩次 set-dropoff／collect／call-ride 不重複寫入、不重複導覽、不丟例外', async function (app) {
+  t.test('縫合 f：連按兩次 set-dropoff／collect／call-ride／confirm-ride 不重複寫入、不重複導覽、不丟例外', async function (app) {
     for (const still of [true, false]) {
       const tag = still ? '（still）' : '（非 still）';
       await app.reset({ still: still });
@@ -476,6 +478,9 @@ T.spec('flows', function (t) {
       await app.go('/ride');
       const call = app.$('[data-act="call-ride"]');
       call.click(); call.click();
+      await app.at('/ride/confirm');
+      const go = app.$('[data-act="confirm-ride"]');
+      go.click(); go.click();
       await app.at('/trip');
       await app.tick(400);
       A.nav.back();
@@ -671,7 +676,7 @@ T.spec('flows', function (t) {
       await app.click('[data-place-foot] [data-act="set-dropoff"]');
       await app.at('/ride');
       seen.dropoff = app.text('[data-fare]');
-      await app.click('[data-act="call-ride"]');
+      await callRide(app);
       await app.at('/trip');
       await app.waitFor(function () { return !app.$('[data-phase="riding"]').hidden; }, 3000, '行程中');
       seen.trip = app.text('[data-phase="riding"] [data-fare]');

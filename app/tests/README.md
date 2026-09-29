@@ -31,7 +31,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | `specs/app.spec.js` | core：§8 每條 route、tab bar、返回與 `nav.prev／nav.up`、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder、地圖 |
 | `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫；最後一段是「回歸測試（從 flows.spec 搬來）」：只牽涉這個區塊的審查／QA／評估，名稱保留原編號 |
 | `specs/flows.spec.js` | 跨區塊：三條 demo 流程端到端、縫合、全站兩種狀態掃描、非 still 模式、跨區塊的審查／QA／評估、無障礙 |
-| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、款式規則（cardRule、ruleLines）、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors、`APP.state`、`cardFace`）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id；來回的 waiting／back／returning、候車時收下、不搭回程、`canCollect`、`roundFare` 與回程的搭車回饋）、`collect` 怎麼判斷搭車或走路、`cardOrigin`、拉面板的 `snapTarget`；`store.test.mjs` 含 `store.clear('footprint')`；`place.test.mjs` 含 22 張明信片的 `APP.place`／`footprintPlace` 對照表 |
+| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、款式規則（cardRule、ruleLines）、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors、`APP.state`、`cardFace`）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id；來回的 waiting／back／returning、候車時收下、不搭回程、`canCollect`、`roundFare` 與回程的搭車回饋；叫車首頁已經沒有來回的入口，行程 module 仍支援）、`collect` 怎麼判斷搭車或走路、`cardOrigin`、拉面板的 `snapTarget`；`store.test.mjs` 含 `store.clear('footprint')`；`place.test.mjs` 含 22 張明信片的 `APP.place`／`footprintPlace` 對照表 |
 | `fixtures/mini-app.html`、`fixtures/selftest.html` | 驗 harness 本身 |
 
 ## 寫新 spec
@@ -114,6 +114,7 @@ T.spec('ride', function (t) {
 | `T.TAP_MAX`、`T.tapMax(path)` | 可按數上限：`/explore`、`/album` 12，其餘 10（query 不算） |
 | `T.fixtures.trip(o)`、`T.fixtures.dropoff(o)`、`T.fixtures.T0` | store 的行程／下車點初值（預設內灣、`startedAt`／`setAt`＝`T0`），`o` 覆寫欄位；某欄位要「沒有」就給 `undefined` |
 | `T.helpers.clickBack(app)` | 點目前畫面的 `a[data-back]` |
+| `T.helpers.callRide(app)` | 叫車的兩步：叫車首頁按「叫車前往」→ 等 `/ride/confirm` → 按「確認叫車」。不等 `/trip`（上一趟的明信片還沒收時會先開確認框） |
 | `T.helpers.histI(app)` | router 蓋在 `history.state` 上的序號 |
 | `T.helpers.drag(app, grip, dy, { id, init, hold })` | 在拉把上拖 `dy`（正＝往下）：down 在拉把、move／up 在 window；`hold` 回傳放手函式 |
 | `T.helpers.revealThrough(app)` | 非 still 的 `/unlock`：點發光的地方 → 收集 → 一路點到 `data-at="3"` |

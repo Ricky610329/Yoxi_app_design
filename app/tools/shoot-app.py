@@ -70,6 +70,8 @@ A_MATCHING = {'trip': {'placeId': 'neiwan', 'phase': 'matching', 'startedAt': T0
 A_DONE = {'trip': {'placeId': 'neiwan', 'phase': 'done', 'startedAt': T0, 'rated': False, 'km': 28}}
 A_RATED = {'trip': {'placeId': 'neiwan', 'phase': 'done', 'startedAt': T0, 'rated': True, 'stars': 5, 'km': 28}}
 # 評分完直接回首頁、限定明信片還沒收：/ride 收合態有金色入口、/postcard/p9 有「解鎖限定版」
+# 下車點已填（青草湖 6.4 km）：確認叫車頁。名字與公里數畫面上不用（從 APP.place 現算）
+A_CONFIRM = {'dropoff': {'id': 'lake', 'name': 'lake', 'km': None, 'setAt': T0, 'via': 'e'}}
 A_PENDING = {'trip': {'placeId': 'neiwan', 'phase': 'done', 'startedAt': T0, 'rated': True, 'km': 28}, 'dropoff': None}
 
 # 下車點已填：名字與公里數從 APP 現算（不手寫），然後就地重畫 /ride（不經 setDropoff，免得拍到 toast）
@@ -92,6 +94,7 @@ SHOTS = [
     ('ride-float',       '/ride?mode=explore',    {'run': RUN_FLOAT}),
     ('ride-float-back',  '/ride?mode=explore',    {'run': RUN_FLOAT_BACK}),
     ('ride-pending-unlock', '/ride',              {'a': A_PENDING}),
+    ('ride-confirm',     '/ride/confirm',         {'a': A_CONFIRM}),
     ('dropoff',          '/dropoff',              None),
     ('pickup',           '/pickup',               None),
     ('trip',             '/trip',                 {'a': A_MATCHING}),

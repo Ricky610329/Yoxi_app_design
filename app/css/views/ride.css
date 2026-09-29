@@ -65,11 +65,6 @@
 .ride-sheet__row { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-4); }
 .ride-call { margin-top: var(--sp-4); }
 
-/* 單程／來回（選好下車點、還沒叫車時）：跟搭車／探索同一種兩格切換，選中的那一格是字（.ride-mode__active） */
-.ride-round { margin-top: var(--sp-3); }
-.ride-round__note { margin: var(--sp-2) 0 0; font-size: var(--fs-cap); line-height: var(--lh-body); color: var(--app-muted); }
-.ride-round__note .num { font-size: var(--fs-sm); color: var(--yoxi-navy); }
-
 /* 變體 F：模式切換在面板頂端。搭車與探索的面板都可上下拉，最低收到只剩拉把。 */
 .ride-mode__pills { margin-bottom: var(--sp-4); }
 .ride-mode__active {
@@ -250,6 +245,115 @@
 }
 .ride-more-wrap .ride-more { border-top: 0; font-size: var(--fs-lead); }
 .ride-list__none { padding: var(--sp-5) var(--gutter); font-size: var(--fs-sm); color: var(--app-muted); line-height: 1.7; }
+
+/* --------------------------------------------------------------------------
+   /ride/confirm：確認叫車（照 yoxi app）。地圖吃剩下的高度，面板最多 56%、車種清單在面板裡捲；
+   面板的圓角蓋在地圖上，署名跟著往上挪。
+   -------------------------------------------------------------------------- */
+.ride-map--confirm { min-height: 220px; overflow: hidden; }
+.ride-map--confirm [data-layer="credit"] { display: none; }
+.ride-map--confirm .ride-map__credit { bottom: calc(var(--r-sheet) + var(--sp-1)); }
+.ride-cf__back { top: calc(var(--statusbar-h) + 12px); left: var(--gutter); }
+.ride-cf__back .arrow { width: 28px; height: 16px; }
+
+.ride-cf {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 56%;
+  margin-top: calc(var(--r-sheet) * -1);
+}
+.ride-cf > * { flex: none; }
+.ride-cf__when { display: flex; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.ride-cf__tab {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 104px; height: 44px; padding: 0 var(--sp-4);
+  border: 2px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-white); color: var(--yoxi-navy);
+  font-size: var(--fs-body); font-weight: var(--fw-heavy);
+}
+.ride-cf__tab.is-on { border-color: var(--yoxi-navy); }
+
+.ride-cf > .ride-cf__cars {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  overflow-y: auto; scrollbar-width: none;
+}
+.ride-cf__cars::-webkit-scrollbar { display: none; }
+.ride-car {
+  flex: none;
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  width: 100%; padding: var(--sp-3);
+  border: 2px solid var(--yoxi-line); border-radius: var(--r-card);
+  background: var(--yoxi-white); color: var(--yoxi-navy); text-align: left;
+}
+.ride-car.is-on { border-color: var(--yoxi-navy); }
+.ride-car:focus { outline: none; }
+.ride-car:focus-visible { outline: 2px solid var(--yoxi-navy); outline-offset: 2px; }
+.ride-car__ic { flex: none; }
+.ride-car__body { display: block; flex: 1; min-width: 0; }
+.ride-car__top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); }
+.ride-car__name { font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+.ride-car__price { flex: none; font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+.ride-car__price--tbd { font-size: var(--fs-cap); font-weight: var(--fw-bold); color: var(--app-muted); }
+.ride-car__eta,
+.ride-car__note { display: block; margin-top: 2px; font-size: var(--fs-sm); color: var(--app-muted); }
+.ride-car__note { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.ride-cf__opts {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  margin: var(--sp-3) calc(var(--gutter) * -1) 0;
+  padding: var(--sp-2) var(--gutter) 0;
+  border-top: 1px solid var(--yoxi-line);
+}
+.ride-cf__opt {
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: 44px; background: none; color: var(--yoxi-navy);
+  font-size: var(--fs-body); font-weight: var(--fw-bold); white-space: nowrap;
+}
+.ride-cf__opt + .ride-cf__opt { border-left: 1px solid var(--yoxi-line); }
+.ride-cf__ic { display: block; flex: none; width: 22px; height: 22px; fill: currentColor; }
+.ride-cf__ic svg { display: block; width: 100%; height: 100%; }
+.ride-cf__stroke { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.ride-cf__stroke--on { stroke: var(--yoxi-white); }
+.ride-cf__go { margin-top: var(--sp-3); }
+
+/* 地圖上的標籤：點就是那個地點（上車點海軍藍圈、下車點紅圈），標籤在點的上面（is-below 翻到下面）；
+   --dx 是 JS 量出來、把標籤推回地圖裡的距離 */
+.ride-cf-pin { position: absolute; width: 0; height: 0; z-index: 6; }
+.ride-cf-pin__dot {
+  position: absolute; left: -9px; top: -9px; width: 18px; height: 18px;
+  border: 5px solid var(--yoxi-navy); border-radius: var(--r-pill);
+  background: var(--yoxi-white); box-shadow: var(--sh-fab);
+}
+.ride-cf-pin--to .ride-cf-pin__dot { border-color: var(--yoxi-red); }
+.ride-cf-pin.is-nogeo .ride-cf-pin__dot { display: none; }
+.ride-cf-pin__label {
+  position: absolute; left: 0; bottom: 16px;
+  transform: translateX(calc(-50% + var(--dx, 0px)));
+  display: flex; align-items: stretch; min-height: 44px;
+  border-radius: var(--r-btn); overflow: hidden;
+  background: var(--yoxi-white); color: var(--yoxi-navy); box-shadow: var(--sh-fab);
+  white-space: nowrap;
+}
+.ride-cf-pin.is-below .ride-cf-pin__label { top: 16px; bottom: auto; }
+.ride-cf-pin.is-nogeo .ride-cf-pin__label { bottom: auto; top: 0; }
+.ride-cf-pin__eta {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 44px; padding: 2px var(--sp-2);
+  background: var(--yoxi-navy); color: var(--yoxi-white); line-height: 1.1;
+}
+.ride-cf-pin__eta .num { font-size: var(--fs-lead); font-weight: var(--fw-heavy); }
+.ride-cf-pin__eta span:last-child { font-size: var(--fs-xs); }
+.ride-cf-pin__mark { display: grid; place-items: center; width: 44px; background: var(--yoxi-red); }
+.ride-cf-pin__mark span { width: 14px; height: 14px; border-radius: var(--r-pill); background: var(--yoxi-white); }
+.ride-cf-pin__t {
+  align-self: center; max-width: 200px; padding: 0 var(--sp-2) 0 var(--sp-3);
+  overflow: hidden; text-overflow: ellipsis;
+  font-size: var(--fs-sm); font-weight: var(--fw-bold);
+}
+.ride-cf-pin__edit { flex: none; align-self: center; width: 20px; height: 20px; margin-right: var(--sp-2); fill: currentColor; }
 
 /* --------------------------------------------------------------------------
    /trip：配對中 → 行程中

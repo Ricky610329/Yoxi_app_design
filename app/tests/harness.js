@@ -666,6 +666,7 @@
     { path: '/ride', area: 'ride' },
     { path: '/dropoff', area: 'ride' },
     { path: '/pickup', area: 'ride' },
+    { path: '/ride/confirm', area: 'ride', flow: true },
     { path: '/trip', area: 'ride', flow: true },
     { path: '/trip/done', area: 'ride', flow: true },
     { path: '/drawer', area: 'ride' },
@@ -735,6 +736,13 @@
   const helpers = {
     /* 目前畫面裡看得到的返回鍵（<a data-back>） */
     clickBack: function (appObj) { return appObj.click('main.view[data-view] a[data-back]'); },
+    /* 叫車跟 yoxi 一樣兩步：叫車首頁按「叫車前往」→ 確認叫車頁按「確認叫車」。
+       不等 /trip：上一趟的明信片還沒收時，確認叫車會先開確認框 */
+    callRide: function (appObj) {
+      return appObj.click('[data-act="call-ride"]')
+        .then(function () { return appObj.at('/ride/confirm'); })
+        .then(function () { return appObj.click('[data-act="confirm-ride"]'); });
+    },
     /* router 蓋在 history.state 上的序號 */
     histI: function (appObj) { const s = appObj.win.history.state; return s && s.i; },
     /* 在拉把上拖 dy（正＝往下）：pointerdown 在拉把上、move／up 在 window 上（跟手指一樣）。
