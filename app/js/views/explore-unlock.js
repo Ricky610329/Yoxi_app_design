@@ -247,7 +247,10 @@ function renderUnlock(params) {
         '<b class="ex-unlock__sname">' + esc(style.name) + '</b>' +
         (verse
           ? '<span class="ex-verse" data-verse>' +
-              '<span class="ex-verse__t">' + esc(verse.text) + '</span>' +
+              /* 跟明信片頁一樣排成題字：一個短句一行，句尾標點懸在行外（explore.css） */
+              '<span class="ex-verse__t">' + E.verseLines(verse.text).map(function (l) {
+                return '<span class="ex-verse__l">' + esc(l.t) + (l.p ? '<span class="ex-verse__p">' + esc(l.p) + '</span>' : '') + '</span>';
+              }).join('') + '</span>' +
               (verse.by ? '<span class="ex-verse__by">' + esc(verse.by) + (verse.title ? '〈' + esc(verse.title) + '〉' : '') + '</span>' : '') +
             '</span>'
           : '') +

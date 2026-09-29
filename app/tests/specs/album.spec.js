@@ -557,18 +557,20 @@ T.spec('album', function (t) {
     t.ok(!app.$('.alb-hint') && !app.$('[data-act="again"]'), '沒有翻面提示、沒有「再來的話」');
   });
 
-  /* 那一句排成題字：逢逗號、句號一行，句尾標點另包一層（CSS 懸出去），字不增不減 */
-  t.test('/postcard/p7 那一句一個短句一行，拼回去是原句', async function (app) {
+  /* 那一句排成題字（斷行規則 explore-verse.js 的 verseLines，單元測試掃整張表）：
+     一個短句一行、句尾標點另包一層（CSS 懸出去），字不增不減，而且短句本身沒有再被折成兩行 */
+  t.test('/postcard/p7 那一句一個短句一行，textContent 還是原句', async function (app) {
     await app.reset();
     await app.go('/postcard/p7');
     const E = app.APP.explore;
     const want = E.verseOf('p7', E.cardOrigin('p7')).text;
-    const lines = app.$$('[data-verse] .alb-verse__l').map(function (l) { return l.textContent; });
-    t.ok(lines.length >= 2, '分成 ' + lines.length + ' 行');
-    t.eq(lines.join(''), want, '拼回去是原句');
+    const ls = app.$$('[data-verse] .alb-verse__l');
+    t.eq(ls.length, E.verseLines(want).length, '一個短句一行（' + ls.length + ' 行）');
     t.eq(app.text('[data-verse] .alb-verse__t'), want, 'textContent 還是原句');
-    t.ok(lines.every(function (l) { return /[，；。！？]$/.test(l); }), '每一行都停在標點上');
-    t.eq(app.$$('[data-verse] .alb-verse__p').length, lines.length, '句尾標點各包一層');
+    t.eq(app.$$('[data-verse] .alb-verse__p').length, ls.length, '句尾標點各包一層');
+    t.ok(ls.every(function (l) {
+      return Math.round(l.getBoundingClientRect().height / parseFloat(app.win.getComputedStyle(l).lineHeight)) === 1;
+    }), '每一行都沒有再折行');
   });
 
   /* 背面的字級照正文走（標題 22、內文 16）：每一張都要排得進卡裡。

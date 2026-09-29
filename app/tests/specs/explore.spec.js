@@ -513,6 +513,12 @@ T.spec('explore', function (t) {
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '走路沒有里程戳');
     t.includes(app.text('[data-arrive-sheet] [data-why]'), '秋天的畫風是木刻版畫', '面板寫為什麼（畫風）');
     t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), E.VERSES.p11.moon, '結果寫這個地方中秋的那一句（不是秋天那一句）');
+    /* 跟明信片頁一樣排成題字：一個短句一行。寬度照內容縮的時候，懸出去的句尾標點曾讓最長那行折成兩行 */
+    const vls = app.$$('[data-result-style] [data-verse] .ex-verse__l');
+    t.eq(vls.length, E.verseLines(E.VERSES.p11.moon).length, '結果的那一句一個短句一行');
+    t.ok(vls.every(function (l) {
+      return Math.round(l.getBoundingClientRect().height / parseFloat(app.win.getComputedStyle(l).lineHeight)) === 1;
+    }), '結果的每一行都沒有再折行');
     t.ok(!app.$('[data-points]'), '走路沒有 +50');
     t.noDeadButtons(app, '/unlock 節日版');
     await app.click('[data-act="collect"]');

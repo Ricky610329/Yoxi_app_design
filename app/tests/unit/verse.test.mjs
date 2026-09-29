@@ -69,3 +69,26 @@ test('verseOf：節日那一週用節日那一句、其他看款式；表上沒�
   const o = E.cardOrigin('p1', E.visits('p1').length);
   assert.equal(E.verseOf('p1', o).text, E.verseOf('p1', E.cardRule({ by: 'walk' })).text, 'cardOrigin 與 cardRule 挑到同一句');
 });
+
+test('verseLines：整張表逢逗號句號斷行，一行一個短句、句尾標點另外拿出來，接回去是原句', () => {
+  const { APP } = load();
+  const E = APP.explore;
+  for (const id of Object.keys(E.VERSES)) {
+    for (const k of Object.keys(E.VERSES[id])) {
+      const t = textOf(E.VERSES[id][k]);
+      const at = id + '.' + k + '：' + t;
+      const ls = E.verseLines(t);
+      assert.equal(ls.map((l) => l.t + l.p).join(''), t, at + '（接回去不是原句）');
+      for (const l of ls) {
+        assert.ok(l.t && !/[，；。！？]/.test(l.t), at + '（行內還有斷句的標點：' + l.t + '）');
+        assert.ok(/^[，；。！？]+$/.test(l.p), at + '（這一行沒有停在標點上：' + l.t + '）');
+      }
+    }
+  }
+  /* loadApp 的物件在另一個 realm，strict deepEqual 會連 prototype 一起比：先轉成純資料 */
+  const L = (s) => JSON.parse(JSON.stringify(E.verseLines(s)));
+  assert.deepEqual(L('樑上的匾被香火燻黑了，每一塊都記著不同的年份。'),
+    [{ t: '樑上的匾被香火燻黑了', p: '，' }, { t: '每一塊都記著不同的年份', p: '。' }], '兩個短句兩行');
+  assert.deepEqual(L('沒有標點'), [{ t: '沒有標點', p: '' }], '沒有標點：整句一行');
+  assert.deepEqual(L(''), [{ t: '', p: '' }], '空字串不出錯');
+});
