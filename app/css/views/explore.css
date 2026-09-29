@@ -1137,32 +1137,32 @@ html[data-still] .ex-unlock .ex-unlock__sname { animation: none; }
 
 /* 減少動態效果：沒有落下、閃爍、旋轉、循環；亮起來直接是亮的（CSS 的漸變保留，改成短淡入） */
 @media (prefers-reduced-motion: reduce) {
-  .ex-unlock.is-lit .ex-spot__pin,
-  .ex-unlock.is-lit .ex-spot__halo,
-  .ex-unlock.is-lit .ex-spot__beam,
-  .ex-unlock.is-lit .ex-spot__ring,
-  .ex-unlock.is-lit .ex-arrive__head,
-  .ex-unlock.is-lit .ex-arrive__hint,
-  .ex-unlock.is-ready .ex-unlock__card,
-  .ex-unlock.is-gold-up .ex-rays i,
-  .ex-unlock.is-done .ex-face__holo,
-  .ex-unlock.is-gilt .ex-seal__spin,
-  .ex-unlock.is-gilt .ex-foil path,
-  .ex-unlock.is-gilt .ex-unlock__sname { animation: none; }
-  .ex-unlock.is-lit .ex-spot__pin,
-  .ex-unlock.is-lit .ex-arrive__head,
-  .ex-unlock.is-lit .ex-arrive__hint { opacity: 1; }
-  .ex-unlock.is-lit .ex-spot__halo { opacity: .8; }
-  .ex-unlock.is-lit .ex-spot__beam { opacity: .8; transform: none; }
-  .ex-unlock__card { transition: none; }
-  .ex-unlock.is-done .ex-result { animation-duration: var(--t-fast); }
-  .ex-unlock.is-wash .ex-wet { animation: none; }
-  .ex-unlock.is-wash .ex-blots i,
-  .ex-unlock.is-paint .ex-strokes i,
-  .ex-unlock.is-print .ex-gouge,
-  .ex-unlock.is-gilt .ex-gilt,
-  .ex-unlock.is-gilt .ex-seal,
-  .ex-unlock.is-gilt .ex-seal * { transition: none; }
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__pin,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__halo,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__beam,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__ring,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-arrive__head,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-arrive__hint,
+  html:not([data-motion="full"]) .ex-unlock.is-ready .ex-unlock__card,
+  html:not([data-motion="full"]) .ex-unlock.is-gold-up .ex-rays i,
+  html:not([data-motion="full"]) .ex-unlock.is-done .ex-face__holo,
+  html:not([data-motion="full"]) .ex-unlock.is-gilt .ex-seal__spin,
+  html:not([data-motion="full"]) .ex-unlock.is-gilt .ex-foil path,
+  html:not([data-motion="full"]) .ex-unlock.is-gilt .ex-unlock__sname { animation: none; }
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__pin,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-arrive__head,
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-arrive__hint { opacity: 1; }
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__halo { opacity: .8; }
+  html:not([data-motion="full"]) .ex-unlock.is-lit .ex-spot__beam { opacity: .8; transform: none; }
+  html:not([data-motion="full"]) .ex-unlock__card { transition: none; }
+  html:not([data-motion="full"]) .ex-unlock.is-done .ex-result { animation-duration: var(--t-fast); }
+  html:not([data-motion="full"]) .ex-unlock.is-wash .ex-wet { animation: none; }
+  html:not([data-motion="full"]) .ex-unlock.is-wash .ex-blots i,
+  html:not([data-motion="full"]) .ex-unlock.is-paint .ex-strokes i,
+  html:not([data-motion="full"]) .ex-unlock.is-print .ex-gouge,
+  html:not([data-motion="full"]) .ex-unlock.is-gilt .ex-gilt,
+  html:not([data-motion="full"]) .ex-unlock.is-gilt .ex-seal,
+  html:not([data-motion="full"]) .ex-unlock.is-gilt .ex-seal * { transition: none; }
 }
 
 /* 規則說明（「?」打開） */

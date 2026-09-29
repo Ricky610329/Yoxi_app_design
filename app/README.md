@@ -18,6 +18,7 @@ hash 路由、狀態存在 localStorage、可安裝成 PWA。原型一個字沒�
 | 裝到主畫面 | 只有 `localhost` 或 https 才註冊 service worker，才能「加到主畫面」 | 區網的 http 網址能用、不能裝；要裝就放上任何 https 靜態主機 |
 
 - `file://` 下 service worker 會安靜略過，不影響使用。
+- 一般 Chrome／Edge 與 VS Code 預覽都播放完整的翻卡、金粉與節日動畫；僅此 app 使用完整展示模式，不改電腦設定。點畫面或用鍵盤「跳過動畫」仍可快轉，`?still=1` 仍可定格。
 - 第一次開會先看三張 onboarding（可略過）；想重來按 demo 工具的「重設 demo」。
 
 ## 這版怎麼看

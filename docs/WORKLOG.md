@@ -267,3 +267,13 @@
 | （本段這一筆） | 金框＝燙金：蓄力時金色光軌像陀螺儀繞著卡片轉、一拍比一拍多，昇格時收進卡片再閃光；翻開時轉一圈半、兩側甩出光絲 → 停格、重震 → 夜色鍍成金（`.ex-gilt`）、背後一圈一圈描出紋章（`.ex-seal`）、金箔翻著閃著飄下來 → 兩道金線沿卡片的邊描下去（`.ex-foil`），在底部合起來再爆一次金光、蓋上限定版緞帶、一個大和弦；卡名掃兩次光，結果頁的金粉裡混著金箔。停在 `.is-gilt`（跳過、still、減少動態效果同一個樣子）。`APP.fx` 多了 `orbit()`、`leaf` 金箔、`sfx.foil／crown`；explore.spec 加一條 |
 
 驗收：`python app/tests/run.py` 全綠；Playwright 逐格看過蓄力、昇格、翻開、燙金、結果頁，還有 still 與減少動態效果的結果頁。沒動 `prototype/`。
+
+## 2026-09-29 一般瀏覽器恢復完整動畫（分支 `fix/browser-browsing`）
+
+使用者：只調整可操作的 app，不新增內容、按鈕或功能；一般瀏覽器也要完整播放動畫，不改電腦設定。
+
+原因：這台 Chrome 的 `prefers-reduced-motion` 回報 reduce，app 原本直接略過抵達與翻卡，共用 base CSS 也把動畫與轉場縮成近乎零。VS Code 預覽與原本測試的 no-preference 環境沒有重現這個問題。
+
+入口標記 `data-motion="full"`，JS、翻卡、金粉、節日及收藏 CSS 採同一個展示設定；still 仍優先、跳過與離頁清理照舊。`motion.css` 只恢復原 CSS 的 duration（依 `index.html` 順序由 `tools/sync-motion.py` 產生），不覆寫拖曳時的 `transition: none`、不讀 file:// 下可能被拒絕的 CSSOM。測試入口檢查產物同步，新增 `--system-motion` 驗一般瀏覽器設定；VERSION v24，快取清單同步。
+
+驗收：node 106/106、瀏覽器一般與系統偏好兩組皆 309/309；check-sw 與 motion 同步 PASS。實際 Chrome 保持 reduce，抵達 pin 為原本 0.576 秒、收卡依序走到結果，無 console 例外。原型八段驗收通過，六條承諾與基準一致（464 節點、4 個叫車入口、4 個景點、6 個受保護元素、0 外洩／覆蓋、標記 class 無交集；E／F 原有 DOM 差異 3／39 處未變）。沒有修改原型，驗收產生的時間戳不納入提交。

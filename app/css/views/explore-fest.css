@@ -278,6 +278,6 @@
 
 /* 保險：就算有人在減少動態效果時加了 .is-live，也不動 */
 @media (prefers-reduced-motion: reduce) {
-  .fest.is-live * { animation: none !important; }
+  html:not([data-motion="full"]) .fest.is-live * { animation: none !important; }
 }
 html[data-still] .fest * { animation: none !important; }

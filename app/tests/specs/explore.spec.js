@@ -1095,14 +1095,27 @@ T.spec('explore', function (t) {
     t.eq(n && n.textContent.trim(), '先看看路線', '有路線的照舊');
   });
 
-  t.test('QA 8：減少動態效果（APP.reduceMotion）時解鎖直接第三幕', async function (app) {
+  t.test('QA 8：完整展示不受系統減少動態影響；still 優先，未指定展示時跟隨系統', async function (app) {
     await app.reset();
     t.eq(app.APP.reduceMotion(), true, 'still 模式 reduceMotion() 為 true');
     await app.reset({ still: false });
     t.eq(app.APP.reduceMotion(), false, '一般模式為 false');
     app.win.matchMedia = function (q) { return { matches: /reduce/.test(q), media: q, addListener: function () {}, removeListener: function () {} }; };
-    t.eq(app.APP.reduceMotion(), true, '系統要求減少動態效果 → true');
+    t.eq(app.APP.reduceMotion(), false, '完整展示仍播放動畫');
+    t.eq(app.APP.fx.calm(), false, '粒子與翻卡採用相同設定');
     await app.go('/unlock/moat');
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '先顯示抵達，不略過操作');
+    const pin = app.win.getComputedStyle(app.$('.ex-spot__pin'));
+    t.eq(pin.animationName, 'ex-pin-drop', '抵達沿用原本的動畫');
+    t.ok(parseFloat(pin.animationDuration) > .1, 'CSS 動畫不能被系統壓成近乎零');
+    await app.click('[data-act="open-spot"]');
+    await app.click('[data-act="open-card"]');
+    await app.waitFor(function () { return app.$('[data-unlock]').getAttribute('data-at') === '2'; }, 3000, '進入翻卡');
+    await app.click('[data-act="skip-reveal"]');
+    t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '仍可跳過動畫');
+    app.doc.documentElement.removeAttribute('data-motion');
+    t.eq(app.APP.reduceMotion(), true, '系統要求減少動態效果 → true');
+    await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-unlock]').getAttribute('data-at'), '3', '/unlock 直接第三幕');
     await app.reset();
   });

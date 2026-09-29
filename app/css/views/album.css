@@ -100,7 +100,7 @@ main.view .alb-v2__look-ic > svg, main.view .alb-v2__look-lock > svg { width: 10
   to   { box-shadow: 0 0 0 3px transparent, var(--sh-card); }
 }
 html[data-still] .alb-v2 .is-landed { animation: none; }
-@media (prefers-reduced-motion: reduce) { .alb-v2 .is-landed { animation: none; } }
+@media (prefers-reduced-motion: reduce) { html:not([data-motion="full"]) .alb-v2 .is-landed { animation: none; } }
 .alb-v2__section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .alb-v2__section-head h2 { font-size: var(--fs-title); }
 .alb-v2__section-head span { color: var(--app-muted); font-size: var(--fs-cap); }

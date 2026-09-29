@@ -53,6 +53,7 @@ const PRECACHE = [
   '../prototype/css/components.css',
   '../prototype/css/chengshi.css',
   // app css
+  './css/motion.css',
   './css/app.css',
   './css/views/system.css',
   './css/views/ride.css',

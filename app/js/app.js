@@ -525,6 +525,7 @@ function $(sel, root) { return (root || document).querySelector(sel); }
 function isStill() {
   if (typeof document === 'undefined') return false;
   if (document.documentElement.hasAttribute('data-still')) return true;
+  if (document.documentElement.getAttribute('data-motion') === 'full') return false;
   try { if (W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches) return true; }
   catch (e) { /* ignore */ }
   return false;
@@ -1457,7 +1458,7 @@ W.APP = {
   ui: ui,
   map: map,
   start: start,
-  /* 動畫要不要省掉：?still=1（html[data-still]）或系統的「減少動態效果」。views 一律問這個 */
+  /* 動畫要不要省掉：still 優先；展示入口 data-motion=full 播完整動畫，其他情況跟隨系統。views 一律問這個 */
   reduceMotion: isStill,
   fitDevice: fitDevice,
 };

@@ -5,6 +5,7 @@ yoxi 城事 web app 的測試總入口。規格：app/ARCHITECTURE.md §6。
     python app/tests/run.py              # 全部：node 單元測試 → headless Chrome 跑 runner.html
     python app/tests/run.py --unit       # 只跑 node --test app/tests/unit/
     python app/tests/run.py --browser    # 只跑瀏覽器測試
+    python app/tests/run.py --system-motion  # 保留系統動態偏好再驗完整展示
     python app/tests/run.py --only ride  # 只跑一個 spec（逗號分隔可多個；隱含 --browser）
     python app/tests/run.py --keep       # 把 dump 出來的 DOM 留在 app/tests/.out/
     python app/tests/run.py --app fixtures/mini-app.html   # 換受測頁
@@ -83,7 +84,7 @@ def run_unit():
 
 
 # ---------------------------------------------------------------- browser
-def run_browser(only=None, keep=False, budget=180000, app=None, page='runner.html'):
+def run_browser(only=None, keep=False, budget=180000, app=None, page='runner.html', system_motion=False):
     print('── 瀏覽器測試（headless Chrome → tests/%s）' % page + '─' * 10)
     exe = browser()
     if not exe:
@@ -100,9 +101,8 @@ def run_browser(only=None, keep=False, budget=180000, app=None, page='runner.htm
     uri = (HERE / page).resolve().as_uri() + ('?' + '&'.join(q) if q else '')
     cmd = [exe, '--headless=new', '--disable-gpu', '--hide-scrollbars',
            '--allow-file-access-from-files', '--force-device-scale-factor=1',
-           # 這台機器（或 CI）若關了動畫效果，headless 會回報 prefers-reduced-motion: reduce，
-           # 非 still 的流程測試就測不到動畫與計時器；減少動態效果的路徑另有 test 用 matchMedia 替身驗
-           '--force-prefers-no-reduced-motion',
+           # 預設驗 no-preference；--system-motion 保留 OS 設定，抓出一般瀏覽器才出現的動畫回歸。
+           *([] if system_motion else ['--force-prefers-no-reduced-motion']),
            '--window-size=1280,1000',
            '--virtual-time-budget=%d' % budget, '--dump-dom', uri]
     try:
@@ -173,6 +173,7 @@ def main():
     ap.add_argument('--budget', type=int, default=180000, help='--virtual-time-budget 毫秒（預設 180000）')
     ap.add_argument('--app', help='受測頁（相對 tests/，例 fixtures/mini-app.html）')
     ap.add_argument('--selftest', action='store_true', help='驗 harness 本身（fixtures/selftest.html 對 mini-app）')
+    ap.add_argument('--system-motion', action='store_true', help='保留系統動態偏好，驗證一般瀏覽器的完整展示')
     a = ap.parse_args()
 
     if a.selftest:
@@ -187,11 +188,13 @@ def main():
     print('═' * 64)
     print('yoxi 城事 app 測試')
     print('═' * 64)
+    if subprocess.run([sys.executable, str(HERE.parent / 'tools' / 'sync-motion.py'), '--check']).returncode:
+        return 1
     if do_unit:
         bad += run_unit()
         print()
     if do_browser:
-        bad += run_browser(a.only, a.keep, a.budget, a.app)
+        bad += run_browser(a.only, a.keep, a.budget, a.app, system_motion=a.system_motion)
     print('═' * 64)
     print('未通過。' if bad else '全部通過。')
     return 1 if bad else 0

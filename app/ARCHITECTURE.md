@@ -44,6 +44,12 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 
 ## 1. 檔案配置
 
+### 瀏覽器動畫（2026-09-29）
+
+這份展示 app 的入口以 `html[data-motion="full"]` 明確播放既有動畫，避免一般瀏覽器繼承系統的減少動態效果後略過整段收卡；不修改作業系統設定、不新增介面。`APP.reduceMotion()` 與 CSS 都讀同一個標記；拿掉標記則跟隨系統。`?still=1` 優先於展示模式，既有跳過動畫與離頁清理照舊。
+
+`css/motion.css` 最後載入，只在完整展示模式覆寫被共用 base 壓短的 `animation-duration`／`transition-duration`，不改動畫名稱、延遲、變形與拖曳時的 `transition: none`。時間從原 CSS 依載入順序產生，不手寫第二套：修改動畫樣式後跑 `python app/tools/sync-motion.py`，驗收加 `--check` 確認同步。不使用 file:// 可能拒絕的 CSSOM 讀取，不修改 `prototype/`。
+
 ```
 app/
   index.html                單一入口。載入順序見 §2
