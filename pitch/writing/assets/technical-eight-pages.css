@@ -1,0 +1,24 @@
+@import url('eight-pages.css');
+
+h1 { font-size: 22pt; margin-bottom: 4mm; }
+.lead { font-size: 11.5pt; margin-bottom: 4mm; }
+.technical-diagram { margin: 4mm 0; }
+.technical-diagram img { display: block; width: 100%; height: auto; }
+.technical-diagram figcaption { color: var(--yoxi-navy-60); font-size: 8.2pt; line-height: 1.55; margin: 2mm 0 0; }
+h2 { font-size: 12.8pt; margin-top: 4mm; }
+.page:nth-of-type(5) table { font-size: 9.2pt; line-height: 1.5; margin: 3mm 0; }
+.page:nth-of-type(5) th:first-child { width: 19%; }
+.page:nth-of-type(5) th:nth-child(2) { width: 29%; }
+.page:nth-of-type(5) th,.page:nth-of-type(5) td { padding: 1.6mm 2mm; }
+.page:nth-of-type(6) th:first-child { width: 43%; }
+.page:nth-of-type(6) th:nth-child(2) { width: 17%; }
+.page:nth-of-type(6) table { font-size: 9.2pt; margin: 3mm 0; }
+.page:nth-of-type(6) th,.page:nth-of-type(6) td { padding: 1.4mm 2mm; }
+.cost-map { display: flex; gap: 3mm; margin-top: 4mm; }
+.cost-map > div { flex: 1; padding: 3mm 2mm; background: var(--yoxi-cream); border-radius: var(--r-card); text-align: center; }
+.cost-map b,.cost-map span,.cost-map small { display: block; }
+.cost-map b { font-size: 11.5pt; }
+.cost-map span { font-size: 10pt; margin: 1mm 0; }
+.cost-map small { font-size: 8.5pt; }
+.refs { font-size: 10pt; }
+.code-refs { font-size: 9.8pt; }

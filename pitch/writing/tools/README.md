@@ -43,3 +43,14 @@ python pitch/writing/tools/build-eight-pages.py
 依賴同上，另需本目錄 `requirements.txt` 的 markdown-it-py。產出 `pitch/writing/eight-pages.html` 與 `output/pdf/遊喜樂_方案精簡版_8頁.pdf`；版面在 `assets/eight-pages.css`。HTML 須保留 repo 相對路徑，PDF 可獨立分享。
 
 工具檢查八個來源分頁、內容與頁尾間距、橫向溢出、圖片載入、PDF 恰八頁、頁碼及本機連結；並寫入八個章節書籤。`tmp/pdfs/eight-pages/` 保存逐頁 PNG、聯絡表與報告，交件前須視覺檢查。日期及 GitHub 來源版本固定於這次交付，更新內容時同步核對。
+
+## 架構導向的八頁技術章節
+
+使用者分工範圍的新版來源為 `technical-eight-pages.md`：架構、資料流、泳道、AI 管線、工具部署、成本資源、原型、參考來源。圖為主要閱讀線索，正文解釋分工與選擇，可獨立併入隊友提案。原有八頁敘述版保留。
+
+```powershell
+python pitch/writing/tools/render-technical-diagrams.py
+python pitch/writing/tools/build-eight-pages.py --technical
+```
+
+圖的產生器只用 Python 標準庫，色票讀取 `prototype/css/tokens.css`；SVG 存於 `assets/technical/`，可獨立插入其他文件。HTML 是 `technical-eight-pages.html`，版面由 `assets/technical-eight-pages.css` 延伸既有八頁樣式；PDF 為 `output/pdf/遊喜樂_架構與技術方案_8頁.pdf`。驗收圖及報告在 `tmp/pdfs/technical-eight-pages/`，檢查同上；須特別檢視箭頭、深色節點字色及泳道分支順序。

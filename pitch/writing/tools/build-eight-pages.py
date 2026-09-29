@@ -22,10 +22,21 @@ ROOT = Path(__file__).resolve().parents[3]
 WRITING = ROOT / 'pitch/writing'
 TMP = ROOT / 'tmp/pdfs/eight-pages'
 PDF = ROOT / 'output/pdf/遊喜樂_方案精簡版_8頁.pdf'
+SOURCE = 'eight-pages.md'
+HTML = 'eight-pages.html'
+CSS = 'assets/eight-pages.css'
+LABEL = '方案精簡版'
+if '--technical' in sys.argv:
+    SOURCE = 'technical-eight-pages.md'
+    HTML = 'technical-eight-pages.html'
+    CSS = 'assets/technical-eight-pages.css'
+    LABEL = '方案設計與技術落地'
+    TMP = ROOT / 'tmp/pdfs/technical-eight-pages'
+    PDF = ROOT / 'output/pdf/遊喜樂_架構與技術方案_8頁.pdf'
 
 
 def prepare():
-    source = (WRITING / 'eight-pages.md').read_text(encoding='utf-8')
+    source = (WRITING / SOURCE).read_text(encoding='utf-8')
     chunks = re.split(r'<!-- page: (.*?) -->', source)[1:]
     assert len(chunks) == 16, 'Exactly eight page sections required'
     md = MarkdownIt('commonmark', {'html': True}).enable('table')
@@ -36,14 +47,14 @@ def prepare():
         content = md.render(markdown)
         page = i // 2 + 1
         sections.append(f'<section class="page"><div class="body">{content}</div>'
-                        f'<footer class="footer"><span>遊喜樂 · 方案精簡版 ｜ 2026.09.29</span>'
+                        f'<footer class="footer"><span>遊喜樂 · {LABEL} ｜ 2026.09.29</span>'
                         f'<span>{page:02d} / 08</span></footer></section>')
     result = ('<!doctype html><html lang="zh-Hant"><head><meta charset="UTF-8">'
               '<meta name="viewport" content="width=device-width,initial-scale=1">'
-              '<title>遊喜樂｜八頁方案說明</title>'
-              '<link rel="stylesheet" href="assets/eight-pages.css"></head><body>'
+              f'<title>遊喜樂｜{LABEL}</title>'
+              f'<link rel="stylesheet" href="{CSS}"></head><body>'
               + ''.join(sections) + '</body></html>')
-    (WRITING / 'eight-pages.html').write_text(result, encoding='utf-8')
+    (WRITING / HTML).write_text(result, encoding='utf-8')
     return result, titles
 
 
@@ -95,13 +106,13 @@ def main():
         if any(p['remainingPx'] < 8 or p['horizontalOverflow'] or not p['images'] for p in geometry):
             raise RuntimeError('Page content overflow / missing image: ' + json.dumps(geometry))
         subprocess.run(args + ['--no-pdf-header-footer', '--print-to-pdf=' + str(raw),
-                               (WRITING / 'eight-pages.html').as_uri()],
+                               (WRITING / HTML).as_uri()],
                        capture_output=True, timeout=60, check=True)
     report = {'pages': 0, 'geometry': geometry, 'out_of_bounds': [], 'local_links': 0}
     with fitz.open(raw) as doc:
         assert len(doc) == 8, f'Expected eight pages, got {len(doc)}'
         doc.set_toc([[1, title, i + 1] for i, title in enumerate(titles)])
-        doc.set_metadata({'title': '遊喜樂｜方案精簡版（8 頁）', 'author': '遊喜樂',
+        doc.set_metadata({'title': f'遊喜樂｜{LABEL}（8 頁）', 'author': '遊喜樂',
                           'subject': '方案架構、流程、AI、工具、成本資源與補充資料'})
         for i, page in enumerate(doc):
             text = page.get_text()

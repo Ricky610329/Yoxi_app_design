@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="460" viewBox="0 0 760 460" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">資料流與權責</title>
+  <desc id="diagram-desc">內容、本人偏好、定位與授權行程證據如何形成推薦、有效到訪與收藏紀錄，並區分原型與正式資料責任。</desc>
+  <defs>
+    <style>text { font-family: Noto Sans TC, Microsoft JhengHei, PingFang TC, sans-serif; }.label { font-size: 16px; font-weight: 500; }.strong { font-size: 18px; font-weight: 700; }.title { font-size: 24px; font-weight: 800; }.line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }</style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#062040" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#778AA4" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="460" fill="#FCFDFF" />
+  <text x="28" y="37" font-size="24px" font-weight="800" fill="#062040" text-anchor="start">資料流與權責</text>
+  <rect x="520" y="16" width="212" height="32" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="626.0" y="38" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">提案架構／待接入能力</text>
+  <rect x="22" y="76" width="716" height="102" rx="8" fill="#FBEBDF" stroke="#E3E8EE" stroke-width="1.5" />
+  <rect x="22" y="190" width="716" height="86" rx="8" fill="#EAF1F5" stroke="#E3E8EE" stroke-width="1.5" />
+  <rect x="22" y="288" width="716" height="118" rx="8" fill="#FCFDFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="38" y="103" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">A 內容</text>
+  <text x="38" y="217" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">B 偏好</text>
+  <text x="38" y="315" font-size="18px" font-weight="800" fill="#062040" text-anchor="start">C 到訪</text>
+  <path d="M 223 127 L 246 127" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 383 127 L 406 127" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 553 127 L 576 127" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="102" y="95" width="121" height="64" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="162.5" y="117.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="162.5" dy="0">編輯／</tspan>
+    <tspan x="162.5" dy="22">可信來源</tspan>
+  </text>
+  <rect x="246" y="95" width="137" height="64" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="314.5" y="117.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="314.5" dy="0">查核</tspan>
+    <tspan x="314.5" dy="22">與發布</tspan>
+  </text>
+  <rect x="406" y="91" width="147" height="72" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="479.5" y="117.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="479.5" dy="0">地方及資產庫</tspan>
+    <tspan x="479.5" dy="22">content_version</tspan>
+  </text>
+  <rect x="576" y="95" width="143" height="64" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="647.5" y="117.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="647.5" dy="0">推薦／</tspan>
+    <tspan x="647.5" dy="22">畫面呈現</tspan>
+  </text>
+  <path d="M 242 235 L 270 235" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 420 235 L 448 235" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 584 235 L 612 235" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="102" y="208" width="140" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="172.0" y="236.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="172.0" dy="0">本人帳號</tspan>
+  </text>
+  <rect x="270" y="208" width="150" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="345.0" y="236.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="345.0" dy="0">偏好授權</tspan>
+  </text>
+  <rect x="448" y="208" width="136" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="516.0" y="236.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="516.0" dy="0">規則與排序</tspan>
+  </text>
+  <rect x="612" y="208" width="107" height="54" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="665.5" y="236.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="665.5" dy="0">推薦</tspan>
+  </text>
+  <text x="103" y="271" font-size="16px" font-weight="500" fill="#778AA4" text-anchor="start">帳號只界定本人資料與權限</text>
+  <path d="M 221 348 L 236 348" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 359 348 L 374 348" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 479 348 L 494 348" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <path d="M 604 348 L 619 348" class="line" stroke="#062040" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="102" y="318" width="119" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="161.5" y="338.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="161.5" dy="0">定位＋授權</tspan>
+    <tspan x="161.5" dy="22">行程證據</tspan>
+  </text>
+  <rect x="236" y="318" width="123" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="297.5" y="338.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="297.5" dy="0">到訪核對</tspan>
+    <tspan x="297.5" dy="22">與去重</tspan>
+  </text>
+  <rect x="374" y="314" width="105" height="68" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="426.5" y="338.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="426.5" dy="0">有效到訪</tspan>
+    <tspan x="426.5" dy="22">visit_id</tspan>
+  </text>
+  <rect x="494" y="318" width="110" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="549.0" y="349.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="549.0" dy="0">收藏紀錄</tspan>
+  </text>
+  <rect x="619" y="318" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#E3E8EE" stroke-width="1.5" />
+  <text x="669.0" y="349.0" font-size="16px" font-weight="700" fill="#062040" text-anchor="middle">
+    <tspan x="669.0" dy="0">收藏回看</tspan>
+  </text>
+  <rect x="22" y="418" width="716" height="30" rx="8" fill="#062040" stroke="#062040" stroke-width="1.5" />
+  <text x="380" y="439" font-size="16px" font-weight="700" fill="#FFFFFF" text-anchor="middle">正式有效紀錄由後端持有；現有原型僅以 localStorage 保存示意狀態</text>
+</svg>
