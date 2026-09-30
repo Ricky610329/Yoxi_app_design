@@ -127,6 +127,7 @@
 :where(html[data-motion="full"]:not([data-still])) .alb-v2 .is-landed { animation-duration: var(--t-scene) !important; }
 
 /* app/css/views/album-memory.css */
+:where(html[data-motion="full"]:not([data-still])) .memory-nav > span { transition-duration: var(--t-fast) !important; }
 :where(html[data-motion="full"]:not([data-still])) .memory-tones button { transition-duration: var(--t-fast), var(--t-fast) !important; }
 :where(html[data-motion="full"]:not([data-still])) .memory-face.is-made { animation-duration: var(--t-scene) !important; }
 

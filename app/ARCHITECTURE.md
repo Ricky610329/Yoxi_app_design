@@ -439,7 +439,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/family/:id` | 子女的手機：在 LINE 裡點開那張明信片（示意）：喜歡、三句快速回覆、自己打一句；`?share` 沒給或對不上用這張卡最近的一次，沒傳過是空狀態 | null | 新（參考 `vision-family-a／b.html`） | album（album-family.js） |
 | `/badge/:id` | 獎章詳情 | album | `badge.html` | album |
 | `/footprint` | 城市足跡（真實道路留白、已訪非道路區域上色，覆蓋率算出來） | album | `fogmap.html`、`concept-map-footprint.html` | album |
-| `/lookback` | 回憶卡：左右滑動到訪地點模板，可加自己的照片、挑光線，一鍵製作保存；整頁不捲 | null | `lookback.html` | album-memory |
+| `/lookback` | 回憶卡：左右滑動（或按卡片兩側小箭頭）換到訪地點模板，可加自己的照片、挑光線，一鍵製作保存；整頁不捲 | null | `lookback.html` | album-memory |
 | `/week` | 週回顧：七日里程圖、期間內收卡、分享（不顯示步數或比較排名） | album | `week.html` | album |
 | `/elder` | 長輩圖（`?card=<id>` 把那張排第一並預選） | album | `elder.html` | album |
 | `/settings` | 遊喜樂設定（隱私開關、重設、demo 工具） | null | `settings.html` | system |
@@ -453,7 +453,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 
 ## 9. 桌機／手機
 
-**回憶卡（2026-09-29 追加）**：`js/views/album-memory.js` 與同名 CSS 負責 `/lookback`，沿用深藍底與完整明信片的視覺。`APP.album.memory.templates()` 優先取今天到訪地點；當日沒有記錄時，明示改用最近到訪地點。左右滑動模板，可選本機照片與三種光線（晴光／柔光／暮色，自繪圖示，不用笑臉；不問使用者心情），只有「做成我的卡」一個主要動作，沒有下拉選單或提示詞面板。照片在本機縮至長邊最多 1000 px、JPEG 壓縮後預覽；光線對應內部構圖提示、色調與短句。底圖署名印在卡面上（自己的照片不印）。這是構圖示意，尚未接 AI，必須明示。
+**回憶卡（2026-09-29 追加）**：`js/views/album-memory.js` 與同名 CSS 負責 `/lookback`，沿用深藍底與完整明信片的視覺。`APP.album.memory.templates()` 優先取今天到訪地點；當日沒有記錄時，明示改用最近到訪地點。左右滑動模板（卡片兩側有上一張／下一張小箭頭，到頭那一邊不畫；桌機可用滑鼠拖、←→ 鍵換），可選本機照片與三種光線（晴光／柔光／暮色，自繪圖示，不用笑臉；不問使用者心情），只有「做成我的卡」一個主要動作，沒有下拉選單或提示詞面板。照片在本機縮至長邊最多 1000 px、JPEG 壓縮後預覽；光線對應內部構圖提示、色調與短句。底圖署名印在卡面上（自己的照片不印）。這是構圖示意，尚未接 AI，必須明示。
 
 **一屏（2026-09-29）**：`/lookback` 整頁不捲。`.memory-stage` 以 `flex:1` 吃掉剩下的高度並設 `container-type:size`，卡片高 = min(舞台高, 舞台寬換算的高)、置中吸附；標題、光線、照片、製卡鈕、狀態列、收納列都是固定高。頁面上沒有說明小字：狀態列平常是空的（先留一行高，按了才出回饋），收納列一直佔同一個高度（沒有卡時是空的、不畫分隔線），收下第一張時卡片不會突然變小。卡片寬度 ≤ 240 px 時用 container query 收小郵戳與字級。
 

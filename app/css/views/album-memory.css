@@ -12,11 +12,22 @@
 .memory-heading p { margin-top:var(--sp-1); color:var(--yoxi-slate-lite); font-size:var(--fs-cap); line-height:var(--lh-body); }
 
 /* 卡片高度 = min(舞台高, 舞台寬換算的高)；左右留白讓第一張與最後一張都能置中 */
-.memory-body > .memory-stage { flex:1 1 0; min-height:0; container-type:size; }
+.memory-body > .memory-stage { position:relative; flex:1 1 0; min-height:0; container-type:size; }
 .memory-templates { --face-h:min(100cqh - 2 * var(--sp-2), (100cqw - 2 * var(--gutter)) * 1.125); --face-w:calc(var(--face-h) / 1.125);
   display:flex; align-items:center; gap:var(--sp-3); height:100%; overflow-x:auto; overflow-y:hidden;
   padding:0 max(var(--gutter), (100cqw - var(--face-w)) / 2); scroll-snap-type:x mandatory; scrollbar-width:none; }
 .memory-templates::-webkit-scrollbar { display:none; }
+/* 滑鼠可以拖：拖的時候關吸附、不選字、圖片不被拖走 */
+@media (hover: hover) and (pointer: fine) { .memory-templates { cursor:grab; } }
+.memory-templates.is-dragging { cursor:grabbing; scroll-snap-type:none; user-select:none; }
+.memory-templates img { -webkit-user-drag:none; }
+/* 左右換一張的小箭頭：浮在卡片兩側邊框上，按區 44px；到頭的那一邊不畫 */
+.memory-nav { position:absolute; top:50%; z-index:1; display:grid; place-items:center; width:44px; height:44px; margin-top:-22px; padding:0; background:transparent; color:var(--yoxi-navy); }
+.memory-nav--prev { left:var(--sp-1); }
+.memory-nav--next { right:var(--sp-1); }
+.memory-nav > span { display:grid; place-items:center; width:36px; height:36px; border-radius:var(--r-pill); background:var(--yoxi-cream); box-shadow:var(--sh-fab); transition:transform var(--t-fast) var(--ease); }
+.memory-nav svg { display:block; width:22px; height:22px; }
+.memory-nav:active > span { transform:scale(.92); }
 .memory-face { container:memory-face / inline-size; position:relative; flex:0 0 auto; width:var(--face-w); height:var(--face-h); min-width:0; overflow:hidden; isolation:isolate; scroll-snap-align:center; border:5px solid var(--yoxi-cream); border-radius:var(--r-img); background:var(--yoxi-cream); box-shadow:var(--sh-lift); color:var(--yoxi-white); text-align:left; }
 .memory-art,.memory-template-art { display:block; position:absolute; inset:0; overflow:hidden; }
 .memory-template-art > .postcard__art { width:100%; height:100%; }

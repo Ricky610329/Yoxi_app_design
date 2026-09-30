@@ -384,6 +384,48 @@ T.spec('album', function (t) {
     t.eq(app.text('[data-memory-status]'), '', '還沒按之前沒有說明小字');
   });
 
+  /* 桌機滑鼠不能拖捲動列：兩顆小箭頭、左右方向鍵、滑鼠拖曳都要換得到模板 */
+  t.test('/lookback 小箭頭、方向鍵、滑鼠拖曳都能左右換模板；到頭那一邊的箭頭不畫', async function (app) {
+    await app.reset();
+    await app.go('/lookback');
+    const faces = app.$$('[data-act="pick-memory-template"]');
+    const prev = app.$('[data-act="step-memory-template"][data-step="-1"]'), next = app.$('[data-act="step-memory-template"][data-step="1"]');
+    const at = function () { return faces.indexOf(app.$('[data-act="pick-memory-template"].is-selected')); };
+    t.ok(prev && next, '有上一張／下一張兩顆小箭頭');
+    if (!prev || !next) return;
+    t.ok(prev.hidden, '第一張時沒有上一張');
+    if (faces.length < 2) { t.ok(next.hidden, '只有一張時也沒有下一張'); return; }
+    t.ok(!next.hidden, '第一張時有下一張');
+    await app.click(next);
+    t.eq(at(), 1, '按下一張換到第二張');
+    t.ok(!prev.hidden, '第二張起有上一張');
+    await app.click(prev);
+    t.eq(at(), 0, '按上一張回到第一張');
+    for (let i = 1; i < faces.length; i++) await app.click(next);
+    t.eq(at(), faces.length - 1, '一路按到最後一張');
+    t.ok(next.hidden && !prev.hidden, '最後一張時只剩上一張');
+    const key = function (k) { faces[at()].dispatchEvent(new app.win.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })); };
+    key('ArrowLeft');
+    t.eq(at(), faces.length - 2, '← 換到前一張');
+    key('ArrowRight');
+    t.eq(at(), faces.length - 1, '→ 換到後一張');
+    await app.tick(200);
+    const track = app.$('[data-memory-templates]');
+    const ptr = function (type, x) { track.dispatchEvent(new app.win.PointerEvent(type, { pointerType: 'mouse', pointerId: 1, button: 0, clientX: x, bubbles: true, cancelable: true })); };
+    const left0 = track.scrollLeft;
+    ptr('pointerdown', 100); ptr('pointermove', 180);
+    t.ok(track.classList.contains('is-dragging') && track.scrollLeft < left0, '拖的時候卡片跟著走 ' + left0 + ' → ' + track.scrollLeft);
+    ptr('pointerup', 180);
+    t.eq(at(), faces.length - 2, '往右拖放開換到前一張');
+    faces[faces.length - 1].click();
+    t.eq(at(), faces.length - 2, '放開後補的那一下 click 不算點卡');
+    await app.tick(200);
+    t.ok(!track.classList.contains('is-dragging'), '停下來後吸附開回來');
+    await app.click(faces[0]);
+    t.eq(at(), 0, '拖完之後點卡照常換');
+    t.eq(app.$$('[data-act="step-memory-template"]:not([hidden])').length, 1, '回到第一張只剩下一張');
+  });
+
   t.test('/lookback 上傳自己的照片可替換模板、移除可還原；格式錯誤會顯示原因', async function (app) {
     await app.reset();
     await app.go('/lookback');
