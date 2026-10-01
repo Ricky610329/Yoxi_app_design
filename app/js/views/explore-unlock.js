@@ -8,10 +8,10 @@
    原型：unlock.html（三幕解鎖的前身）。
    搭 yoxi 抵達是金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
    手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
-     幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板，面板上先寫好會收到哪一款、為什麼。
+     幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板（只寫地名，為什麼是這一款收在「?」）。
      翻卡（data-at=2）：卡背升起 → 蓄力 → 點一下翻開 → 依款式給特效（金框最重）。
      結果（data-at=3）：卡面（節日那一週多一層會動的插畫、首訪與里程各蓋一枚戳）＋畫風名＋跟這個地方、這個時節有關的一句話
-       （explore-verse.js；為什麼是這一款只寫在面板與「?」，這裡不再重複）、寫一句話、收進收藏。
+       （explore-verse.js；為什麼是這一款只寫在「?」）、寫一句話、收進收藏。
        今天已收過、still、減少動態效果（APP.reduceMotion）直接停在結果。收下時司機還在等（來回的行程）就回 /trip，不然回收藏。
    特效工具在 explore-fx.js（APP.fx）；點畫面可以快轉：蓄力中 → 可以翻、翻開中 → 結果。
    鍵盤與報讀器：按下「收集明信片」焦點移到「跳過動畫」（平常看不到，鍵盤焦點才浮出來）；翻完焦點移到「收到 ○○」那一行。
@@ -19,8 +19,10 @@
    不用等 mount、不寫 store；重整、返回都是同一款。
    結果頁不會一直動：金粉飄幾秒就停、光芒與全息掃光有限次；離開這一頁音效（sfx.stopAll）與規則說明一起收掉。
    「回探索」與找不到、返回的保底都回叫車首頁的探索模式（/ride?mode=explore&area=<id>），不回舊的 /explore。
-   規則說明收在收集面板與成品右上角的「?」裡（data-act="open-rules"），面板只寫這一次適用的那幾條（結果換成那一句話）。
+   規則說明收在收集面板與成品右上角的「?」裡（data-act="open-rules"）。
    刻意沒有：機率、抽籤、「越稀有越華麗」的暗示（蓄力拍數只分金框與其他，四季的畫風一樣重）；
+             標題底下的「搭 yoxi 抵達 · 幾公里」、面板上一條一條的「為什麼」、翻開之後的「司機同行紀念」（小字太多，2026-10-01 拿掉，
+             每一款都一樣；怎麼來的看頂上的標籤，為什麼是這一款看「?」）；
              分享鈕（分享在明信片頁，這一頁只做「收下」一件事）、司機姓名（MOCK 沒有這筆資料，不編）。
    每款翻開的反應（REVEAL）刻意寫成五段程式而不是資料表：停格、震動、粒子、音效的先後各款不同，
    攤成表反而看不出節奏。
@@ -41,7 +43,6 @@ const fmt = APP.fmt;
 const E = APP.explore;
 const CARD_STYLES = E.CARD_STYLES;
 const cardOrigin = E.cardOrigin;
-const ruleLines = E.ruleLines;
 const cardFace = E.cardFace;
 const cardPhoto = E.cardPhoto;
 const openRules = E.openRules;
@@ -52,7 +53,7 @@ const M = K.M, collected = K.collected, num = K.num;
 const ridePoints = K.ridePoints;
 const styleOf = K.styleOf, arrivalAt = K.arrivalAt, today = K.today, marksHTML = K.marksHTML;
 const closeRules = K.closeRules;
-const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar, distHTML = K.distHTML;
+const exploreHome = K.exploreHome, notFound = K.notFound, backFabBar = K.backFabBar;
 
 /* 收下時寫的一句話最多幾個字：輸入框的 maxlength、提示文字、收下時的截斷都讀這一個 */
 const NOTE_MAX = 40;
@@ -176,7 +177,6 @@ function renderUnlock(params) {
   const got = collected(p) && !canCollect(p.card);
   const origin = got && p.card ? cardOrigin(p.card, visitsOf(p.card).length) : null;
   const style = origin ? origin.style : arr.style;
-  const lines = origin ? origin.lines : ruleLines(arr.rule);
   const marks = origin ? origin.marks : marksHTML(arr.rule);
   const v = origin ? origin.v : arr.v;
   /* 金框看款式（搭 yoxi 抵達就是金框）；限定版與 +50 點只給第一次搭 yoxi 去走不到的地方（ride.js 的 limitedPlace） */
@@ -184,14 +184,9 @@ function renderUnlock(params) {
   const bonus = isRide && limitedPlace(p) && arr.v === 1;
   const name = cardName(p);
   const day = today();
-  const km = arr.km;
-  const arriveBy = isRide
-    ? '搭 yoxi 抵達 · ' + num(km) + ' 公里'
-    : (p.dist != null ? '走了 ' + distHTML(p.dist) + ' 抵達' : '走路抵達');
   const tier = tierOf(style);
   const rulesBtn = '<button class="ex-rules-btn" type="button" data-act="open-rules" aria-label="明信片怎麼決定"><span class="ex-rules-btn__i">?</span></button>';
-  const why = lines.map(function (t) { return '<span class="ex-why__l">' + esc(t) + '</span>'; }).join('');
-  /* 翻開之後卡片底下的那一句（explore-verse.js）：為什麼是這一款已經寫在面板上，這裡換成跟這個地方、這個時節有關的一句話 */
+  /* 翻開之後卡片底下的那一句（explore-verse.js）：跟這個地方、這個時節有關的一句話 */
   const verse = E.verseOf(p.card, origin || arr.rule);
 
   /* ---- 幕一：抵達。夜色地圖上，這個地方亮起來；點它拉出「收集明信片」 ---- */
@@ -202,7 +197,6 @@ function renderUnlock(params) {
           (isRide ? '搭 yoxi 抵達' : '走路抵達') + '</span>' +
           (v > 1 ? '<span class="ex-arrive__chip ex-arrive__chip--again" data-visit-n>第 ' + num(v) + ' 次來</span>' : '') +
         '<h1 class="unlock__title">你到了<br>' + esc(name) + '</h1>' +
-        '<p class="unlock__sub">' + arriveBy + '</p>' +
       '</div>' +
       '<div class="ex-spot-wrap">' +
         '<button class="ex-spot" type="button" data-act="open-spot" aria-label="' + esc(name) + '：收集這裡的明信片">' +
@@ -218,7 +212,6 @@ function renderUnlock(params) {
           '<span class="ex-sheet__art" data-art="' + esc(p.art) + '" data-seed="1"></span>' +
           '<span class="ex-sheet__txt">' +
             '<span class="ex-sheet__t">' + esc(name) + '</span>' +
-            '<span class="ex-sheet__p ex-why" data-why>' + why + '</span>' +
           '</span>' +
           rulesBtn +
         '</div>' +
@@ -263,10 +256,9 @@ function renderUnlock(params) {
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + (v > 1 ? '?v=' + v : '') + '" data-act="open-postcard">看這張明信片</a>' : '') +
         '<a class="btn-link ex-center ex-unlock__link" href="#' + esc(exploreHome(p.id)) + '" data-act="go-explore">回探索</a>' +
       '</div>'
-    : (isRide
+    : (bonus
         ? '<div class="ex-unlock__gold" data-gold-note>' +
-            '<span class="ex-unlock__goldrow"><span data-icon="badge" class="ex-ic16"></span>司機同行紀念 · 這一段是 yoxi 陪你到的</span>' +
-            (bonus ? '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' : '') +
+            '<span class="ex-unlock__goldrow" data-points>和泰 Points ' + num('+' + ridePoints()) + '</span>' +
           '</div>'
         : '') +
       '<div class="ex-unlock__in">' +
