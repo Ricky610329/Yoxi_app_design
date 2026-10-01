@@ -450,14 +450,16 @@ function albumV2Render() {
   const got = cards.filter(function (p) { return STATE.has(p.id); });
   /* 每去一次收一張：圖鑑算的是不同的明信片（got），回訪收下的另外寫一句 */
   const again = APP.explore.recentVisits().length - got.length;
+  /* 有收過卡、沒有回訪時不另寫一句：張數自己會說話 */
+  const note = again > 0 ? '回訪又收了 <span class="num" data-stat="again">' + again + '</span> 張，每一次都留著。'
+             : got.length ? '' : '到了一個地方，就收下一張。';
   return '<div class="alb alb-v2 alb-v2--home"><div class="scroll alb-scroll alb-v2__scroll">' +
       '<header class="alb-v2__header"><span class="alb-v2__brand">遊喜樂</span><h1>收藏</h1>' +
         '<p>走過的地方，都留在這裡。</p></header>' +
       '<a class="alb-v2__hero" href="#/postcards" data-act="go-postcards">' +
         '<div><span class="alb-v2__label">我的明信片</span><div class="alb-v2__hero-count">' +
           '<strong data-stat="cards">' + got.length + '</strong><span>／' + cards.length + ' 張</span></div>' +
-          '<p>' + (again > 0 ? '回訪又收了 <span class="num" data-stat="again">' + again + '</span> 張，每一次都留著。'
-                   : got.length ? '一張卡，記下一個到過的地方。' : '到了一個地方，就收下一張。') + '</p>' +
+          (note ? '<p>' + note + '</p>' : '') +
           '<span class="alb-v2__hero-go">看全部<span class="arrow arrow--onred"></span></span></div>' +
         /* 最近收下的三張（回訪的也算：最新的那一張在最上面） */
         '<div class="alb-v2__stack" aria-hidden="true">' + APP.explore.recentVisits(3).map(function (x, i) {
@@ -489,7 +491,8 @@ function albumV2Mount(root, params, ctx) {
     const values = Array.prototype.slice.call(look.querySelectorAll('.alb-v2__look-value'));
     if (!values.length) return;
     const tokens = getComputedStyle(document.documentElement);
-    const max = parseFloat(tokens.getPropertyValue('--fs-display')) || 32;
+    /* 上限比頁首大標再大一些，讓數字撐滿格子；放不下時一起縮（三格同一個字級） */
+    const max = (parseFloat(tokens.getPropertyValue('--fs-display')) || 32) * 1.3;
     const min = parseFloat(tokens.getPropertyValue('--fs-sm')) || 14;
     look.style.setProperty('--alb-metric-size', max + 'px');
     let fit = max;

@@ -54,13 +54,14 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
   margin: 0 var(--gutter); padding: var(--sp-5); overflow: hidden;
   border-radius: var(--r-card); background: var(--yoxi-navy); color: var(--yoxi-white);
 }
-.alb-v2__hero > div:first-child { position: relative; z-index: 2; }
-.alb-v2__label { font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+/* 左欄直排：「看全部」貼底，中間沒有那一句時不會留一塊空白 */
+.alb-v2__hero > div:first-child { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; }
+.alb-v2__label { font-size: var(--fs-title); font-weight: var(--fw-bold); line-height: 1.2; }
 .alb-v2__hero-count { display: flex; align-items: baseline; margin-top: var(--sp-3); }
 .alb-v2__hero-count strong { font-size: calc(var(--fs-display) * 1.88); line-height: 1; font-weight: var(--fw-heavy); }
 .alb-v2__hero-count span { font-size: var(--fs-sm); }
 .alb-v2__hero p { max-width: 155px; margin-top: var(--sp-2); font-size: var(--fs-cap); line-height: var(--lh-body); opacity: .85; }
-.alb-v2__hero-go { display: inline-flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.alb-v2__hero-go { display: inline-flex; align-items: center; gap: var(--sp-2); margin-top: auto; padding-top: var(--sp-3); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
 .alb-v2__stack { position: absolute; width: 146px; height: 156px; right: var(--sp-2); bottom: var(--sp-2); }
 .alb-v2__stack-art { position: absolute; display: block; width: 89px; height: 126px; overflow: hidden; border: 3px solid var(--yoxi-white); border-radius: var(--r-img); box-shadow: var(--sh-lift); }
 .alb-v2__stack-art > .postcard__art { width: 100%; height: 100%; }
@@ -73,15 +74,15 @@ body:not([data-tab]) .alb-scroll { padding-bottom: var(--sp-6); }
 .alb-v2__look { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); padding: var(--sp-3) var(--gutter) 0; }
 .alb-v2__look-tile {
   position: relative; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; min-height: 92px;
-  padding: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2) var(--sp-3) calc(var(--sp-2) + 2px);
   border: 1px solid var(--yoxi-line); border-radius: var(--r-card);
   background: var(--yoxi-white); box-shadow: var(--sh-card); color: var(--yoxi-navy);
 }
-.alb-v2__look-value { display: flex; align-items: baseline; gap: var(--sp-1); min-width: 0; white-space: nowrap; }
+.alb-v2__look-value { display: flex; align-items: baseline; gap: 2px; min-width: 0; white-space: nowrap; }
 .alb-v2__look-value strong { flex: none; font-size: var(--alb-metric-size, var(--fs-display)); font-weight: var(--fw-heavy); line-height: .95; letter-spacing: -.04em; }
 .alb-v2__look-value > span { color: var(--app-muted); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-.alb-v2__look-label { display: flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-3); color: var(--app-muted); font-size: var(--fs-xs); font-weight: var(--fw-bold); white-space: nowrap; }
-.alb-v2__look-ic { width: 15px; height: 15px; display: block; flex: none; color: var(--app-muted); }
+.alb-v2__look-label { display: flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-3); color: var(--app-muted); font-size: var(--fs-sm); font-weight: var(--fw-bold); white-space: nowrap; }
+.alb-v2__look-ic { width: 17px; height: 17px; display: block; flex: none; color: var(--app-muted); }
 main.view .alb-v2__look-ic > svg { width: 100%; height: 100%; display: block; }
 /* 舊連結 ?tab=journal 等落在首頁：那一塊亮一下（海軍藍外框淡出），定格與減少動態效果時不動 */
 .alb-v2 .is-landed { animation: alb-land var(--t-scene) var(--ease-out) both; }
