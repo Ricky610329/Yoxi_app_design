@@ -1,51 +1,110 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>遊喜樂｜三分鐘影片分鏡與腳本</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>遊喜樂｜三分鐘影片腳本與分鏡敘述</title>
 <style>
 /*TOKENS*/
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--yoxi-paper);color:var(--yoxi-navy);font-family:var(--font-sans);line-height:1.75}button,input{font:inherit}button,a{touch-action:manipulation}button{cursor:pointer;border:1px solid var(--yoxi-line);border-radius:var(--r-btn);padding:8px 15px;color:var(--yoxi-navy);background:var(--yoxi-white)}button:hover,button[aria-pressed="true"]{background:var(--yoxi-navy);color:var(--yoxi-white)}button:disabled{opacity:.4;cursor:default}a{color:inherit;text-underline-offset:5px}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--yoxi-slate);outline-offset:4px}.wrap{max-width:1376px;margin:auto;padding:0 40px}.topline{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--yoxi-line);padding:20px 0;gap:16px}.brand{font-style:italic;font-size:27px;font-weight:900;color:var(--yoxi-red)}.topline nav{display:flex;gap:22px;font-size:13px}.eyebrow{font-size:12px;letter-spacing:.15em;font-weight:700;text-transform:uppercase}.muted{color:var(--yoxi-navy-60)}.hero{display:grid;grid-template-columns:1.4fr 1fr;gap:70px;padding:54px 0 36px}.hero h1{font-size:clamp(32px,4vw,55px);line-height:1.27;letter-spacing:-.04em;margin:14px 0 20px}.hero p{margin:0;max-width:690px;font-size:16px}.hero aside{border-left:1px solid var(--yoxi-line);padding-left:30px;align-self:center}.hero aside strong{display:block;font-size:17px}.facts{display:flex;gap:28px;margin-top:23px}.facts b{font-size:31px;display:block;line-height:1.3}.facts span{font-size:12px;color:var(--yoxi-navy-60)}.bar{display:flex;gap:4px;margin:10px 0 36px}.bar button{border:0;flex:var(--weight);background:var(--yoxi-mist);padding:10px 8px;text-align:left;font-size:12px;white-space:nowrap}.bar button:nth-child(2){background:var(--yoxi-navy);color:var(--yoxi-white)}.bar small{display:block;opacity:.7}section{scroll-margin-top:20px}.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:15px;margin:28px 0 18px}.section-head h2{font-size:25px;margin:0}.section-head p{font-size:13px;margin:0;color:var(--yoxi-navy-60)}.viewer{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(310px,1fr);gap:26px}.stage{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:var(--r-card);background:var(--yoxi-cream);container-type:inline-size}.frame{height:100%;width:100%;position:relative;padding:5% 5% 7%;display:flex;gap:4%;align-items:center;background:var(--yoxi-cream);overflow:hidden}.frame.dark{background:var(--yoxi-navy);color:var(--yoxi-white)}.frame .copy{width:56%;position:relative;z-index:1}.frame .kicker{font-size:1.4cqw;font-weight:700;letter-spacing:.08em;margin-bottom:3cqw}.frame h3{text-wrap:balance;font-size:4.4cqw;line-height:1.35;letter-spacing:-.03em;margin:0 0 2cqw}.frame .subline{font-size:1.6cqw;line-height:1.7;margin:0}.frame .disclosure{position:absolute;bottom:2.5%;left:5%;right:5%;font-size:1.25cqw;opacity:.75;line-height:1.5}.phone{width:30%;height:105%;align-self:center;display:flex;justify-content:center;filter:drop-shadow(0 12px 15px var(--yoxi-navy-60));transform:rotate(2deg)}.phone img{max-width:100%;max-height:100%;object-fit:contain;border:4px solid var(--yoxi-navy);border-radius:var(--r-sheet);background:var(--yoxi-white)}.art{flex:1;position:relative;min-width:0}.postcard{background:var(--yoxi-white);color:var(--yoxi-navy);padding:1.3cqw;transform:rotate(5deg);box-shadow:var(--sh-lift);border-radius:var(--r-img)}.postcard .landscape{height:14cqw;background:var(--yoxi-mist);display:grid;place-items:center;overflow:hidden}.postcard p{font-size:1.6cqw;margin:1cqw 0 0;font-weight:700}.postcard small{font-size:1.15cqw;display:block}.landscape svg{width:100%;height:100%}.bubble{padding:1.5cqw;border-radius:var(--r-card);background:var(--yoxi-white);box-shadow:var(--sh-card);font-size:1.6cqw;margin:1.4cqw 0;color:var(--yoxi-navy)}.bubble.reply{margin-left:3cqw;background:var(--yoxi-mist)}.symbols{font-size:5cqw;letter-spacing:.2em}.diagram{display:flex;flex-direction:column;gap:1.5cqw}.diagram p{margin:0;border:1px solid var(--yoxi-slate-lite);background:var(--yoxi-white);color:var(--yoxi-navy);border-radius:var(--r-card);padding:1.6cqw;font-size:1.45cqw}.diagram b{display:block;font-size:1.7cqw}.diagram .gate{background:var(--yoxi-navy);color:var(--yoxi-white)}.frame.title .copy{width:60%}.frame.title h3{font-size:7.5cqw}.frame.title .subline{font-size:2.1cqw}.frame .endline{font-size:1.6cqw;margin-top:2.5cqw}.controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}.controls .primary{background:var(--yoxi-navy);color:var(--yoxi-white)}.controls input{flex:1;min-width:100px;accent-color:var(--yoxi-navy)}.controls output{font-size:13px;font-variant-numeric:tabular-nums;min-width:92px}.hint{font-size:12px;color:var(--yoxi-navy-60);margin:8px 0}.detail{border:1px solid var(--yoxi-line);border-radius:var(--r-card);padding:23px;background:var(--yoxi-white)}.detail .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--yoxi-navy-60);gap:15px}.detail h3{font-size:22px;line-height:1.5;margin:10px 0}.label{font-size:11px;letter-spacing:.1em;font-weight:700;color:var(--yoxi-navy-60);margin-top:18px}.narration{font-size:17px;line-height:1.9;margin:7px 0}.onwords{padding:12px 14px;background:var(--yoxi-mist);border-radius:var(--r-btn);font-size:14px}.detail ol{padding-left:22px;font-size:13px}.detail li{padding:5px 0}.detail li.active{font-weight:700;background:var(--yoxi-cream)}.source{font-size:12px;color:var(--yoxi-navy-60)}.shotlist{display:flex;gap:6px;margin:20px 0;flex-wrap:wrap}.shotlist button{font-size:12px;min-width:46px}.summary{display:grid;grid-template-columns:1.25fr 1fr;gap:38px;border-top:1px solid var(--yoxi-line);padding:30px 0}.summary h3{font-size:18px;margin:0 0 8px}.summary p{font-size:14px;margin:0}.summary ul{font-size:14px;margin:0;padding-left:20px}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}.shotcard{border:1px solid var(--yoxi-line);border-radius:var(--r-card);overflow:hidden;break-inside:avoid}.shotcard .body{padding:23px}.shotcard h3{font-size:21px;margin:6px 0 12px}.shotcard .card-meta{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--yoxi-navy-60)}.shotcard .narration{font-size:15px}.shotcard .body>p{font-size:13px}.shotcard .beats{font-size:13px;padding-left:19px}.shotcard .notes{border-left:2px solid var(--yoxi-slate-lite);padding-left:12px;color:var(--yoxi-navy-60)}.shotcard .goto{margin-top:8px;font-size:12px}.production{margin-top:46px;padding:28px;background:var(--yoxi-mist);border-radius:var(--r-card)}.production h2{font-size:24px;margin:0 0 14px}.production-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}.production h3{font-size:16px;margin:0 0 8px}.production p,.production li{font-size:13px}.production ul{padding-left:18px}.source-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}.source-table td,.source-table th{text-align:left;padding:12px;border-bottom:1px solid var(--yoxi-line);vertical-align:top}.transcript{padding:25px 0}.transcript ol{padding-left:24px;columns:2;column-gap:50px}.transcript li{break-inside:avoid;font-size:14px;margin:0 0 16px}.transcript small{display:block;color:var(--yoxi-navy-60)}footer{border-top:1px solid var(--yoxi-line);padding:25px 0 40px;font-size:12px;color:var(--yoxi-navy-60)}.print-only{display:none}body.script-mode .shotcard>.stage{display:none}@media(max-width:1000px){.viewer{grid-template-columns:1fr}.hero{gap:30px}.detail{display:grid;grid-template-columns:1fr 1fr;gap:20px}.production-grid{grid-template-columns:1fr}.cards{gap:18px}}@media(max-width:640px){.wrap{padding:0 18px}.topline{align-items:flex-start}.topline nav{gap:12px;font-size:12px;flex-wrap:wrap;justify-content:flex-end}.hero{grid-template-columns:1fr;padding-top:30px;gap:22px}.hero aside{border:0;padding:0}.hero h1{font-size:35px}.hero p{font-size:14px}.facts{gap:24px}.bar{overflow:auto}.bar button{min-width:102px}.cards,.summary,.detail{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}.controls button{padding:7px 10px}.controls output{font-size:12px}.transcript ol{columns:1}.production{padding:20px}.source-table{font-size:12px}.source-table td,.source-table th{padding:8px}.detail{gap:0}.phone img{border-width:2px}.shotcard .body{padding:18px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{body{background:white}.wrap{max-width:none;padding:0}.topline nav,.controls,.shotlist,.goto,.bar,.viewer,.screen-only{display:none!important}.hero{padding:20px 0;gap:30px}.hero h1{font-size:30px}.cards{display:block}.shotcard{margin-bottom:20px;page-break-inside:avoid;display:grid;grid-template-columns:40% 60%}.shotcard>.stage{align-self:start;margin-top:22px}.shotcard .body{padding:16px}.shotcard h3{font-size:17px}.shotcard p,.shotcard li{font-size:11px!important}.production{background:none;padding:0}.transcript ol{columns:1}.print-only{display:block}.section-head{break-after:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--yoxi-white); color: var(--yoxi-navy); font-family: var(--font-sans); font-size: 16px; line-height: 1.85; }
+main { width: min(100% - 64px, 960px); margin: 0 auto; }
+header { padding: 52px 0 30px; border-bottom: 1px solid var(--yoxi-line); }
+.eyebrow { margin: 0; color: var(--yoxi-navy-60); font-size: 13px; letter-spacing: .06em; }
+h1 { margin: 12px 0; font-size: 34px; line-height: 1.4; letter-spacing: -.02em; }
+h2 { font-size: 24px; margin: 0 0 14px; line-height: 1.5; }
+h3 { font-size: 15px; margin: 0 0 8px; }
+p { margin: 0 0 14px; }
+.lead { font-size: 18px; margin-bottom: 18px; }
+.meta, .small { color: var(--yoxi-navy-60); font-size: 13px; }
+section { padding: 30px 0; scroll-margin-top: 22px; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 16px 0; border-bottom: 1px solid var(--yoxi-line); }
+a { color: var(--yoxi-navy); text-underline-offset: 5px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--yoxi-navy); outline-offset: 5px; }
+nav a { font-size: 14px; }
+.overview { padding-bottom: 12px; }
+.schedule { width: 100%; border-collapse: collapse; margin: 18px 0 0; font-size: 14px; }
+.schedule th, .schedule td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--yoxi-line); vertical-align: top; }
+.schedule th { background: var(--yoxi-mist); font-weight: 700; }
+.schedule th:first-child, .schedule td:first-child { width: 135px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.schedule th:nth-child(2) { width: 130px; }
+.shot { padding: 32px 0 34px; border-top: 1px solid var(--yoxi-line); scroll-margin-top: 22px; }
+.shot-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 8px; font-size: 13px; color: var(--yoxi-navy-60); font-variant-numeric: tabular-nums; }
+.shot h2 { font-size: 23px; margin-bottom: 18px; }
+.description { font-size: 17px; }
+.beats { list-style: none; padding: 0; margin: 20px 0 24px; }
+.beats li { display: grid; grid-template-columns: 66px 1fr; gap: 12px; padding: 7px 0; font-size: 14px; }
+.beats time { color: var(--yoxi-navy-60); font-variant-numeric: tabular-nums; }
+.copy { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; margin-top: 22px; }
+.copy h3 { color: var(--yoxi-navy-60); font-weight: 400; font-size: 13px; }
+blockquote { margin: 0; padding-left: 16px; border-left: 2px solid var(--yoxi-slate-lite); font-size: 16px; }
+.words p { margin-bottom: 5px; }
+.words .secondary { font-size: 14px; }
+.sound { margin: 20px 0 0; font-size: 13px; color: var(--yoxi-navy-60); }
+details { margin-top: 16px; font-size: 13px; color: var(--yoxi-navy-60); }
+summary { cursor: pointer; width: fit-content; }
+details p { margin: 10px 0 0; }
+.closing { border-top: 1px solid var(--yoxi-line); }
+.closing li { margin-bottom: 10px; }
+footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size: 12px; color: var(--yoxi-navy-60); }
+@media (max-width: 640px) {
+  main { width: calc(100% - 36px); }
+  header { padding-top: 30px; }
+  h1 { font-size: 28px; }
+  .lead, .description { font-size: 16px; }
+  .copy { grid-template-columns: 1fr; gap: 22px; }
+  .schedule { font-size: 12px; }
+  .schedule th, .schedule td { padding: 9px 6px; }
+  .schedule th:first-child, .schedule td:first-child { width: 93px; }
+  .schedule th:nth-child(2) { width: 83px; }
+  .shot h2 { font-size: 21px; }
+  .beats li { grid-template-columns: 48px 1fr; gap: 8px; }
+}
+@media print {
+  main { width: 100%; }
+  header { padding-top: 0; }
+  nav, details { display: none; }
+  .shot { break-inside: avoid; padding: 22px 0; }
+  .copy { gap: 24px; }
+  body { font-size: 12px; }
+  h1 { font-size: 25px; }
+  .description, blockquote { font-size: 13px; }
+  .beats li { font-size: 12px; }
+  a { text-decoration: none; }
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header class="topline"><div class="brand">yoxi <span style="font-style:normal;font-size:15px">遊喜樂</span></div><nav aria-label="頁面導覽"><a href="#overview">概要</a><a href="#preview">節奏預覽</a><a href="#storyboard">全片分鏡</a><a href="#recording">錄製備註</a></nav></header>
 <main>
-<section id="overview" class="hero"><div><div class="eyebrow">FILM TREATMENT / 2026.10.01</div><h1>從一次出門，<br>到下一次期待。</h1><p id="summary"></p><div class="facts"><div><b id="total"></b><span>全片規劃長度</span></div><div><b id="demotime"></b><span>產品操作為主</span></div><div><b id="count"></b><span>可逐鏡討論</span></div></div></div><aside><div class="eyebrow muted">THE STORY</div><strong>長輩自己決定去哪裡。<br>每次出門，都有值得留下的回憶。</strong><p class="muted" style="font-size:14px;margin-top:16px">先把產品用給觀眾看，再把它放回真實生活。延續原影片「日常 → 移動 → 回憶」的情緒，改以實際操作串起全片。</p><p class="muted" style="font-size:12px;margin-top:16px">腳本提案 · 時間為剪輯配置<br>畫面為構圖與既有原型截圖參考<br>本頁預覽無配音、無影片素材播放</p></aside></section>
-<nav class="bar" id="timeline" aria-label="影片段落"></nav>
-<section id="preview"><div class="section-head"><h2>把三分鐘，先看一遍。</h2><p>點鏡號或拖曳時間軸；播放可檢查每鏡停留與節奏。</p></div><div class="viewer"><div><div class="stage" id="stage" role="img" aria-label="當前分鏡構圖"></div><div class="controls"><button type="button" class="primary" id="play">播放節奏</button><button type="button" id="prev" aria-label="上一鏡">←</button><button type="button" id="next" aria-label="下一鏡">→</button><input type="range" id="scrub" min="0" value="0" step="0.1" aria-label="分鏡預覽時間"><output id="clock"></output></div><p class="hint">預覽停留依腳本秒數；正式配音後需微調。全片含轉場與片尾，不另加黑場。</p></div><div class="detail" id="detail" aria-live="polite"></div></div><div class="shotlist" id="shotlist" aria-label="選擇分鏡"></div></section>
-<section class="summary"><div><h3>影片概要</h3><p>媽媽想找個出門的理由。她在遊喜樂選地方、查看明信片，用 yoxi 前往，到訪後把卡收進收藏；回家再加上照片，留下自己的回憶。Demo 之後，影片展開附近散步、朋友出遊、向家人分享三個日常片段，最後說明 AI 如何支援內容，以及探索如何接回叫車。</p></div><div><h3>看完要記得的三件事</h3><ul><li>不搭車，也能探索與收藏。</li><li>想去的地方，可以直接接到 yoxi 下車點。</li><li>回憶屬於自己，分享由自己決定。</li></ul></div></section>
-<section id="storyboard"><div class="section-head"><h2>逐鏡腳本與畫面字詞</h2><button type="button" id="mode" class="screen-only" aria-pressed="false">只看文字稿</button></div><p class="hint">「片上主標／副標」是剪輯時加上的重點字；「旁白」另作逐句字幕，不整段同時疊在畫面。預覽圖不是最終連續錄影。</p><div class="cards" id="cards"></div></section>
-<section id="recording" class="production"><h2>錄製與剪輯安排</h2><div class="production-grid"><div><h3>01 / 先錄一條完整產品流程</h3><p>固定地點、日期與交通方式，重設 demo 後一次錄到底。保留「點景點 → 用 yoxi → 下車點已填」、「抵達 → 收卡 → 收藏」兩段連續操作。回憶卡另拍模板、選圖、光線、保存。</p><p>現有截圖只作分鏡參考，錄製時以同一地點與同一次狀態重新取景。原型是新竹示例；雙北是提案客群與試辦方向。</p></div><div><h3>02 / 再補三組生活鏡頭</h3><p>附近散步：穿鞋、緩步、坐著看風景。朋友出遊：一起選地方、上車、窗景、見面。回家分享：看卡、選分享、家人看圖。手部與背影即可，少量素材也能成立。</p><p>LINE 對話使用自製示意，不拍真實私訊。這版用獨立動畫說明分享提案；原型尚未串接手機系統分享或實際 LINE 傳送。分享物是到訪明信片，私人回憶卡沒有分享鍵。</p></div><div><h3>03 / 讓觀眾來得及看</h3><p>影片橫式 1920×1080；手機完整保留，再對重要欄位做局部放大。主標建議 48–64 px、字幕 36–44 px、揭露文字 24 px 起；每鏡只留一個重點。</p><p>旁白採自然溫暖的說話速度。保留上拉、翻卡、成品的安靜停頓。這份腳本配置恰三分鐘；如正式剪輯需要額外轉場或封裝餘裕，從第八鏡尾段扣除一至兩秒，輸出控制在 2:58–2:59。</p></div></div></section>
-<section><div class="section-head"><h2>與投影片、現有影片的對照</h2><p>頁碼採 PDF 實際頁序，避免重複頁碼混淆。</p></div><table class="source-table"><thead><tr><th>來源重點</th><th>如何放進影片</th></tr></thead><tbody><tr><td>PDF 1–3、6–7：長輩為核心、圖像表達、自主出門</td><td>開場與三組情境以同一位長輩為主角；家人是選擇分享後的自然觸及。</td></tr><tr><td>PDF 8–10：探索、前往、收卡、收藏、回憶卡</td><td>全片最長的連續段落；沿現行雙主頁操作，避免用舊版三分頁示範。</td></tr><tr><td>PDF 11–12：自選分享、AI 即時與離線產線</td><td>LINE 分享保留示意標籤；AI 段落說明短理由、地方故事、預生成與人工查核。</td></tr><tr><td>PDF 13–15：照護延伸、商業價值、試辦評估</td><td>主片保留探索回看與叫車轉換。照護圈、異常提醒、待命接送留在簡報延伸討論；收益與回本數字不進片。</td></tr><tr><td>現有 shots.json：開場 → 日常 → 搭車 → 回顧 → AI → 收尾</td><td>保留情緒結構，改成產品 demo 在前、生活情境在後；舊版四幕 AI 回顧改為現行本機回憶卡。</td></tr></tbody></table><p class="hint">參考檔案：2026和泰AI黑客松_draft.pdf、pitch/video/shots.json、pitch/BRIEF.md、app/README.md。到訪半徑與部分提案描述尚有版本差異，本片不念門檻數字。正式功能接入以企業 API 與試辦驗證為準。</p></section>
-<section class="transcript"><div class="section-head"><h2>旁白連讀稿</h2><button type="button" id="print" class="screen-only">列印／另存 PDF</button></div><p class="hint" id="voicecount"></p><ol id="transcript"></ol></section>
-</main><footer>遊喜樂小隊 · 三分鐘產品展示影片腳本提案 · 2026-10-01<br>原型畫面：HTML／PWA；派車、定位與到訪為模擬。卡面：AI 生成示意；回憶卡：本機模板。<br>地圖資料 © OpenStreetMap 貢獻者（ODbL）。所用玻璃工坊參考照片 © Råy kuø（CC BY-SA 4.0）；青草湖參考照片 © lienyuan lee（CC BY 3.0），來源 Wikimedia Commons；原圖出處見專案 prototype/assets/photos/credits.js。預覽內的簡筆場景為構圖示意。<br>本頁圖像、樣式與腳本皆已內嵌，可單獨複製並離線開啟。舊影片生成器不會覆寫此提案。</footer>
-</div>
-<script id="data" type="application/json">/*DATA*/</script>
-<script>
-'use strict';
-const data=JSON.parse(document.getElementById('data').textContent), shots=data.shots;
-let total=0;shots.forEach(s=>{s.start=total;total+=s.duration;s.end=total});
-const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])), tc=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-const landscape=`<svg viewBox="0 0 300 160" aria-hidden="true"><rect width="300" height="160" fill="var(--yoxi-mist)"/><circle cx="230" cy="35" r="20" fill="var(--yoxi-cream-deep)"/><path d="M0 95Q65 20 140 87T300 80V160H0Z" fill="var(--yoxi-slate-lite)"/><path d="M0 120Q85 90 150 125T300 100V160H0Z" fill="var(--yoxi-cream-deep)"/><path d="M80 160Q140 115 230 105" fill="none" stroke="var(--yoxi-white)" stroke-width="16"/><path d="M40 100V65m-15 10 15-30 18 30" stroke="var(--yoxi-navy)" stroke-width="5" fill="none"/></svg>`;
-function postcard(title,small){return `<div class="postcard"><div class="landscape">${landscape}</div><p>${esc(title)}</p><small>${esc(small)}</small></div>`}
-function art(s){if(s.asset)return `<div class="phone"><img src="${data.images[s.asset]}" alt="${esc(s.title)}原型畫面"></div>`;if(s.art==='ai')return `<div class="art diagram"><p><b>推薦短理由</b>已審地方 → 規則排序 → 短理由</p><p><b>地方故事</b>可信來源 → 草稿 → 編輯查核</p><p class="gate"><b>明信片卡面</b>預先生成 → 人工審圖 → 取用</p></div>`;if(s.art==='value')return `<div class="art diagram"><p><b>探索 → 到訪收藏</b>留下使用理由</p><p><b>回看 → 再次探索</b>觀察是否願意再打開</p><p class="gate"><b>需要移動時 → yoxi</b>驗證探索來源叫車</p></div>`;if(s.art==='share')return `<div class="art">${postcard('今天出去走走','風景很好看。')}<div class="bubble reply">下次一起去。</div></div>`;if(s.art==='ride')return `<div class="art"><div class="bubble">下次一起去這裡？</div>${postcard('和朋友，去遠一點','用 yoxi 前往')}</div>`;return `<div class="art">${postcard(s.art==='morning'?'早安，今天想出門':s.art==='end'?'今天，有自己的風景':'留一張，今天的風景',s.art==='morning'?'今天，想去哪裡走走？':'遊得開心，樂得安心')}</div>`}
-function frame(s){let label=s.group==='產品 Demo'?'HTML／PWA 原型 · 派車與到訪模擬 · 新竹示例':s.tag;if(['ride-cards','unlock','album'].includes(s.asset))label+=' · 卡面為 AI 生成示意';if(s.asset==='lookback')label+=' · 本機模板';if(s.asset&&['ride-peek','ride-cards','ride-dropoff'].includes(s.asset))label+=' · © OpenStreetMap';return `<div class="frame ${s.kind==='title'?'title dark':''}"><div class="copy"><div class="kicker">${esc(s.group)} / ${s.id}</div><h3>${s.headline.split("，").map((line,i,a)=>`<span style="display:block">${esc(line)}${i<a.length-1?"，":""}</span>`).join("")}</h3><p class="subline">${esc(s.subline)}</p>${s.art==='end'?'<p class="endline">不搭車，也有打開 yoxi 的理由。<br>遊喜樂小隊</p>':''}</div>${art(s)}<div class="disclosure">${esc(label)}</div></div>`}
-$('summary').textContent=data.summary;$('total').textContent=tc(total);$('demotime').textContent=shots.filter(s=>s.group==='產品 Demo').reduce((n,s)=>n+s.duration,0)+' 秒';$('count').textContent=shots.length+' 鏡';$('scrub').max=total;
-data.groups.forEach(g=>{const list=shots.filter(s=>s.group===g),duration=list.reduce((n,s)=>n+s.duration,0);const b=document.createElement('button');b.type='button';b.style.setProperty('--weight',duration);b.innerHTML=`${esc(g)} · ${duration} 秒<small>${tc(list[0].start)}–${tc(list.at(-1).end)}</small>`;b.onclick=()=>jump(list[0].start,true);$('timeline').append(b)});
-$('cards').innerHTML=shots.map(s=>`<article class="shotcard" id="shot-${s.id}"><div class="stage">${frame(s)}</div><div class="body"><div class="card-meta"><span>${s.id} / ${esc(s.group)}</span><span>${tc(s.start)}–${tc(s.end)} · ${s.duration} 秒</span></div><h3>${esc(s.title)}</h3><div class="label">片上主標 / 副標</div><div class="onwords"><strong>${esc(s.headline)}</strong><br>${esc(s.subline)}</div><div class="label">旁白</div><p class="narration">${s.narration.map(esc).join('<br>')}</p><div class="label">鏡頭與操作節拍</div><ul class="beats">${s.beats.map(([t,b])=>`<li>${tc(s.start+t)}　${esc(b)}</li>`).join('')}</ul><p>${esc(s.visual)}</p>${s.route?`<p><strong>錄屏路徑：</strong>${esc(s.route)}</p>`:''}<p><strong>聲音：</strong>${esc(s.sound)}</p><p class="notes">${esc(s.note)}</p><p class="source">來源：${esc(s.source)}</p><button type="button" class="goto" data-shot="${s.id}">在上方預覽這一鏡 ↗</button></div></article>`).join('');
-$('transcript').innerHTML=shots.map(s=>`<li><small>${tc(s.start)}–${tc(s.end)} · ${esc(s.title)}</small>${s.narration.map(esc).join('')}</li>`).join('');
-const chars=shots.reduce((n,s)=>n+s.narration.join('').replace(/[\s，。、「」：；！？·]/g,'').length,0);$('voicecount').textContent=`共 ${chars} 字（含英文、不含主要標點），保留操作與成品停留。每鏡分開錄音；時間碼為配置值，尚未以真人配音實測。`;
-shots.forEach(s=>{const b=document.createElement('button');b.type='button';b.textContent=s.id;b.title=`${tc(s.start)} ${s.title}`;b.setAttribute('aria-label',`第 ${s.id} 鏡：${s.title}`);b.onclick=()=>jump(s.start);$('shotlist').append(b)});
-document.querySelectorAll('[data-shot]').forEach(b=>b.onclick=()=>jump(shots.find(s=>s.id===b.dataset.shot).start,true));
-let position=0,index=-1,playing=false,raf=0,last=0;
-function render(){const next=Math.max(0,shots.findIndex(s=>position<s.end));const i=position>=total?shots.length-1:next;const s=shots[i];if(i!==index){index=i;$('stage').innerHTML=frame(s);$('stage').setAttribute('aria-label',`第 ${s.id} 鏡，${s.title}，${s.tag}`);$('detail').innerHTML=`<div><div class="meta"><span>${s.id} / ${esc(s.tag)}</span><span>${tc(s.start)}–${tc(s.end)}</span></div><h3>${esc(s.title)}</h3><div class="label">旁白</div><p class="narration">${s.narration.map(esc).join('<br>')}</p><div class="onwords"><strong>${esc(s.headline)}</strong><br>${esc(s.subline)}</div></div><div><div class="label">鏡頭節拍</div><ol>${s.beats.map(([t,b])=>`<li data-beat="${t}">${tc(s.start+t)}　${esc(b)}</li>`).join('')}</ol><p class="source">${esc(s.note)}</p><p class="source">${esc(s.source)}</p></div>`;[...$('shotlist').children].forEach((b,j)=>b.setAttribute('aria-pressed',String(i===j)))}const local=position-s.start;const beat=s.beats.reduce((v,b,j)=>local>=b[0]?j:v,0);$('detail').querySelectorAll('[data-beat]').forEach((li,j)=>li.classList.toggle('active',j===beat));$('clock').textContent=`${tc(position)} / ${tc(total)}`;$('scrub').value=position;$('prev').disabled=i===0;$('next').disabled=i===shots.length-1;}
-function stop(){playing=false;cancelAnimationFrame(raf);$('play').textContent='播放節奏';$('play').setAttribute('aria-pressed','false')}
-function jump(t,scroll=false){stop();position=Math.min(total,Math.max(0,t));render();if(scroll)$('preview').scrollIntoView({behavior:'smooth',block:'start'})}
-function tick(now){if(!playing)return;position=Math.min(total,position+(now-last)/1000);last=now;render();if(position>=total)stop();else raf=requestAnimationFrame(tick)}
-$('play').onclick=()=>{if(playing)return stop();if(position>=total)position=0;playing=true;last=performance.now();$('play').textContent='暫停';$('play').setAttribute('aria-pressed','true');raf=requestAnimationFrame(tick)};
-$('prev').onclick=()=>jump(shots[Math.max(0,index-1)].start);$('next').onclick=()=>jump(shots[Math.min(shots.length-1,index+1)].start);$('scrub').oninput=()=>jump(Number($('scrub').value));$('mode').onclick=()=>{const on=document.body.classList.toggle('script-mode');$('mode').setAttribute('aria-pressed',String(on));$('mode').textContent=on?'顯示分鏡畫面':'只看文字稿'};$('print').onclick=()=>window.print();
-document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});window.BOARD={seek:jump,get total(){return total},get index(){return index},get playing(){return playing}};render();document.documentElement.dataset.ready='1';
-</script>
-</body></html>
+<header>
+  <p class="eyebrow">遊喜樂小隊 · 影片腳本提案</p>
+  <h1>三分鐘影片腳本與分鏡敘述</h1>
+  <p class="lead">先示範產品怎麼用，再看它如何走進長輩的生活。</p>
+  <p class="meta">全片 /*TOTAL*/ · /*COUNT*/ 鏡 · 文字分鏡版 · 2026-10-01</p>
+</header>
+<nav aria-label="分鏡段落">/*NAV*/</nav>
+<section class="overview" id="overview">
+  <h2>影片概要</h2>
+  <p>/*SUMMARY*/</p>
+  <p>影片以同一位長輩為主角：從「今天想去哪裡」開始，先看她選地方、前往、收卡與留下回憶，再延伸到附近散步、和朋友出遊、向家人分享。每個情境各自回答一件事：為什麼不搭車也會打開、什麼時候需要 yoxi、回家之後為什麼還想再看。</p>
+  <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody>/*SCHEDULE*/</tbody></table>
+</section>
+<section id="storyboard">
+  <h2>分鏡腳本</h2>
+  <p class="small">以下是建議拍法與剪接方式。旁白另作逐句字幕；「畫面字詞」只放當鏡的重點，不與整段旁白同時堆疊。</p>
+  /*SHOTS*/
+</section>
+<section class="closing" id="notes">
+  <h2>整體拍攝方向</h2>
+  <ul>
+    <li><strong>Demo 用連續操作說明。</strong>固定地點、日期與交通方式，特別保留「點景點 → 用 yoxi → 下車點已填」與「抵達 → 收卡 → 收藏」的連接，讓觀眾看懂每一步。</li>
+    <li><strong>情境段回到人物。</strong>以手部、背影、腳步與朋友碰面的小動作補足故事。景點與照片可以換，長輩自主選擇、出門留下紀念這條主線要一致。</li>
+    <li><strong>畫面留一點呼吸。</strong>翻卡與作品出現後停一拍。旁白不用填滿三分鐘，讓操作、環境聲與表情也有時間。</li>
+    <li><strong>區分展示與提案。</strong>派車與到訪標為原型模擬；回憶卡是本機私人作品。LINE 分享另選到訪明信片，以獨立情境示意呈現。AI 推薦與內容服務採方案語氣。</li>
+  </ul>
+  <p class="small">時間為剪輯配置，已含轉場與片尾；真人配音後再校時。若需額外餘裕，可縮短第八鏡尾段一至兩秒，輸出控制在 2:58–2:59。原型採新竹示例資料，投影片的雙北客群與試辦方向另行說明。</p>
+</section>
+<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、既有影片 shots.json、pitch/BRIEF.md、app/README.md。<br>每鏡的來源與能力邊界可展開「拍攝提醒與來源」查看。本頁為文字腳本，可單檔離線閱讀與列印。</footer>
+</main>
+</body>
+</html>
