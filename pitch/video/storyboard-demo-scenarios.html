@@ -208,6 +208,7 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
   <h2>影片概要</h2>
   <p>一句「早安」先出現，遊喜樂現有的漂亮卡面隨即彈出，組成一張早安圖。從媽媽用圖片向家人打招呼的日常，帶出「如果這張圖，來自今天親自走過的地方呢？」接著以實際 App 畫面展示探索、選下車點、模擬到訪收卡、收藏及本機回憶卡。後段延伸附近散步、熟悉地方再次到訪、明信片分享與家人回應；都以目前 App 已有的操作或示意流程為依據。最後說明現有卡面如何預先用 AI 製作，回到最初的早安圖，留下「不搭車，也有打開 yoxi 的理由」。</p>
   <p><strong>呈現方式：</strong>沿用 repo 的 SVG／JavaScript 場景與逐格輸出流程。卡片與 App 畫面作為圖片素材，文字、地圖、路線與訊息框由程式控制進出。整支影片可用素材與動畫敘事，無需真人拍攝；本頁只提供文字腳本。</p>
+  <p><strong>視覺設計分工：</strong>本稿只規劃構圖、資訊層級、動作與轉場；影片的背景、文字、圖形與特效配色由 Claude 決定。既有 App 畫面與卡面保留素材原貌，金框、晴光、暮色等產品款式或選項名稱沿用 App。</p>
   <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody><tr><td>00:00–00:22</td><td>開場</td><td>早安字樣與漂亮卡面先出場，再帶入長輩傳圖的日常。</td></tr><tr><td>00:22–01:46</td><td>產品 Demo</td><td>以實際 App 畫面序列，展示探索、前往、收卡、收藏與回憶卡。</td></tr><tr><td>01:46–02:30</td><td>生活情境</td><td>附近散步、再次到訪，與 App 既有的家人分享示意。</td></tr><tr><td>02:30–02:52</td><td>AI 與價值</td><td>現有 AI 卡面製作方式，與探索收藏的使用循環。</td></tr><tr><td>02:52–02:58</td><td>結尾</td><td>回到同一張早安圖，讓問候多一段自己的故事。</td></tr></tbody></table>
 </section>
 <section id="storyboard">
@@ -216,12 +217,12 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
   <article class="shot" id="shot-01">
       <div class="shot-meta"><span>第 01 鏡 · 開場</span><span>00:00–00:12 / 12 秒</span></div>
       <h2>早安，一張漂亮的卡先出現</h2>
-      <h3>畫面與動態</h3><p class="description">奶油色背景先只有「早安」兩字。接著用現有青草湖油畫卡面，從畫面下方滑入並輕輕彈定；早安字樣縮小、移到卡面留白位置，短祝福淡入，組成一張值得停下來看的早安圖。卡片佔畫面主要面積，不套手機框。先讓卡面被看見，再由旁白帶到長輩；旁白後段，卡片縮到中央訊息框內，框上只標「媽媽」，旁邊出現「早安，今天也要開心」。</p>
+      <h3>畫面與動態</h3><p class="description">畫面先只有「早安」兩字。接著用現有青草湖油畫卡面，從畫面下方滑入並輕輕彈定；早安字樣縮小、移到卡面留白位置，短祝福淡入，組成一張值得停下來看的早安圖。卡片佔畫面主要面積，不套手機框。先讓卡面被看見，再由旁白帶到長輩；旁白後段，卡片縮到中央訊息框內，框上只標「媽媽」，旁邊出現「早安，今天也要開心」。</p>
       <ul class="beats"><li><time>00:00</time><span>0–0.8 秒：「早安」淡入；旁白輕聲念「早安」。</span></li><li><time>00:01</time><span>1–1.7 秒：卡面由下滑入，縮放 0.92 → 1.02 → 1；早安文字移到卡上。</span></li><li><time>00:03</time><span>卡面於第 1.7 秒彈定；保持到第 4 秒，第二句旁白才開始，祝福文字淡入。</span></li><li><time>00:07</time><span>卡片縮進「媽媽」訊息框，帶出傳圖打招呼的日常；右下標「情境示意」。</span></li></ul>
       <div class="copy"><div><h3>旁白</h3><blockquote>早安。<br>對媽媽來說，<br>一張早安圖，是和家人打招呼的方式。</blockquote></div>
       <div class="words"><h3>畫面字詞</h3><p><strong>早安</strong></p><p class="secondary">願你今天，也有好風景</p><p class="secondary">分段出現：媽媽／早安，今天也要開心／情境示意／卡面為 AI 生成示意</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>保留同一張卡，訊息框淡出；卡片移向左側，右側留給下一鏡的提問。</p>
-      <p class="sound">聲音：第一秒一個明亮、柔和的音符；卡片彈定時輕提示。暖色配樂在卡片出現後淡入。</p>
+      <p class="sound">聲音：第一秒一個明亮、柔和的音符；卡片彈定時輕提示。輕柔配樂在卡片出現後淡入。</p>
       <details><summary>素材、實作提醒與來源</summary><ul><li>app/assets/postcards/p22-oil.jpg（青草湖卡面）</li><li>SVG 文字：早安、祝福、媽媽；訊息框與圓角卡框</li></ul><p>預定場景名：<code>greeting_card</code>（新腳本命名，尚未註冊）</p><p>用真實卡面資產，不用舊 PRIM.postcard 的簡化山丘。素材不拆成多層景深，以整張圖片動畫即可。標示「卡面為 AI 生成示意」及來源署名；訊息框為情境，不代表 App 內聊天。首鏡需提供含指定靜音的配音檔，或先把「早安」與後文分段合成再補靜音；舊 TTS 直接串句無法產生這個節奏。開場是片頭編排，不表示 App 自動製作並傳送這張早安卡。</p><p>來源：PDF 1、3、5、7 頁；app/assets/postcards/README.md。</p></details>
     </article>
 <article class="shot" id="shot-02">

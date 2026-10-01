@@ -70,7 +70,7 @@ for s in shots:
     </article>''')
 template = (HERE / 'demo-scenarios.template.html').read_text(encoding='utf-8')
 tokens = (ROOT / 'prototype/css/tokens.css').read_text(encoding='utf-8')
-replacements = {'TOKENS': tokens, 'TOTAL': tc(cursor), 'COUNT': str(len(shots)),
+replacements = {'TOKENS': tokens, 'TOTAL': tc(cursor), 'COUNT': str(len(shots)), 'VISUAL_DIRECTION': e(data['visual_direction']),
                 'NAV': ''.join(navigation), 'SUMMARY': e(data['summary']),
                 'SCHEDULE': ''.join(schedule), 'SHOTS': '\n'.join(articles)}
 page = template
