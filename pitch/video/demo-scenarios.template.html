@@ -104,12 +104,12 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
     <li><strong>Demo 以實際狀態為證據。</strong>先操作 App 核對流程，再固定地點、日期與交通方式擷取關鍵狀態 PNG。各鏡列出既有 shot stem、新拍狀態與 SVG 插值分工；拖曳、翻卡以真實前後狀態重建轉場，不聲稱是 App 原始動畫錄影。現成截圖可作參考，不把不同地點、張數或日期拼成同一趟行程。</li>
     <li><strong>每格由時間決定。</strong>沿 <code>ANIM.seek(t)</code> 控制位置、透明度與畫格索引；不靠 CSS 自行播放或非同步影片解碼。所有圖片在 ready 前載入，跳到同一秒應產生同一張圖。翻面可用水平縮放收窄後換圖再展開。</li>
     <li><strong>先守住節奏，再對齊音檔。</strong>本稿為 178 秒配置，預留 2 秒輸出餘裕；舊管線依配音長度加前後停留產生 timeline，不能直接把本稿時長貼成 hold。以實測配音調整停留，首鏡需提供含靜音的配音檔，或分段合成後插入靜音；舊 TTS 串句與鏡尾 hold 都不能取代句間停頓。額外停留時間要算在原鏡內。</li>
-    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享用到訪明信片作獨立情境示意。AI 推薦與內容服務採方案語氣，不演成已接通。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
+    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享與回應沿現有 App 的本機示意流程；沒有好友、揪團或共同路線。AI 只說明已製作的卡面資產與規則取用，不展示尚未接上的推薦服務。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
   </ul>
   <p class="small">新增鏡頭依本稿 scene_key 註冊；正式製片前再把敘事同步到 <code>shots.json</code>、場景與配音時間。本稿不會直接被舊 <code>build-video.py</code> 編成新片。配音超時時先縮第八鏡尾段停留；成片需重新量測，總長不得超過三分鐘。</p>
   <p class="small"><strong>素材標示：</strong>開場／片尾的青草湖油畫卡是情境用既有卡，非當次搭車收卡結果。卡面標「AI 生成示意」；p22 底圖 © Taiwankengo / Wikimedia Commons，CC BY-SA 4.0；p11 底圖 © Råy kuø / Wikimedia Commons，CC BY-SA 4.0。其他卡依 <code>prototype/assets/photos/credits.js</code> 逐張保留作者與授權；地圖標 © OpenStreetMap 貢獻者（ODbL）。</p>
 </section>
-<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/README.md。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
+<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/ARCHITECTURE.md 與 app/js/views/ 現行實作。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
 </main>
 </body>
 </html>

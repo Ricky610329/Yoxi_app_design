@@ -206,9 +206,9 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
 <nav aria-label="分鏡段落"><a href="#overview">概要</a><a href="#shot-01">開場</a><a href="#shot-03">產品 Demo</a><a href="#shot-09">生活情境</a><a href="#shot-12">AI 與價值</a><a href="#shot-14">結尾</a></nav>
 <section class="overview" id="overview">
   <h2>影片概要</h2>
-  <p>一句「早安」先出現，遊喜樂現有的漂亮卡面隨即彈出，組成一張早安圖。從長輩用圖片向家人打招呼的日常，帶出「如果這張圖，來自今天親自走過的地方呢？」接著以實際 App 畫面為素材，配合觸點、面板移動與卡片動態，展示探索、前往、收卡、收藏及回憶卡。Demo 後以地圖、小車、卡片與訊息框，延伸附近散步、朋友出遊、自選分享三種情境。最後說明 AI 的內容角色，回到最初那張早安圖，留下「不搭車，也有打開 yoxi 的理由」。</p>
+  <p>一句「早安」先出現，遊喜樂現有的漂亮卡面隨即彈出，組成一張早安圖。從媽媽用圖片向家人打招呼的日常，帶出「如果這張圖，來自今天親自走過的地方呢？」接著以實際 App 畫面展示探索、選下車點、模擬到訪收卡、收藏及本機回憶卡。後段延伸附近散步、熟悉地方再次到訪、明信片分享與家人回應；都以目前 App 已有的操作或示意流程為依據。最後說明現有卡面如何預先用 AI 製作，回到最初的早安圖，留下「不搭車，也有打開 yoxi 的理由」。</p>
   <p><strong>呈現方式：</strong>沿用 repo 的 SVG／JavaScript 場景與逐格輸出流程。卡片與 App 畫面作為圖片素材，文字、地圖、路線與訊息框由程式控制進出。整支影片可用素材與動畫敘事，無需真人拍攝；本頁只提供文字腳本。</p>
-  <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody><tr><td>00:00–00:22</td><td>開場</td><td>早安字樣與漂亮卡面先出場，再帶入長輩傳圖的日常。</td></tr><tr><td>00:22–01:46</td><td>產品 Demo</td><td>以實際 App 畫面序列，展示探索、前往、收卡、收藏與回憶卡。</td></tr><tr><td>01:46–02:30</td><td>生活情境</td><td>用地圖、小車、卡片、訊息框說附近散步、朋友出遊與分享。</td></tr><tr><td>02:30–02:52</td><td>AI 與價值</td><td>內容如何供應，探索如何接回叫車。</td></tr><tr><td>02:52–02:58</td><td>結尾</td><td>回到同一張早安圖，讓問候多一段自己的故事。</td></tr></tbody></table>
+  <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody><tr><td>00:00–00:22</td><td>開場</td><td>早安字樣與漂亮卡面先出場，再帶入長輩傳圖的日常。</td></tr><tr><td>00:22–01:46</td><td>產品 Demo</td><td>以實際 App 畫面序列，展示探索、前往、收卡、收藏與回憶卡。</td></tr><tr><td>01:46–02:30</td><td>生活情境</td><td>附近散步、再次到訪，與 App 既有的家人分享示意。</td></tr><tr><td>02:30–02:52</td><td>AI 與價值</td><td>現有 AI 卡面製作方式，與探索收藏的使用循環。</td></tr><tr><td>02:52–02:58</td><td>結尾</td><td>回到同一張早安圖，讓問候多一段自己的故事。</td></tr></tbody></table>
 </section>
 <section id="storyboard">
   <h2>分鏡腳本</h2>
@@ -222,7 +222,7 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
       <div class="words"><h3>畫面字詞</h3><p><strong>早安</strong></p><p class="secondary">願你今天，也有好風景</p><p class="secondary">分段出現：媽媽／早安，今天也要開心／情境示意／卡面為 AI 生成示意</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>保留同一張卡，訊息框淡出；卡片移向左側，右側留給下一鏡的提問。</p>
       <p class="sound">聲音：第一秒一個明亮、柔和的音符；卡片彈定時輕提示。暖色配樂在卡片出現後淡入。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>app/assets/postcards/p22-oil.jpg（青草湖卡面）</li><li>SVG 文字：早安、祝福、媽媽；訊息框與圓角卡框</li></ul><p>預定場景名：<code>greeting_card</code>（新腳本命名，尚未註冊）</p><p>用真實卡面資產，不用舊 PRIM.postcard 的簡化山丘。素材不拆成多層景深，以整張圖片動畫即可。標示「卡面為 AI 生成示意」及來源署名；訊息框為情境，不代表 App 內聊天。首鏡需提供含指定靜音的配音檔，或先把「早安」與後文分段合成再補靜音；舊 TTS 直接串句無法產生這個節奏。</p><p>來源：PDF 1、3、5、7 頁；app/assets/postcards/README.md。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>app/assets/postcards/p22-oil.jpg（青草湖卡面）</li><li>SVG 文字：早安、祝福、媽媽；訊息框與圓角卡框</li></ul><p>預定場景名：<code>greeting_card</code>（新腳本命名，尚未註冊）</p><p>用真實卡面資產，不用舊 PRIM.postcard 的簡化山丘。素材不拆成多層景深，以整張圖片動畫即可。標示「卡面為 AI 生成示意」及來源署名；訊息框為情境，不代表 App 內聊天。首鏡需提供含指定靜音的配音檔，或先把「早安」與後文分段合成再補靜音；舊 TTS 直接串句無法產生這個節奏。開場是片頭編排，不表示 App 自動製作並傳送這張早安卡。</p><p>來源：PDF 1、3、5、7 頁；app/assets/postcards/README.md。</p></details>
     </article>
 <article class="shot" id="shot-02">
       <div class="shot-meta"><span>第 02 鏡 · 開場</span><span>00:12–00:22 / 10 秒</span></div>
@@ -238,24 +238,24 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
 <article class="shot" id="shot-03">
       <div class="shot-meta"><span>第 03 鏡 · 產品 Demo</span><span>00:22–00:36 / 14 秒</span></div>
       <h2>探索：選一個想去的地方</h2>
-      <h3>畫面與動態</h3><p class="description">以現行 App 的畫面取樣作為產品層，SVG 只疊觸點與重點標示。先看到搭車模式，觸點落在「探索」後，換成探索狀態；再點選水利路的地點，底部資訊同步展開。最後把地點名稱與介紹稍微放大，仍保留足夠的介面位置感。這是動態操作展示，不是重新畫一支簡化手機。</p>
-      <ul class="beats"><li><time>00:22</time><span>App 初始畫面進場，主標停在一側。</span></li><li><time>00:24</time><span>觸點亮起 → 切探索；切換狀態取自實際 App。</span></li><li><time>00:27</time><span>觸點落在地點，對應資訊面板出現。</span></li><li><time>00:31</time><span>資訊區縮放至約 1.15 倍，停住讀地方簡介。</span></li></ul>
-      <div class="copy"><div><h3>旁白</h3><blockquote>打開探索，先看看附近有哪些地方。<br>點一個地點，讀一小段它的故事。</blockquote></div>
-      <div class="words"><h3>畫面字詞</h3><p><strong>先選一個想去的地方</strong></p><p class="secondary">看地點，也看它的故事</p></div></div>
+      <h3>畫面與動態</h3><p class="description">以現行 App 的畫面取樣作為產品層，SVG 只疊觸點與重點標示。先看到搭車模式，觸點落在「探索」後，App 自動選定最近的水利路地區，資訊同步出現。用局部放大帶觀眾看地名、短句與可收集卡片入口，保留原本介面的位置關係。</p>
+      <ul class="beats"><li><time>00:22</time><span>App 初始畫面進場，主標停在一側。</span></li><li><time>00:24</time><span>觸點亮起 → 切探索；切換狀態取自實際 App。</span></li><li><time>00:27</time><span>最近的水利路地點已被預選；高亮現有資訊，不再加一次沒有狀態變化的點擊。</span></li><li><time>00:31</time><span>資訊區縮放至約 1.15 倍，停住讀地方簡介。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>打開探索，先看看附近有哪些地方。<br>先看看最近的地方，還有可以收的卡。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>先選一個想去的地方</strong></p><p class="secondary">看地方介紹，也看可以收的卡</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>保持同一個產品框與地點，資訊區回到原比例，直接接面板上拉。</p>
       <p class="sound">聲音：觸點音輕且短；不配真人操作環境聲。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride、ride-peek；資訊狀態須新拍 glass-kiln，固定同一次 demo 資料。</li><li>需新增：同一操作的探索地點已選 PNG；以 app/tools/shoot-app.py 的狀態注入方式擴充擷取。</li><li>由 SVG 插值：觸點、裁切、放大、前後狀態淡接；不模擬原始 App 的逐格操作動畫。</li></ul><p>預定場景名：<code>demo_explore</code>（新腳本命名，尚未註冊）</p><p>須先操作實際 App 核對前後狀態，再擷取必要畫格；純靜態切圖不偽稱原始錄屏。片上常駐「原型操作示範」。原型用新竹示例，正式推薦仍屬方案。</p><p>操作路徑：#/ride → 探索 → 選 glass-kiln；或 #/ride?mode=explore</p><p>來源：PDF 10 頁；app/README.md 的現行雙主頁。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride、ride-peek；資訊狀態須新拍 glass-kiln，固定同一次 demo 資料。</li><li>需新增：同一操作的探索地點已選 PNG；以 app/tools/shoot-app.py 的狀態注入方式擴充擷取。</li><li>由 SVG 插值：觸點、裁切、放大、前後狀態淡接；不模擬原始 App 的逐格操作動畫。</li></ul><p>預定場景名：<code>demo_explore</code>（新腳本命名，尚未註冊）</p><p>須先操作實際 App 核對前後狀態，再擷取必要畫格；純靜態切圖不偽稱原始錄屏。片上常駐「原型操作示範」。原型用新竹示例，正式推薦仍屬方案。</p><p>操作路徑：#/ride → 探索 → 自動預選 #/ride?mode=explore&amp;area=glass-kiln</p><p>來源：app/ARCHITECTURE.md「雙主頁的叫車面板」；app/js/views/ride.js。</p></details>
     </article>
 <article class="shot" id="shot-04">
       <div class="shot-meta"><span>第 04 鏡 · 產品 Demo</span><span>00:36–00:48 / 12 秒</span></div>
       <h2>預覽：出發前，先有一份期待</h2>
-      <h3>畫面與動態</h3><p class="description">延續同一個 App 畫面，以觸點上移帶出面板上拉。卡片堆出現後，選中的一張前移、放大；背面內容依實際 App 取樣，翻面過程用水平縮放收窄、換面、再展開。讓觀眾看到卡面與地方故事，之後收回地點資訊。</p>
+      <h3>畫面與動態</h3><p class="description">延續同一個 App 畫面，以觸點上移帶出面板上拉。卡片堆出現後，選中的一張前移、放大；背面內容依實際 App 取樣，翻面過程用水平縮放收窄、換面、再展開。讓觀眾看到卡面、地名與「抵達後可以收下」狀態，之後收回地點資訊。</p>
       <ul class="beats"><li><time>00:36</time><span>觸點由面板下方向上移，以實際 App 展開前後截圖配合 SVG 遮罩呈現上拉結果。</span></li><li><time>00:40</time><span>點一張待收集卡，懸浮預覽放大。</span></li><li><time>00:42</time><span>水平縮窄 → 換背面 → 展開；背面停留兩秒。</span></li><li><time>00:46</time><span>卡片收回，地點資訊保持原位。</span></li></ul>
       <div class="copy"><div><h3>旁白</h3><blockquote>往上拉，就能看這個地方的明信片。<br>還沒出發，就有了一份小小的期待。</blockquote></div>
       <div class="words"><h3>畫面字詞</h3><p><strong>出門前，先看看這裡的卡</strong></p><p class="secondary">上拉看卡片 · 點開看細節</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>卡片收回後，觸點移到同一地點的「用 yoxi」。</p>
       <p class="sound">聲音：一聲短翻頁音，避免反覆加特效聲。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride-cards、ride-float、ride-float-back；後兩者目前選 moat，須改以同場 glass-kiln 新拍。</li><li>需新增：同一地點面板展開、卡面正背與關閉狀態的 PNG；既有 still=1 截圖只能當終態參考。</li><li>由 SVG 插值：面板遮罩展開、卡片位移放大與 scaleX 翻面；是影片重建轉場。</li></ul><p>預定場景名：<code>demo_card_preview</code>（新腳本命名，尚未註冊）</p><p>待收集與已收藏狀態必須分清；卡面款式與後續收卡規則一致。翻面是影片重建的過渡，畫面內容必須來自原型。</p><p>操作路徑：探索面板 → 上拉 → 點卡片 → 翻面 → 關閉</p><p>來源：PDF 10 頁；現行探索卡片面板。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride-cards、ride-float、ride-float-back；後兩者目前選 moat，須改以同場 glass-kiln 新拍。</li><li>需新增：同一地點面板展開、卡面正背與關閉狀態的 PNG；既有 still=1 截圖只能當終態參考。</li><li>由 SVG 插值：面板遮罩展開、卡片位移放大與 scaleX 翻面；是影片重建轉場。</li></ul><p>預定場景名：<code>demo_card_preview</code>（新腳本命名，尚未註冊）</p><p>待收集與已收藏狀態必須分清；不可把預覽誤標成已收下。翻面是影片重建的過渡，畫面內容必須來自原型。預覽款式沿現有懸浮小卡呈現；未收的預覽與搭車後收到的金框可以不同，不強制預覽先顯示金框。懸浮小卡背面只有地名與收藏狀態；地方故事在明信片詳情等其他頁面，本鏡不添加。</p><p>操作路徑：探索面板 → 上拉 → 點卡片 → 翻面 → 關閉</p><p>來源：app/js/views/ride.js：openCard 懸浮小卡正反面。</p></details>
     </article>
 <article class="shot" id="shot-05">
       <div class="shot-meta"><span>第 05 鏡 · 產品 Demo</span><span>00:48–01:02 / 14 秒</span></div>
@@ -266,29 +266,29 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
       <div class="words"><h3>畫面字詞</h3><p><strong>想去的地方，直接帶入下車點</strong></p><p class="secondary">需要搭車時，用 yoxi 前往</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>小車接近目的地，路線終點標記放大，接到到訪畫面。</p>
       <p class="sound">聲音：確認提示一次；小車移動用配樂節拍帶過。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride-dropoff（glass-kiln）；ride-confirm 為 lake，trip 系列為 neiwan，不能直接混剪。</li><li>需新增：全部固定 glass-kiln 的確認、派車與行程 PNG；數字取自同一份 App 狀態。</li><li>由 SVG 插值：欄位提示、畫面縮放、PRIM.car 與路線描繪。</li></ul><p>預定場景名：<code>demo_set_dropoff</code>（新腳本命名，尚未註冊）</p><p>不沿用舊 PRIM.phone 的簡化首頁。車資與時間取自同一次 App 狀態，不另編數值；不是正式報價或實際派車。</p><p>操作路徑：探索「用 yoxi」→ #/ride → 確認 → #/trip</p><p>來源：PDF 9–10 頁；既有 ride 場景的路徑與小車動態。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride-dropoff（glass-kiln）；ride-confirm 為 lake，trip 系列為 neiwan，不能直接混剪。</li><li>需新增：全部固定 glass-kiln 的確認、派車與行程 PNG；數字取自同一份 App 狀態。</li><li>由 SVG 插值：欄位提示、畫面縮放、PRIM.car 與路線描繪。</li></ul><p>預定場景名：<code>demo_set_dropoff</code>（新腳本命名，尚未註冊）</p><p>不沿用舊 PRIM.phone 的簡化首頁。車資與時間取自同一次 App 狀態，不另編數值；不是正式報價或實際派車。</p><p>操作路徑：探索「用 yoxi」→ #/ride（下車點已填）→ 叫車前往 → #/ride/confirm → 確認叫車 → #/trip</p><p>來源：PDF 9–10 頁；既有 ride 場景的路徑與小車動態。</p></details>
     </article>
 <article class="shot" id="shot-06">
       <div class="shot-meta"><span>第 06 鏡 · 產品 Demo</span><span>01:02–01:18 / 16 秒</span></div>
       <h2>抵達：這次到訪，留成一張卡</h2>
       <h3>畫面與動態</h3><p class="description">路線終點的標記接到原型到訪狀態，持續顯示「到訪模擬」。點亮地點與收卡入口依實際流程呈現；取 App 翻卡前後畫面，以 SVG 水平收窄、換面、展開重建轉場。卡面穩定後，把同款成品圖移到產品框外放大，留出欣賞時間；這一刻是全片的主要視覺亮點。</p>
-      <ul class="beats"><li><time>01:02</time><span>由交通示意切到已準備好的到訪模擬狀態。</span></li><li><time>01:05</time><span>觸點選地點與收卡入口。</span></li><li><time>01:08</time><span>由原型翻卡前後截圖重建翻面轉場；不是原始 App 動畫錄影。</span></li><li><time>01:13</time><span>同款成品卡向前放大，停留約三秒。</span></li><li><time>01:16</time><span>卡片縮回產品畫面，準備收進收藏。</span></li></ul>
+      <ul class="beats"><li><time>01:02</time><span>顯示桌機 demo 工具的「搭 yoxi 抵達」操作，再切到到訪模擬狀態。</span></li><li><time>01:05</time><span>觸點選地點與收卡入口。</span></li><li><time>01:08</time><span>由原型翻卡前後截圖重建翻面轉場；不是原始 App 動畫錄影。</span></li><li><time>01:13</time><span>同款成品卡向前放大，停留約三秒。</span></li><li><time>01:16</time><span>卡片縮回產品畫面，準備收進收藏。</span></li></ul>
       <div class="copy"><div><h3>旁白</h3><blockquote>到訪後，這個地方亮起來。<br>收下一張明信片，記住今天來過這裡。</blockquote></div>
       <div class="words"><h3>畫面字詞</h3><p><strong>到訪之後，收下一張明信片</strong></p><p class="secondary">點亮地方 · 翻開紀念</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>同一張卡縮到收藏首頁主卡的位置，接第 07 鏡。</p>
       <p class="sound">聲音：翻卡前配樂稍降，卡片展開時一個柔和亮起音；成品停留不加旁白。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：unlock（glass-kiln）；unlock-ride 是 neiwan，必須另拍。</li><li>需新增：glass-kiln 搭 yoxi 到訪的解鎖前後 PNG，保留合法行程與模擬狀態。</li><li>由 SVG 插值：點亮提示、scaleX 翻面、成品卡放大；卡面使用 p11-gold.jpg，保留原型框線、文字與署名。</li></ul><p>預定場景名：<code>demo_arrival_card</code>（新腳本命名，尚未註冊）</p><p>卡款依現行規則，不從早安圖的油畫款直接跳成這次搭車的收卡結果。擷取動畫時保留日期與交通狀態；不唸到訪門檻公尺數。</p><p>操作路徑：demo 工具「搭 yoxi 抵達」→ #/unlock/glass-kiln?ride=1 → 收卡</p><p>來源：PDF 9–10 頁；app 收卡流程與卡款規則。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：unlock（glass-kiln）；unlock-ride 是 neiwan，必須另拍。</li><li>需新增：glass-kiln 搭 yoxi 到訪的解鎖前後 PNG，保留合法行程與模擬狀態。</li><li>由 SVG 插值：點亮提示、scaleX 翻面、成品卡放大；卡面使用 p11-gold.jpg，保留原型框線、文字與署名。</li></ul><p>預定場景名：<code>demo_arrival_card</code>（新腳本命名，尚未註冊）</p><p>卡款依現行規則，不從早安圖的油畫款直接跳成這次搭車的收卡結果。擷取動畫時保留日期與交通狀態；不唸到訪門檻公尺數。本鏡走 demo 工具的捷徑，明示是模擬；若改走行程頁抵達，須保留行程結束、評分、金色入口再到收卡的步驟。</p><p>操作路徑：在 #/trip 以 demo 工具選 glass-kiln → 搭 yoxi 抵達 → #/unlock/glass-kiln?ride=1 → 點地點 → 收集明信片</p><p>來源：PDF 9–10 頁；app 收卡流程與卡款規則。</p></details>
     </article>
 <article class="shot" id="shot-07">
       <div class="shot-meta"><span>第 07 鏡 · 產品 Demo</span><span>01:18–01:30 / 12 秒</span></div>
       <h2>收藏：每次出門，都有地方留下</h2>
-      <h3>畫面與動態</h3><p class="description">成品卡回到 App 後按「收進收藏」，切到新卡在最上方的收藏狀態。先放大新卡位置，再切到城市足跡；用輕微亮起圈指出剛去過的地區。獎章只留在首頁畫面中，不另外開一串分頁。</p>
+      <h3>畫面與動態</h3><p class="description">按「收進收藏」後回到實際收藏首頁：最新卡位於「我的明信片」主卡最上方，旁邊保留回憶卡、週里程與城市足跡摘要。用局部放大讓新卡被看見，再點城市足跡看已到訪區域，最後返回收藏。首頁維持實際的疊卡與數據版面。</p>
       <ul class="beats"><li><time>01:18</time><span>觸點按收進收藏，切到對應的新卡入冊狀態。</span></li><li><time>01:21</time><span>新卡位置輕亮，整體收藏保持可見。</span></li><li><time>01:25</time><span>切城市足跡，去過的地區以柔和圈線提示。</span></li><li><time>01:28</time><span>回到收藏入口，準備進回憶卡。</span></li></ul>
       <div class="copy"><div><h3>旁白</h3><blockquote>收進收藏，走過的地方就有了紀念。<br>明信片和足跡，都能慢慢回看。</blockquote></div>
       <div class="words"><h3>畫面字詞</h3><p><strong>走過的地方，都留在收藏裡</strong></p><p class="secondary">明信片 · 獎章 · 城市足跡</p></div></div>
       <p class="transition"><strong>接下一鏡：</strong>保持 App 比例與位置，觸點移到回憶卡入口。</p>
       <p class="sound">聲音：音樂維持穩定，收藏時一聲輕提示。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：album、album-new、footprint；album-new 目前新卡是 p9，不能直接接本段。</li><li>需新增：同次 demo 的 p11 新卡收藏與城市足跡 PNG；卡片數字沿用真實狀態。</li><li>由 SVG 插值：淡接、觸點、位置提示與局部放大。</li></ul><p>預定場景名：<code>demo_collection</code>（新腳本命名，尚未註冊）</p><p>張數與足跡沿用實際狀態，不自行重寫數字，也不把收藏數當產品成效。</p><p>操作路徑：收進收藏 → #/album → #/footprint → 返回</p><p>來源：PDF 9–10 頁；收藏首頁與城市足跡。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：album、album-new、footprint；album-new 目前新卡是 p9，不能直接接本段。</li><li>需新增：同次 demo 的 p11 新卡收藏與城市足跡 PNG；卡片數字沿用真實狀態。</li><li>由 SVG 插值：淡接、觸點、位置提示與局部放大。</li></ul><p>預定場景名：<code>demo_collection</code>（新腳本命名，尚未註冊）</p><p>張數與足跡沿用實際狀態，不自行重寫數字，也不把收藏數當產品成效。</p><p>操作路徑：收進收藏 → #/album → #/footprint → 返回</p><p>來源：app/js/views/album.js：收藏首頁疊卡、三個摘要入口與 /footprint；app/js/views/explore-unlock.js 收進收藏。</p></details>
     </article>
 <article class="shot" id="shot-08">
       <div class="shot-meta"><span>第 08 鏡 · 產品 Demo</span><span>01:30–01:46 / 16 秒</span></div>
@@ -307,43 +307,43 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
       <h3>畫面與動態</h3><p class="description">真實新竹地圖緩慢放大到附近範圍，起點旁放「今天，想走近一點」文字。既有步行小點沿示意路線移動；抵達後目的地亮起，對應地點卡從標記上方升起。旁邊出現小型長椅圖示，暗示慢慢走、坐一會兒的生活節奏。情境由地圖與物件說明，不需要人物表演。</p>
       <ul class="beats"><li><time>01:46</time><span>地圖與起點進場，短句淡入。</span></li><li><time>01:49</time><span>步行小點沿短路線移動，地圖緩慢跟隨。</span></li><li><time>01:54</time><span>目的地亮起，長椅圖示短暫出現。</span></li><li><time>01:56</time><span>同地點明信片升起，主標定住。</span></li></ul>
       <div class="copy"><div><h3>旁白</h3><blockquote>有時，媽媽只想在附近走走。<br>看看河邊，坐一會兒，<br>也能留下一張屬於今天的紀念。</blockquote></div>
-      <div class="words"><h3>畫面字詞</h3><p><strong>今天，只想在附近走走</strong></p><p class="secondary">不搭車，也能探索與收藏</p></div></div>
-      <p class="transition"><strong>接下一鏡：</strong>地圖視角保持連續，慢慢拉遠，露出下一個較遠的目的地。</p>
+      <div class="words"><h3>畫面字詞</h3><p><strong>今天，只想在附近走走</strong></p><p class="secondary">不搭車，也能探索與收藏</p><p class="secondary">分段出現：生活情境示意／到訪模擬</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>目的地卡保留；背景切成同地點的明信片詳情，接到另一次到訪的紀錄。</p>
       <p class="sound">聲音：音樂放輕，步行點到站時一個提示即可。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>HSMAP 與既有 walk 場景的地圖／步行點</li><li>護城河地點對應卡面；SVG 長椅圖示</li></ul><p>預定場景名：<code>scenario_nearby</code>（新腳本命名，尚未註冊）</p><p>地圖保留 OpenStreetMap 署名。卡片地點須與標記一致；使用附近適合的地方作情境，不承諾已驗證的無障礙條件。路線為敘事動畫，不表示持續 GPS 追蹤或沿路塗色；足跡只呼應已到訪地點。</p><p>來源：PDF 3、7、9 頁；既有 walk、lightup 場景。</p></details>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>HSMAP 與既有 walk 場景的地圖／步行點</li><li>護城河地點對應卡面；SVG 長椅圖示</li></ul><p>預定場景名：<code>scenario_nearby</code>（新腳本命名，尚未註冊）</p><p>地圖保留 OpenStreetMap 署名。卡片地點須與標記一致；使用附近適合的地方作情境，不承諾已驗證的無障礙條件。路線為敘事動畫，不表示持續 GPS 追蹤或沿路塗色；足跡只呼應已到訪地點。步行收卡以 demo 工具的「走路抵達」模擬，片上標「到訪模擬」；新首頁不新增「走路前往」按鈕，也不把舊 /going 路由當新首頁入口。</p><p>來源：app/js/views/system.js demo 抵達工具；app/js/views/explore-cards.js 步行收卡規則。</p></details>
     </article>
 <article class="shot" id="shot-10">
       <div class="shot-meta"><span>第 10 鏡 · 生活情境</span><span>02:00–02:15 / 15 秒</span></div>
-      <h2>去遠一點：出遊的期待帶來移動</h2>
-      <h3>畫面與動態</h3><p class="description">沿上一鏡地圖向外拉遠，目的地卡浮起，旁邊是兩個簡單的人物圓標，標「我」與「朋友」。一個對話框顯示「下次，一起去這裡？」接著短暫帶入已填下車點的產品畫面，小車接續沿路線前進。到站後，兩個圓標移到目的地旁，卡片浮起，表達相約出遊。</p>
-      <ul class="beats"><li><time>02:00</time><span>延續地圖視角拉遠，兩個人物圓標與邀約文字淡入。</span></li><li><time>02:04</time><span>目的地卡縮到實際 App 已填下車點的畫面旁。</span></li><li><time>02:07</time><span>產品畫面退場，小車沿虛線前進，走過處變實線。</span></li><li><time>02:11</time><span>兩個人物圓標在目的地並列，明信片升起。</span></li></ul>
-      <div class="copy"><div><h3>旁白</h3><blockquote>改天，她想和朋友去遠一點的地方。<br>選好景點，再用 yoxi 前往。<br>叫車的理由，從這份期待開始。</blockquote></div>
-      <div class="words"><h3>畫面字詞</h3><p><strong>想去遠一點，就用 yoxi 前往</strong></p><p class="secondary">出遊的期待，接上移動需求</p></div></div>
-      <p class="transition"><strong>接下一鏡：</strong>目的地卡放大遮過地圖，再縮成下一鏡要分享的一張卡。</p>
-      <p class="sound">聲音：邀約文字一聲輕提示，小車移動跟隨音樂，不用車門或真人招呼。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>既有 far、ride 場景的視角、路徑、小車</li><li>同目的地的產品狀態取樣與卡面；兩個靜態 SVG 人物圓標</li></ul><p>預定場景名：<code>scenario_friends_ride</code>（新腳本命名，尚未註冊）</p><p>人物圓標只位移與淡入，不需角色骨架。片上標「出遊情境示意」；交通是單趟叫車提案，不延伸為待命或包車。</p><p>來源：PDF 6–9、14 頁；既有 far、ride 場景。</p></details>
+      <h2>熟悉的地方：再來一次，也留一張</h2>
+      <h3>畫面與動態</h3><p class="description">承接前一鏡的護城河明信片，進入實際明信片詳情頁。先看第一次到訪的卡與日期，再將「每一次來」選擇列局部放大，點另一個日期，換成那次留下的卡。兩次紀錄都取自 App 狀態，畫面只用卡片、日期與選中提示表達時間經過；不加入朋友、邀約或同行位置。</p>
+      <ul class="beats"><li><time>02:00</time><span>明信片詳情進場，先看第一次到訪。</span></li><li><time>02:04</time><span>鏡頭移到「每一次來」；兩次日期必須不同。</span></li><li><time>02:07</time><span>點另一個到訪紀錄，切換到那次明信片。</span></li><li><time>02:11</time><span>卡面與日期停住，讓觀眾看懂這是熟悉地方的另一次回憶。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>不一定每次都要去新的地方。<br>改天再來，也能留下一張明信片。<br>熟悉的風景，慢慢成為自己的回憶。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>同一個地方，也有不同的回憶</strong></p><p class="secondary">回看每一次來過的紀錄</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>停在選中的到訪明信片；下一鏡從這頁的分享按鈕開始。</p>
+      <p class="sound">聲音：切換日期時一聲輕提示，讓卡面停留時只剩配樂。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>需新拍：護城河 p3 的兩次合法到訪紀錄、詳情頁與「每一次來」選擇狀態。</li><li>卡面款式、日期與首訪戳取自 APP.explore.cardOrigin；同季節可同款，不捏造每次自動產生新畫風。</li><li>SVG 只作局部放大、淡接與觸點提示。</li></ul><p>預定場景名：<code>scenario_return_visit</code>（新腳本命名，尚未註冊）</p><p>現行 App 支援同一地點不同日的再次收卡；同一地點同一天只收一張。影片展示已備妥的兩次紀錄，不演成同日重複抵達便可無限收卡；不增加揪團、好友、共同路線或同行邀約。拍攝前以不同模擬日期建立兩次到訪，第二次紀錄須先存在；只改網址 v=2 不會自動新增紀錄。</p><p>操作路徑：#/album → #/postcards → #/postcard/p3 → 點「每一次來」→ #/postcard/p3?v=2</p><p>來源：app/js/views/explore-cards.js：visits、canCollect、cardOrigin；app/js/views/album.js：visitsStripHTML 與 /postcard/:id。</p></details>
     </article>
 <article class="shot" id="shot-11">
       <div class="shot-meta"><span>第 11 鏡 · 生活情境</span><span>02:15–02:30 / 15 秒</span></div>
-      <h2>自選分享：讓問候多一段故事</h2>
-      <h3>畫面與動態</h3><p class="description">卡片先停在標有「我的收藏」的區塊。海軍藍分享符號亮一下，卡片才移往另一側的 LINE 對話示意框；框上標「女兒」，回覆「下次一起去」淡入。畫面角落全程保留「分享情境示意」。最後對話框退淡，原本的收藏區仍在，表達分享是選擇，收藏不必依賴回覆。</p>
-      <ul class="beats"><li><time>02:15</time><span>一張到訪明信片停在收藏區；帶出「自選分享」。</span></li><li><time>02:19</time><span>分享符號亮起，卡片縮入 LINE 對話示意框。</span></li><li><time>02:22</time><span>傳圖短句出現，下一拍才顯示女兒的回覆。</span></li><li><time>02:26</time><span>對話框退淡，收藏區保持可見，副標定住。</span></li></ul>
-      <div class="copy"><div><h3>旁白</h3><blockquote>回家後，她選一張到訪明信片，傳給女兒。<br>「今天出去走走，風景很好看。」<br>不想分享，自己收藏也很好。</blockquote></div>
-      <div class="words"><h3>畫面字詞</h3><p><strong>今天的開心，也想讓你看見</strong></p><p class="secondary">自選分享 · 自己收藏也很好</p></div></div>
-      <p class="transition"><strong>接下一鏡：</strong>分享框收起，卡片保持在場，作為下一鏡 AI 卡面產線的例子。</p>
-      <p class="sound">聲音：只用一次訊息提示音；回覆以文字呈現。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>到訪明信片成品；SVG 收藏區、分享圖示、對話框與文字</li><li>開場同樣的卡片與訊息進場動態</li></ul><p>預定場景名：<code>scenario_postcard_share</code>（新腳本命名，尚未註冊）</p><p>此鏡為獨立情境動畫，現有 App 尚未實際呼叫系統分享或傳送 LINE。不用私人回憶卡作分享物；不畫已讀、回覆數或取得家人資料。</p><p>來源：PDF 8–11 頁；BRIEF 分享邊界。</p></details>
+      <h2>自選分享：收到家人的一句回應</h2>
+      <h3>畫面與動態</h3><p class="description">延續同一張明信片詳情，觸點開啟現有分享面板並選「傳到 LINE 給家人」。用 App 既有 /line 畫面呈現「家人」群組，再按「看看子女收到的樣子（示意）」，切到女兒端。點現有快速回覆「好漂亮」，再回媽媽端，讓回覆出現。全程保留 App 的示意標示；使用真正的頁面取樣，不另外設計聊天介面。</p>
+      <ul class="beats"><li><time>02:15</time><span>明信片詳情 → 分享面板。</span></li><li><time>02:18</time><span>點「傳到 LINE 給家人」，進 /line 示意頁。</span></li><li><time>02:21</time><span>點「看看子女收到的樣子（示意）」，進女兒端。</span></li><li><time>02:24</time><span>點快速回覆「好漂亮」，再按「回到媽媽的手機」。</span></li><li><time>02:27</time><span>媽媽端顯示同次分享的回覆，留三秒讀取。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>想分享時，就挑一張明信片給家人。<br>一句「好漂亮」，讓問候多一點溫度。<br>不想分享，自己收藏也很好。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>一張明信片，一句家人的回應</strong></p><p class="secondary">自選分享 · 自己收藏也很好</p><p class="secondary">分段出現：LINE 分享與回應示意</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>家人頁淡出，保留那張卡的圖像，接到下一鏡的卡面製作說明。</p>
+      <p class="sound">聲音：回覆出現時一次輕提示；不假裝連線或手機收到真實通知。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>需新拍：同一 p3 到訪卡與 v 值的分享面板、/line、/family/p3 及回覆後的媽媽端。</li><li>依實際操作產生 share id；每個狀態沿用同一分享紀錄。SVG 只控制頁面切換、放大與觸點。</li></ul><p>預定場景名：<code>scenario_postcard_share</code>（新腳本命名，尚未註冊）</p><p>此流程已在 app/js/views/album-family.js 實作，但只寫本機 APP.store，沒有真的傳到 LINE。不是好友聊天或揪團，也不會分享私人回憶卡。此鏡走明信片分享的 share-line，不走 /elder：後者傳送鈕目前只有 demo toast，無法接家人回應。</p><p>操作路徑：#/postcard/p3?v=2 → 分享 → 傳到 LINE 給家人 → #/line?share=&lt;id&gt; → #/family/p3?share=&lt;id&gt; → 好漂亮 → 回媽媽端</p><p>來源：app/js/views/system.js 分享面板；album-family.js 的 /line、/family/:id、QUICK 與 react。</p></details>
     </article>
 <article class="shot" id="shot-12">
       <div class="shot-meta"><span>第 12 鏡 · AI 與價值</span><span>02:30–02:44 / 14 秒</span></div>
-      <h2>AI：支援內容，保留查核</h2>
-      <h3>畫面與動態</h3><p class="description">上一鏡卡片移到右側，左側依序出現三條簡短流程。先是已審地方與規則排序，接到推薦短理由；再是可信來源，接到草稿與編輯查核；最後是卡面候選，經人工審圖後留下右側那張成品。每次只強調一條，其餘降低明度。全程標「AI 方案設計」。</p>
-      <ul class="beats"><li><time>02:30</time><span>推薦：已審地方 → 規則排序 → 短理由，依序淡入。</span></li><li><time>02:34</time><span>地方故事：可信來源 → 草稿 → 編輯查核，取代上一條的視覺重點。</span></li><li><time>02:38</time><span>卡面候選疊出，通過人工審圖的一張移到右側。</span></li><li><time>02:41</time><span>「到訪時取用」淡入，成品卡定住。</span></li></ul>
-      <div class="copy"><div><h3>旁白</h3><blockquote>正式方案，由 AI 協助推薦理由與地方故事。<br>卡面預先生成，經查核後提供。<br>到訪時取用，就不用現場等生圖。</blockquote></div>
-      <div class="words"><h3>畫面字詞</h3><p><strong>AI 在背後，讓內容持續更新</strong></p><p class="secondary">推薦短理由 · 地方故事 · 明信片卡面</p></div></div>
-      <p class="transition"><strong>接下一鏡：</strong>三條流程退場，保留卡片，接回使用者的探索循環。</p>
-      <p class="sound">聲音：每條流程一次輕提示，旁白保持清晰。</p>
-      <details><summary>素材、實作提醒與來源</summary><ul><li>既有 ai 場景的節點、連線與淡入工具</li><li>現有卡面素材；新 SVG 編輯查核／人工審圖標記</li></ul><p>預定場景名：<code>ai_content_supply</code>（新腳本命名，尚未註冊）</p><p>推薦、RAG 文案與線上服務為正式方案；卡面已有離線生成素材。模型不核定到訪、車資或點數。</p><p>來源：PDF 12 頁；既有 ai 場景與卡面生成紀錄。</p></details>
+      <h2>AI：把地方風景，做成可收藏的卡面</h2>
+      <h3>畫面與動態</h3><p class="description">畫面左側放一張具授權的地方底圖，中間出現同地點現有的幾款卡面，右側放實際 App 的收卡結果。三組素材依序淡入，箭頭只說明製作與取用的關係。旁邊以小字標示「卡面預先製作」；最後將 App 實際使用的那款卡放大。</p>
+      <ul class="beats"><li><time>02:30</time><span>地方照片與來源署名出現。</span></li><li><time>02:33</time><span>同地點的幾款既有 AI 卡面依序展開。</span></li><li><time>02:37</time><span>顯示「卡面預先製作」，連到 App 的規則選款。</span></li><li><time>02:41</time><span>對應款式放大，停留到下一鏡。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>這些卡面，以地方照片為基礎，<br>透過 AI 預先製作不同畫風。<br>App 再依到訪方式與季節，顯示對應款式。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>熟悉的風景，換一種方式收藏</strong></p><p class="secondary">照片素材 → AI 製作卡面 → App 取用</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>製作流程淡出，成品卡保留，接回探索與收藏的使用循環。</p>
+      <p class="sound">聲音：照片與卡面出現時各一聲輕提示，不加現場生圖的等待音效。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>同地點具授權底圖與 app/assets/postcards/ 既有成品；建議沿 p3，款式以實際示範紀錄為準。</li><li>SVG 箭頭、文字與卡片位移；以 index.json 核對素材與生成紀錄。</li></ul><p>預定場景名：<code>ai_content_supply</code>（新腳本命名，尚未註冊）</p><p>已實作的是本機離線卡面生成工具與 App 取用成品；不是在 App 裡即時生成。款式由 explore-cards.js 規則決定，並非 AI 判定到訪。推薦理由、RAG 地方故事與線上 AI 服務不列入本片目前功能展示。</p><p>來源：app/tools/gen-postcards.py；app/assets/postcards/index.json；app/js/views/explore-face.js 與 explore-cards.js。</p></details>
     </article>
 <article class="shot" id="shot-13">
       <div class="shot-meta"><span>第 13 鏡 · AI 與價值</span><span>02:44–02:52 / 8 秒</span></div>
@@ -376,12 +376,12 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
     <li><strong>Demo 以實際狀態為證據。</strong>先操作 App 核對流程，再固定地點、日期與交通方式擷取關鍵狀態 PNG。各鏡列出既有 shot stem、新拍狀態與 SVG 插值分工；拖曳、翻卡以真實前後狀態重建轉場，不聲稱是 App 原始動畫錄影。現成截圖可作參考，不把不同地點、張數或日期拼成同一趟行程。</li>
     <li><strong>每格由時間決定。</strong>沿 <code>ANIM.seek(t)</code> 控制位置、透明度與畫格索引；不靠 CSS 自行播放或非同步影片解碼。所有圖片在 ready 前載入，跳到同一秒應產生同一張圖。翻面可用水平縮放收窄後換圖再展開。</li>
     <li><strong>先守住節奏，再對齊音檔。</strong>本稿為 178 秒配置，預留 2 秒輸出餘裕；舊管線依配音長度加前後停留產生 timeline，不能直接把本稿時長貼成 hold。以實測配音調整停留，首鏡需提供含靜音的配音檔，或分段合成後插入靜音；舊 TTS 串句與鏡尾 hold 都不能取代句間停頓。額外停留時間要算在原鏡內。</li>
-    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享用到訪明信片作獨立情境示意。AI 推薦與內容服務採方案語氣，不演成已接通。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
+    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享與回應沿現有 App 的本機示意流程；沒有好友、揪團或共同路線。AI 只說明已製作的卡面資產與規則取用，不展示尚未接上的推薦服務。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
   </ul>
   <p class="small">新增鏡頭依本稿 scene_key 註冊；正式製片前再把敘事同步到 <code>shots.json</code>、場景與配音時間。本稿不會直接被舊 <code>build-video.py</code> 編成新片。配音超時時先縮第八鏡尾段停留；成片需重新量測，總長不得超過三分鐘。</p>
   <p class="small"><strong>素材標示：</strong>開場／片尾的青草湖油畫卡是情境用既有卡，非當次搭車收卡結果。卡面標「AI 生成示意」；p22 底圖 © Taiwankengo / Wikimedia Commons，CC BY-SA 4.0；p11 底圖 © Råy kuø / Wikimedia Commons，CC BY-SA 4.0。其他卡依 <code>prototype/assets/photos/credits.js</code> 逐張保留作者與授權；地圖標 © OpenStreetMap 貢獻者（ODbL）。</p>
 </section>
-<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/README.md。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
+<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/ARCHITECTURE.md 與 app/js/views/ 現行實作。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
 </main>
 </body>
 </html>
