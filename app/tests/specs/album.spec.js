@@ -835,7 +835,7 @@ T.spec('album', function (t) {
   });
 
   /* 8b. 長輩圖＝那張明信片（使用者：「把全部的卡片、圖片、特效同步到分享的早安圖上面」） */
-  t.test('/elder：圖就是收下的那張明信片（成品、金框、節日版插畫、底圖署名），換地方整張跟著換、選好的祝福留著', async function (app) {
+  t.test('/elder：圖就是收下的那張明信片（成品、金框、節日版插畫），圖上不標 AI、不印署名與遊喜樂，換地方整張跟著換、選好的祝福留著', async function (app) {
     await app.reset();
     const E = app.APP.explore;
     const moon = E.FESTIVALS.filter(function (f) { return f.key === 'moon'; })[0];
@@ -853,9 +853,12 @@ T.spec('album', function (t) {
     t.ok(gen && gen.getAttribute('src') === want, '成品圖：' + (gen && gen.getAttribute('src')) + '（要 ' + want + '）');
     t.ok(app.$('[data-elder] .fest[data-fest="moon"]'), '中秋版：月亮和玉兔也在長輩圖上');
     t.ok(app.$('[data-elder] .fest').classList.contains('is-live'), '打開就動一次');
-    t.ok(app.$('[data-elder] .ai-mark'), '圖上標 AI 生成示意（這張圖會傳出去）');
-    t.includes(app.text('[data-elder-credit]'), E.cardPhoto('p11').author, '圖上印底圖照片的作者');
-    t.includes(app.text('[data-elder-credit]'), E.cardPhoto('p11').licence, '與授權');
+    /* 2026-10-01 使用者：圖上的 AI 生成示意、右下角的遊喜樂、底圖照片的字都刪掉；圖上面、底下的說明小字也刪掉 */
+    t.ok(!app.$('[data-elder] .ai-mark'), '圖上不標 AI 生成示意');
+    t.ok(!/底圖照片|遊喜樂/.test(app.text('[data-elder]')), '圖上不印底圖署名、不寫遊喜樂：' + app.text('[data-elder]'));
+    t.ok(!app.$('main.view[data-view] .ai-note'), '圖上面沒有 AI 說明那一行');
+    t.ok(!/收下的那張明信片做的/.test(app.text('main.view[data-view]')), '圖底下沒有「用你收下的那張明信片做的」');
+    t.includes(app.text('[data-credit]'), E.cardPhoto('p11').author, '底圖的作者與授權留在圖底下那一行');
     t.ok(!img.classList.contains('is-gold'), '走路收的不是金框');
     t.ok(app.$('[data-act="pick-card"][data-card="p11"]') && /中秋版/.test(app.text('[data-act="pick-card"][data-card="p11"]')), '選地方的小卡寫「中秋版」');
     await app.click('[data-act="caption"][data-cap-i="1"]');
@@ -870,7 +873,6 @@ T.spec('album', function (t) {
     t.eq(app.$('[data-elder-art]').getAttribute('data-card-art'), 'p8', '卡面換成 p8 收下的那一款');
     t.eq(app.text('[data-elder-big]'), '身體健康 萬事如意', '換地方不會把選好的祝福洗掉');
     t.includes(app.text('[data-elder-small]'), '青草湖', '地點跟著換');
-    t.includes(app.text('[data-elder-credit]'), E.cardPhoto('p8').author, '圖上的署名跟著換');
     t.includes(app.text('[data-credit]'), E.cardPhoto('p8').author, '圖底下的出處連結也跟著換');
     t.eq(app.$$('[data-credit]').length, 1, '出處只有一行');
     t.noDeadButtons(app, '/elder 換地方之後');

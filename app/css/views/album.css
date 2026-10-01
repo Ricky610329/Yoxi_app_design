@@ -449,7 +449,7 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
 
 /* ---- 長輩圖：排版語言跟 app 其它地方相反（大字、高飽和、描邊）——它要在 LINE 裡被看見 ----
    圖就是收下的那張明信片（3:4，跟明信片頁一樣，景色整張看得到）：成品＋金框＋節日版插畫都在，上面壓一句大字。
-   底下一條跟明信片的地名那一條一樣（約 62 px 高、深色漸層），節日插畫的兔子、浪才對得齊 */
+   底下一條深色漸層只寫日期與地點（不標 AI、不印署名與遊喜樂；署名在圖底下那一行） */
 .alb-elder {
   position: relative;
   aspect-ratio: 3 / 4;
@@ -499,32 +499,18 @@ html[data-still] .alb-v2 .is-landed { animation: none; }
   right: 0;
   bottom: 0;
   z-index: 3;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  column-gap: var(--sp-2);
   padding: var(--sp-4) var(--sp-3) var(--sp-3);
   background: linear-gradient(to top, color-mix(in srgb, var(--yoxi-navy) 90%, transparent), transparent);
   color: var(--yoxi-white);
 }
 .alb-elder--empty .alb-elder__foot { background: none; }
 .alb-elder__small {
-  grid-column: 1;
+  display: block;
   font-size: var(--fs-body);
   font-weight: var(--fw-heavy);
   line-height: 1.3;
   text-shadow: 1.5px 1.5px 0 color-mix(in srgb, var(--yoxi-navy) 55%, transparent);
 }
-.alb-elder__credit { grid-column: 1; font-size: var(--fs-xs); line-height: 1.4; opacity: .85; }
-.alb-elder__sig {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: end;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-  opacity: .85;
-}
-.alb-elder > .ai-mark { z-index: 3; }
 .alb-elder > .postcard__ribbon { z-index: 5; }
 .alb-cap { width: 100%; text-align: left; }
 .alb-elder__picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }

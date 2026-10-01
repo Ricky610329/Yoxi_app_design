@@ -1027,27 +1027,23 @@ function elderCards(ctx) {
 
 /* 長輩圖的那一張圖＝收下的那張明信片本身（跟明信片頁同一套）：成品或照片＋那一款的濾鏡（data-card-art）、
    金框與角標、節日版會動的插畫、遠行戳（cardOrigin().marks），再壓一句大字祝福。3:4，景色整張看得到。
-   底下一條跟明信片的地名那一條一樣高（節日插畫的兔子、浪都對齊它）：日期與地點、底圖照片的署名、遊喜樂。
-   這張圖會傳出去：一定帶「AI 生成示意」與底圖的作者、授權（CC 授權要署名）。還沒收過任何一張：只有祝福的字。 */
+   底下一條深色漸層只寫日期與地點。圖上不標「AI 生成示意」、不印底圖署名與遊喜樂（2026-10-01 依使用者要求拿掉）；
+   底圖的作者、授權與出處連結留在圖底下那一行（photoCreditHTML）。還沒收過任何一張：只有祝福的字。 */
 function elderImage(p, cap) {
   const big = '<div class="alb-elder__cap"><div class="alb-elder__big" data-elder-big>' + esc(cap) + '</div></div>';
   if (!p) {
     return '<div class="alb-elder alb-elder--empty" data-elder>' + big +
-      '<div class="alb-elder__foot"><span class="alb-elder__small" data-elder-small>新竹</span><span class="alb-elder__sig">遊喜樂</span></div></div>';
+      '<div class="alb-elder__foot"><span class="alb-elder__small" data-elder-small>新竹</span></div></div>';
   }
   const o = APP.explore.cardOrigin(p.id);
-  const ph = APP.explore.cardPhoto ? APP.explore.cardPhoto(p.id) : null;
   return '<div class="alb-elder' + (o.gold ? ' is-gold' : '') + '" data-elder data-card="' + esc(p.id) + '"' + (o.gold ? ' data-gold-aura' : '') + '>' +
       '<div class="alb-elder__art" data-elder-art data-art="' + esc(p.art) + '" data-seed="' + cardIdx(p) + '" data-card-art="' + esc(p.id) + '"></div>' +
-      '<span class="ai-mark">AI 生成示意</span>' +
       (o.limited ? '<span class="postcard__ribbon" data-ribbon="limited">yoxi 限定版</span>'
         : o.gold ? '<span class="postcard__ribbon" data-ribbon="gold">yoxi 金框</span>' : '') +
       o.marks +
       big +
       '<div class="alb-elder__foot">' +
         '<span class="alb-elder__small" data-elder-small>' + esc(YEAR() + '.' + o.date + ' · ' + p.name) + '</span>' +
-        (ph ? '<span class="alb-elder__credit" data-elder-credit>底圖照片 © ' + esc(ph.author || '') + ' · ' + esc(ph.licence || '') + '</span>' : '') +
-        '<span class="alb-elder__sig">遊喜樂</span>' +
       '</div>' +
     '</div>';
 }
@@ -1073,11 +1069,10 @@ APP.view('elder', {
     const caps = [APP.fmt.greet() + ' 平安喜樂', '身體健康 萬事如意', '我今天去走走了', '有空一起來'];
     return header({ title: '傳給家人', back: '/week' }) +
       '<div class="scroll alb-scroll" style="background:var(--yoxi-mist)">' +
-        (first ? '<p class="ai-note">圖是 AI 依實景照片改作的示意圖，不是照片；底圖照片的作者與授權印在圖上。</p>' : '') +
         '<div class="alb-pad" data-elder-wrap>' +
           elderImage(first, caps[0]) +
           (first
-            ? '<p class="alb-foot">用你收下的那張明信片做的：畫風、金框、節日版都跟著。</p>' + photoCreditHTML(first.id)
+            ? photoCreditHTML(first.id)
             : '<p class="alb-foot" data-elder-empty>還沒有去過的地方可以放進圖裡，先傳一句問候。收下第一張明信片之後，這裡就能換成那個地方。</p>') +
         '</div>' +
         '<div class="alb-pad"><div class="sec"><h2 class="sec__t sec__t--sm">換一句話</h2></div>' +
@@ -1117,7 +1112,7 @@ APP.view('elder', {
       b.onclick = function () {
         const p = cardById(b.getAttribute('data-card'));
         if (!p) return;
-        /* 整張圖換成那一張（卡面、金框、節日版、署名都跟著）；出處連結也換 */
+        /* 整張圖換成那一張（卡面、金框、節日版都跟著）；圖底下的出處也換 */
         const old = wrap.querySelector('[data-elder]');
         old.insertAdjacentHTML('afterend', elderImage(p, cap));
         old.remove();
