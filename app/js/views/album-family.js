@@ -410,8 +410,6 @@ APP.view('family', {
         '<div class="fam-cardwrap fam-cardwrap--lg">' + cardArt(P.id, { v: s.v, size: 'lg' }) + '</div>' +
         (s.cap ? '<p class="fam-kid__cap" data-share-cap>' + esc(s.cap) + '</p>' : '') +
         '<p class="fam-kid__name">' + esc(P.name) + '</p>' +
-        '<p class="fam-kid__note"><span data-icon="lock" class="fam-kid__lock"></span>' +
-          '<span>你只看得到這一張明信片，看不到' + esc(FAMILY.elder.name) + '在哪裡，也看不到她的其他紀錄。</span></p>' +
         '<div class="fam-kid__react">' +
           '<button class="fam-heart' + (on ? ' is-on' : '') + '" type="button" data-act="toggle-heart" aria-pressed="' + (on ? 'true' : 'false') + '">' +
             HEART + '<span data-heart-label>' + (on ? '已喜歡' : '喜歡') + '</span></button>' +

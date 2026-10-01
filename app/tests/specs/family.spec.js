@@ -242,7 +242,6 @@ T.spec('family', function (t) {
     const txt = app.text('main.view') || '';
     ['公里', 'km', '步數', '已讀', '獎章'].forEach(function (w) { t.ok(txt.indexOf(w) < 0, '沒有「' + w + '」'); });
     t.eq(app.$$('main.view .postcard').length, 1, '畫面上只有一張明信片');
-    t.includes(txt, '只看得到這一張明信片', '寫明只看得到這一張');
   });
 
   t.test('使用者打的字不會變成 HTML（/family、/line、repliesHTML）', async function (app) {

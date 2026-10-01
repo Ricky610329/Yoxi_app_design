@@ -143,15 +143,6 @@
 .fam-kid__from b { font-weight: var(--fw-heavy); }
 .fam-kid__cap { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
 .fam-kid__name { margin-top: var(--sp-3); text-align: center; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
-.fam-kid__note {
-  display: flex;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-  color: var(--app-muted);
-  font-size: var(--fs-cap);
-  line-height: 1.6;
-}
-.fam-kid__lock { display: block; flex: none; width: 14px; height: 14px; margin-top: 3px; }
 .fam-kid__react { display: flex; justify-content: center; margin-top: var(--sp-4); }
 
 .fam-heart {
