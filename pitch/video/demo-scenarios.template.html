@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>遊喜樂｜三分鐘影片腳本與分鏡敘述</title>
+<title>遊喜樂｜從一張早安圖開始・三分鐘動畫腳本</title>
 <style>
 /*TOKENS*/
 * { box-sizing: border-box; }
@@ -41,6 +41,8 @@ blockquote { margin: 0; padding-left: 16px; border-left: 2px solid var(--yoxi-sl
 .words p { margin-bottom: 5px; }
 .words .secondary { font-size: 14px; }
 .sound { margin: 20px 0 0; font-size: 13px; color: var(--yoxi-navy-60); }
+.transition { margin: 22px 0 0; font-size: 14px; }
+code { overflow-wrap: anywhere; }
 details { margin-top: 16px; font-size: 13px; color: var(--yoxi-navy-60); }
 summary { cursor: pointer; width: fit-content; }
 details p { margin: 10px 0 0; }
@@ -77,34 +79,37 @@ footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size
 <body>
 <main>
 <header>
-  <p class="eyebrow">遊喜樂小隊 · 影片腳本提案</p>
-  <h1>三分鐘影片腳本與分鏡敘述</h1>
-  <p class="lead">先示範產品怎麼用，再看它如何走進長輩的生活。</p>
-  <p class="meta">全片 /*TOTAL*/ · /*COUNT*/ 鏡 · 文字分鏡版 · 2026-10-01</p>
+  <p class="eyebrow">遊喜樂小隊 · 程式動畫影片腳本</p>
+  <h1>從一張早安圖開始</h1>
+  <p class="lead">讓一張打招呼的圖，多一段自己走過的故事。</p>
+  <p class="meta">全片 /*TOTAL*/ · /*COUNT*/ 鏡 · SVG 動態＋現有卡面＋App 狀態畫面序列 · 2026-10-01</p>
 </header>
 <nav aria-label="分鏡段落">/*NAV*/</nav>
 <section class="overview" id="overview">
   <h2>影片概要</h2>
   <p>/*SUMMARY*/</p>
-  <p>影片以同一位長輩為主角：從「今天想去哪裡」開始，先看她選地方、前往、收卡與留下回憶，再延伸到附近散步、和朋友出遊、向家人分享。每個情境各自回答一件事：為什麼不搭車也會打開、什麼時候需要 yoxi、回家之後為什麼還想再看。</p>
+  <p><strong>呈現方式：</strong>沿用 repo 的 SVG／JavaScript 場景與逐格輸出流程。卡片與 App 畫面作為圖片素材，文字、地圖、路線與訊息框由程式控制進出。整支影片可用素材與動畫敘事，無需真人拍攝；本頁只提供文字腳本。</p>
   <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody>/*SCHEDULE*/</tbody></table>
 </section>
 <section id="storyboard">
   <h2>分鏡腳本</h2>
-  <p class="small">以下是建議拍法與剪接方式。旁白另作逐句字幕；「畫面字詞」只放當鏡的重點，不與整段旁白同時堆疊。</p>
+  <p class="small">以下時間碼為剪輯配置，已含轉場與片尾。每鏡列畫面、動態節拍、旁白、片上字詞與接續方式；字詞分段出現，勿同時堆滿。首鏡「早安」之後刻意停一下，再帶入長輩敘事。</p>
   /*SHOTS*/
 </section>
 <section class="closing" id="notes">
-  <h2>整體拍攝方向</h2>
+  <h2>交給動畫製作的共通設定</h2>
   <ul>
-    <li><strong>Demo 用連續操作說明。</strong>固定地點、日期與交通方式，特別保留「點景點 → 用 yoxi → 下車點已填」與「抵達 → 收卡 → 收藏」的連接，讓觀眾看懂每一步。</li>
-    <li><strong>情境段回到人物。</strong>以手部、背影、腳步與朋友碰面的小動作補足故事。景點與照片可以換，長輩自主選擇、出門留下紀念這條主線要一致。</li>
-    <li><strong>畫面留一點呼吸。</strong>翻卡與作品出現後停一拍。旁白不用填滿三分鐘，讓操作、環境聲與表情也有時間。</li>
-    <li><strong>區分展示與提案。</strong>派車與到訪標為原型模擬；回憶卡是本機私人作品。LINE 分享另選到訪明信片，以獨立情境示意呈現。AI 推薦與內容服務採方案語氣。</li>
+    <li><strong>現有元件直接沿用。</strong>1920×1080 SVG 舞台、字幕、交叉淡接、HSMAP 地圖、地點標記、小車、步行點與字標都已有實作。進場以約 0.5–0.7 秒為主，每鏡最多一句大字；保留字幕區與署名位置。</li>
+    <li><strong>卡面與 App 序列需要新增載入層。</strong>現有 <code>PRIM.postcard</code> 只畫向量風景，<code>PRIM.phone</code> 只畫簡化首頁。新版需要本機 SVG <code>&lt;image&gt;</code>、圖片預載與 ready 檢查，以及由時間選擇畫格的 App 序列層。這些是本稿的實作需求，尚未加入現有 renderer。</li>
+    <li><strong>Demo 以實際狀態為證據。</strong>先操作 App 核對流程，再固定地點、日期與交通方式擷取關鍵狀態 PNG。各鏡列出既有 shot stem、新拍狀態與 SVG 插值分工；拖曳、翻卡以真實前後狀態重建轉場，不聲稱是 App 原始動畫錄影。現成截圖可作參考，不把不同地點、張數或日期拼成同一趟行程。</li>
+    <li><strong>每格由時間決定。</strong>沿 <code>ANIM.seek(t)</code> 控制位置、透明度與畫格索引；不靠 CSS 自行播放或非同步影片解碼。所有圖片在 ready 前載入，跳到同一秒應產生同一張圖。翻面可用水平縮放收窄後換圖再展開。</li>
+    <li><strong>先守住節奏，再對齊音檔。</strong>本稿為 178 秒配置，預留 2 秒輸出餘裕；舊管線依配音長度加前後停留產生 timeline，不能直接把本稿時長貼成 hold。以實測配音調整停留，首鏡需提供含靜音的配音檔，或分段合成後插入靜音；舊 TTS 串句與鏡尾 hold 都不能取代句間停頓。額外停留時間要算在原鏡內。</li>
+    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享用到訪明信片作獨立情境示意。AI 推薦與內容服務採方案語氣，不演成已接通。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
   </ul>
-  <p class="small">時間為剪輯配置，已含轉場與片尾；真人配音後再校時。若需額外餘裕，可縮短第八鏡尾段一至兩秒，輸出控制在 2:58–2:59。原型採新竹示例資料，投影片的雙北客群與試辦方向另行說明。</p>
+  <p class="small">新增鏡頭依本稿 scene_key 註冊；正式製片前再把敘事同步到 <code>shots.json</code>、場景與配音時間。本稿不會直接被舊 <code>build-video.py</code> 編成新片。配音超時時先縮第八鏡尾段停留；成片需重新量測，總長不得超過三分鐘。</p>
+  <p class="small"><strong>素材標示：</strong>開場／片尾的青草湖油畫卡是情境用既有卡，非當次搭車收卡結果。卡面標「AI 生成示意」；p22 底圖 © Taiwankengo / Wikimedia Commons，CC BY-SA 4.0；p11 底圖 © Råy kuø / Wikimedia Commons，CC BY-SA 4.0。其他卡依 <code>prototype/assets/photos/credits.js</code> 逐張保留作者與授權；地圖標 © OpenStreetMap 貢獻者（ODbL）。</p>
 </section>
-<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、既有影片 shots.json、pitch/BRIEF.md、app/README.md。<br>每鏡的來源與能力邊界可展開「拍攝提醒與來源」查看。本頁為文字腳本，可單檔離線閱讀與列印。</footer>
+<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/README.md。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
 </main>
 </body>
 </html>

@@ -12,13 +12,15 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 data = json.loads((HERE / 'shots-demo-scenarios.json').read_text(encoding='utf-8'))
 shots = data['shots']
-assert sum(s['duration'] for s in shots) == 180
+assert sum(s['duration'] for s in shots) == 178
 assert len({s['id'] for s in shots}) == len(shots)
+assert len({s['scene_key'] for s in shots}) == len(shots)
 for shot in shots:
+    assert shot['materials'] and shot['transition']
     assert shot['beats'][0][0] == 0
     assert [b[0] for b in shot['beats']] == sorted(set(b[0] for b in shot['beats']))
     assert all(0 <= b[0] < shot['duration'] for b in shot['beats'])
-    copy = ''.join(shot['narration']) + shot['headline'] + shot['subline']
+    copy = ''.join(shot['narration']) + shot['headline'] + shot['subline'] + ''.join(shot.get('extra_words', []))
     assert not re.search('任務|完成|達成|挑戰|每日', copy), shot['id']
     for sentence in shot['narration']:
         assert len(re.sub(r'[\s，。、「」：；！？·]', '', sentence)) <= 25, (shot['id'], sentence)
@@ -33,11 +35,11 @@ for shot in shots:
     shot['end'] = cursor
 
 purposes = {
-    '開場': '長輩想出門；遊喜樂給她一個開始。',
-    '產品 Demo': '探索、前往、收卡、收藏與回憶卡的實際操作。',
-    '生活情境': '附近散步、朋友出遊、向家人分享。',
+    '開場': '早安字樣與漂亮卡面先出場，再帶入長輩傳圖的日常。',
+    '產品 Demo': '以實際 App 畫面序列，展示探索、前往、收卡、收藏與回憶卡。',
+    '生活情境': '用地圖、小車、卡片、訊息框說附近散步、朋友出遊與分享。',
     'AI 與價值': '內容如何供應，探索如何接回叫車。',
-    '結尾': '回到長輩自己的出遊紀念。',
+    '結尾': '回到同一張早安圖，讓問候多一段自己的故事。',
 }
 navigation = ['<a href="#overview">概要</a>']
 schedule = []
@@ -53,15 +55,18 @@ for s in shots:
     beats = ''.join(f'<li><time>{tc(s["start"] + t)}</time><span>{e(text)}</span></li>' for t, text in s['beats'])
     narration = '<br>'.join(e(line) for line in s['narration'])
     route = f'<p>操作路徑：{e(s["route"])}</p>' if s.get('route') else ''
+    materials = '<ul>' + ''.join(f'<li>{e(x)}</li>' for x in s['materials']) + '</ul>'
+    extra = f'<p class="secondary">分段出現：{e("／".join(s["extra_words"]))}</p>' if s.get('extra_words') else ''
     articles.append(f'''<article class="shot" id="shot-{s['id']}">
       <div class="shot-meta"><span>第 {s['id']} 鏡 · {e(s['group'])}</span><span>{tc(s['start'])}–{tc(s['end'])} / {s['duration']} 秒</span></div>
       <h2>{e(s['title'])}</h2>
-      <h3>建議畫面</h3><p class="description">{e(s['visual'])}</p>
+      <h3>畫面與動態</h3><p class="description">{e(s['visual'])}</p>
       <ul class="beats">{beats}</ul>
       <div class="copy"><div><h3>旁白</h3><blockquote>{narration}</blockquote></div>
-      <div class="words"><h3>畫面字詞</h3><p><strong>{e(s['headline'])}</strong></p><p class="secondary">{e(s['subline'])}</p></div></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>{e(s['headline'])}</strong></p><p class="secondary">{e(s['subline'])}</p>{extra}</div></div>
+      <p class="transition"><strong>接下一鏡：</strong>{e(s['transition'])}</p>
       <p class="sound">聲音：{e(s['sound'])}</p>
-      <details><summary>拍攝提醒與來源</summary><p>{e(s['note'])}</p>{route}<p>來源：{e(s['source'])}</p></details>
+      <details><summary>素材、實作提醒與來源</summary>{materials}<p>預定場景名：<code>{e(s['scene_key'])}</code>（新腳本命名，尚未註冊）</p><p>{e(s['note'])}</p>{route}<p>來源：{e(s['source'])}</p></details>
     </article>''')
 template = (HERE / 'demo-scenarios.template.html').read_text(encoding='utf-8')
 tokens = (ROOT / 'prototype/css/tokens.css').read_text(encoding='utf-8')
@@ -73,5 +78,5 @@ for key, value in replacements.items():
     page = page.replace(f'/*{key}*/', value)
 target = HERE / 'storyboard-demo-scenarios.html'
 target.write_text(page, encoding='utf-8')
-print(f'PASS: {len(shots)} shots, 180 seconds, narration <= 25 characters per sentence')
+print(f'PASS: {len(shots)} shots, 178 seconds, narration <= 25 characters per sentence')
 print(f'Wrote {target.name} ({target.stat().st_size:,} bytes); text only, no images or JavaScript.')
