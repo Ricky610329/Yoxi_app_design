@@ -4,7 +4,6 @@
 .memory-top { display:flex; align-items:center; justify-content:space-between; flex:none; padding:calc(var(--statusbar-h) + var(--sp-1)) var(--gutter) 0; font-size:var(--fs-cap); }
 .memory-top a { display:grid; place-items:center; width:44px; height:44px; color:var(--yoxi-white); }
 .memory-top [data-icon] { width:20px; height:20px; }
-.memory-top > span:last-child { color:var(--yoxi-slate-lite); }
 .memory-body { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; padding-bottom:calc(var(--sp-2) + var(--safe-bottom)); }
 .memory-body > * { flex:none; }
 .memory-heading { padding:var(--sp-1) var(--gutter) var(--sp-2); }
@@ -35,20 +34,14 @@
 .memory-face[data-memory-mood="good"] .memory-art { filter:saturate(1.15) sepia(.1) brightness(1.06); }
 .memory-face[data-memory-mood="ok"] .memory-art { filter:saturate(.8) contrast(.92) brightness(1.04); }
 .memory-face[data-memory-mood="low"] .memory-art { filter:saturate(.55) sepia(.22) brightness(.94); }
-.memory-stamp { position:absolute; top:var(--sp-4); left:var(--sp-4); display:flex; flex-direction:column; padding:var(--sp-2); border:1px solid var(--yoxi-cream); color:var(--yoxi-cream); background:color-mix(in srgb,var(--yoxi-navy) 65%,transparent); font-size:var(--fs-sm); font-weight:var(--fw-bold); transform:rotate(-6deg); }
-.memory-stamp > span { margin-top:var(--sp-1); font-size:var(--fs-xs); }
 .memory-face-caption { display:flex; flex-direction:column; position:absolute; inset:auto 0 0; gap:var(--sp-1); padding:var(--sp-6) var(--sp-4) var(--sp-4); background:linear-gradient(transparent,color-mix(in srgb,var(--yoxi-navy) 94%,transparent)); }
 .memory-face-caption strong { font-size:var(--fs-title); }
 .memory-face-line { font-size:var(--fs-sm); line-height:var(--lh-body); }
-.memory-face-credit { margin-top:var(--sp-1); font-size:var(--fs-xs); line-height:var(--lh-body); opacity:.8; }
-.memory-demo-mark { position:absolute; top:var(--sp-2); right:var(--sp-2); font-size:var(--fs-xs); padding:var(--sp-1) var(--sp-2); border-radius:var(--r-btn); background:var(--yoxi-navy); }
-/* 矮螢幕卡片變小：郵戳與字級跟著收 */
+/* 矮螢幕卡片變小：字級跟著收 */
 @container memory-face (max-width: 240px) {
-  .memory-stamp { top:var(--sp-3); left:var(--sp-2); padding:var(--sp-1); font-size:var(--fs-xs); }
   .memory-face-caption { gap:0; padding:var(--sp-5) var(--sp-2) var(--sp-2); }
   .memory-face-caption strong { font-size:var(--fs-body); }
   .memory-face-line { font-size:var(--fs-xs); }
-  .memory-face-credit { margin-top:0; }
 }
 
 /* 光線三選一：一條分段控制，選中的那格是奶油色 */

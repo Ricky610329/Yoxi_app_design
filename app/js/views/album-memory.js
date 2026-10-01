@@ -41,10 +41,9 @@ function artHTML(d) {
   const p = K.cardById(d.cardId);
   return d.photo ? '<img class="memory-own-photo" src="'+esc(d.photo)+'" alt="自己的照片">' : '<span class="memory-template-art" data-art="'+esc(p.art)+'" data-seed="'+K.cardIdx(p)+'" data-card-art="'+esc(p.id)+'"></span>';
 }
-/* 底圖署名印在卡面上（跟 /elder 一樣）：每張模板各自帶自己的出處；換成自己的照片就沒有 */
+/* 卡面只留圖、地名與一句光線短句：不蓋郵戳、不標「構圖示意」、不印底圖署名 */
 function faceHTML(d) {
-  const ph = !d.photo && APP.explore.cardPhoto ? APP.explore.cardPhoto(d.cardId) : null;
-  return '<div class="memory-art">'+artHTML(d)+'</div><span class="memory-stamp">遊喜樂<span>'+esc(d.date)+'</span></span><span class="memory-face-caption"><strong>'+esc(K.cardById(d.cardId).name)+'</strong><span class="memory-face-line">'+esc(moodOf(d.mood).caption)+'</span>'+(ph?'<small class="memory-face-credit" data-memory-credit>底圖照片 © '+esc(ph.author||'')+' · '+esc(ph.licence||'')+'</small>':'')+'</span><span class="memory-demo-mark">構圖示意</span>';
+  return '<div class="memory-art">'+artHTML(d)+'</div><span class="memory-face-caption"><strong>'+esc(K.cardById(d.cardId).name)+'</strong><span class="memory-face-line">'+esc(moodOf(d.mood).caption)+'</span></span>';
 }
 /* STATE.save 會吞配額錯誤，讀回確認後才算收下。寫入仍只走 APP.state。 */
 function saveCard(d) {
@@ -62,7 +61,7 @@ APP.view('lookback', {
   path:'/lookback', tab:null, status:'light', title:'回憶卡',
   render:function () {
     const T = templates();
-    return '<div class="memory-room" data-memory-page><header class="memory-top"><a href="#" data-back="/album?tab=journal" aria-label="返回收藏"><span class="ic-ondark" data-icon="close"></span></a><span>遊喜樂</span><span>'+esc(APP.fmt.todayMMDD())+'</span></header><div class="memory-body"><div class="memory-heading"><h1>把這一刻，留成卡。</h1></div>'+
+    return '<div class="memory-room" data-memory-page><header class="memory-top"><a href="#" data-back="/album?tab=journal" aria-label="返回收藏"><span class="ic-ondark" data-icon="close"></span></a></header><div class="memory-body"><div class="memory-heading"><h1>把這一刻，留成卡。</h1></div>'+
     (T.places.length ? '<div class="memory-stage"><div class="memory-templates" data-memory-templates data-gallery role="region" aria-label="地點模板，左右滑動選擇">'+T.places.map(function(p,i){
       return '<button type="button" class="memory-face'+(!i?' is-selected':'')+'" data-act="pick-memory-template" data-card="'+esc(p.id)+'" data-memory-mood="good" aria-pressed="'+!i+'" aria-label="'+esc(p.name)+'模板">'+faceHTML(draft(p.id,'good'))+'</button>';
     }).join('')+'</div>'+navs.map(n=>'<button type="button" class="memory-nav memory-nav--'+n.cls+'" data-act="step-memory-template" data-step="'+n.step+'" aria-label="'+n.label+'"'+(n.step<0||T.places.length<2?' hidden':'')+'><span>'+n.svg+'</span></button>').join('')+'</div>'+

@@ -368,7 +368,8 @@ T.spec('album', function (t) {
     t.eq(tones.map(function (b) { return (b.textContent || '').trim(); }).join('／'), '晴光／柔光／暮色', '三選一是光線，不是心情');
     t.ok(tones.every(function (b) { return b.querySelector('svg') && !b.querySelector('[data-icon^="mood"]'); }), '光線用自己的圖示，沒有笑臉');
     ['開心', '平靜', '放鬆'].forEach(function (w) { t.ok(app.text('main.view[data-view]').indexOf(w) < 0, '畫面上沒有「' + w + '」'); });
-    t.includes(app.text('[data-act="pick-memory-template"].is-selected [data-memory-credit]'), app.APP.explore.cardPhoto(faces[0].getAttribute('data-card')).author, '卡面印底圖作者');
+    t.eq(app.$$('.memory-face .memory-stamp, .memory-face [data-memory-credit], .memory-face .memory-demo-mark').length, 0, '卡面不蓋郵戳、不印底圖署名、不標構圖示意');
+    t.eq(app.text('.memory-top'), '', '頁首只有關閉鍵，沒有品牌字與日期');
     t.eq(app.$$('[data-act="make-memory"]').length, 1, '只有一個主要動作');
     t.eq(app.$$('main.view select, main.view [data-act="preview-memory"], main.view [data-act="save-memory"]').length, 0, '沒有表單選單或分開預覽／儲存');
     if (faces[1]) {
@@ -440,7 +441,7 @@ T.spec('album', function (t) {
     const jpeg = selected.querySelector('.memory-own-photo').getAttribute('src');
     t.ok(/^data:image\/jpeg;base64,/.test(jpeg), '圖片在本機縮圖後轉成 JPEG');
     t.includes(app.text('[data-photo-label]'), '換一張', '上傳後可替換');
-    t.ok(!selected.querySelector('[data-memory-credit]'), '自己的照片不印底圖署名');
+    t.ok(!selected.querySelector('[data-memory-credit]'), '自己的照片也不印署名');
     t.ok(!app.$('[data-act="remove-memory-photo"]').hidden, '移除照片可用');
     t.eq(app.STATE.count(), count0, '上傳不改原明信片');
     t.eq(app.STATE.points, points0, '上傳不改點數');
@@ -460,7 +461,7 @@ T.spec('album', function (t) {
     const reopened = app.$('[data-act="pick-memory-template"].is-selected');
     t.eq(reopened.getAttribute('data-memory-mood'), 'low', '重開後心情一致');
     t.eq(reopened.querySelector('.memory-own-photo').getAttribute('src'), item.photo, '重開後照片一致');
-    t.includes((reopened.textContent || '').replace(/\s+/g, ' ').trim(), item.date, '重開後日期一致');
+    t.includes(app.$('[data-act="open-memory"][data-memory-id="' + item.id + '"]').getAttribute('aria-label'), item.date, '重開後日期一致（卡面不印日期，縮圖的讀屏標籤帶著）');
     t.eq(app.STATE.count(), count0, '保存回憶卡也不改原明信片');
     t.eq(app.STATE.points, points0, '保存回憶卡也不改點數');
   });

@@ -697,7 +697,7 @@ T.spec('flows', function (t) {
     await app.reset();
     await app.go('/lookback');
     const lookback = app.text('main.view[data-view]');
-    t.includes(app.text('[data-act="pick-memory-template"].is-selected .memory-demo-mark'), '構圖示意', '卡面標明是構圖示意（頁面上不另寫說明小字）');
+    t.ok(!app.$('[data-act="pick-memory-template"].is-selected .memory-demo-mark'), '卡面不標構圖示意');
     t.ok(lookback.indexOf('這個月') < 0 && lookback.indexOf('步數') < 0 && lookback.indexOf('公里') < 0,
       '沒有舊月累積、步數或里程文案');
     await app.go('/trip/done');
