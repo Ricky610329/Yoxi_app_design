@@ -230,17 +230,6 @@
   border-radius: var(--r-img);
 }
 
-.ride-tag {
-  flex: none;
-  padding: 2px var(--sp-2);
-  border-radius: var(--r-pill);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-heavy);
-  white-space: nowrap;
-}
-.ride-tag--walk { background: var(--yoxi-mist); color: var(--yoxi-navy); }
-.ride-tag--ride { background: var(--yoxi-navy); color: var(--yoxi-white); }
-
 .ride-more-wrap { border-top: 1px solid var(--yoxi-line); }
 .ride-more {
   display: block;

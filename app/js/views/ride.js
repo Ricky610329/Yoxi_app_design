@@ -1315,8 +1315,7 @@ APP.view('dropoff', {
       '<div class="scroll ride-list">' +
         '<a class="row-nav" href="#/ride?mode=explore" data-act="pick-on-map">' +
           '<span class="tile-icon tile-icon--lg tile-icon--round ride-tile--navy"><span class="ic-ondark" data-icon="place"></span></span>' +
-          '<span class="row-nav__body"><span class="row-nav__title">在地圖上挑</span>' +
-          '<span class="row-nav__sub">在地圖選附近有卡片的地方</span></span>' +
+          '<span class="row-nav__body"><span class="row-nav__title">在地圖上挑</span></span>' +
           '<span class="arrow"></span></a>' +
         '<div class="ride-gap"></div>' +
         '<div data-drop-list></div>' +
@@ -1342,14 +1341,12 @@ APP.view('dropoff', {
         return;
       }
       list.innerHTML = shown.map(function (p) {
-        const walk = F.canWalk(p.dist);
         return '<button class="row-nav ride-row" type="button" data-act="choose-dropoff" data-id="' + esc(p.id) + '">' +
           '<span class="ride-row__art" data-art="' + esc(p.art) + '" data-seed="2"></span>' +
           '<span class="row-nav__body">' +
             '<span class="row-nav__title">' + esc(p.name) + '</span>' +
             '<span class="row-nav__sub">' + esc(p.type) + ' · ' + esc(distText(p.dist)) + '</span>' +
           '</span>' +
-          '<span class="ride-tag ' + (walk ? 'ride-tag--walk' : 'ride-tag--ride') + '">' + (walk ? '走得到' : '叫車') + '</span>' +
         '</button>';
       }).join('') +
       (hit.length > shown.length

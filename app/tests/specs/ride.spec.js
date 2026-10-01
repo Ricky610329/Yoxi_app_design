@@ -448,7 +448,9 @@ T.spec('ride', function (t) {
     input.dispatchEvent(new w.Event('input', { bubbles: true }));
     const r = app.$('[data-act="choose-dropoff"][data-id="neiwan"]');
     t.ok(r, '內灣那一列');
-    t.includes(r && r.textContent, '叫車', '28 km 標「叫車」');
+    t.ok(r && r.textContent.indexOf('叫車') < 0 && r.textContent.indexOf('走得到') < 0, '列上沒有「走得到／叫車」標籤');
+    t.ok(!app.$('.ride-tag'), '清單沒有任何 .ride-tag');
+    t.ok(!app.$('[data-act="pick-on-map"] .row-nav__sub'), '「在地圖上挑」沒有說明小字');
     await app.click(r);
     await app.at('/ride');
     const d = A.store.get('dropoff');
