@@ -1,5 +1,15 @@
 # 方案說明影片（初賽）
 
+## 2026-10-01：產品 Demo＋生活情境腳本提案
+
+先看 [三分鐘分鏡、旁白與畫面字詞](storyboard-demo-scenarios.html)。依使用者提供的 `2026和泰AI黑客松_draft.pdf` 整理為 14 鏡：開場 18 秒、產品 Demo 90 秒、三個生活情境 44 秒、AI 與價值 22 秒、結尾 6 秒，共 180 秒。頁面有影片概要、逐鏡畫面、旁白、片上主副標、錄製節拍、來源對照與完整連讀稿，可離線單檔開啟；節奏預覽為靜態分鏡輪播，沒有配音。
+
+來源為 `shots-demo-scenarios.json`，版面為 `demo-scenarios.template.html`；執行 `python pitch/video/build-demo-storyboard.py` 重建 HTML，並檢查總秒數、旁白單句長度與片上禁用字詞。圖片取自既有 app 截圖並內嵌，正式錄屏仍須固定同一地點、日期與交通方式。生活情境與分享畫面是拍攝提案，派車與到訪保留模擬標示，回憶卡依現行本機模板敘述。
+
+這份提案獨立於以下既有向量影片管線；尚未產生新 MP4，也不會被 `build-video.py --docs` 覆寫。
+
+## 既有向量影片
+
 初賽第二件交件：**3 分鐘以內**、YouTube「不公開」、標題 `yoxi_遊喜樂_2026 和泰 AI 黑客松`、連結到 11/21 都要看得到（`../docs/competition.md` §5.2）。
 影片是一支**向量動畫**：`anim/index.html` 在 1920×1080 的 SVG 上把每一格畫成「時間 t 的純函數」，`build-video.py` 用 headless Chrome 逐格截圖、合上旁白，編成 MP4。
 **影片畫面本身就是最終畫面**；正式版只把 Windows TTS 換成真人配音，不用另外錄螢幕或剪接。
