@@ -221,13 +221,13 @@ function share(opt) {
   const title = opt.title ||
     (opt.kind === 'postcard' ? '分享這張明信片' : opt.kind === 'week' ? '分享這一週' : '分享');
 
-  /* [data-act, 標題, 說明, 圖示（家人那兩格才有）] */
+  /* [data-act, 標題, 圖示（家人那兩格才有）]：每格只留標題，說明只剩底部那一句 */
   const rows = [].concat(
-    oneTap ? [['share-line', '傳到 LINE 給家人', '一鍵傳到「家人」群組，只傳這一張（示意，不會真的送出）', 'share']] : [],
+    oneTap ? [['share-line', '傳到 LINE 給家人', 'share']] : [],
     [
-      ['share-family', '做一張長輩圖再傳', '排成大字、吉祥話、你去過的地方，再傳給家人', 'elder'],
-      ['share-save', '存成圖片', '存到相簿，原圖不含任何位置資訊'],
-      ['share-link', '複製連結', '對方點開只看得到這一張，看不到你的其他紀錄'],
+      ['share-family', '做一張長輩圖再傳', 'elder'],
+      ['share-save', '存成圖片'],
+      ['share-link', '複製連結'],
     ]);
 
   const scrim = document.createElement('div');
@@ -243,10 +243,9 @@ function share(opt) {
       '<div class="sharesheet__t">' + esc(title) + '</div>' +
       rows.map(function (r) {
         return '<button class="row-nav" type="button" data-act="' + r[0] + '">' +
-          (r[3] ? '<span class="tile-icon tile-icon--md"><span data-icon="' + r[3] + '" class="sys-ico"></span></span>' : '') +
+          (r[2] ? '<span class="tile-icon tile-icon--md"><span data-icon="' + r[2] + '" class="sys-ico"></span></span>' : '') +
           '<span class="row-nav__body">' +
             '<span class="row-nav__title">' + r[1] + '</span>' +
-            '<span class="row-nav__sub">' + r[2] + '</span>' +
           '</span><span class="arrow"></span></button>';
       }).join('') +
       '<div class="sharesheet__note">日誌與心情不會被分享</div>' +
