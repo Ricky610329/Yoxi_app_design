@@ -546,11 +546,7 @@
 .ex-sheet__art { position: relative; flex: none; width: 56px; height: 56px; overflow: hidden; border-radius: var(--r-img); }
 .ex-sheet__txt { flex: 1; min-width: 0; }
 .ex-sheet__t { display: block; font-size: var(--fs-lead); font-weight: var(--fw-heavy); line-height: var(--lh-tight); }
-.ex-sheet__p { display: block; margin-top: var(--sp-1); color: var(--yoxi-slate); font-size: var(--fs-cap); line-height: var(--lh-body); }
 .ex-sheet .ex-rules-btn { color: var(--yoxi-slate); }
-/* 為什麼是這一款：一條規則一行（面板與結果共用） */
-.ex-why__l { display: block; }
-.ex-why__l + .ex-why__l { margin-top: 2px; }
 .ex-sheet__go { width: 100%; height: 52px; margin-top: var(--sp-4); font-size: var(--fs-body); }
 
 /* ---- 翻卡舞台＋結果（同一幕：卡片不換元素，翻完直接滑到結果的位置） ---- */
@@ -1012,9 +1008,6 @@
   font-weight: var(--fw-heavy);
 }
 .ex-unlock__goldrow .num { color: var(--gold-lite); }
-/* 深底上的獎章圖示：icons.js 的 badge 把海軍藍寫死在 fill，壓在深底上看不見；外圈與緞帶換成淺金，中間紅點照舊 */
-.ex-unlock__goldrow [data-icon] svg > circle:first-of-type,
-.ex-unlock__goldrow [data-icon] svg > path { fill: var(--gold-lite); }
 
 /* 卡面畫風（正式版：景點照片＋diffusion；原型：同一張照片或插圖套 explore-fx.js 的 SVG 濾鏡） */
 .ex-face { position: absolute; inset: 0; overflow: hidden; background: var(--yoxi-mist); }

@@ -171,7 +171,7 @@ function nextMile(km) {
   return MILE_STEPS.filter(function (m) { return m > km; })[0] || null;
 }
 
-/* 為什麼是這一款：一條規則一句（/unlock 的收集面板念這幾句） */
+/* 為什麼是這一款：一條規則一句（/unlock 的收集面板以前念這幾句，2026-10-01 小字太多拿掉了，畫面上目前沒有人念） */
 function ruleLines(r) {
   if (!r || !r.style) return [];
   const out = [r.style.gold ? '搭 yoxi 抵達是金框' : r.season.season + '的畫風是' + r.style.name];

@@ -293,7 +293,6 @@ T.spec('explore', function (t) {
     t.eq(app.$('[data-unlock]').getAttribute('data-visit'), '2', '第 2 次');
     t.includes(app.text('[data-visit-n]'), '第 2 次來', '寫第幾次來');
     t.ok(!app.$('[data-final-card] [data-mark="first"]'), '回訪沒有首訪戳');
-    t.ok(!/首訪/.test(app.text('[data-arrive-sheet] [data-why]')), '為什麼：不寫首訪');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.STATE.count(), n0, '圖鑑（STATE）不多一張');
@@ -312,7 +311,7 @@ T.spec('explore', function (t) {
     await app.go('/unlock/neiwan?ride=1');
     t.ok(app.$('.postcard--gold'), '金框');
     t.includes(app.text('.postcard__ribbon'), 'yoxi 限定版', '角標');
-    t.includes(app.text('[data-gold-note]'), '司機同行紀念', '司機同行紀念');
+    t.ok(!/司機同行紀念/.test(app.text('[data-unlock]')), '不寫司機同行紀念（小字太多，拿掉了）');
     t.includes(app.text('[data-points]'), '+50', '和泰 Points +50');
     await app.click('[data-act="collect"]');
     await app.at('/album');
@@ -409,20 +408,19 @@ T.spec('explore', function (t) {
   /* 款式規則本身（季節、三節、遠行、金框、表上沒有的年份）是純函式：在 tests/unit/views.test.mjs */
   const seasonDate = T.helpers.seasonDate;
 
-  t.test('/unlock/glass-kiln：照規則的款式與為什麼寫在結果、? 打開規則說明（沒有機率）、收下記款式', async function (app) {
+  t.test('/unlock/glass-kiln：照規則的款式、為什麼只在 ? 的規則說明（沒有機率）、收下記款式', async function (app) {
     await app.reset();
     const E = app.APP.explore;
     await app.reset({ store: { demoDate: seasonDate(app, 'ink') } });
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '冬天走路抵達 → 水墨');
     t.includes(app.text('[data-result-style]'), '水墨', '寫出畫風名');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), '冬天的畫風是水墨', '面板寫出為什麼');
-    t.ok(!app.$('[data-result-style] [data-why]'), '結果不再重複為什麼');
+    t.ok(!app.$('[data-unlock] [data-why]'), '面板與結果都不列為什麼（小字太多，收在「?」）');
+    t.ok(!app.$('.unlock__sub'), '標題底下不寫怎麼抵達、走了多遠');
     t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), E.VERSES.p11.ink, '結果寫這個地方冬天的那一句');
     t.ok(!app.$('[data-final-card].postcard--gold'), '水墨不是金框');
     t.ok(app.$('[data-final-card] .card-mark[data-mark="first"]'), '第一次來：首訪紀念戳');
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]') && !app.$('[data-final-card] .fest'), '不是節日、不是搭車：沒有插畫、沒有里程戳');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), '第一次來，多蓋一枚首訪紀念戳', '為什麼：首訪');
     await app.go('/explore');
     await app.go('/unlock/glass-kiln');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'ink', '重進還是同一款');
@@ -498,10 +496,9 @@ T.spec('explore', function (t) {
     const pts0 = app.STATE.points;
     await app.go('/unlock/glass-kiln');
     await app.click('[data-act="open-spot"]');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), moon.when + '去的，卡面有' + moon.deco, '面板先寫節日版與為什麼');
     const fest = app.$('[data-final-card] .fest[data-fest="moon"]');
     t.ok(fest, '卡面有中秋的插畫（那一週的第一天也算）');
-    t.eq(fest && fest.getAttribute('aria-hidden'), 'true', '插畫報讀器略過（意思在「為什麼」那幾句）');
+    t.eq(fest && fest.getAttribute('aria-hidden'), 'true', '插畫報讀器略過（意思在「?」的規則說明）');
     t.ok(fest && !fest.classList.contains('is-live'), '還沒翻開：插畫不動');
     t.ok(app.$('[data-final-card] .fest [data-fest-part="moon"]') && app.$('[data-final-card] .fest [data-fest-part="rabbit"]'), '月亮與玉兔');
     await T.helpers.revealThrough(app);
@@ -511,7 +508,6 @@ T.spec('explore', function (t) {
     t.ok(/^\d/.test(app.win.getComputedStyle(rabbit).animationIterationCount), '有限次（不會一直動）：' + app.win.getComputedStyle(rabbit).animationIterationCount);
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'woodcut', '中秋在秋天：木刻版畫');
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '走路沒有里程戳');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), '秋天的畫風是木刻版畫', '面板寫為什麼（畫風）');
     t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), E.VERSES.p11.moon, '結果寫這個地方中秋的那一句（不是秋天那一句）');
     /* 跟明信片頁一樣排成題字：一個短句一行。寬度照內容縮的時候，懸出去的句尾標點曾讓最長那行折成兩行 */
     const vls = app.$$('[data-result-style] [data-verse] .ex-verse__l');
@@ -591,8 +587,6 @@ T.spec('explore', function (t) {
     const mark = app.$('[data-final-card] .card-mark[data-mark="mile"]');
     t.ok(mark, '里程紀念戳');
     t.includes(mark && mark.textContent, mile + ' km', '戳上寫跨過的里程');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), '搭 yoxi 累積到 ' + mile + ' 公里，多蓋一枚里程紀念戳', '面板寫為什麼');
-    t.includes(app.text('[data-arrive-sheet] [data-why]'), '搭 yoxi 抵達是金框', '金框的理由');
     const E2 = app.APP.explore;               /* reset 之後重新拿（E 是 reset 前那一頁的） */
     const verse = E2.verseOf('p9', E2._.arrivalAt(app.APP.place('neiwan')).rule);
     t.eq(app.text('[data-result-style] [data-verse] .ex-verse__t'), verse.text, '結果寫內灣的那一句（金框，或今天是節日就是節日那一句）');
@@ -607,7 +601,6 @@ T.spec('explore', function (t) {
     await app.go('/unlock/glass-kiln');
     t.ok(app.$('[data-final-card].postcard--gold'), '近的也是金框');
     t.ok(!app.$('[data-final-card] .card-mark[data-mark="mile"]'), '沒跨過：沒有里程戳');
-    t.ok(!/里程/.test(app.text('[data-arrive-sheet] [data-why]')), '沒跨過：不寫里程');
     await app.reset();
   });
 
@@ -636,8 +629,9 @@ T.spec('explore', function (t) {
       t.ok(app.$('[data-arrive-sheet]').hidden, c.key + '：面板一開始收著');
       await app.click('[data-act="open-spot"]');
       t.ok(!app.$('[data-arrive-sheet]').hidden, c.key + '：點發光的地方 → 面板');
-      const style = app.APP.explore.CARD_STYLES.filter(function (d) { return d.key === c.key; })[0];
-      t.includes(app.text('[data-arrive-sheet]'), c.ride ? '搭 yoxi 抵達是金框' : style.season + '的畫風是' + style.name, c.key + '：面板先寫會收到哪一款、為什麼');
+      /* 小字太多（2026-10-01）：每一款都不寫標題底下的「搭 yoxi 抵達 · 幾公里／走了多遠」、面板上的為什麼、翻開之後的司機同行紀念 */
+      t.ok(!app.$('.unlock__sub'), c.key + '：標題底下不寫怎麼抵達、幾公里');
+      t.ok(!app.$('[data-arrive-sheet] [data-why]'), c.key + '：面板只寫地名，為什麼收在 ?');
       t.ok(app.$('[data-arrive-sheet] [data-act="open-rules"]'), c.key + '：面板上有規則說明的 ?');
       t.ok(!/必得|機率|抽/.test(app.text('[data-arrive-sheet]')), c.key + '：面板不寫機率、抽、必得');
       await revealThrough(app);
@@ -653,6 +647,7 @@ T.spec('explore', function (t) {
       t.eq(app.$('[data-unlock]').classList.contains('is-gold-up'), c.key === 'gold', c.key + '：只有金框有光芒');
       t.eq(!!app.$('[data-final-card].postcard--gold'), c.key === 'gold', c.key + '：只有金框是金框');
       t.ok(app.$('[data-act="collect"]'), c.key + '：結果有「收進收藏」');
+      t.ok(!/司機同行紀念/.test(app.text('[data-unlock]')), c.key + '：結果不寫司機同行紀念');
       t.eq(app.errors.length, 0, c.key + '：錯誤：' + app.errors.join('；'));
     }
     await app.reset();
@@ -1028,7 +1023,7 @@ T.spec('explore', function (t) {
       const pts0 = app.STATE.points;
       await app.go('/unlock/neiwan?ride=1');
       t.ok(!app.$('[data-final-card].postcard--gold'), c.label + '：沒有金框');
-      t.ok(!app.$('[data-gold-note]'), c.label + '：沒有司機同行紀念／+50');
+      t.ok(!app.$('[data-gold-note]'), c.label + '：沒有 +50');
       t.ok(!app.$('[data-unlock][data-ride]'), c.label + '：不是 ride 版');
       await app.click('[data-act="collect"]');
       await app.at('/album');

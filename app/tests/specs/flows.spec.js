@@ -146,8 +146,8 @@ T.spec('flows', function (t) {
     t.ok(A.store.get('trip'), '到解鎖頁時 trip 還在（沒有在 /ride 被中途清掉）');
     t.ok(app.$('[data-final-card].postcard--gold'), '金框');
     t.includes(app.text('.postcard__ribbon'), 'yoxi 限定版', '限定版角標');
-    t.includes(app.text('main.view[data-view]'), '司機同行紀念', '司機同行紀念');
-    t.includes(app.text('.unlock__sub'), String(km), '抵達文案用 trip.km');
+    t.ok(!/司機同行紀念/.test(app.text('main.view[data-view]')), '不寫司機同行紀念');
+    t.ok(!app.$('.unlock__sub'), '標題底下不寫公里數');
 
     await app.click('[data-act="collect"]');
     await app.at('/album');
@@ -774,7 +774,7 @@ T.spec('flows', function (t) {
     t.ok(app.$('[data-final-card].postcard--gold'), '搭 yoxi 抵達是金框');
     t.eq(app.$('[data-final-card]').getAttribute('data-style'), 'gold', '款式是金框');
     t.ok(!app.$('[data-points]'), '沒有 +50');
-    t.includes(app.text('.unlock__sub'), '搭 yoxi 抵達', '文案仍是搭車抵達');
+    t.includes(app.text('.ex-arrive__chip'), '搭 yoxi 抵達', '頂上的標籤仍是搭車抵達');
     await app.click('[data-act="collect"]');
     await app.at('/album');
     t.eq(app.STATE.card('p19') && app.STATE.card('p19').by, 'ride', "by 'ride'（真的是搭車到的）");
