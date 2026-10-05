@@ -170,9 +170,8 @@
   color: var(--app-muted);
 }
 
-/* 清除足跡／重設 demo 是可按的按鈕 → 海軍藍（btn-ghost 本色）；危險由確認框把關（預設焦點在「先不要」） */
-.sys-set__wipe,
-.sys-set__danger { border-color: var(--yoxi-navy); color: var(--yoxi-navy); }
+/* 清除足跡由確認框把關（預設焦點在「先不要」）。 */
+.sys-set__wipe { border-color: var(--yoxi-navy); color: var(--yoxi-navy); }
 
 /* 開關本體 50×30（components.css 的 .sw-toggle）：用透明的 ::before 把命中區撐到 58×48，外觀不變（::after 是圓鈕）。
    跟 app.css 的通用命中區同一套寫法（置中＋translate），這裡再撐大一點、而且不靠 app.css 也成立 */
@@ -213,14 +212,12 @@
 
 .sys-set__morebox { padding-top: var(--sp-4); }
 .sys-set__morebox[hidden] { display: none; }
-.sys-set__demo {
+.sys-set__actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--sp-2);
 }
-.sys-set__demo .btn-ghost { min-height: 44px; font-size: var(--fs-sm); }
-.sys-set__demo .btn-ghost.is-off { border-color: var(--yoxi-slate-lite); color: var(--app-muted); }
-.sys-set__demo .sys-set__danger { grid-column: 1 / -1; }
+.sys-set__actions .btn-ghost { min-height: 44px; font-size: var(--fs-sm); }
 
 .sys-set__abouthd { margin-top: var(--sp-5); }
 .sys-set__about { font-size: var(--fs-sm); line-height: 1.7; }

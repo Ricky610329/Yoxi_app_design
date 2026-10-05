@@ -39,7 +39,13 @@ T.spec('ride', function (t) {
     await app.go('/trip');
     await app.tick(60);
     checkPage(app, '/trip riding');
-    t.ok(app.$('[data-act="arrive"]'), '有模擬抵達');
+    t.ok(!app.$('main.view [data-act="arrive"], main.view [data-act="advance-trip"]'), '乘客行程沒有抵達開發控制');
+    t.ok(!/demo|模擬抵達|模擬到家/i.test(app.text('main.view')), '乘客行程文案沒有 demo 或模擬抵達');
+    const contact = app.$('[data-phase="riding"] [data-act="call-driver"]');
+    t.ok(contact && typeof contact.onclick === 'function', '行程中仍可聯絡司機');
+    await app.click(contact);
+    t.includes(app.text('.toast'), '正在撥號給', '聯絡司機能觸發撥號回饋');
+    t.ok(!app.$('#demo-panel [data-act="advance-trip"]').disabled, '開發工具可推進進行中的行程');
     await app.reset({ store: { trip: neiwanTrip('done', { rated: true, stars: 5 }) } });
     await app.go('/trip/done');
     await app.tick(60);
@@ -1125,7 +1131,7 @@ T.spec('ride', function (t) {
     await callRide(app);
     await app.at('/trip');
     t.eq(A.store.get('trip').via, 'k1', 'trip.via＝dropoff.via');
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     await app.click('[data-act="rate"][data-star="5"]');
     await app.click('.banner--gold');
@@ -1175,7 +1181,7 @@ T.spec('ride', function (t) {
     await app.at('/trip');
     t.eq('round' in A.store.get('trip'), false, '單程的行程沒有 round');
     t.ok(!app.$('[data-round-note]') && !app.$('[data-round-fare]'), '去程沒有來回的車資與說明');
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     t.eq(A.store.get('trip').phase, 'done', '單程抵達就是 done');
     t.ok(!app.$('[data-legs]'), '結算頁沒有三段');
@@ -1194,7 +1200,7 @@ T.spec('ride', function (t) {
     t.eq(money(app, '[data-phase="riding"] [data-min]'), F.rideMin(km), '去程分鐘＝rideMin');
     t.eq(money(app, '[data-round-note] [data-wait-max]'), R.WAIT_MAX_MIN, '去程就先說司機會等多久');
 
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.waitFor(function () { return app.$('[data-phase="waiting"]'); }, 3000, '候車那一段');
     t.eq(app.route().path, '/trip', '去程到了還在 /trip');
     t.eq(A.store.get('trip').phase, 'waiting', 'phase=waiting');
@@ -1217,10 +1223,16 @@ T.spec('ride', function (t) {
     t.eq(A.store.get('trip').phase, 'returning', 'phase=returning');
     t.includes(app.doc.title, '回家的路上', '標題');
     checkPage(app, '/trip 回程');
+    t.ok(!app.$('main.view [data-act="arrive"], main.view [data-act="advance-trip"]'), '回程沒有抵達或到家開發控制');
+    t.ok(!/demo|模擬抵達|模擬到家/i.test(app.text('main.view')), '回程文案沒有 demo 或模擬到家');
+    const returningContact = app.$('[data-phase="returning"] [data-act="call-driver"]');
+    t.ok(returningContact && typeof returningContact.onclick === 'function', '回程仍可聯絡司機');
+    await app.click(returningContact);
+    t.includes(app.text('.toast'), '正在撥號給', '回程聯絡司機可用');
     t.eq(money(app, '[data-phase="returning"] [data-min]'), F.rideMin(km), '回程分鐘＝rideMin（一樣遠）');
     t.ok(app.$('[data-back-pending]'), '還沒收：說到家之後也收得到');
 
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     t.eq(A.store.get('trip').phase, 'done', '到家');
     checkPage(app, '/trip/done 來回');
@@ -1282,7 +1294,7 @@ T.spec('ride', function (t) {
     await app.click('[data-act="ride-back"]');
     await app.waitFor(function () { return app.$('[data-phase="returning"]'); }, 3000, '回程');
     t.ok(!app.$('[data-back-pending]'), '收過了：回程不再提醒');
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     await app.click('[data-act="rate"][data-star="4"]');
     const g = app.$('[data-gold] .banner--gold');

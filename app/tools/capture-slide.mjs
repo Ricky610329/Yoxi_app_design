@@ -95,7 +95,7 @@ try {
         brokenImages:[...d.images].filter(im=>!im.complete||!im.naturalWidth).map(im=>im.src),text:d.querySelector('#view').innerText};
     })()`);
     if(state.error||state.brokenImages.length||exceptions.length) throw new Error(JSON.stringify({state,exceptions}));
-    if(/走路前往|步行|走路約|不是拿來滑|為車上的這/.test(state.text)) throw new Error('Legacy travel copy: '+shot.name);
+    if(/走路前往|步行|走路約|不是拿來滑|為車上的這|demo|模擬抵達|模擬到家/i.test(state.text)) throw new Error('Non-passenger copy: '+shot.name);
     const png=await call('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false,clip:{x:0,y:0,width:390,height:844,scale:1}});
     await writeFile(path.join(OUT,shot.name+'.png'),Buffer.from(png.data,'base64'));
     console.log(shot.name+' '+state.route+' '+state.version);

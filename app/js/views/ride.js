@@ -187,7 +187,7 @@ function emptyCard(eyebrow, title, text) {
    - phase(t, now)：純函式。存的是 matching 但已經過了 MATCH_MS 就算 riding（now 可注入）；其他段照存的。
    - 進行中（active）：配對中、行程中、候車、回程。進行中不能從旁邊改下車點、也不從其他入口另開前往流程。
    - 抵達了（reached）：單程 done；來回 waiting、returning、done——回家不能讓還沒收的那一張搭車卡消失（產品決定）。
-   - arrive() 每一段怎麼走＝「這一趟下一個抵達的地方」（/trip 的 demo 鈕、system 的模擬抵達都叫它）：
+   - arrive() 每一段怎麼走＝「這一趟下一個抵達的地方」（手機外展示工具或行程事件呼叫）：
        單程：任何一段 → done。
        來回：配對中／去程 → waiting（到了這個地方，司機候車）；候車 → done（demo 直接跳到到家）；回程 → done；done 不動。
    - back()：候車 → 回程（司機過來載你回家）。不是候車中的來回就不動、回 null。
@@ -1720,9 +1720,8 @@ function returningHTML(t, p, km, min, pend) {
     driverHTML(esc(DRIVER.name) + ' · ' + esc(DRIVER.plate), esc(DRIVER.car), etaHTML(min, '分鐘後到家')) +
     tripFareHTML(t, km) +
     (pend ? '<p class="ride-wait__p" data-back-pending>這一次的明信片還沒收，到家之後也收得到。</p>' : '') +
-    '<div class="ride-trip__acts">' +
+    '<div class="ride-trip__acts ride-trip__acts--one">' +
       '<button class="btn-ghost" type="button" data-act="call-driver">聯絡司機</button>' +
-      '<button class="demo-btn" type="button" data-act="arrive">模擬到家</button>' +
     '</div>' +
   '</div>';
 }
@@ -1807,9 +1806,8 @@ APP.view('trip', {
               paras.map(function (x) { return '<p class="story__text">' + esc(x) + '</p>'; }).join('') +
             '</div>' +
           '</div>' +
-          '<div class="ride-trip__acts">' +
+          '<div class="ride-trip__acts ride-trip__acts--one">' +
             '<button class="btn-ghost" type="button" data-act="call-driver">聯絡司機</button>' +
-            '<button class="demo-btn" type="button" data-act="arrive">模擬抵達</button>' +
           '</div>' +
         '</div>' +
 
@@ -1877,8 +1875,6 @@ APP.view('trip', {
     root.querySelectorAll('[data-act="call-driver"]').forEach(function (b) {
       b.onclick = function () { APP.ui.toast('正在撥號給 ' + DRIVER.name + '…'); };
     });
-    const arr = root.querySelector('[data-act="arrive"]');
-    if (arr) arr.onclick = function () { arrive(); };
     /* 回程：候車 → 回程，這一頁換成回程那一段 */
     const bk = root.querySelector('[data-act="ride-back"]');
     if (bk) {

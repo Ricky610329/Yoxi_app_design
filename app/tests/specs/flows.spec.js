@@ -25,7 +25,7 @@ T.spec('flows', function (t) {
   /* 叫車首頁「叫車前往」→ 確認叫車頁「確認叫車」 */
   const callRide = T.helpers.callRide;
 
-  /* 流程 A 的前半：探索 → 今天的地方 → 下車點 → 叫車 → 模擬抵達 → 評分 → 解鎖 → 收下。
+  /* 流程 A 的前半：探索 → 今天的地方 → 下車點 → 叫車 → 外部推進行程 → 評分 → 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
   async function rideAndCollect(app, note) {
     const A = app.APP;
@@ -41,7 +41,8 @@ T.spec('flows', function (t) {
     await callRide(app);
     await app.at('/trip');
     t.eq(A.ride.trip.current().placeId, T0.id, '建立這個目的地的 yoxi 行程');
-    await app.click('main.view [data-act="arrive"]');
+    t.ok(!app.$('main.view [data-act="arrive"]'), '乘客 app 不提供抵達開發控制');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     await app.click('[data-act="rate"][data-star="5"]');
     await app.click('.banner--gold');
@@ -140,7 +141,7 @@ T.spec('flows', function (t) {
     t.ok(story && !story.hidden, '「這條路上」展開');
     t.ok(story && story.querySelectorAll('.story__text').length > 0 && app.text('[data-story]').length > 20, '「這條路上」有內容');
 
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     t.eq(A.store.get('trip').phase, 'done', 'trip.phase=done');
     t.ok(app.$('[data-gold]').hidden, '評分前沒有金色橫幅');
@@ -237,7 +238,7 @@ T.spec('flows', function (t) {
     await app.go('/ride');
     await callRide(app);
     await app.at('/trip');
-    await app.click('main.view [data-act="arrive"]');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
     await app.click('[data-act="rate"][data-star="4"]');
     await app.click('[data-act="go-home"]');
@@ -538,14 +539,17 @@ T.spec('flows', function (t) {
     await app.at('/explore');
     t.ok(true, '從別頁呼叫是 push，返回回到原頁');
 
-    /* 設定頁的模擬抵達（手機的 demo 工具）：有行程 → 行程完成 */
+    /* 乘客設定頁不含開發控制；手機外的工具推進既有行程 → 結算評分。 */
     await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
     A = app.APP;
     await app.go('/settings');
     await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="arrive"]');
+    t.ok(!app.$('main.view [data-act="arrive"], main.view [data-act="advance-trip"], main.view [data-act="reset-demo"], main.view [data-act="push-am"], main.view [data-act="push-pm"]'), '設定頁展開後沒有開發控制');
+    t.ok(!/demo|模擬抵達|模擬到家/i.test(app.text('main.view')), '設定頁沒有 demo 或模擬說明');
+    t.ok(!app.$('#demo-panel [data-act="advance-trip"]').disabled, '有 active trip，外面的開發工具可推進');
+    await app.click('#demo-panel [data-act="advance-trip"]');
     await app.at('/trip/done');
-    t.eq(A.store.get('trip').phase, 'done', '設定頁模擬抵達 → phase=done');
+    t.eq(A.store.get('trip').phase, 'done', '外部推進既有行程 → phase=done');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
   });
 
@@ -597,6 +601,8 @@ T.spec('flows', function (t) {
       if (!v) { probs.push(path + '：沒有 main.view'); continue; }
       t.noDeadButtons(app, label + path);
       t.noBannedWords(app, { msg: label + path });
+      t.ok(!app.$('main.view [data-act="arrive"], main.view [data-act="advance-trip"]'), label + path + ' 乘客畫面沒有抵達開發控制');
+      t.ok(!/模擬抵達|模擬到家|demo 工具|叫車、抵達與推播都是模擬的/i.test(v.innerText), label + path + ' 乘客可見文案沒有 demo 說明');
       t.ok(!app.$('[data-act="go-walk"], [data-act="arrive-walk"]'), label + path + ' 沒有步行前往或抵達控制');
       const retiredTravel = /走路前往|步行|走路約|再走過去|走路抵達|不是拿來滑的/;
       t.ok(!retiredTravel.test(v.innerText), label + path + ' 可見文案沒有舊步行產品語意：' + (v.innerText.match(retiredTravel) || []).join(''));
@@ -697,7 +703,7 @@ T.spec('flows', function (t) {
       await app.at('/trip');
       await app.waitFor(function () { return !app.$('[data-phase="riding"]').hidden; }, 3000, '行程中');
       seen.trip = app.text('[data-phase="riding"] [data-fare]');
-      await app.click('main.view [data-act="arrive"]');
+      await app.click('#demo-panel [data-act="advance-trip"]');
       await app.at('/trip/done');
       seen.done = app.text('.ride-done__sum [data-fare]');
       Object.keys(seen).forEach(function (k) { t.eq(seen[k], want, id + ' ' + k + ' 車資'); });

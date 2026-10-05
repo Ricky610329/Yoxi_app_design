@@ -162,7 +162,7 @@ function push(opt) {
         '<span class="pushmock__b">' + esc(body) + '</span>' +
       '</span>' +
     '</a>' +
-    '<p class="sys-push__note">demo：一天最多兩則，早上一則、晚上一則</p>' +
+    '<p class="sys-push__note">一天最多兩則，早上一則、晚上一則</p>' +
     '<button class="pushmock__close sys-push__close" type="button" data-act="close-push">關閉</button>';
 
   el.querySelector('[data-act="open-push"]').onclick = function (e) {
@@ -474,21 +474,15 @@ APP.view('settings', {
 
         '<section class="sys-set__sec sys-set__sec--last">' +
           '<button class="sys-set__more" type="button" data-act="more" aria-expanded="false">' +
-            '<span>清除足跡、demo 工具與關於</span><span class="sys-set__chev" aria-hidden="true"></span></button>' +
+            '<span>清除足跡與關於</span><span class="sys-set__chev" aria-hidden="true"></span></button>' +
           '<div class="sys-set__morebox" data-more hidden>' +
             /* 可按數 ≤ 10：多了「探索模式的景點」開關，清除足跡收進展開區（它本來就不是常用的動作） */
             '<div class="sys-set__sec">' +
               '<button class="btn-ghost sys-set__wipe" type="button" data-act="wipe">清除我的足跡</button>' +
             '</div>' +
-            '<div class="sec"><h2 class="sec__t sec__t--sm">demo 工具</h2><span class="sec__m">提案現場用</span></div>' +
-            '<div class="sys-set__demo">' +
-              '<button class="btn-ghost" type="button" data-act="push-am">早上推播</button>' +
-              '<button class="btn-ghost" type="button" data-act="push-pm">晚上推播</button>' +
-              '<button class="btn-ghost" type="button" data-act="arrive">模擬抵達</button>' +
+            '<div class="sys-set__actions">' +
               '<button class="btn-ghost" type="button" data-act="welcome">再看一次介紹</button>' +
-              '<button class="btn-ghost sys-set__danger" type="button" data-act="reset-demo">重設 demo</button>' +
             '</div>' +
-            '<p class="sys-set__small">叫車、抵達與推播都是模擬的。</p>' +
 
             '<div class="sec sys-set__abouthd"><h2 class="sec__t sec__t--sm">關於</h2></div>' +
             '<div class="card card--pad sys-set__about">' +
@@ -537,18 +531,7 @@ APP.view('settings', {
       }
     };
 
-    root.querySelector('[data-act="push-am"]').onclick = function () { APP.ui.push({ when: 'am' }); };
-    root.querySelector('[data-act="push-pm"]').onclick = function () { APP.ui.push({ when: 'pm' }); };
     root.querySelector('[data-act="welcome"]').onclick = function () { APP.nav.go('/welcome'); };
-    root.querySelector('[data-act="reset-demo"]').onclick = function () { resetDemo(); };
-
-    const arrive = root.querySelector('[data-act="arrive"]');
-    const can = arriveTarget();
-    arrive.classList.toggle('is-off', !can);
-    arrive.onclick = function () {
-      const go = arriveTarget();
-      if (go) go(); else APP.ui.toast('先開始前往或叫車');
-    };
 
     /* 別處改了設定（例如 demo 面板的重設）時同步開關 */
     return APP.on('state:change', function () { syncSwitches(root); });
@@ -622,6 +605,7 @@ function fillPanel() {
     '<div class="demo-panel__t">demo 工具</div>' +
     '<button class="demo-panel__btn" type="button" data-act="push-am">早上推播</button>' +
     '<button class="demo-panel__btn" type="button" data-act="push-pm">晚上推播</button>' +
+    '<button class="demo-panel__btn" type="button" data-act="advance-trip" disabled>推進目前行程</button>' +
     '<div class="demo-panel__group" role="group" aria-labelledby="demo-arrive-t">' +
       '<label class="demo-panel__label" id="demo-arrive-t" for="demo-arrive-place">模擬抵達</label>' +
       '<select class="demo-panel__select" id="demo-arrive-place" data-demo-place></select>' +
@@ -642,6 +626,9 @@ function fillPanel() {
   sel.onchange = function () { panelPick = sel.value; };
   panel.querySelector('[data-act="push-am"]').onclick = function () { APP.ui.push({ when: 'am' }); };
   panel.querySelector('[data-act="push-pm"]').onclick = function () { APP.ui.push({ when: 'pm' }); };
+  panel.querySelector('[data-act="advance-trip"]').onclick = function () {
+    if (APP.ride.trip.active()) APP.ride.arrive();
+  };
   panel.querySelector('[data-act="reset-demo"]').onclick = function () { resetDemo(); };
   panel.querySelector('[data-act="arrive-ride"]').onclick = function () { demoArrive(sel.value, 'ride'); };
   const date = panel.querySelector('[data-demo-date]');
@@ -656,6 +643,7 @@ function fillPanel() {
 function updatePanel(cur) {
   const panel = fillPanel();
   if (!panel) return;
+  panel.querySelector('[data-act="advance-trip"]').disabled = !APP.ride.trip.active();
   const sel = panel.querySelector('[data-demo-place]');
   let list = demoPlaces();
   const here = contextPlace(cur);

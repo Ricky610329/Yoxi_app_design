@@ -69,9 +69,11 @@ T.spec('system', function (t) {
     t.noBannedWords(app);
     const n = t.countTappables(app);
     t.ok(n <= 10, '可按數 ' + n);
-    /* 展開 demo 工具與關於：內容都在、仍然沒有死按鈕與禁用詞 */
+    /* 展開清除足跡與關於：乘客設定頁沒有開發工具，仍然沒有死按鈕與禁用詞。 */
     await app.click('[data-act="more"]');
     t.ok(!app.$('[data-more]').hidden, '展開');
+    t.ok(!app.$('main.view [data-act="arrive"], main.view [data-act="advance-trip"], main.view [data-act="push-am"], main.view [data-act="push-pm"], main.view [data-act="reset-demo"]'), '展開後仍沒有抵達、推播、重設等開發控制');
+    t.ok(!/demo|模擬抵達|模擬到家|叫車、抵達與推播都是模擬的/i.test(app.text('main.view')), '設定文案沒有 demo 與模擬說明');
     t.eq(app.text('[data-version]'), app.APP.system.VERSION, '版本字串');
     t.ok(app.text('main.view').indexOf('OpenStreetMap') >= 0, '地圖署名');
     const P = app.win.PHOTOS_DATA || {};
@@ -198,7 +200,7 @@ T.spec('system', function (t) {
     t.eq(app.STATE.count(), 9, '先收一張');
     await app.go('/settings');
     await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="reset-demo"]');
+    await app.click('#demo-panel [data-act="reset-demo"]');
     await app.click('[data-act="confirm-yes"]');
     await app.at('/ride');
     t.eq(app.STATE.count(), 8, 'STATE 回到 fresh 8 張');
@@ -212,7 +214,7 @@ T.spec('system', function (t) {
     app.STATE.collect('glass-kiln', {});
     await app.go('/settings');
     await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="reset-demo"]');
+    await app.click('#demo-panel [data-act="reset-demo"]');
     await app.click('[data-act="confirm-no"]');
     t.eq(app.STATE.count(), 9, '沒有重設');
     t.eq(app.route().path, '/settings', '還在設定');
@@ -233,14 +235,19 @@ T.spec('system', function (t) {
     t.eq(app.STATE.all.settings.pushAm, true, '設定不動');
   });
 
-  t.test('設定頁的模擬抵達：沒有前往或叫車時 toast、不導走', async function (app) {
+  t.test('設定頁沒有抵達開發控制；無行程時手機外的推進工具停用且不導走', async function (app) {
     await app.reset();
     await app.go('/settings');
     await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="arrive"]');
+    t.ok(!app.$('main.view [data-act="arrive"], main.view [data-act="advance-trip"]'), '設定頁展開後也沒有抵達控制');
+    t.ok(!/demo|模擬抵達|模擬到家/i.test(app.text('main.view')), '設定頁文案沒有 demo 或模擬抵達');
+    const advance = app.$('#demo-panel [data-act="advance-trip"]');
+    t.ok(advance && advance.disabled, '無 active trip 的開發工具停用');
+    const before = JSON.stringify(app.APP.store.all);
+    await app.click(advance);
     await app.tick(30);
     t.eq(app.route().path, '/settings', '沒有導走');
-    t.includes(app.text('.toast') || '', '先開始前往或叫車', 'toast');
+    t.eq(JSON.stringify(app.APP.store.all), before, '停用控制不更動任何 store 狀態');
   });
 
   t.test('再看一次介紹 → /welcome', async function (app) {
@@ -500,7 +507,7 @@ T.spec('system', function (t) {
     app.APP.ui.confirm = function (o) { seen = o; return orig.apply(this, arguments); };
     await app.go('/settings');
     await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="reset-demo"]');
+    await app.click('#demo-panel [data-act="reset-demo"]');
     t.ok(seen && seen.danger === true, 'danger:true');
     await app.click('[data-act="confirm-no"]');
     app.APP.ui.confirm = orig;
@@ -614,7 +621,7 @@ T.spec('system', function (t) {
     /* 重設 demo 的文案 */
     await app.go('/settings');
     await app.click('[data-act="more"]');
-    await app.click('main.view [data-act="reset-demo"]');
+    await app.click('#demo-panel [data-act="reset-demo"]');
     t.includes(app.text('.app-confirm'), '回到 demo 初始狀態', '重設 demo 文案');
     await app.click('[data-act="confirm-yes"]');
     await app.at('/ride');

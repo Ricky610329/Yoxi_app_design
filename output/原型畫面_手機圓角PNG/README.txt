@@ -1,9 +1,10 @@
 解決方案設計｜原型畫面：五張 app 截圖
 
 擷取日期：2026-10-05
-來源：本專案目前 app/ 原始碼，APP_VERSION chengshi-app-v30
+來源：本專案目前 app/ 原始碼，APP_VERSION chengshi-app-v31
 重拍指令：node app/tools/capture-slide.mjs
 第 2、3 張已同步為搭 yoxi 的乘車中與抵達收卡狀態。
+手機畫面不含 demo／模擬抵達按鈕；行程操作只呈現乘客介面。
 
 01_探索.png      /ride?mode=explore&area=glass-kiln
 02_前往.png      /trip（搭 yoxi 前往水利路老玻璃窯）
