@@ -5,6 +5,16 @@
 
 ## 0. 這是什麼、選了哪一版
 
+### 2026-10-05：前往景點統一搭 yoxi
+
+- 所有探索、地方詳情與路線的前往動作，都交由 `APP.ride.setDropoff` 接回既有叫車確認流程；不再提供步行前往、步行時間或步行導航。
+- 舊 `/going/:id` 僅作相容轉址：有進行中的行程回 `/trip`；已搭車抵達且尚可收卡時前往搭車收卡頁；其他情況帶入目的地回叫車頁。不得直接叫車或偽造抵達。
+- demo 只有「搭 yoxi 抵達」。新的收卡必須有 `APP.ride.trip.arrivedAt` 的抵達紀錄；直接開啟收卡網址不代表已抵達。既存收藏的來源與款式保留，不把歷史非搭車紀錄改寫成搭車。
+- 設定頁不再提供步數資料開關；明信片的交通資訊用車輛圖示，舊到訪紀錄用地點圖示。
+- 歷史季節款與到訪資料仍可讀；介面以「到訪紀錄」描述未記為搭車的舊卡，不再提供非搭車的前往或抵達操作。抵達後在景點附近的探索不屬於交通選項。
+- 3 km 只保留為搭車解鎖回饋門檻，命名為 `APP.fmt.RIDE_BONUS_MIN_M`；移除 `canWalk` 與 `walkMin`。
+- 乘車中畫面使用 `/trip`，顯示目的地、司機、車輛、預估車程與車資；不出現對使用者滑手機的評論或介紹文案本身的自述。
+
 `prototype/` 是 102 張各自獨立的 HTML 設計原型；`app/` 是把其中**一組決定**做成一個真的能用的
 單頁 web app（hash 路由、狀態持久、可安裝 PWA），手機直接開、桌機看得到手機外框。
 
@@ -16,7 +26,7 @@
 |---|---|---|
 | 入口 | 底欄雙主頁（叫車／收藏） | `#/ride`、`#/album`；探索舊路由保留作深連結對照 |
 | 地圖歸誰 | **F＋E** 同頁切模式 | 叫車首頁是真實新竹地圖（`HSMAP` paper）；搭車不顯示景點，探索同時最多 **4** 個景點，可設為下車點 |
-| 轉換點 | **K1** 內容頁設為下車點 | 地方詳情：走得到（≤ 3 km）主要動作「走路前往」、次要「設為下車點」；走不到主次對調。門檻統一 **3 km**（`APP.fmt.WALK_MAX_M`） |
+| 轉換點 | **K1** 內容頁設為下車點 | 地方詳情統一「搭 yoxi 前往」，填入下車點後接確認叫車；車程與車資走 `APP.fmt` |
 | 收藏組織 | 數據摘要＋製卡入口 | 明信片主卡、回憶卡張數、週里程、城市點亮比例；數字大於入口標籤。`/lookback` 保留舊網址但改為回憶卡製作，不再叫今天的回顧 |
 | 獎章呈現 | **X4** 勳章牆（六角金屬章，章面是地標線稿） | 首頁保留最新一枚主章與其餘一列小章，放大章面、使用下半頁空間；顯示全部進 `/badges` |
 | 進度獎勵 | 只有獎章（「收集 n/m」） | 2026-09-27 做過 `/rewards` 相框與稱號，同一天使用者拿掉：已經有獎章，再一套收集的東西是重複的，收藏首頁也因為它要捲。不要再加回來，除非使用者改主意 |
@@ -33,7 +43,7 @@ app 比原型多出來的東西（原型是一疊畫面，app 要能走完一圈
 - 設定下車地點頁（`#/dropoff`）：清單＋搜尋，資料全部來自 `MOCK`。
 - 第一次開的 onboarding（三張，可略過）。
 - 推播是 app 內的浮層（早／晚各一則，一天最多兩則），由 demo 工具觸發。
-- demo 工具：桌機在手機外框旁邊一條面板；手機在「設定 → demo 工具」。桌機面板：早上推播、晚上推播、模擬抵達（地點下拉選單＋「走路抵達」「搭 yoxi 抵達」，任何一頁都能按；地點預設跟著這一頁）、重設。設定頁的模擬抵達仍只在前往中／行程中出現。
+- demo 工具：桌機在手機外框旁邊一條面板；手機在「設定 → demo 工具」。桌機面板：早上推播、晚上推播、模擬抵達（地點下拉選單＋「搭 yoxi 抵達」，任何一頁都能按；地點預設跟著這一頁）、重設。設定頁的模擬抵達只在有行程時出現。
 
 ### 雙主頁的叫車面板
 
@@ -165,7 +175,7 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
   新收的卡日期用 `APP.fmt.todayMMDD()`，不再寫死 09.21。
   **讀**直接讀 `STATE`（`has`、`card`、`count`、`all`、`badge`…）；**寫**一律經過 app.js 的 `APP.state`（state.js 是 prototype 的檔，app 不改它）：
   ```js
-  APP.state.collect(id, opt)    // 只有 APP.explore.collect 用（它決定搭車或走路、款式、公里）
+  APP.state.collect(id, opt)    // 只有 APP.explore.collect 用（它驗證搭車抵達、決定款式與公里）
   APP.state.setToday(patch)     APP.state.setSetting(k, v)     APP.state.markLastSeen()
   APP.state.reset()             // 回到 demo 初始（8 張）
   APP.state.wipe()              // 清除我的足跡的 STATE 那一半：明信片、公里、日誌清空（哪些欄位算足跡只寫在這裡）；settings 留著
@@ -211,12 +221,10 @@ mount 期間掛在 `window`／`document` 上的 listener（例：`INTERACT.initS
 
 ### 3.4 格式與公式（不准手寫數字）
 ```js
-APP.fmt.WALK_MAX_M = 3000
+APP.fmt.RIDE_BONUS_MIN_M = 3000  // 搭車解鎖回饋門檻，不是交通方式切換
 APP.fmt.fare(km)      // Math.round(75 + 22 * km)   → 車資
 APP.fmt.rideMin(km)   // Math.round(3 + 2.2 * km)
-APP.fmt.walkMin(m)    // Math.round(m / 75)
 APP.fmt.dist(m)       // < 1000 → '900 m'；否則 '1.4 km'（一位小數）
-APP.fmt.canWalk(m)    // m <= WALK_MAX_M
 APP.fmt.todayMMDD()   // '09.23'
 APP.fmt.greet(hour)   // 5–11 早安、11–18 午安、其餘晚安
 APP.fmt.num(n)        // 千分位
@@ -301,11 +309,11 @@ html[data-layout="desktop"|"phone"]（§9 的判斷結果，給測試與除錯�
 [data-nav-focus]（導覽後拿到焦點的 h1／main）
 ```
 demo 面板的「模擬抵達」下拉選單遇到清單外的地方（路線站的明信片 id，例 /place/p14）會多一個選項排在最前面並選起來。
-demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-panel__btn`（海軍藍）、`.demo-panel__btn--ghost`、`.demo-panel__note`；模擬抵達那一組（system.css 提供）：`.demo-panel__group`、`__label`、`__select`（`[data-demo-place]`）、`__row`、`.demo-panel__btn--gold`，按鈕是 `data-act="arrive-walk"`／`"arrive-ride"`；模擬日期是 `[data-demo-date]` 的下拉選單（選項從 `APP.explore.CARD_STYLES`／`FESTIVALS` 長出來，寫 `store.demoDate`）。
+demo 面板的 class（app.css 提供）：`.demo-panel__t` 標題、`.demo-panel__btn`（海軍藍）、`.demo-panel__btn--ghost`、`.demo-panel__note`；模擬抵達那一組（system.css 提供）：`.demo-panel__group`、`__label`、`__select`（`[data-demo-place]`）、`__row`、`.demo-panel__btn--gold`，按鈕是 `data-act="arrive-ride"`；模擬日期是 `[data-demo-date]` 的下拉選單（選項從 `APP.explore.CARD_STYLES`／`FESTIVALS` 長出來，寫 `store.demoDate`）。
 內建卡片：`.app-empty > .app-empty__card`（`__eyebrow`、`__t`、`__p`），views 要做「找不到」也可以沿用。
 - 每個可按的東西都要有行為：`href="#/…"`（必須是已註冊的 route）、`element.onclick`、或 `data-toast="…"`。
   只做裝飾的東西不要用 `<button>`／`<a>`。
-- 動作按鈕加 `data-act="<動詞-名詞>"`（例 `set-dropoff`、`go-walk`、`call-ride`、`collect`、`rate`），測試靠它點。
+- 動作按鈕加 `data-act="<動詞-名詞>"`（例 `set-dropoff`、`call-ride`、`collect`、`rate`），測試靠它點。
 - 需要程式產生插畫的地方用 `data-art="glass" data-seed="1"` 然後 `SHELL.injectArt(root)`；圖上要有 `<span class="ai-mark">AI 生成示意</span>`。
 - 圖示 `<span data-icon="sun">` 然後 `SHELL.injectIcons(root)`。
 
@@ -389,20 +397,20 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 
 需要 core 多給一個 helper 時：先在自己的 view 檔裡以 `APP.<area>.<fn>` 命名空間放（例 `APP.ride.setDropoff()`），
 別人要用就從那裡拿；不要改 `app.js`。跨區塊共用的動作只有這幾個，**由這些人提供**：
-- `APP.ride.setDropoff(placeId, via)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）
+- `APP.ride.setDropoff(placeId, via, opt)`：寫 `store.dropoff` 並 toast「已設為下車點」→ 回 `#/ride`（ride 提供；explore 的 K1 與 E 小卡都呼叫它）。舊連結轉址可傳 `{ replace:true }` 取代舊頁；仍只設定目的地，不直接叫車
 - `APP.ride.call()`：叫車首頁的「叫車前往」→ `#/ride/confirm`（行程進行中 → `#/trip`；沒有下車點只 toast）。`APP.ride.carFares(km)` → `{ multi, lo, hi }` 或 null（距離不明）：多元＝`APP.fmt.fare(km)`（跟行程中、結算頁同一個數），小黃／跳表多元＝多元 × `METER_RANGE`、往外取到 10 元；常數 `PICKUP_MIN`（司機幾分鐘到）與 `METER_RANGE` 是「假設」（yoxi 的派車估計與跳表範圍拿不到；倍數量自 yoxi app 截圖）
-- `APP.explore.collect(placeId, { note })`：收下這一次的明信片（explore 提供；/unlock 用）。**每一次來都收一張**：還沒收過寫進 STATE（圖鑑、獎章、去過的地方都認它），收過的（別天）記進 `store.visits`（第 N 次）；同一個地方同一天只收一張（`APP.explore.canCollect(地點或卡片 id)`，今天看 `store.demoDate`）；回傳有沒有收到一張。呼叫的人只給那一句話，其餘由它判斷：有搭 yoxi 抵達這裡的那一趟（`APP.ride.trip.arrivedAt`）就是搭車——公里用這一趟的、收下時 `APP.ride.trip.consume` 用掉它（連同 rideVia 歸因）；否則走路——公里用地方的距離，行程不碰（還沒領的限定版不會消失）。哪一款、蓋哪些郵戳照 `cardRule`（今天的日期，demo 可用 `store.demoDate` 撥）。經 `APP.state.collect` 寫進 STATE（日期也是 `cardRule` 的那一天；跟 app store 的寫入包成一次 state:change，寫完才發）；第一次的款式記進 `store.cardStyle[卡片 id]`、節日與里程記進 `store.cardMarks[卡片 id]`，回訪的全部記在那一筆 `store.visits`。測試要準備「收過了」的狀態用 `T.helpers.collect(app, placeId, { by, style, note })`（`style` 是四季的一款，會暫時撥 `demoDate`）或 `app.reset({ cards })`
+- `APP.explore.collect(placeId, { note })`：收下這一次的明信片（explore 提供；/unlock 用）。**每一次來都收一張**：還沒收過寫進 STATE（圖鑑、獎章、去過的地方都認它），收過的（別天）記進 `store.visits`（第 N 次）；同一個地方同一天只收一張（`APP.explore.canCollect(地點或卡片 id)`，今天看 `store.demoDate`）；回傳有沒有收到一張。呼叫的人只給那一句話，其餘由它判斷：必須有搭 yoxi 抵達這裡的那一趟（`APP.ride.trip.arrivedAt`），否則回傳 false 且不寫任何資料；公里用這一趟的、收下時 `APP.ride.trip.consume` 用掉它（連同 rideVia 歸因）。哪一款、蓋哪些郵戳照 `cardRule`（今天的日期，demo 可用 `store.demoDate` 撥）。經 `APP.state.collect` 寫進 STATE（日期也是 `cardRule` 的那一天；跟 app store 的寫入包成一次 state:change，寫完才發）；第一次的款式記進 `store.cardStyle[卡片 id]`、節日與里程記進 `store.cardMarks[卡片 id]`，回訪的全部記在那一筆 `store.visits`。測試要準備「收過了」的狀態用 `T.helpers.collect(app, placeId, { note })`（先準備搭車抵達），歷史季節款用 `T.helpers.seedHistoricalCard` 或 `app.reset({ cards })`
 - `APP.explore.cardOrigin(cardId, v)`（explore 提供）：收下的那一張是怎麼來的（v 是第幾次，省略是第一次），還沒收或沒有這一次是 null：`{ id, v, visits, first, date:'MM.DD', ymd, dateText:'YYYY.MM.DD', note, km, by:'walk'|'ride', style, gold, limited, via, festival, mile, lines, marks }`。`gold`＝金框那一款或限定版；`limited` 只給第一次（回訪不再給限定版與 +50）；`festival`／`mile` 只認收下時記的（demo 一開始的 8 張沒有紀錄，就沒有節日版；第一次都蓋首訪戳）；
   另有 `visits(卡片或地點 id)`（這個地方收過的每一次，舊到新）、`recentVisits(n)`（全部收下的，最新的在前，照 `seq`）、`rideKm()`（搭 yoxi 去收明信片的累積公里：里程紀念看它）、`totalKm()`（收藏首頁「留下的距離」＝STATE.all.km＋回訪的公里）；`lines`＝為什麼是這一款（`ruleLines`；明信片頁與 `/unlock` 都不再念它，改念 `verseOf(卡片 id, cardOrigin)` 的那一句，接在標題底下 `[data-verse]`）；`marks`＝卡面的郵戳 HTML（`.card-marks`，樣式在 explore.css）；`limited`＝`APP.ride.limitedCard`；`via`＝`store.rideVia`。收藏、叫車的浮起來小卡、探索的「已收藏」一行都問它，不各自翻 STATE 的 by、store.cardStyle、store.rideVia
 - `APP.ride.trip`（ride 提供）：**行程 module，`store.trip` 只有它讀寫**，別的區塊與畫面一律透過它。讀：`current()`（id 認得的那一趟或 null）、`active()`（phase 不是 done：配對中／行程中／候車／回程）、`arrivedAt(placeId)`（搭車到了這裡、這一趟的卡還沒收：單程是 done，來回是 waiting／returning／done）、`pending()`（到了、這一次的明信片還收得到：`APP.explore.canCollect`＋還沒收；`{ trip, place, card, limited, href }`，limited 只給第一次去）、`waiting()`（候車中的來回或 null）、`phase(t, now)`（純函式，matching 過了 `MATCH_MS` 算 riding）。寫：`start(placeId, via, { round })`、`toRiding()`、`arrive()`（單程 → done；來回：去程 → waiting、回程 → done、候車中按是 demo 直接到家）、`back()`（waiting → returning）、`arriveAt(placeId)`（demo 搭 yoxi 抵達；同一個目的地的來回停在 waiting）、`cancel()`（去程：取消；候車／回程：不搭回程了，變成單程 done，卡照樣收得到）、`rate(stars)`、`consume(placeId)` → `{ via, km }`（搭車收下：單程用掉這一趟；來回記 collected、行程留著；第一次才記 `store.rideVia[明信片 id]`）、`clear()`、`clearBroken()`。到家（done）而且沒有東西要等 → /ride 的 mount 安靜清掉。`APP.ride.roundFare(km)` → `{ go, wait, back, total }` 或 null；常數 `WAIT_MAX_MIN`、`WAIT_FEE`（假設）、`FARE_PER_POINT`。`pastTrips()`／`pointsRows()` 每一次搭車收下都算（回訪也是，城事解鎖回饋只有第一次），來回的回程另一列搭車回饋。行程的形狀只在 ride.js 的 `make()` 寫一次；km 一律從地方的距離算，距離不明是 null。node 測試在 `tests/unit/trip.test.mjs`
 - `APP.ride.RIDE_BONUS`（ride 提供）：搭車抵達走不到的地方的加點，＝`MOCK.FAR_PLACE.ridePoints`（資料缺了才用 50）；全 app 唯一來源，explore 的「+50 點」也讀它。`APP.ride.pointsRows()` 每一列多一個 `place` 欄位
-- 款式規則（explore 提供）：沒有機率、沒有抽籤，什麼時候去、怎麼去就決定是哪一款，同一天同樣方式到每個人都一樣。`APP.explore.CARD_STYLES`（五款：四季的畫風各帶 `season`、`months`，加一款 `gold`）、`FESTIVALS`（節日版：春節、端午、中秋是「那一週」——節日當天所在的週一到週日，官方連假更長就延到連假最後一天，日期照人事行政總處的辦公日曆表一年一年補，表上沒有的年份沒有節日版；賞櫻是每年一樣的期間；碰在一起時排前面的算）、`festSpan(節日或 key, 年)` → `['MM-DD', 'MM-DD']` 或 null、`MILE_STEPS`（里程紀念：[30, 60, 100, 200, 300, 500] 公里）、`nextMile(km)`、`cardRule({ by, km, date, first, before })` → `{ style, season, festival, first, mile, km, total }`（純函式；date 省略是今天，會看 `store.demoDate`；first＝第一次來；before＝這一趟之前的 `rideKm()`，省略就不算里程）、`ruleLines(rule)`（一條規則一句；畫面上目前沒有人念它）、`openRules()`（規則說明，掛在 `.device`，帶 `data-overlay`＋`_dismiss`）。走路抵達：畫風跟著季節；搭 yoxi 抵達：金框（是不是搭車只問 `APP.ride.trip.arrivedAt(地點 id)`，`?ride=1` 只是入口的記號）；節日那一週的卡面多一層會動的節日插畫（`explore-fest.js`）；第一次來多蓋一枚首訪紀念戳；搭 yoxi 去收明信片的公里累積跨過 `MILE_STEPS` 的那一趟多蓋一枚里程紀念戳（看累積，不看單趟；2026-09-27 取代單趟 20 km 的遠行戳）。render 就算得出款式（不等 mount、不寫 store）。`/unlock` 不寫為什麼（2026-10-01 小字太多拿掉：標題底下的「搭 yoxi 抵達 · 幾公里／走了多遠」`.unlock__sub`、收集面板的 `[data-why]`、翻開之後的「司機同行紀念」，每一款都一樣；怎麼來的看頂上的標籤 `.ex-arrive__chip`，`[data-gold-note]` 只剩第一次搭 yoxi 去走不到的地方的 +50 點），完整規則在面板與成品右上角的「?」（`data-act="open-rules"`）；翻開之後的結果寫一句跟這個地方、這個時節有關的話（`[data-verse]`：`APP.explore.verseOf(卡片 id, cardRule 或 cardOrigin)` → `{ text, by, title }`，表在 `explore-verse.js` 的 `VERSES`：節日那一週走路用節日那一句、搭 yoxi 用 `'gold+節日'` 那一句，其他看款式；同樣的組合永遠同一句；引用古典詩詞寫作者與篇名，表上沒有的卡退回通用句）。這一句在 `/unlock` 的結果與明信片頁都排成題字：`APP.explore.verseLines(text)` → `[{ t, p }]`（逢逗號句號斷行、一個短句一行，`p` 是句尾標點；接回去就是原句），畫面用明體 `--app-serif`（`app.css`，裝置內建字型，不加 webfont）、句尾標點懸在行外；地方頁「到了會得到」寫現在去會是哪一款（`[data-rule-preview]`）。金框 ≠ +50 點：點數仍只給走不到的地方（`APP.ride.limitedPlace`）
+- 款式規則（explore 提供）：沒有機率、沒有抽籤，什麼時候去、怎麼去就決定是哪一款，同一天同樣方式到每個人都一樣。`APP.explore.CARD_STYLES`（五款：四季的畫風各帶 `season`、`months`，加一款 `gold`）、`FESTIVALS`（節日版：春節、端午、中秋是「那一週」——節日當天所在的週一到週日，官方連假更長就延到連假最後一天，日期照人事行政總處的辦公日曆表一年一年補，表上沒有的年份沒有節日版；賞櫻是每年一樣的期間；碰在一起時排前面的算）、`festSpan(節日或 key, 年)` → `['MM-DD', 'MM-DD']` 或 null、`MILE_STEPS`（里程紀念：[30, 60, 100, 200, 300, 500] 公里）、`nextMile(km)`、`cardRule({ by, km, date, first, before })` → `{ style, season, festival, first, mile, km, total }`（純函式；date 省略是今天，會看 `store.demoDate`；first＝第一次來；before＝這一趟之前的 `rideKm()`，省略就不算里程）、`ruleLines(rule)`（一條規則一句；畫面上目前沒有人念它）、`openRules()`（規則說明，掛在 `.device`，帶 `data-overlay`＋`_dismiss`）。既存非搭車卡：保留收下時的季節畫風；新的搭 yoxi 抵達：金框（是不是搭車只問 `APP.ride.trip.arrivedAt(地點 id)`，`?ride=1` 只是入口的記號）；節日那一週的卡面多一層會動的節日插畫（`explore-fest.js`）；第一次來多蓋一枚首訪紀念戳；搭 yoxi 去收明信片的公里累積跨過 `MILE_STEPS` 的那一趟多蓋一枚里程紀念戳（看累積，不看單趟；2026-09-27 取代單趟 20 km 的遠行戳）。render 就算得出款式（不等 mount、不寫 store）。`/unlock` 不寫為什麼（2026-10-01 小字太多拿掉：標題底下的「搭 yoxi 抵達 · 幾公里／走了多遠」`.unlock__sub`、收集面板的 `[data-why]`、翻開之後的「司機同行紀念」，每一款都一樣；怎麼來的看頂上的標籤 `.ex-arrive__chip`，`[data-gold-note]` 只剩第一次搭 yoxi 去超過回饋門檻的地方的 +50 點），完整規則在面板與成品右上角的「?」（`data-act="open-rules"`）；翻開之後的結果寫一句跟這個地方、這個時節有關的話（`[data-verse]`：`APP.explore.verseOf(卡片 id, cardRule 或 cardOrigin)` → `{ text, by, title }`，表在 `explore-verse.js` 的 `VERSES`：歷史季節卡用節日那一句、搭 yoxi 用 `'gold+節日'` 那一句，其他看款式；同樣的組合永遠同一句；引用古典詩詞寫作者與篇名，表上沒有的卡退回通用句）。這一句在 `/unlock` 的結果與明信片頁都排成題字：`APP.explore.verseLines(text)` → `[{ t, p }]`（逢逗號句號斷行、一個短句一行，`p` 是句尾標點；接回去就是原句），畫面用明體 `--app-serif`（`app.css`，裝置內建字型，不加 webfont）、句尾標點懸在行外；地方頁「到了會得到」寫現在去會是哪一款（`[data-rule-preview]`）。金框 ≠ +50 點：點數仍只給超過搭車回饋門檻的地方（`APP.ride.limitedPlace`）
 - `APP.fx`（explore-fx.js）：`engine(canvas)` 粒子（burst／converge／ring／stream／orbit；樣子 glow／soft／star／spark／shard／leaf（會翻面閃光的金箔）／orbit（繞中心轉的光軌））、`shaker(el)`、`hitstop(root, eng, ms)`、`flash(el, rgb)`、`sfx`（Web Audio 合成，`store.fxMute` 靜音；金框的燙金用 `foil(秒)`、`crown()`）、`filters()`（`#exf-watercolor／oil／woodcut／ink／gold／paper／brush`）、`color(token)`、`sfx.stopAll()`（切掉已排好的聲音；靜音與離開 /unlock 時呼叫）。顏色一律從 tokens 讀；`calm()` 就是 `APP.reduceMotion()`。`APP.explore._` 是不可列舉的內部零件，只給 explore 三支檔案用
 - 明信片的卡面（explore 提供，`explore-face.js`）：`APP.explore.cardFace(cardId, key)` → `{ gen, photo, credit }`——疊法只有這一個，`/unlock` 的卡面與收藏的卡都照它；`postcardSrc(cardId, key)` → `assets/postcards/<id>-<key>.jpg`（只有 `POSTCARD_GEN` 裡的，現在 22 張都在；其餘回空字串，卡面退回照片＋SVG 濾鏡）；`cardPhoto(cardId)` 底圖照片（明信片自己的 → 對照表的地點 → 這張卡所在地點的；出處也從它來）；`cardStyleOf(cardId)`（explore-cards.js）收下的是哪一款（`store.cardStyle` → 沒紀錄的：搭車卡金框、走路卡照收下那天的月份補季節的畫風）。別的區塊要顯示「收下的那一張」：在畫插圖的元素上加 `data-card-art="<明信片 id>"`，explore-face.js 監看整台 `.device`（`#view` 與掛在上面的浮層、懸浮小卡）自動疊上 `<img class="card-gen">`，畫面不用自己呼叫，順序跟 `/unlock` 卡面一樣：生成的成品 → 沒有成品或載不到：底圖照片＋那一款的 SVG 濾鏡（`.card-gen--photo`，先排成 220 px 寬套濾鏡再縮放到容器，容器加 `.card-photo-host` 藏起底下的插圖）→ 都沒有才留插圖（還沒收的不疊）。收藏裡顯示明信片的地方都要帶 `data-card-art`（含週回顧的卡與封面）；明信片詳情寫底圖照片的出處（`data-credit`，作者、授權、連結）
 - 節日版的插畫（explore 提供，`explore-fest.js`＋`css/views/explore-fest.css`）：`APP.explore.festHTML(key)` → 一層 `.fest[data-fest=key]`（inline SVG、`aria-hidden`、`pointer-events: none`），由 `cardOrigin().marks`／`marksHTML` 放在卡面上、`.postcard__foot` 前面（地名壓在圖上）。春節一串鞭炮由下往上炸開、端午龍舟在浪上起伏、中秋右上角月亮＋底下玉兔來回跳、賞櫻左上角櫻花樹＋落花。只放在卡片四周：主角至少五分之一卡寬、卡片正中央不擋、主角的範圍加起來不超過卡片一半（`explore.spec.js` 量）。`APP.explore.festPlay(root, { restart })` 加 `.is-live` 才動，約 5 秒停在收尾的樣子（WCAG 2.2.2）；`/unlock` 翻開時開始、明信片頁打開與翻回正面時各演一次；`APP.reduceMotion()`（含 `?still=1`）不動，直接是靜止的構圖。顏色全在 CSS（tokens），SVG 裡沒有色碼。
 - 長輩圖（album，`/elder`）：圖就是收下的那張明信片——`elderImage(p, 祝福)` 疊法跟明信片頁一樣（`data-card-art` 的成品或照片＋濾鏡、金框＋角標＋金粉、`cardOrigin().marks` 的節日插畫與遠行戳），3:4，上面壓一句大字，底下一條只寫日期地點。圖上不標「AI 生成示意」、不印底圖署名與遊喜樂，圖的上下也沒有說明小字（2026-10-01 依使用者要求拿掉；這是 §4「圖上要有 ai-mark」的例外）；底圖照片的作者、授權與出處連結留在圖底下那一行（`[data-credit]`）。換地方時整張換、選好的祝福留著；節日插畫打開與換地方各動一次。
 - 金框卡在哪裡顯示都有金框和金粉（explore 提供，`explore-gold.js`）：在「畫金框的那個元素」加 `data-gold-aura`，金粉就從它的邊緣冒出來（照元素的旋轉角度）。`[data-card-art]` 的金框卡沒人標的話，`paintCardArt` 自己補 `data-gold-aura`＋`.card-gold`（通用的框，explore.css）；框畫在外層的（明信片詳情整張卡、叫車的浮起來小卡）由畫面自己標在外層，`paintCardArt` 看到祖先標了就不再補。`/unlock` 翻開之後（`finish()`）才標，翻開前不洩底。整台手機一張 `canvas.gold-aura`（掛 `.device`、z-index 97、`pointer-events:none`、`aria-hidden`）；金粉裁在卡片的捲動範圍裡，被別的東西蓋住的邊不冒（`elementFromPoint`）；卡片移動時金粉被「跟著卡片走的空氣」帶著、有慣性（`APP.fx.gold.step` 是純函式）。樣子：細金粉、會翻會閃的金箔、細長四芒閃光、暗底的散景；相對空氣動得快的金粉拉出變淡的尾巴；每張卡每 4.8 秒有一道斜光掃過框、從亮的地方多灑一把（每張卡錯開）。`APP.reduceMotion()` 時不建 canvas（框照舊）；看不到金框卡時不跑 rAF。測試用：`APP.fx.gold.tracked()`、`particles()`
-- `APP.system.demoArrive(placeId, 'walk'|'ride')`：demo 面板的模擬抵達。走路 → `/unlock/:id`（行程進行中不行）；搭 yoxi → `APP.ride.trip.arriveAt(placeId)`（這一趟在這裡結束、取代原本的行程；距離不明的 km 是 null，跟一般叫車一樣）＋ `/unlock/:id?ride=1`
+- `APP.system.demoArrive(placeId, 'ride')`：demo 面板只有搭 yoxi 抵達（預設 ride；其他交通方式拒絕且不改資料）。呼叫 `APP.ride.trip.arriveAt(placeId)`（這一趟在這裡結束、取代原本的行程；距離不明的 km 是 null，跟一般叫車一樣）＋ `/unlock/:id?ride=1`
 - `APP.ui.push({when})`：推播浮層（system 提供；點推播進 `#/ride?mode=explore&area=...`（早）或 `#/lookback`（晚））
 - `APP.ui.share(opt)`：分享面板（system 提供；album 的週回顧與明信片用；明信片分享帶 `card` 與 `v`（第幾次）：第一格一鍵傳到 LINE（`APP.family.sendToLine`），長輩圖 `/elder?card=<id>` 把那張排第一）
 - `APP.family`（album-family 提供；全部是示意，只寫 APP.store，不連網）：`send({ card, v, cap })` → `{ id, card, v, at, cap? }` 或 null（認不得的卡）；`sendToLine(o)`＝send＋toast＋`#/line?share=<id>`（分享面板的 share-line 走它）；`canSend(card)`；`shares()`；`sharesOf(card, v?)`／`latestOf(card, v?)`（v 省略＝每一次）；`repliesOf(shareId)`；`hearted(shareId, who?)`；`react(shareId, { who, heart } | { who, text })`；`repliesHTML(cardId, v?)` → '' 或「家人的回應」一段（喜歡只寫名字、留言最新三則、沒有數字與連結；明信片詳情頁嵌）；`FAMILY`（媽媽＝長輩、小芸＝女兒）。明信片是傳出去的那一次（`cardOrigin(card, v)`：第幾次、金框、首訪／里程戳與節日插畫；`/line` 的小卡不蓋戳），沒有相框、寄件人旁邊不寫稱號。子女那一端只有那一張明信片：沒有地點、距離、其他紀錄、已讀、按讚數
@@ -427,7 +435,7 @@ node 端：`tests/unit/helpers.mjs` 的 `loadApp({ views: ['ride', 'album', …]
 | `/explore` | 探索（X2 缺口導向＋今天的地方） | explore | `variant-x2-explore.html`、`explore.html`、`variant-l1-explore.html` | explore |
 | `/explore/map` | 探索地圖（真實地圖 ≤ 10 景點、小卡） | explore | `map.html`、`concept-map-explore.html` | explore |
 | `/place/:id` | 地方詳情（K1） | explore | `variant-k1-place.html`、`place.html` | explore |
-| `/going/:id` | 前往中（走路；這個地方已搭 yoxi 抵達、明信片還沒收時改顯示「收下這張明信片」卡） | null | `going.html` | explore |
+| `/going/:id` | 舊連結相容轉址至叫車、進行中的行程或已抵達的搭車收卡；沒有獨立畫面 | null | — | explore |
 | `/unlock/:id` | 抵達 → 收集 → 翻卡（每一次來都收一張，`data-visit` 是第幾次、回訪寫「第 N 次來」；今天收過就直接看今天那一張；款式照 `cardRule`；搭 yoxi 抵達是金框，問 `APP.ride.trip.arrivedAt`；`?ride=1` 只是入口記號；`data-at` 1 抵達／2 翻卡／3 結果） | null | `unlock.html` | explore |
 | `/routes` | 路線列表 | explore | `routes.html` | explore |
 | `/route/:id` | 路線詳情（斷點處可設為下車點） | explore | `route.html`、`variant-k4-route.html` | explore |

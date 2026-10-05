@@ -85,7 +85,7 @@ const FARE_PER_POINT = 20;
    - WAIT_FEE：候車費，一趟固定一筆（不按分鐘跳錶：沒有一個會跑的數字要長輩盯著）。
      來回的車資＝去程＋WAIT_FEE＋回程，回程的公里＝去程（家 ↔ 這個地方），每一段都是 APP.fmt.fare(km)。
      搭車回饋只算兩段車資（候車費不是車資，不回饋）。
-   長輩在多大的範圍內走走、收下這一次的明信片：跟走路抵達同一個數（explore.js 的 APP.explore.ARRIVE_RADIUS_M），這裡不另寫。 */
+   長輩在多大的範圍內走走、收下這一次的明信片：統一使用景點的抵達探索範圍（explore.js 的 APP.explore.ARRIVE_RADIUS_M），這裡不另寫。 */
 const WAIT_MAX_MIN = 60;
 const WAIT_FEE = 100;
 /* 確認叫車頁（/ride/confirm）。yoxi 的派車估計與小黃跳表的範圍拿不到，下面兩個是「假設」：
@@ -185,7 +185,7 @@ function emptyCard(eyebrow, title, text) {
      不拿 0 去算起跳價。
    - 一次只有一趟：start、arriveAt 都會取代原本的那一趟。
    - phase(t, now)：純函式。存的是 matching 但已經過了 MATCH_MS 就算 riding（now 可注入）；其他段照存的。
-   - 進行中（active）：配對中、行程中、候車、回程。進行中不能從旁邊改下車點、不能走路去別的地方（跟單程一樣）。
+   - 進行中（active）：配對中、行程中、候車、回程。進行中不能從旁邊改下車點、也不從其他入口另開前往流程。
    - 抵達了（reached）：單程 done；來回 waiting、returning、done——回家不能讓還沒收的那一張搭車卡消失（產品決定）。
    - arrive() 每一段怎麼走＝「這一趟下一個抵達的地方」（/trip 的 demo 鈕、system 的模擬抵達都叫它）：
        單程：任何一段 → done。
@@ -193,7 +193,7 @@ function emptyCard(eyebrow, title, text) {
    - back()：候車 → 回程（司機過來載你回家）。不是候車中的來回就不動、回 null。
    - cancel()：去程（配對中／行程中）取消整趟、清掉（跟單程一樣）。候車與回程是「不搭回程了」：去程已經到了，
      這一趟退回成單程的「已抵達」（明信片還沒收就還收得到）；已經收了就沒有東西要等，清掉。
-   - 單程抵達之後這一趟留著（明信片還沒收），直到搭車收下（consume）才清；走路收同一個地方不碰它。
+   - 單程抵達之後這一趟留著（明信片還沒收），直到搭車收下（consume）才清；未抵達不收卡。
    - 來回什麼時候清：到家（done）而且沒有東西要等（這一趟的卡收了、或這裡沒有卡可收）→ /ride 的 mount 安靜清掉
      （跟單程同一條：done 而且 pending() 是 null；評分不擋，跟單程一樣）；下一次 start 也會取代它。
    - 行程紀錄與點數只從收下的搭車卡來（pastTrips，每一次收下都算，回訪也是）：來回要「到家、而且這一趟的卡收了」
@@ -236,10 +236,10 @@ const TRIP = (function () {
     const t = current();
     return t && t.phase !== 'done' ? t : null;
   }
-  /* 搭 yoxi 抵達這個地方、這一趟的明信片還沒收的那一趟。/unlock 的金框與 +50 點、/going 的
+  /* 搭 yoxi 抵達這個地方、這一趟的明信片還沒收的那一趟。/unlock 的金框與 +50 點、舊連結的
      「收下這張明信片」、/ride 的金色入口、/trip/done 的金色橫幅都是同一個判斷。網址上的 ?ride=1 只是入口的記號，
      不參與判斷：沒有這一趟，手打 ?ride=1 也拿不到金框和點數；有這一趟，不論從哪裡進來都是搭車抵達
-     （不然走路收下會把還沒領的限定版一起清掉）。來回收過了（collected）就不再是：一趟車只給一張搭車卡。 */
+     （未抵達的收卡請求不會清掉待收行程）。來回收過了（collected）就不再是：一趟車只給一張搭車卡。 */
   function arrivedAt(placeId) {
     const t = current();
     return t && reached(t) && !t.collected && placeId != null && t.placeId === placeId ? t : null;
@@ -390,10 +390,10 @@ function validDate(iso) {
   return d && !isNaN(d.getTime()) ? d : null;
 }
 
-/* 限定版（金框＋和泰 Points +50）只給「走路到不了」的地方：搭車去 900 m 外的地方不該換到 50 點。
-   /unlock 決定金框、點數頁算遊喜樂解鎖回饋、收藏頁畫金框，全部用這一個判斷（門檻＝APP.fmt.WALK_MAX_M）。
+/* 限定版（金框＋和泰 Points +50）只給超過搭車解鎖回饋門檻的地方。
+   /unlock 決定金框、點數頁算遊喜樂解鎖回饋、收藏頁畫金框，全部用這一個判斷（門檻＝APP.fmt.RIDE_BONUS_MIN_M）。
    STATE.points 是原型的算法（by==='ride' 的卡 × 50），app 的點數一律用 pointsRows／pointsTotal。 */
-function limitedPlace(p) { return !!p && p.dist != null && p.dist > F.WALK_MAX_M; }
+function limitedPlace(p) { return !!p && p.dist != null && p.dist > F.RIDE_BONUS_MIN_M; }
 function limitedCard(cardId) {
   const c = S().card(cardId);
   if (!c || c.by !== 'ride') return false;
@@ -427,7 +427,7 @@ function writeDropoff(placeId, via) {
   APP.ui.toast('已設為下車點');
   return p;
 }
-function setDropoff(placeId, via) {
+function setDropoff(placeId, via, opt) {
   /* 連點兩下（第二下常落在轉場中的舊畫面上）：同一個地方、剛設過、人已經在 /ride → 不再寫、不再導 */
   const here = APP.nav.current();
   const d0 = store().get('dropoff');
@@ -440,7 +440,7 @@ function setDropoff(placeId, via) {
   if (cur && cur.path === '/ride') {
     /* 探索模式（例：從 /dropoff「在地圖上挑」進來）：上一格也是 /ride 就退回去，不疊兩個 /ride */
     APP.nav.up('/ride', { backIf: fromRide, dir: 'none' });
-  } else APP.nav.go('/ride');
+  } else APP.nav.go('/ride', opt && opt.replace ? { replace: true, dir: 'none' } : {});
   return true;
 }
 
@@ -1805,8 +1805,6 @@ APP.view('trip', {
               '<span class="arrow ride-story__arrow"></span></button>' +
             '<div class="ride-story__body" data-story hidden>' +
               paras.map(function (x) { return '<p class="story__text">' + esc(x) + '</p>'; }).join('') +
-              '<p class="story__note">' + (min == null ? '這一段是為車上的這段路寫的。'
-                : '這一段是為車上的這 <span class="num">' + min + '</span> 分鐘寫的。') + '</p>' +
             '</div>' +
           '</div>' +
           '<div class="ride-trip__acts">' +

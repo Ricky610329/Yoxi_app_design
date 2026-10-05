@@ -1,7 +1,7 @@
 /* ==========================================================================
    flows.spec — QA-flows：把四個區塊縫成一個走得完一圈的 app
    1. 三條 demo 流程端到端（prototype/js/catalog.js 的 FLOWS：每一步「要講的那句話」就是驗收條件）
-      A 不搭車的日常、B 搭車的轉換、C 晚上的回顧（C 在非 still 模式跑：動畫與計時器照真的走）。
+      A 附近地方搭車到訪、B 路線的叫車轉換、C 晚上的回顧（C 在非 still 模式跑：動畫與計時器照真的走）。
       一律從 app.reset() 開始、用 app.click 真的按；只有推播用 APP.ui.push 觸發（demo 工具的職責）。
    2. 縫合：叫車小卡→地方→返回、E 小卡走 APP.ride.setDropoff、深連結重整、tab 記憶、
       非 still 模式每條 route 無例外、連點不重複寫入、APP.ride.arrive() 在 /trip 之外。
@@ -25,21 +25,26 @@ T.spec('flows', function (t) {
   /* 叫車首頁「叫車前往」→ 確認叫車頁「確認叫車」 */
   const callRide = T.helpers.callRide;
 
-  /* 流程 A 的前半：探索 → 今天的地方 → 走路前往 → 模擬抵達（demo 面板）→ 解鎖 → 收下。
+  /* 流程 A 的前半：探索 → 今天的地方 → 下車點 → 叫車 → 模擬抵達 → 評分 → 解鎖 → 收下。
      C 會先走一次；still 與非 still 都能跑（非 still 時解鎖點一下畫面跳到成品）。 */
-  async function walkAndCollect(app, note) {
+  async function rideAndCollect(app, note) {
     const A = app.APP;
     const T0 = app.MOCK.TODAY;
     await app.at('/explore');
     await app.click('main.view .ex-cta [data-act="open-place"]');
     await app.at('/place/' + T0.id);
     const main = app.$('[data-place-foot] .btn-primary');
-    t.eq(main && main.getAttribute('data-act'), 'go-walk', '地方詳情：走得到 → 主要動作是走路前往');
-    await app.click('[data-place-foot] [data-act="go-walk"]');
-    await app.at('/going/' + T0.id);
-    /* demo 面板的模擬抵達：地點跟著前往中的目的地，走路抵達 */
-    t.eq(app.$('#demo-panel [data-demo-place]').value, T0.id, 'demo 面板的地點跟著前往中的目的地');
-    await app.click('#demo-panel [data-act="arrive-walk"]');
+    t.eq(main && main.getAttribute('data-act'), 'set-dropoff', '附近地方的主要動作也是設為下車點');
+    await app.click('[data-place-foot] [data-act="set-dropoff"]');
+    await app.at('/ride');
+    t.eq(A.store.get('dropoff').id, T0.id, '目的地帶入叫車');
+    await callRide(app);
+    await app.at('/trip');
+    t.eq(A.ride.trip.current().placeId, T0.id, '建立這個目的地的 yoxi 行程');
+    await app.click('main.view [data-act="arrive"]');
+    await app.at('/trip/done');
+    await app.click('[data-act="rate"][data-star="5"]');
+    await app.click('.banner--gold');
     await app.at('/unlock/' + T0.id);
     if (!app.still) {
       t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先是抵達（這個地方亮起來）');
@@ -80,12 +85,13 @@ T.spec('flows', function (t) {
     await app.click('[data-act="toggle-why"]');
     t.eq(app.$$('[data-why-list] .why__item').length, (T0.why || []).length, '推薦依據條數');
 
-    await walkAndCollect(app, '窯的牆還是溫的');
+    await rideAndCollect(app, '窯的牆還是溫的');
 
     t.ok(app.$('main.view .postcard__new'), '/album 有「新」角標');
     t.eq(S.count(), n0 + 1, 'STATE.count() 8 → 9');
     t.eq(S.card(card) && S.card(card).note, '窯的牆還是溫的', 'card.note 是那句話');
-    t.eq(S.card(card) && S.card(card).by, 'walk', 'by walk');
+    t.eq(S.card(card) && S.card(card).by, 'ride', '新到訪是 yoxi 抵達');
+    t.eq(A.explore.cardOrigin(card).style.key, 'gold', '附近地方也留下金框');
     t.eq(app.text('[data-stat="cards"]'), String(n0 + 1), '明信片摘要 +1');
     t.eq(app.$$('[data-stat="places"], [data-stat="km"]').length, 0, '收藏首頁沒有重複的地方／距離統計');
     t.ok(!app.$('#tabbar .tabbar__dot'), '底欄沒有提示小圓點');
@@ -182,7 +188,7 @@ T.spec('flows', function (t) {
     const A = app.APP, S = app.STATE;
     t.ok(!app.doc.documentElement.hasAttribute('data-still'), '非 still 模式');
     await app.go('/explore');
-    await walkAndCollect(app, '今天光很好');
+    await rideAndCollect(app, '今天光很好');
     const last = app.MOCK.POSTCARDS.filter(function (p) { return p.id === S.all.lastCard; })[0];
     t.ok(last, 'lastCard 是剛收的那張');
 
@@ -304,11 +310,12 @@ T.spec('flows', function (t) {
 
   /* ============================================================ QA-visual（跨區塊的兩項；視覺 3 在 album.spec、視覺 4 在 explore.spec） */
 
-  t.test('視覺 1／2：/going 按鈕文案與收藏頁獎章數字', async function (app) {
+  t.test('視覺 1／2：舊 /going 接回叫車，收藏頁獎章數字仍照公式', async function (app) {
     await app.reset();
-    await app.go('/going/glass-kiln');
-    const b = app.$('main.view [data-act="arrive"]');
-    t.eq(b && b.textContent.trim(), '模擬抵達', '/going 按鈕文字與 /trip 一致');
+    await app.go('/going/glass-kiln', { expect: '/ride' });
+    t.eq(app.APP.store.get('dropoff').id, 'glass-kiln', '舊連結選定叫車目的地');
+    t.eq(app.APP.ride.trip.current(), null, '開舊連結不偽造行程');
+    t.ok(!app.$('main.view [data-act="arrive"]'), '叫車前沒有抵達操作');
     await app.go('/album');
     t.eq(app.text('.alb-v2__medals h2'), '獎章', '獎章區標題');
     const bc = app.MOCK.BADGES.filter(function (x) { return app.STATE.badge(x.id).got; }).length;
@@ -398,8 +405,12 @@ T.spec('flows', function (t) {
 
     await app.reset({ hash: '/unlock/glass-kiln' });
     t.eq(app.route().path, '/unlock/glass-kiln', '深連結 /unlock 直接開');
-    t.ok(app.$('[data-act="collect"]'), '可以收');
+    t.ok(!app.$('[data-act="collect"], [data-final-card]'), '未抵達不顯示成品與收卡操作');
+    t.ok(app.$('[data-act="use-yoxi"]'), '提供叫車目的地入口');
     t.eq(app.errors.length, 0, '錯誤：' + app.errors.join('；'));
+    app.APP.ride.trip.arriveAt('glass-kiln');
+    await app.reload('/unlock/glass-kiln');
+    t.ok(app.$('[data-act="collect"]'), '已抵達的深連結重整仍能收卡');
   });
 
   t.test('縫合 d：雙主頁 tab 記憶選定地區，再按叫車回根', async function (app) {
@@ -431,6 +442,7 @@ T.spec('flows', function (t) {
       if (txt || app.errors.length) bad.push(list[i].path + '：' + (txt || app.errors.join('；')).slice(0, 160));
     }
     /* 抵達：這個地方亮起來、等你點；點過去翻卡會停在結果 */
+    app.APP.ride.trip.arriveAt('moat');    /* 只測非 still 解鎖動畫，抵達狀態由行程 module 建立。 */
     await app.go('/unlock/moat');
     await app.tick(1500);
     t.eq(app.$('[data-unlock]').getAttribute('data-at'), '1', '非 still：先停在抵達，等你點發光的地方');
@@ -488,8 +500,9 @@ T.spec('flows', function (t) {
       off();
 
       const n0 = S.count();
+      A.ride.trip.arriveAt('glass-kiln');   /* 此段只測已抵達後的 collect 連點。 */
       await app.go('/unlock/glass-kiln');
-      await app.click('[data-unlock]');
+      if (!still) await revealThrough(app);
       const c = app.$('[data-act="collect"]');
       c.click(); c.click();
       await app.at('/album');
@@ -506,7 +519,8 @@ T.spec('flows', function (t) {
     await app.reset();
     let A = app.APP;
     await app.go('/explore');
-    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]').disabled, 'demo 面板的走路抵達任何一頁都能按（地點從選單挑）');
+    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]'), 'demo 面板只有 yoxi 抵達');
+    t.ok(app.$('#demo-panel [data-act="arrive-ride"]'), 'demo 的 yoxi 抵達入口仍可用');
     t.eq(A.ride.arrive(), false, '沒有行程 → 回 false');
     await app.tick(40);
     t.eq(app.route().path, '/explore', '沒有行程不導走');
@@ -583,6 +597,9 @@ T.spec('flows', function (t) {
       if (!v) { probs.push(path + '：沒有 main.view'); continue; }
       t.noDeadButtons(app, label + path);
       t.noBannedWords(app, { msg: label + path });
+      t.ok(!app.$('[data-act="go-walk"], [data-act="arrive-walk"]'), label + path + ' 沒有步行前往或抵達控制');
+      const retiredTravel = /走路前往|步行|走路約|再走過去|走路抵達|不是拿來滑的/;
+      t.ok(!retiredTravel.test(v.innerText), label + path + ' 可見文案沒有舊步行產品語意：' + (v.innerText.match(retiredTravel) || []).join(''));
       const n = t.countTappables(app);
       const max = T.tapMax(landed);
       if (n > max) probs.push(path + '：可按數 ' + n + ' > ' + max);
@@ -608,7 +625,7 @@ T.spec('flows', function (t) {
   }, { timeout: 30000 });
 
   t.test('全站掃描：收了 3 張、有下車點、有行程', async function (app) {
-    /* 搭車收的那張直接種進 STATE（走 APP.explore.collect 要先有一趟抵達內灣的行程，會取代下面這趟進行中的） */
+    /* 掃描持久化狀態，直接注入舊步行收藏與已收搭車卡；不冒充新抵達，不取代下面進行中的行程。 */
     await app.reset({
       cards: [{ id: 'p11', by: 'walk', note: '第一張' }, { id: 'p19', by: 'walk' }, { id: 'p9', by: 'ride', km: 28 }],
       store: {
@@ -631,6 +648,7 @@ T.spec('flows', function (t) {
     W.__xss = 0;
     const evil = '<img src=x onerror="window.__xss=1">"\'&';
     const injected = function () { return app.$$('main.view img[src="x"], main.view [onerror]').length; };
+    app.APP.ride.trip.arriveAt('glass-kiln');   /* 已抵達後輸入那一句話，驗證收藏與各畫面的 escape。 */
     await app.go('/unlock/glass-kiln');
     app.$('[data-one-line]').value = evil;
     await app.click('[data-act="collect"]');
@@ -918,6 +936,9 @@ T.spec('flows', function (t) {
   const HIT_EXEMPT = '.spot';
 
   function hitOk(app, el) {
+    /* 捲動頁可能只露出開關的一半；先捲到可操作位置，再用真實命中測試驗完整範圍。
+       保留 elementFromPoint 檢查，不把視窗裁切誤認成按鈕本身的命中區不足。 */
+    el.scrollIntoView({ block: 'center', inline: 'nearest' });
     const r = el.getBoundingClientRect();
     if (Math.min(r.width, r.height) >= 40) return true;
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -960,7 +981,7 @@ T.spec('flows', function (t) {
     /* 有狀態才出現的畫面：行程中、行程完成（評過分）、叫車首頁小卡打開、推播與分享浮層 */
     await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: now(), km: 6.4 }) } });
     await app.go('/trip'); await app.tick(40); scan('/trip');
-    await app.go('/going/moat'); await app.tick(40); scan('/going（行程中）');
+    await app.go('/going/moat', { expect: '/trip' }); await app.tick(40); scan('/going → /trip（行程中）');
     await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', phase: 'done', startedAt: now(), rated: true, stars: 4, km: 6.4 }) } });
     await app.go('/trip/done'); await app.tick(40); scan('/trip/done');
     await app.go('/ride?mode=explore'); await app.click('.spot[data-spot="moat"]'); scan('/ride 探索選點');

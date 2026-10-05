@@ -86,7 +86,7 @@ test('toRiding／arrive／rate／cancel：各自只改自己那一段', () => {
   assert.equal(T.rate(5), null, '沒有行程不能評分');
 });
 
-test('pending：抵達了、明信片還沒收的那一趟；限定版只給走不到的地方', () => {
+test('pending：抵達了、明信片還沒收的那一趟；限定版看搭車回饋距離門檻', () => {
   const { APP, STATE } = load();
   const T = APP.ride.trip;
   T.start('neiwan', 'route');
@@ -94,7 +94,7 @@ test('pending：抵達了、明信片還沒收的那一趟；限定版只給走�
   T.arrive();
   const p = T.pending();
   assert.equal(p.card, APP.place('neiwan').card);
-  assert.equal(p.limited, true, '內灣走不到：限定版');
+  assert.equal(p.limited, true, '內灣超過回饋門檻：限定版');
   assert.equal(p.href, '#/unlock/neiwan?ride=1');
   STATE.collect(p.card, { by: 'walk', date: '09.26' });
   assert.equal(T.pending(), null, '收過了就沒有東西要等');
@@ -102,7 +102,7 @@ test('pending：抵達了、明信片還沒收的那一趟；限定版只給走�
   T.arrive();
   const near = APP.place('glass-kiln');
   if (STATE.has(near.card)) assert.equal(T.pending(), null, '收過了就沒有東西要等');
-  else assert.equal(T.pending().limited, false, '走得到的地方不是限定版');
+  else assert.equal(T.pending().limited, false, '未超過回饋門檻的地方不是限定版');
 });
 
 test('consume：用掉這一趟、記下 rideVia、回傳 { via, km }；別的地方不碰', () => {
@@ -124,21 +124,16 @@ test('consume：用掉這一趟、記下 rideVia、回傳 { via, km }；別的�
   assert.equal(lakeCard in APP.store.get('rideVia'), false, '沒有歸因就不寫');
 });
 
-test('collect：有搭 yoxi 抵達這裡的那一趟才算搭車並用掉它；走路收別的地方不碰（還沒領的限定版不會消失）', () => {
+test('collect：必須搭 yoxi 抵達同一個地方；沒有或尚未抵達時拒收且不動收藏與行程', () => {
   const { APP, STATE } = load();
   const T = APP.ride.trip;
   T.start('neiwan', 'k1');
   T.arrive();
-  const km0 = STATE.all.km;
-  assert.equal(APP.explore.collect('moat', { note: '走過去的' }), true);
-  const walked = STATE.card(APP.place('moat').card);
-  assert.equal(walked.by, 'walk', '沒有抵達這裡的那一趟 → 走路');
-  assert.equal(walked.note, '走過去的');
-  assert.equal(STATE.all.km - km0, Math.round(APP.fmt.km(APP.place('moat').dist)), '走路的公里是地方的距離（STATE 累加到總里程）');
-  assert.equal(APP.store.get('cardStyle')[APP.place('moat').card], 'woodcut', '走路收的照規則：九月是秋天 → 木刻版畫');
-  const mk = APP.store.get('cardMarks')[APP.place('moat').card];
-  assert.deepEqual([mk.fest, mk.mile], ['moon', 0], '9/26 在 115 年中秋那一週（9/21–9/28）：記下中秋，走路沒有里程紀念');
-  assert.ok(T.arrivedAt('neiwan'), '走路收別的地方：行程還在');
+  const snapshot = () => JSON.stringify({ state: STATE.all, store: APP.store.all });
+  const before = snapshot();
+  assert.equal(APP.explore.collect('moat', { note: '沒有搭車抵達' }), false);
+  assert.equal(snapshot(), before, '拒收不寫 STATE、store 或消耗別處的行程');
+  assert.ok(T.arrivedAt('neiwan'), '另一個地方拒收後：原本待收的行程還在');
   const km1 = STATE.all.km;
   APP.explore.collect('neiwan');
   const card = APP.place('neiwan').card;
@@ -148,30 +143,44 @@ test('collect：有搭 yoxi 抵達這裡的那一趟才算搭車並用掉它；�
   assert.equal(APP.store.get('cardStyle')[card], 'gold', '搭 yoxi 抵達是金框');
   assert.equal(raw(APP), null, '搭車收下：用掉');
   assert.equal(APP.store.get('rideVia')[card], 'k1', '歸因記在 rideVia');
+  const noTrip = snapshot();
+  assert.equal(APP.explore.collect('glass-kiln'), false, '沒有行程不收');
+  assert.equal(snapshot(), noTrip, '沒有行程不改收藏或 store');
+  T.start('glass-kiln');
+  const matching = snapshot();
+  assert.equal(APP.explore.collect('glass-kiln'), false, '配對中不收');
+  assert.equal(snapshot(), matching, '配對中拒收不改收藏或行程');
+  T.toRiding();
+  const riding = snapshot();
+  assert.equal(APP.explore.collect('glass-kiln'), false, '行程中尚未抵達也不收');
+  assert.equal(snapshot(), riding, '行程中拒收不改收藏或行程');
 });
 
 test('collect：款式與節慶照收下那天的規則記下；收過了不改（換了季節也不改）', () => {
   const { APP, STATE } = load({ now: '2026-09-25T10:00:00+08:00' });   /* 115 年的中秋 */
-  APP.explore.collect('glass-kiln');
+  APP.ride.trip.arriveAt('glass-kiln');
+  assert.equal(APP.explore.collect('glass-kiln'), true);
   const card = APP.place('glass-kiln').card;
-  assert.equal(APP.store.get('cardStyle')[card], 'woodcut', '秋天 → 木刻版畫');
+  assert.equal(APP.store.get('cardStyle')[card], 'gold', '新到訪搭 yoxi：金框');
   assert.equal(APP.store.get('cardMarks')[card].fest, 'moon', '中秋當天 → 記下中秋');
   assert.equal(STATE.card(card).date, '09.25');
   assert.equal(APP.explore.collect('glass-kiln'), false, '同一天再收：一天一張，不收');
   APP.store.set('demoDate', '2027-01-15');
+  APP.ride.trip.arriveAt('glass-kiln');
   assert.equal(APP.explore.collect('glass-kiln'), true, '別天再來：回訪也收一張');
-  assert.equal(APP.store.get('cardStyle')[card], 'woodcut', '第一次那一張不改款式');
+  assert.equal(APP.store.get('cardStyle')[card], 'gold', '第一次那一張不改款式');
   assert.equal(APP.store.get('cardMarks')[card].fest, 'moon', '第一次那一張不改郵戳');
   assert.equal(APP.explore.cardOrigin(card).festival.key, 'moon', 'cardOrigin 讀記下的郵戳，不拿今天回推');
-  assert.equal(APP.explore.cardOrigin(card, 2).style.key, 'ink', '回訪那一張照那一天的規則：一月是冬天 → 水墨');
+  assert.equal(APP.explore.cardOrigin(card, 2).style.key, 'gold', '一月的 yoxi 回訪仍是金框');
 });
 
 test('collect：demoDate 撥到別天，收下的款式、郵戳、日期都跟著它', () => {
   const { APP, STATE } = load();
   APP.store.set('demoDate', '2027-02-06');   /* 116 年春節初一 */
-  APP.explore.collect('moat');
+  APP.ride.trip.arriveAt('moat');
+  assert.equal(APP.explore.collect('moat'), true);
   const card = APP.place('moat').card;
-  assert.equal(APP.store.get('cardStyle')[card], 'ink', '二月是冬天 → 水墨');
+  assert.equal(APP.store.get('cardStyle')[card], 'gold', '二月的 yoxi 到訪仍是金框');
   assert.equal(APP.store.get('cardMarks')[card].fest, 'spring', '春節那一週 → 春節');
   assert.equal(STATE.card(card).date, '02.06', '收下的日期是 demo 的那一天');
 });
@@ -208,8 +217,10 @@ test('cardOrigin：搭車或走路、哪一款、金框、限定版、歸因只�
   assert.equal(near.mile, 0, '玻璃窯：還沒跨過');
   assert.ok(!/data-mark="mile"/.test(near.marks), '玻璃窯：卡面沒有里程戳');
   assert.ok(/data-mark="first"/.test(near.marks) && near.first, '第一次來：首訪紀念戳');
-  /* 走路收的：照規則不會是金框 */
-  APP.explore.collect('moat');
+  /* 舊版收藏相容性：直接注入當年存好的季節款與郵戳，不走新的 collect API。 */
+  STATE.collect('moat', { by: 'walk', date: '09.26', note: '歷史收藏' });
+  APP.store.set('cardStyle', Object.assign({}, APP.store.get('cardStyle'), { p19: 'woodcut' }));
+  APP.store.set('cardMarks', Object.assign({}, APP.store.get('cardMarks'), { p19: { fest: 'moon', mile: 0, ymd: '2026-09-26', km: APP.fmt.km(APP.place('moat').dist) } }));
   const walked = O('p19');
   assert.deepEqual([walked.by, walked.gold, walked.limited, walked.via, walked.mile], ['walk', false, false, null, 0]);
   assert.deepEqual([...walked.lines], ['秋天的畫風是木刻版畫', '第一次來，多蓋一枚首訪紀念戳', '中秋那一週去的，卡面有月亮和玉兔'],

@@ -61,7 +61,8 @@ T.spec('system', function (t) {
     const v = app.view();
     t.ok(v && v.getAttribute('data-view') === 'settings', 'view=settings');
     t.ok(app.$('#tabbar').hidden, 'tab bar 隱藏');
-    t.eq(app.$$('main.view [data-switch]').length, 8, '八個開關（含探索模式的景點）');
+    t.eq(app.$$('main.view [data-switch]').length, 7, '七個開關（含探索模式的景點）');
+    t.ok(!app.$('main.view [data-switch="steps"]'), '不再提供步數資料開關');
     t.ok(app.text('main.view').indexOf('一天最多兩則') >= 0, '說出上限');
     t.ok(app.text('main.view').indexOf('只有你') >= 0 && app.text('main.view').indexOf('你可分享') >= 0, '隱私分軌');
     t.noDeadButtons(app);
@@ -251,7 +252,35 @@ T.spec('system', function (t) {
     t.eq(app.APP.store.get('onboarded'), true, 'onboarded 不變');
   });
 
-  t.test('demo 面板：選地點＋走路／搭 yoxi 抵達，地點跟著這一頁', async function (app) {
+  t.test('/unlock：沒有抵達行程時先搭 yoxi；進行中回到行程；歷史收藏保留', async function (app) {
+    await app.reset();
+    await app.go('/unlock/glass-kiln?ride=1');
+    t.ok(!app.$('[data-unlock]'), '手打 ride=1 不產生新卡舞台');
+    t.ok(!app.$('[data-act="collect"]') && !app.$('[data-final-card]'), '沒有收卡按鈕或已取得的卡面');
+    t.eq(app.text('[data-act="use-yoxi"]'), '搭 yoxi 前往', '明確搭車入口');
+    t.ok(!/找不到/.test(app.text('main')), '合法地點不誤報找不到');
+    t.ok(app.$('.app-empty__card [data-act="use-yoxi"]'), '主要動作放在說明卡內');
+    await app.click('[data-act="use-yoxi"]');
+    await app.at('/ride');
+    t.eq(app.APP.store.get('dropoff').id, 'glass-kiln', '經 setDropoff 填入目的地');
+    app.APP.ride.trip.start('lake', 'e');
+    await app.go('/unlock/glass-kiln');
+    t.ok(!app.$('[data-final-card]'), '其他進行中的行程也不產生新卡');
+    t.eq(app.text('[data-act="go-trip"]'), '回到行程', '進行中回到原行程');
+    t.includes(app.text('.app-empty__p'), '目前行程', '說明回到目前行程，不假稱已抵達所選地點');
+    await app.click('[data-act="go-trip"]');
+    await app.at('/trip');
+    t.eq(app.APP.ride.trip.current().placeId, 'lake', '不替換進行中的目的地');
+    app.APP.ride.trip.clear();
+    await app.go('/unlock/station');
+    t.ok(app.$('[data-final-card]'), '已收藏的歷史卡仍可看');
+    t.ok(!app.$('[data-act="collect"]'), '查看歷史卡不提供新的收卡動作');
+    t.eq(app.APP.explore.cardOrigin('p1').by, 'walk', '歷史交通方式保留');
+    t.ok(!/走路抵達|步行/.test(app.text('main')), '歷史 UI 不顯示步行選項');
+    await app.reset();
+  });
+
+  t.test('demo 面板：只模擬搭 yoxi 抵達，地點跟著這一頁', async function (app) {
     await app.reset();
     await app.go('/ride');
     const panel = app.$('#demo-panel');
@@ -263,14 +292,19 @@ T.spec('system', function (t) {
     const ids = Array.prototype.map.call(sel ? sel.options : [], function (o) { return o.value; });
     t.ok(ids.indexOf('glass-kiln') >= 0 && ids.indexOf('neiwan') >= 0, '選單有地圖景點＋走不到的內灣：' + ids.join(','));
     t.ok(!app.STATE.has(app.APP.place(sel.value).card), '沒有指定時預設一個還沒收的地方：' + sel.value);
-    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]').disabled && !app.$('#demo-panel [data-act="arrive-ride"]').disabled, '兩顆抵達鈕在 /ride 也能按');
+    t.ok(!app.$('#demo-panel [data-act="arrive-walk"]'), '沒有步行抵達選項');
+    t.ok(!app.$('#demo-panel [data-act="arrive-ride"]').disabled, '搭車抵達鈕在 /ride 也能按');
 
-    /* 走路抵達：地點跟著地方詳情 */
+    /* 搭車抵達：地點跟著地方詳情；旧的步行 API 明確拒絕 */
     await app.go('/place/moat');
     t.eq(app.$('#demo-panel [data-demo-place]').value, 'moat', '地點跟著這一頁');
-    await app.click('#demo-panel [data-act="arrive-walk"]');
+    t.eq(app.APP.system.demoArrive('moat', 'walk'), false, '旧的步行抵達不建立行程');
+    t.ok(!app.APP.ride.trip.arrivedAt('moat'), '沒有新抵達');
+    t.eq(app.APP.explore.collect('moat'), false, '不能直接收新卡');
+    t.ok(!app.STATE.has(app.APP.place('moat').card), '沒有寫入新收藏');
+    await app.click('#demo-panel [data-act="arrive-ride"]');
     await app.at('/unlock/moat');
-    t.ok(!app.$('[data-unlock][data-ride]'), '走路：不是搭車版');
+    t.ok(app.$('[data-unlock][data-ride]'), '搭車抵達版');
 
     /* 搭 yoxi 抵達：行程直接在這裡結束，抵達頁認得這一趟 → 必得金框 */
     await app.go('/place/lake');
@@ -283,13 +317,13 @@ T.spec('system', function (t) {
     t.ok(app.$('[data-unlock][data-ride]'), '搭車版');
     t.ok(app.$('[data-final-card].postcard--gold'), '必得金框');
 
-    /* 行程進行中：地點是行程的目的地，走路抵達不行（人在車上） */
+    /* 行程進行中：地點是行程目的地，旧的步行 API 不改寫行程 */
     await app.reset({ store: { trip: T.fixtures.trip({ placeId: 'lake', startedAt: new Date().toISOString(), km: 6.4 }) } });
     await app.go('/explore');
     t.eq(app.$('#demo-panel [data-demo-place]').value, 'lake', '行程中：地點是行程的目的地');
-    await app.click('#demo-panel [data-act="arrive-walk"]');
-    await app.tick(60);
-    t.eq(app.route().path, '/explore', '行程進行中不能走路抵達');
+    const before = JSON.stringify(app.APP.ride.trip.current());
+    t.eq(app.APP.system.demoArrive('lake', 'walk'), false, '舊步行 API 拒絕');
+    t.eq(JSON.stringify(app.APP.ride.trip.current()), before, '原行程保持原樣');
     await app.reset();
   });
 
@@ -301,7 +335,7 @@ T.spec('system', function (t) {
     t.ok(sel, '有模擬日期的選單');
     const opts = Array.prototype.map.call(sel.options, function (o) { return o.textContent; });
     E.CARD_STYLES.filter(function (d) { return d.months; }).forEach(function (d) {
-      t.ok(opts.indexOf(d.season + '（' + d.name + '）') >= 0, '季節選項：' + d.season);
+      t.ok(opts.indexOf(d.season) >= 0, '季節日期選項：' + d.season);
     });
     E.FESTIVALS.forEach(function (f) {
       t.ok(opts.some(function (o) { return o.indexOf(f.name + '（') === 0; }), '三節選項：' + f.name);
@@ -311,9 +345,9 @@ T.spec('system', function (t) {
     sel.value = winter.value;
     sel.dispatchEvent(new app.win.Event('change', { bubbles: true }));
     t.eq(app.APP.store.get('demoDate'), winter.value, '寫進 store.demoDate');
-    await app.click('#demo-panel [data-act="arrive-walk"]');
-    await app.waitFor(function () { return /^\/unlock\//.test(app.route().path) && app.$('[data-unlock]'); }, 3000, '走路抵達 → /unlock');
-    t.eq(app.$('[data-unlock]').getAttribute('data-style'), 'ink', '冬天走路抵達是水墨');
+    await app.click('#demo-panel [data-act="arrive-ride"]');
+    await app.waitFor(function () { return /^\/unlock\//.test(app.route().path) && app.$('[data-unlock]'); }, 3000, '搭車抵達 → /unlock');
+    t.eq(app.$('[data-unlock]').getAttribute('data-style'), 'gold', '冬天搭 yoxi 抵達仍是金框');
     await app.go('/ride');
     await app.click('#demo-panel [data-act="reset-demo"]');
     await app.click('[data-act="confirm-yes"]');
@@ -473,7 +507,7 @@ T.spec('system', function (t) {
   });
 
   /* ---------------------------------------------------------------- demo 面板的地點 */
-  t.test('demo 面板：路線站／明信片 id 的地方詳情，下拉選單也選得到、走路抵達走得到', async function (app) {
+  t.test('demo 面板：路線站／明信片 id 的地方詳情，下拉選單可選且可搭車抵達', async function (app) {
     await app.reset();
     const A = app.APP;
     for (const id of ['p1', 'p3', 'p14']) {
@@ -485,9 +519,9 @@ T.spec('system', function (t) {
       t.ok(picked && here && (picked.id === here.id || (picked.card && picked.card === here.card)),
         '/place/' + id + '：選到的是這一頁的地方（' + (picked && picked.name) + '）');
     }
-    /* p14（玻璃工藝博物館）不在地圖景點裡：多一個選項，走路抵達進得了抵達頁 */
+    /* p14（玻璃工藝博物館）不在地圖景點裡：多一個選項，搭車抵達進得了抵達頁 */
     const val = app.$('#demo-panel [data-demo-place]').value;
-    await app.click('#demo-panel [data-act="arrive-walk"]');
+    await app.click('#demo-panel [data-act="arrive-ride"]');
     await app.at('/unlock/' + val);
     t.ok(!/先選一個地方/.test(app.text('.toast') || ''), '沒有「先選一個地方」');
     t.eq(app.errors.length, 0, '沒有錯誤 ' + app.errors.join('；'));

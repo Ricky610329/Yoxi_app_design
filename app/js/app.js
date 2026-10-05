@@ -186,7 +186,7 @@ const state = {
       if (!stateDepth && stateDirty) { stateDirty = false; emit('state:change'); }
     }
   },
-  /* 收下一張明信片（只有 APP.explore.collect 用；它決定搭車或走路、款式、公里）。回傳是否新收 */
+  /* 收下一張明信片（只有 APP.explore.collect 用；它驗證搭車抵達、決定款式與公里）。回傳是否新收 */
   collect: function (id, opt) { const r = W.STATE.collect(id, opt); stateChanged(); return r; },
   setToday: function (patch) { W.STATE.setToday(patch); stateChanged(); },
   setSetting: function (k, v) { W.STATE.setSetting(k, v); stateChanged(); },
@@ -212,17 +212,15 @@ const state = {
    -------------------------------------------------------------------------- */
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
 const fmt = {
-  WALK_MAX_M: 3000,
+  RIDE_BONUS_MIN_M: 3000,
   fare:    function (km) { return Math.round(75 + 22 * km); },
   rideMin: function (km) { return Math.round(3 + 2.2 * km); },
-  walkMin: function (m)  { return Math.round(m / 75); },
   dist:    function (m) {
     m = Number(m) || 0;
     /* 先四捨五入再挑單位：999.6 公尺是「1.0 km」，不是「1000 m」 */
     const r = Math.round(m);
     return r < 1000 ? r + ' m' : (m / 1000).toFixed(1) + ' km';
   },
-  canWalk: function (m) { return m != null && m <= fmt.WALK_MAX_M; },
   km:      function (m) { return Math.round((Number(m) || 0) / 100) / 10; },   /* 公尺 → 公里（一位小數） */
   todayMMDD: function (d) { d = d || new Date(); return pad2(d.getMonth() + 1) + '.' + pad2(d.getDate()); },
   clock:   function (d) { d = d || new Date(); return d.getHours() + ':' + pad2(d.getMinutes()); },
@@ -236,15 +234,23 @@ const fmt = {
   },
 };
 
-/* MOCK 的敘事文字裡手寫了數字（例：內灣「從你家 28 公里，搭車 42 分鐘」），
-   跟同一頁用公式算的分鐘數對不起來。把「搭車 N 分鐘」「走路 N 分鐘」「N 公里」換成這個地方的公式值。
-   只換阿拉伯數字，「不到三公里」這種描述不動。dist 是公尺；null（距離待確認）就原樣回傳。 */
+/* 共用 MOCK 保留原型的舊交通敘述；app 邊界統一成搭 yoxi，數字改用同一份車程公式。
+   不改唯讀的 prototype 資料，也不把歷史卡片的交通方式重新歸因。 */
 fmt.fixText = function (text, dist) {
-  if (text == null || dist == null || isNaN(Number(dist))) return text;
+  if (text == null) return text;
+  const copy = String(text)
+    .replace('，也是唯一一站走路到不了的地方', '，可搭 yoxi 前往')
+    .replace('步行不可達 —— 這一段需要搭車', '可搭 yoxi 前往')
+    .replace(/今天走過去看/g, '今天搭 yoxi 前往')
+    .replace(/適合走過去看看/g, '適合搭 yoxi 前往')
+    .replace(/適合走路/g, '適合出遊');
+  if (dist == null || isNaN(Number(dist))) {
+    return copy.replace(/(?:走路|步行)\s*\d+\s*分鐘/g, '搭 yoxi 前往');
+  }
   const km = fmt.km(dist);
-  return String(text)
+  return copy
     .replace(/搭車\s*\d+\s*分鐘/g, '搭車 ' + fmt.rideMin(km) + ' 分鐘')
-    .replace(/走路\s*\d+\s*分鐘/g, '走路 ' + fmt.walkMin(dist) + ' 分鐘')
+    .replace(/(?:走路|步行|搭 yoxi)\s*\d+\s*分鐘/g, '搭 yoxi ' + fmt.rideMin(km) + ' 分鐘')
     .replace(/\d+(?:\.\d+)?\s*公里/g, km + ' 公里');
 };
 

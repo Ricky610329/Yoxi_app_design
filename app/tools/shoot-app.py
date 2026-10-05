@@ -83,6 +83,8 @@ RUN_CARDS = RUN_STACK
 RUN_FLOAT = RUN_SELECT + RUN_STACK + "var c=document.querySelector('[data-act=\"open-card\"]');if(c)c.click();"
 RUN_FLOAT_BACK = RUN_FLOAT + "var f=document.querySelector('[data-act=\"flip-card\"]');if(f)f.click();"
 RUN_STORY = "var b=document.querySelector('[data-act=\"toggle-story\"]');if(b)b.click();"
+RUN_TAXI = "APP.ride.trip.start('glass-kiln','e');APP.ride.trip.toRiding();APP.nav.go('/trip',{replace:true,dir:'none'});"
+RUN_TAXI_ARRIVED = "APP.ride.trip.arriveAt('glass-kiln');APP.nav.go('/unlock/glass-kiln?ride=1',{replace:true,dir:'none'});"
 
 # (stem, route, {'s':STATE, 'a':store, 'run':js} 或 None)
 SHOTS = [
@@ -109,8 +111,9 @@ SHOTS = [
     ('explore-map',      '/explore/map',          None),
     ('place',            '/place/glass-kiln',     None),
     ('place-far',        '/place/neiwan',         None),
-    ('going',            '/going/glass-kiln',     None),
-    ('unlock',           '/unlock/glass-kiln',    None),
+    # going 圖檔名稱留給既有文件引用；內容統一是搭 yoxi 行程中。
+    ('going',            '/ride',                 {'run': RUN_TAXI}),
+    ('unlock',           '/ride',                 {'run': RUN_TAXI_ARRIVED}),
     ('unlock-ride',      '/unlock/neiwan?ride=1', {'a': A_RATED}),
     ('routes',           '/routes',               None),
     ('route',            '/route/rail',           None),

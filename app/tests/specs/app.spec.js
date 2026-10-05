@@ -16,7 +16,8 @@ T.spec('app', function (t) {
       const cur = routes()[i];
       /* 每條從叫車首頁出發，避免上一條留下的覆蓋層影響 */
       if (app.route().path !== '/ride') await app.go('/ride');
-      const landed = await app.go(cur.path, { expect: cur.expect, redirectOk: !!cur.flow || !!cur.notFound });
+      const landed = await app.go(cur.path, { expect: cur.path.indexOf('/going/') === 0 ? '/ride' : cur.expect,
+        redirectOk: !!cur.flow || !!cur.notFound });
       await app.tick(80);   /* 讓 mount 裡的 setTimeout（地圖、INTERACT）跑一輪 */
       const v = app.view();
       t.ok(v, 'main.view[data-view] 存在');
@@ -171,6 +172,7 @@ T.spec('app', function (t) {
     t.eq(N.prev() && N.prev().path, '/album', '重新整理之後 prev 還在');
     t.eq(N.upAction(), 'back', '重新整理之後照樣退一格');
     /* 流程頁（沒有底欄）來的：不退回去 */
+    app.APP.ride.trip.arriveAt('glass-kiln');
     await app.go('/unlock/glass-kiln');
     await app.go('/postcard/p1');
     t.eq(N.prev() && N.prev().tab, null, '/unlock 沒有底欄');

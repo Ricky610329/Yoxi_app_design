@@ -3,12 +3,12 @@
    契約：app/ARCHITECTURE.md §3、§7。
    載入順序：explore-fx.js → explore-fest.js → explore-cards.js → explore-face.js → explore-gold.js → explore.js → explore-unlock.js（都在 album.js 之前）。
 
-   回答什麼：一張明信片怎麼拿到的——照規則是哪一款、為什麼、怎麼收下、收下的是搭車還是走路、是不是金框或限定版。
+   回答什麼：一張明信片怎麼拿到的——照規則是哪一款、為什麼、怎麼收下、哪一次搭車到訪、是不是金框或限定版。
              每去一次就收一張那一次的明信片（同一個地方同一天一張）：第一次那張蓋首訪紀念戳，之後的是回訪。
              收藏（album）、叫車首頁（ride）、探索的各畫面、/unlock 都讀這裡，所以獨立成一支，不跟著任何一個畫面走。
              長什麼樣（成品、照片＋濾鏡、插圖的疊法）在 explore-face.js。
    提供（APP.explore，對外 API，契約 §7）：
-     collect(placeId, { note })                  收下這一次的明信片（第一次或回訪）：搭車或走路、哪一款、幾公里都由這裡自己判斷
+     collect(placeId, { note })                  收下這一次的明信片（第一次或回訪）：必須搭車抵達，哪一款、幾公里都由這裡自己判斷
      canCollect(placeId 或卡片 id)               現在收得到嗎：還沒收過、或今天還沒收過這個地方
      cardOrigin(cardId, v)                       收下的那一張是怎麼來的（v 是第幾次，省略是第一次）：{ by, style, gold, limited, first, festival, mile, lines, marks, … }
      visits(cardId)／recentVisits(n)             這個地方收過的每一次（舊到新）／全部收下的，最新的在前
@@ -20,7 +20,7 @@
    是不是搭車抵達一律問 ride 的行程 module：APP.ride.trip.arrivedAt(地點 id)；搭車收下由 collect 呼叫
    APP.ride.trip.consume 用掉那一趟（連同 rideVia 歸因）。「是不是金框、是不是限定版」一律問 cardOrigin。
    內部零件 APP.explore._（不可列舉；只給 explore.js 與 explore-unlock.js 共用，別的區塊不要依賴）：
-     這一次抵達（arrivalAt：搭車還是走路、幾公里、照規則的款式）、今天（today：demo 可以假裝別天）、
+     這一次抵達（arrivalAt：搭車抵達行程、幾公里、照規則的款式；未抵達無款式）、今天（today：demo 可以假裝別天）、
      卡面多的那幾層（marksHTML：節日插畫＋遠行戳）、關掉規則說明（closeRules）、點數（ridePoints）與幾個小工具；explore.js 再掛上頁面零件
      （exploreHome、notFound、backFabBar、distHTML）。
    刻意沒有：機率、抽籤、保底（明信片是哪一款只看規則，長輩知道「為什麼」；里程看的是累積的公里，不是「抽幾次必中」）；
@@ -48,7 +48,7 @@ function collected(p) { return !!(p && p.card && S() && S().has(p.card)); }
 
 function num(n) { return '<span class="num">' + esc(n) + '</span>'; }
 
-/* 搭車抵達走不到的地方回饋的點數：唯一來源是 ride.js 的 APP.ride.RIDE_BONUS（/points 的明細也用它；
+/* 搭車抵達達到距離門檻的地方回饋的點數：唯一來源是 ride.js 的 APP.ride.RIDE_BONUS（/points 的明細也用它；
    資料缺了退回幾點也只寫在那裡）。ride.js 比這支先載入 */
 function ridePoints() { return APP.ride.RIDE_BONUS; }
 
@@ -57,7 +57,7 @@ function ridePoints() { return APP.ride.RIDE_BONUS; }
    按「收集明信片」之前就寫在面板上。同一天用同樣方式到，每個人收到的都一樣。
    這一段是全 app 唯一來源：/unlock 的收集面板、「?」的規則說明都從這裡組字，不另外手寫
    （翻開之後的結果與收藏的明信片頁不念規則，改念 explore-verse.js 的那一句）。
-     - 常態款：走路抵達，畫風跟著季節（months）；搭 yoxi 抵達，金框，不分季節；
+     - 常態款：搭 yoxi 抵達，金框，不分季節；已收藏的季節畫風保留原樣；
      - 節慶限定：節日那一週（FESTIVALS：三節與櫻花季）去的，卡面多一層會動的節日插畫（explore-fest.js）；
      - 首訪紀念：第一次來這個地方的那一張，多蓋一枚首訪紀念戳；
      - 里程紀念：搭 yoxi 去收明信片的公里數累積起來，跨過 MILE_STEPS 的那一趟多蓋一枚里程紀念戳（獎勵已經走過的路）。
@@ -91,7 +91,7 @@ const FESTIVALS = [
 /* 里程紀念（公里）：搭 yoxi 去收明信片的路程累積起來（rideKm），這一趟跨過其中一個數字，這張卡就蓋一枚里程紀念戳。
    看累積、不看單趟，所以常搭短程的人也會走到；一趟跨過兩個數字時記大的那一個。回程不收明信片，不算。
    demo 一開始搭 yoxi 收了南寮（8.2）與青草湖（6.4）：14.6 km，搭車去內灣（28 km）就會跨過 30。
-   跟走路門檻（fmt.WALK_MAX_M）一樣是寫死的規則，改這裡畫面上的說明會跟著變。 */
+   跟搭車加碼門檻（fmt.RIDE_BONUS_MIN_M）一樣是寫死的規則，改這裡畫面上的說明會跟著變。 */
 const MILE_STEPS = [30, 60, 100, 200, 300, 500];
 
 function styleOf(key) {
@@ -278,14 +278,14 @@ function canCollect(cardOrPlace) {
   return !list.some(function (x) { return x.ymd ? x.ymd === ymd : x.md === md; });
 }
 
-/* 這一次抵達（只讀）：搭 yoxi 抵達這裡的那一趟（行程 module 說了算）、搭車還是走路、幾公里、第幾次來、
-   照規則會收到哪一款（rule）。/unlock 的畫面與 collect 都用這一個答案。 */
+/* 這一次抵達（只讀）：搭 yoxi 抵達這裡的那一趟（行程 module 說了算）、幾公里、第幾次來、
+   照規則會收到哪一款（rule）。未抵達沒有款式。/unlock 與 collect 都用這一個答案。 */
 function arrivalAt(p) {
   const trip = p ? APP.ride.trip.arrivedAt(p.id) : null;
-  const by = trip ? 'ride' : 'walk';
-  const km = trip && trip.km != null ? trip.km : fmt.km(p && p.dist);
+  const by = trip ? 'ride' : null;
+  const km = trip && trip.km != null ? trip.km : 0;
   const n = p && p.card ? visits(p.card).length : 0;
-  const rule = p ? cardRule({ by: by, km: km, first: n === 0, before: rideKm() }) : null;
+  const rule = trip ? cardRule({ by: by, km: km, first: n === 0, before: rideKm() }) : null;
   return { trip: trip, by: by, km: km, v: n + 1, rule: rule, style: rule ? rule.style : null };
 }
 
@@ -333,7 +333,7 @@ function openRules() {
   scrim.innerHTML =
     '<div class="modal app-modal ex-rules__box">' +
       '<h2 class="ex-rules__t">明信片怎麼決定</h2>' +
-      '<h3 class="ex-rules__h">走路抵達：畫風跟著季節</h3><ul class="ex-rules__list" data-rules="season">' + seasons + '</ul>' +
+      '<h3 class="ex-rules__h">已收藏的季節款</h3><ul class="ex-rules__list" data-rules="season">' + seasons + '</ul>' +
       '<h3 class="ex-rules__h">搭 yoxi 抵達</h3><ul class="ex-rules__list" data-rules="ride">' +
         row('gold', '不分季節', esc(styleOf('gold').name)) +
         row('mile', '累積到 ' + MILE_STEPS.map(function (m) { return num(m); }).join('、') + ' 公里', '多蓋一枚里程紀念戳') +
@@ -366,21 +366,22 @@ function closeRules() {
 /**
  * 收下這一次的明信片（契約 §7）。placeId 可以是地點 id 或明信片 id；回傳有沒有收到一張（第一次或回訪都是 true，
  * 今天已經收過這個地方是 false）。呼叫的人只給那一句話（note），其餘都在這裡判斷，跟 /unlock 畫面上看到的是同一個答案：
- *   - 搭車還是走路：行程 module 說這一趟搭 yoxi 抵達這裡（APP.ride.trip.arrivedAt）就是搭車，否則走路；
- *   - 哪一款、節日版、首訪紀念、里程紀念：照 cardRule（今天的日期、搭車還是走路、幾公里、第幾次、之前累積幾公里）；
- *   - 幾公里：搭車用這一趟的公里數，走路用地方的距離（距離不明是 0，跟以前一樣）。
+ *   - 抵達：必須有 APP.ride.trip.arrivedAt 認定的目標行程，未抵達不寫入資料；
+ *   - 哪一款、節日版、首訪紀念、里程紀念：照 cardRule（今天的日期、幾公里、第幾次、之前累積幾公里）；
+ *   - 幾公里：用這一趟的公里數。
  * 第一次：寫進 STATE（圖鑑、獎章都認它），款式與郵戳記在 store.cardStyle／cardMarks；第二次起記在 store.visits。
- * 搭車收下才用掉這一趟（行程 module 順便記下 rideVia 歸因）；走路收別的地方不碰行程——還沒領的限定版
- * （金框＋點數）不會跟著消失。同一個地方有搭車抵達的那一趟時一律算搭車（/unlock 也是這樣畫的）。
+ * 收下會用掉這一趟（行程 module 順便記下 rideVia 歸因）；其他地方未抵達不可收，也不會用掉待收行程。
  */
 function collect(placeId, opt) {
   opt = opt || {};
   const p = APP.place(placeId);
+  if (!p || !APP.ride.trip.arrivedAt(p.id)) return false;
   const pid = p ? p.id : placeId;
   const target = (p && p.card) || placeId;
   /* STATE 與 app store 的寫入包成一次 state:change，全部寫完才發 */
   return APP.state.batch(function () {
     const a = arrivalAt(p);
+    if (!a.trip) return false;
     const d = today();
     const note = opt.note || '';
     const seq = nextSeq();

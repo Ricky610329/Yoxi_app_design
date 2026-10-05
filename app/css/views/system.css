@@ -273,7 +273,7 @@
 .sys-share .row-nav__title { font-size: var(--fs-body); }
 
 /* --------------------------------------------------------------------------
-   demo 面板的模擬抵達（#demo-panel 本體在 app.css；這裡只補地點選單與兩顆抵達鈕）
+   demo 面板的模擬抵達（#demo-panel 本體在 app.css；這裡補地點選單與搭 yoxi 抵達鈕）
    -------------------------------------------------------------------------- */
 .demo-panel__group {
   display: grid;
@@ -293,7 +293,7 @@
   color: var(--yoxi-navy);
   font-size: var(--fs-sm);
 }
-.demo-panel__row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.demo-panel__row { display: grid; grid-template-columns: 1fr; gap: var(--sp-2); }
 .demo-panel__row .demo-panel__btn { padding: 0 var(--sp-1); font-size: var(--fs-cap); }
 .demo-panel__btn--gold { background: var(--gold); color: var(--yoxi-navy); }
 .demo-panel__btn--gold:active { background: var(--gold-lite); }

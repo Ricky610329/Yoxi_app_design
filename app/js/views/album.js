@@ -688,8 +688,8 @@ APP.view('postcard', {
     const dist = pl && pl.dist != null ? pl.dist : null;
     const how = ride
       ? (dist != null ? '搭 yoxi ' + APP.fmt.km(dist) + ' 公里' : '搭 yoxi 抵達')
-      : (dist != null ? '移動 ' + APP.fmt.km(dist) + ' 公里' : '走路抵達');
-    const byText = ride ? '搭 yoxi 抵達' : '走路抵達';
+      : (dist != null ? '移動 ' + APP.fmt.km(dist) + ' 公里' : '到訪紀錄');
+    const byText = ride ? '搭 yoxi 抵達' : '到訪紀錄';
     const date = origin.dateText;
     const nth = origin.first ? '第一次來' : '第 ' + origin.v + ' 次來';
     const area = pl && pl.area ? pl.area : '新竹';
@@ -731,7 +731,7 @@ APP.view('postcard', {
         visitsStripHTML(P, v) +
         repliesHTML(P.id, v) +
         '<div class="alb-pad"><div class="card">' +
-          '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="steps"></span></span>' +
+          '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="' + (ride ? 'tabRide' : 'place') + '"></span></span>' +
             '<span class="row-nav__body"><span class="row-nav__sub">怎麼到的</span>' +
             '<span class="row-nav__title" data-how>' + esc(how) + '</span></span></div>' +
           '<div class="row-nav alb-fact"><span class="tile-icon tile-icon--sm"><span data-icon="place"></span></span>' +

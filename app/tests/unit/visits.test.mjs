@@ -5,6 +5,10 @@ import { loadApp } from './helpers.mjs';
 
 const NOW = '2026-09-26T10:00:00+08:00';     /* 115 年中秋那一週（9/21–9/28）裡 */
 const load = (o = {}) => loadApp(Object.assign({ views: ['ride', 'explore-fx', 'explore-fest', 'explore-cards', 'album'], now: NOW }, o));
+const collect = (APP, id, opt) => {
+  if (!APP.ride.trip.arrivedAt(id)) APP.ride.trip.arriveAt(id);
+  return APP.explore.collect(id, opt);
+};
 const plain = (o) => JSON.parse(JSON.stringify(o));
 
 test('visits：第一次在 STATE、第二次起在 store.visits；同一個地方同一天一張', () => {
@@ -19,18 +23,18 @@ test('visits：第一次在 STATE、第二次起在 store.visits；同一個地�
   assert.equal(E.canCollect('p1'), true, 'demo 的卡是九月初收的：今天可以再收一張');
 
   const n0 = STATE.count();
-  assert.equal(E.collect('station', { note: '又來了' }), true, '回訪：收到一張');
+  assert.equal(collect(APP, 'station', { note: '又來了' }), true, '回訪：收到一張');
   assert.equal(STATE.count(), n0, '圖鑑（STATE）不多一張');
   const two = E.visits('p1');
   assert.deepEqual(plain(two.map((x) => x.v)), [1, 2], '第二次記在後面');
-  assert.deepEqual([two[1].first, two[1].ymd, two[1].by, two[1].note, two[1].fest], [false, '2026-09-26', 'walk', '又來了', 'moon']);
+  assert.deepEqual([two[1].first, two[1].ymd, two[1].by, two[1].note, two[1].fest], [false, '2026-09-26', 'ride', '又來了', 'moon']);
   assert.equal(E.canCollect('p1'), false, '今天收過了：一天一張');
-  assert.equal(E.collect('station'), false, '同一天再收：不收');
+  assert.equal(collect(APP, 'station'), false, '同一天再收：不收');
   assert.equal(E.visits('p1').length, 2);
   APP.store.set('demoDate', '2026-12-20');
   assert.equal(E.canCollect('p1'), true, '別天：又收得到');
-  assert.equal(E.collect('station'), true);
-  assert.equal(E.cardOrigin('p1', 3).style.key, 'ink', '第三次：十二月是冬天 → 水墨');
+  assert.equal(collect(APP, 'station'), true);
+  assert.equal(E.cardOrigin('p1', 3).style.key, 'gold', '第三次：搭 yoxi 抵達，不分季節是金框');
   assert.equal(E.cardOrigin('p1', 3).first, false, '回訪沒有首訪紀念');
   assert.ok(!/data-mark="first"/.test(E.cardOrigin('p1', 3).marks), '回訪卡面不蓋首訪戳');
   assert.ok(/data-mark="first"/.test(E.cardOrigin('p1').marks), '第一次那一張蓋首訪戳');
@@ -41,7 +45,7 @@ test('visits：第一次在 STATE、第二次起在 store.visits；同一個地�
 test('收下當天第一次收的地方：同一天不能再收；隔天就是第 2 次', () => {
   const { APP } = load();
   const E = APP.explore;
-  assert.equal(E.collect('moat'), true);
+  assert.equal(collect(APP, 'moat'), true);
   const card = APP.place('moat').card;
   assert.equal(APP.store.get('cardMarks')[card].ymd, '2026-09-26', '第一次也記下年月日（一天一張要看）');
   assert.equal(E.canCollect(card), false, '今天收的：今天不能再收');
@@ -55,13 +59,13 @@ test('recentVisits：每一次都算一張，最新的在前；demo 的 8 張照
   const E = APP.explore;
   const ids = Object.keys(STATE.all.cards);
   assert.deepEqual(plain(E.recentVisits().map((x) => x.card)), ids.slice().reverse(), '一開始：STATE 收下的順序，最後收的在前');
-  E.collect('glass-kiln');
-  E.collect('station');
+  collect(APP, 'glass-kiln');
+  collect(APP, 'station');
   assert.deepEqual(plain(E.recentVisits(3).map((x) => x.card + '#' + x.v)), ['p1#2', 'p11#1', ids[ids.length - 1] + '#1'], '回訪的那一張在最前面');
   assert.equal(E.recentVisits().length, ids.length + 2);
 });
 
-test('rideKm：搭 yoxi 去收明信片的公里累積（回訪也算、走路不算）；totalKm：STATE 的總里程加上回訪', () => {
+test('rideKm：搭 yoxi 去收明信片的公里累積（回訪也算）；totalKm：STATE 的總里程加上回訪', () => {
   const { APP, STATE } = load();
   const E = APP.explore, T = APP.ride.trip, F = APP.fmt;
   const km = (id) => F.km(APP.place(id).dist);
@@ -70,19 +74,54 @@ test('rideKm：搭 yoxi 去收明信片的公里累積（回訪也算、走路�
   assert.equal(E.totalKm(), STATE.all.km, '還沒回訪：跟 STATE 一樣');
   T.arriveAt('neiwan');
   assert.equal(E._.arrivalAt(APP.place('neiwan')).rule.mile, 30, '搭去內灣會跨過 30');
-  E.collect('neiwan');
+  collect(APP, 'neiwan');
   assert.equal(E.rideKm(), Math.round((demo + km('neiwan')) * 10) / 10, '內灣這一趟算進去');
   assert.equal(E.cardOrigin('p9').mile, 30, '卡上記的是跨過的那一個里程');
   const before = E.rideKm();
-  E.collect('station');                                   /* 走路回訪 */
-  assert.equal(E.rideKm(), before, '走路不算里程');
+  collect(APP, 'station');                                   /* 搭車回訪 */
+  assert.equal(E.rideKm(), Math.round((before + km('station')) * 10) / 10, '搭車回訪也算里程');
   assert.equal(E.totalKm(), STATE.all.km + Math.round(km('station')), '留下的距離：回訪也加進去');
   APP.store.set('demoDate', '2026-10-03');
   T.arriveAt('neiwan');
-  E.collect('neiwan');                                    /* 搭車回訪內灣：再 28 km，跨過 60 */
+  collect(APP, 'neiwan');                                    /* 搭車回訪內灣：再 28 km，跨過 60 */
   assert.equal(E.cardOrigin('p9', 2).mile, 60, '回訪的那一趟也算、跨過 60');
   assert.equal(E.cardOrigin('p9', 2).limited, false, '回訪不是限定版（+50 只給第一次）');
   assert.equal(E.cardOrigin('p9', 2).gold, true, '搭 yoxi 抵達還是金框');
+});
+
+test('collect：沒有這個地方已抵達的行程，不可新收或回訪；舊到訪資料保持原樣', () => {
+  const { APP, STATE } = load();
+  const E = APP.explore, T = APP.ride.trip;
+  const before = plain({ state: STATE.all, store: APP.store.all });
+  assert.equal(E.collect('glass-kiln'), false, '未抵達不可收新卡');
+  assert.equal(E.collect('station'), false, '未抵達不可回訪');
+  assert.equal(E._.arrivalAt(APP.place('glass-kiln')).rule, null, '未抵達不宣稱取得任何款式');
+  assert.deepEqual(plain({ state: STATE.all, store: APP.store.all }), before, '沒有寫入任何收藏或行程');
+  assert.equal(E.cardOrigin('p1').by, 'walk', '歷史到訪方式仍保留');
+  assert.equal(E.cardOrigin('p1').style.key, 'woodcut', '歷史季節款仍保留');
+  T.start('glass-kiln', 'e');
+  assert.equal(E.collect('glass-kiln'), false, '車程進行中尚未抵達');
+  T.arriveAt('neiwan');
+  assert.equal(E.collect('glass-kiln'), false, '抵達別的地方不能收這張');
+  assert.ok(T.arrivedAt('neiwan'), '別處待收行程保留');
+  assert.equal(E.collect('neiwan'), true, '抵達目標才可以收');
+});
+
+test('demoArrive：舊 walk 呼叫拒絕且不建立新到訪；省略方式只建立搭車抵達', () => {
+  const { APP, STATE, ctx } = load({ views: ['system', 'ride', 'explore-fx', 'explore-fest', 'explore-cards'] });
+  ctx.document = { getElementById: () => null };
+  APP.ui.toast = () => {};
+  let route = '';
+  APP.nav.go = (path) => { route = path; };
+  const before = plain({ state: STATE.all, store: APP.store.all });
+  assert.equal(APP.system.demoArrive('glass-kiln', 'walk'), false);
+  assert.equal(route, '', '不進抵達頁');
+  assert.deepEqual(plain({ state: STATE.all, store: APP.store.all }), before, '不改寫舊交通方式或建立新資料');
+  assert.equal(APP.explore.collect('glass-kiln'), false);
+  assert.equal(APP.system.demoArrive('glass-kiln'), true);
+  assert.ok(APP.ride.trip.arrivedAt('glass-kiln'));
+  assert.equal(APP.explore.collect('glass-kiln'), true);
+  assert.equal(APP.explore.cardOrigin('p11').by, 'ride');
 });
 
 test('搭車回訪：行程紀錄與點數每一次都算（回訪不給城事解鎖回饋）；回訪的歸因記在那一次、不蓋掉第一次', () => {
@@ -90,7 +129,7 @@ test('搭車回訪：行程紀錄與點數每一次都算（回訪不給城事�
   const E = APP.explore, T = APP.ride.trip, R = APP.ride, F = APP.fmt;
   T.start('neiwan', 'route');
   T.arrive();
-  E.collect('neiwan');
+  collect(APP, 'neiwan');
   const card = APP.place('neiwan').card;
   assert.equal(APP.store.get('rideVia')[card], 'route', '第一次的歸因');
   const rows0 = R.pastTrips().filter((x) => x.card === card);
@@ -99,7 +138,7 @@ test('搭車回訪：行程紀錄與點數每一次都算（回訪不給城事�
   APP.store.set('demoDate', '2026-10-03');
   T.start('neiwan', 'k1');
   T.arrive();
-  E.collect('neiwan');
+  collect(APP, 'neiwan');
   assert.equal(APP.store.get('rideVia')[card], 'route', '回訪不蓋掉第一次的歸因');
   assert.equal(E.cardOrigin(card, 2).via, 'k1', '回訪的歸因記在那一次');
   const rows = R.pastTrips().filter((x) => x.card === card);
@@ -116,7 +155,7 @@ test('來回回訪：到家而且收了，行程紀錄記在那一次（rideRoun
   T.start('market', 'e', { round: true });
   T.arrive();                                   /* 抵達：司機候車 */
   assert.ok(T.waiting(), '候車中');
-  E.collect('market');                          /* 東門市場 demo 收過（p2）：這是第 2 次 */
+  collect(APP, 'market');                          /* 東門市場 demo 收過（p2）：這是第 2 次 */
   assert.equal(E.visits(card).length, 2);
   assert.ok(T.waiting(), '收下之後司機還在等');
   T.back();

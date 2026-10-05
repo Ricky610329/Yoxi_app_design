@@ -6,7 +6,7 @@ import { loadApp } from './helpers.mjs';
 const { APP } = loadApp();
 const f = APP.fmt;
 
-test('WALK_MAX_M 是 3000', () => assert.equal(f.WALK_MAX_M, 3000));
+test('搭車解鎖回饋門檻是 3000 m', () => assert.equal(f.RIDE_BONUS_MIN_M, 3000));
 
 test('fare = round(75 + 22 km)', () => {
   assert.equal(f.fare(28), 691);
@@ -20,10 +20,10 @@ test('rideMin = round(3 + 2.2 km)', () => {
   assert.equal(f.rideMin(10), 25);
 });
 
-test('walkMin = round(m / 75)', () => {
-  assert.equal(f.walkMin(900), 12);
-  assert.equal(f.walkMin(3000), 40);
-  assert.equal(f.walkMin(0), 0);
+test('共用舊文案在 app 轉為 yoxi 車程，未知距離不捏造分鐘', () => {
+  assert.equal(f.fixText('走路 12 分鐘', 900), '搭 yoxi 5 分鐘');
+  assert.equal(f.fixText('步行 40 分鐘', null), '搭 yoxi 前往');
+  assert.equal(f.fixText('28 公里，步行不可達 —— 這一段需要搭車', 28000), '28 公里，可搭 yoxi 前往');
 });
 
 test('dist：< 1000 用 m，其餘一位小數 km', () => {
@@ -41,13 +41,6 @@ test('dist 先四捨五入再挑單位：999.6 m 是 1.0 km，不是 1000 m', ()
   assert.equal(f.dist(0.4), '0 m');
   assert.equal(f.dist(null), '0 m', 'null 照舊當 0（呼叫端自己擋「距離待確認」）');
   assert.equal(f.dist('1400'), '1.4 km', '字串數字照樣算');
-});
-
-test('canWalk：≤ 3000 m 才走得到', () => {
-  assert.equal(f.canWalk(3000), true);
-  assert.equal(f.canWalk(3001), false);
-  assert.equal(f.canWalk(900), true);
-  assert.equal(f.canWalk(28000), false);
 });
 
 test('greet 分界：5–11 早安、11–18 午安、其餘晚安', () => {

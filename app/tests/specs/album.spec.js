@@ -314,7 +314,7 @@ T.spec('album', function (t) {
       t.eq(app.doc.documentElement.getAttribute('data-layout'), 'desktop', '桌機外框');
       t.ok(!app.$('[data-act="go-rewards"], .alb-v2__rw, [data-look-title]'), '沒有相框與稱號的入口、頁首沒有稱號');
       fits('預設');
-      app.APP.explore.collect('station');           /* 回訪：主卡多一句 */
+      T.helpers.collect(app, 'station');            /* yoxi 回訪：主卡多一句 */
       await app.go('/album');
       fits('回訪');
       const A0 = app.STATE.all;
@@ -842,7 +842,7 @@ T.spec('album', function (t) {
     const moon = E.FESTIVALS.filter(function (f) { return f.key === 'moon'; })[0];
     const y = Object.keys(moon.days)[0];
     await app.reset({ still: false, store: { demoDate: y + '-' + moon.days[y] } });
-    T.helpers.collect(app, 'glass-kiln');                  /* 中秋那一週走路收的 p11 */
+    T.helpers.seedHistoricalCard(app, 'glass-kiln');       /* 中秋那一週的舊季節收藏 fixture */
     app.APP.store.set('demoDate', null);
     await app.go('/elder?card=p11');
     await app.tick(80);
@@ -860,7 +860,7 @@ T.spec('album', function (t) {
     t.ok(!app.$('main.view[data-view] .ai-note'), '圖上面沒有 AI 說明那一行');
     t.ok(!/收下的那張明信片做的/.test(app.text('main.view[data-view]')), '圖底下沒有「用你收下的那張明信片做的」');
     t.includes(app.text('[data-credit]'), E.cardPhoto('p11').author, '底圖的作者與授權留在圖底下那一行');
-    t.ok(!img.classList.contains('is-gold'), '走路收的不是金框');
+    t.ok(!img.classList.contains('is-gold'), '歷史季節收藏保留原款式');
     t.ok(app.$('[data-act="pick-card"][data-card="p11"]') && /中秋版/.test(app.text('[data-act="pick-card"][data-card="p11"]')), '選地方的小卡寫「中秋版」');
     await app.click('[data-act="caption"][data-cap-i="1"]');
     /* 換成搭車收的 p8（demo 一開始就有、金框、限定版） */
@@ -924,10 +924,10 @@ T.spec('album', function (t) {
   });
 
   /* 6. 限定版只看 ride.js */
-  t.test('搭 yoxi 去走得到的玻璃窯（900 m）：金框，但角標寫「yoxi 金框」不是「yoxi 限定版」', async function (app) {
+  t.test('搭 yoxi 去玻璃窯（900 m）：金框，未超過回饋門檻就寫「yoxi 金框」', async function (app) {
     await app.reset({ cards: [{ id: 'glass-kiln', by: 'ride', km: 1 }] });
     const A = app.APP;
-    t.eq(A.ride.limitedCard('p11'), false, 'ride.js：p11 不是限定版（走得到、沒有 +50）');
+    t.eq(A.ride.limitedCard('p11'), false, 'ride.js：p11 不是限定版（未超過回饋距離門檻、沒有 +50）');
     await app.go('/postcard/p11');
     const card = app.$('[data-flip]');
     t.ok(card && card.classList.contains('postcard--gold'), '搭車收的是金框');
@@ -935,7 +935,7 @@ T.spec('album', function (t) {
     t.eq(app.$('[data-ribbon]') && app.$('[data-ribbon]').getAttribute('data-ribbon'), 'gold', '角標是金框那一種');
     t.eq(app.text('[data-ribbon]'), 'yoxi 金框', '角標寫 yoxi 金框');
     t.ok(app.text('main.view[data-view]').indexOf('限定版') < 0, '整頁不寫限定版');
-    /* 走路收的：照 cardStyleOf 決定有沒有框，沒有限定版 */
+    /* 歷史步行收藏：照 cardStyleOf 保留款式，沒有限定版 */
     await app.go('/postcard/p2');
     const gold2 = !!(A.explore.cardStyleOf('p2') || {}).gold;
     t.eq(!!app.$('[data-flip].postcard--gold'), gold2, 'p2 的框跟收下的款式一致');
@@ -983,7 +983,7 @@ T.spec('album', function (t) {
   t.test('十八尖山的防空洞（p21）：收藏各處是收下那一款的成品；載不到才退回照片＋畫風濾鏡；詳情寫照片出處', async function (app) {
     await app.reset();
     const A = app.APP;
-    T.helpers.collect(app, 'hill', { style: 'oil' });
+    T.helpers.seedHistoricalCard(app, 'hill', { style: 'oil' });
     const ph = A.explore.cardPhoto('p21');
     const want = A.explore.postcardSrc('p21', 'oil');
     t.eq(want, 'assets/postcards/p21-oil.jpg', '前提：p21 有油畫的成品');

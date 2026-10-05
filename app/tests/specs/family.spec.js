@@ -268,7 +268,7 @@ T.spec('family', function (t) {
   t.test('/family、/line 的明信片是傳出去的那一次（第 2 次、首訪戳只在第一次）；寄件人旁邊不寫稱號', async function (app) {
     await app.reset();
     const A = app.APP;
-    A.explore.collect('station');                  /* p1 第 2 次 */
+    T.helpers.collect(app, 'station');            /* 搭 yoxi 抵達，p1 第 2 次 */
     const s2 = A.family.send({ card: 'p1', v: 2 });
     await app.go('/family/p1?share=' + s2.id);
     t.eq(app.text('[data-family-from]'), '媽媽傳來一張明信片', '寄件人：只有名字');

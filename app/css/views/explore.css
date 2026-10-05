@@ -1,6 +1,6 @@
 /* ==========================================================================
    yoxi 城事 web app — explore 區塊樣式
-   畫面：/explore、/explore/map、/place/:id、/going/:id、/unlock/:id、/routes、/route/:id
+   畫面：/explore、/explore/map、/place/:id、/unlock/:id、/routes、/route/:id
    沿用 chengshi.css 的 .placecard／.why／.peek／.postcard／.track-mini／.route-track／.unlock／.burst／.gen；
    這裡只補 app 版需要的版面與少數新零件（全部 ex- 前綴）。
    規則：不寫 hex；顏色、圓角、字級、動畫時間全用 tokens.css 的變數。圓的東西用 var(--r-pill)（正方形上就是正圓）。
@@ -239,36 +239,6 @@
   font-size: var(--fs-xs);
   font-weight: var(--fw-heavy);
 }
-
-/* ---------- /going/:id ---------- */
-.ex-going__map { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--map-land); }
-.ex-going__top {
-  position: absolute;
-  z-index: 25;
-  top: calc(var(--statusbar-h) + var(--sp-2));
-  left: var(--gutter);
-  right: var(--gutter);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  border-radius: var(--r-card);
-  background: var(--yoxi-white);
-  box-shadow: var(--sh-lift);
-}
-.ex-going__ic { width: 44px; height: 44px; flex: none; }
-.ex-going__d { display: block; font-size: var(--fs-title); font-weight: var(--fw-heavy); line-height: 1.2; }
-.ex-going__s { display: block; margin-top: 2px; font-size: var(--fs-cap); color: var(--app-muted); }
-.ex-going__sheet { --sheet-min: 230px; padding-bottom: calc(var(--safe-bottom) + var(--sp-3)); }
-.ex-going__card { background: var(--yoxi-cream); border: 0; }
-.ex-going__card--mist { margin-top: var(--sp-2); background: var(--yoxi-mist); }
-.ex-going__p { font-size: var(--fs-sm); line-height: 1.6; }
-.ex-going__acts { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); }
-.ex-demo { width: 100%; }
-/* 「先不去了」是文字連結的樣子，但按得到的範圍至少 44 px 高 */
-.ex-going__acts .btn-link { min-height: 44px; }
-/* 收合態也看得到兩顆鈕：只把「抵達怎麼驗」那張卡收起來 */
-.ex-going__sheet.is-collapsed .ex-going__card--mist { display: none; }
 
 /* ---------- /unlock/:id ---------- */
 /* 抵達 → 收集 → 翻卡。圖層（下到上）：夜色地圖 → 宣紙（水墨）→ 後景粒子 → 兩幕 → 前景粒子 → 閃光 → 音效鈕。

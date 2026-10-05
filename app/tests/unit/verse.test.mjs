@@ -65,9 +65,10 @@ test('verseOf：節日那一週用節日那一句、其他看款式；表上沒�
   delete V.p4['gold+moon'];
   assert.equal(E.verseOf('p4', R('ride', '2026-09-25')).text, V.p4.moon[0], '少了節日搭車那一句：先退回同一張卡的節日那一句');
   /* 收下之後（cardOrigin）挑到的跟當下（cardRule）一樣 */
-  E.collect('station');
+  APP.ride.trip.arriveAt('station');
+  assert.equal(E.collect('station'), true);
   const o = E.cardOrigin('p1', E.visits('p1').length);
-  assert.equal(E.verseOf('p1', o).text, E.verseOf('p1', E.cardRule({ by: 'walk' })).text, 'cardOrigin 與 cardRule 挑到同一句');
+  assert.equal(E.verseOf('p1', o).text, E.verseOf('p1', E.cardRule({ by: 'ride' })).text, '新的 yoxi 到訪：cardOrigin 與 cardRule 挑到同一句');
 });
 
 test('verseLines：整張表逢逗號句號斷行，一行一個短句、句尾標點另外拿出來，接回去是原句', () => {

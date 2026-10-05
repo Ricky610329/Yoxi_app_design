@@ -759,18 +759,34 @@
       if (opt.hold) return up;
       up();
     },
-    /* 收下一張明信片，走跟 /unlock 一樣的路（APP.explore.collect 自己照規則判斷搭車或走路、哪一款、幾公里）：
-       by:'ride' 先讓行程 module 記一趟搭 yoxi 抵達這裡（APP.ride.trip.arriveAt，會取代原本的行程）；
-       走路要指定畫風就給 opt.style（四季的一款）：暫時把 store.demoDate 撥到那個季節（T.helpers.seasonDate），收完撥回來。
-       回傳是否新收 */
+    /* 新收卡一律先模擬 yoxi 抵達，再走正式 collect。歷史款式資料使用 seedHistoricalCard。 */
     collect: function (appObj, placeId, opt) {
       opt = opt || {};
       const A = appObj.APP;
-      if (opt.by === 'ride') A.ride.trip.arriveAt(placeId);
-      const d0 = A.store.get('demoDate');
-      if (opt.style && opt.by !== 'ride') A.store.set('demoDate', helpers.seasonDate(appObj, opt.style));
-      try { return A.explore.collect(placeId, { note: opt.note }); }
-      finally { if (A.store.get('demoDate') !== d0) A.store.set('demoDate', d0); }
+      if (opt.by === 'walk' || (opt.style && opt.style !== 'gold')) throw new Error('歷史款式 fixture 請用 seedHistoricalCard');
+      A.ride.trip.arriveAt(placeId);
+      return A.explore.collect(placeId, { note: opt.note });
+    },
+    /* 舊收藏相容性 fixture：直接種 STATE 與收下時的 metadata，不呼叫抵達或 collect API。 */
+    seedHistoricalCard: function (appObj, placeId, opt) {
+      opt = opt || {};
+      const A = appObj.APP, E = A.explore, p = A.place(placeId);
+      if (!p || !p.card || appObj.STATE.has(p.card)) return false;
+      const ymd = opt.date || (opt.style ? helpers.seasonDate(appObj, opt.style) : A.store.get('demoDate')) || A.fmt.todayMMDD().replace('.', '-');
+      const full = /^\d{4}-/.test(ymd) ? ymd : new Date().getFullYear() + '-' + ymd;
+      const parts = full.split('-').map(Number), d = new Date(parts[0], parts[1] - 1, parts[2], 12);
+      const km = opt.km == null ? A.fmt.km(p.dist) : opt.km;
+      const rule = E.cardRule({ by: 'walk', km: km, first: true, date: d, before: E.rideKm() });
+      const seq = E.recentVisits().reduce(function (n, x) { return Math.max(n, x.seq); }, 0) + 1;
+      return A.state.batch(function () {
+        const got = A.state.collect(p.card, { by: 'walk', note: opt.note || '', km: km, date: A.fmt.todayMMDD(d) });
+        if (!got) return false;
+        A.store.set('cardStyle', Object.assign({}, A.store.get('cardStyle'), { [p.card]: opt.style || rule.style.key }));
+        A.store.set('cardMarks', Object.assign({}, A.store.get('cardMarks'), {
+          [p.card]: { fest: rule.festival ? rule.festival.key : '', mile: 0, km: km, ymd: full, seq: seq, at: d.toISOString() },
+        }));
+        return true;
+      });
     },
     /* 四季畫風的 key → 那個季節中間那個月 15 號（'YYYY-MM-DD'，給 store.demoDate）。app.reset({ store: { demoDate } }) 用它指定 /unlock 的款式 */
     seasonDate: function (appObj, key) {

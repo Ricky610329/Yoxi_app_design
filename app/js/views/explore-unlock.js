@@ -7,7 +7,7 @@
              同一個地方同一天一張：今天已經收過就直接看今天那一張。
    原型：unlock.html（三幕解鎖的前身）。
    搭 yoxi 抵達是金框。是不是搭車問行程 module（APP.ride.trip.arrivedAt：這個地方、phase done）；網址的 ?ride=1 只是入口的記號，
-   手打拿不到金框，少了它也不會把還沒領的限定版當成走路收掉。
+   手打網址不建立抵達或取得明信片；舊的到訪收藏仍可觀看。
      幕一（data-at=1）：夜色地圖上這個地方亮起光柱；點它拉出「收集明信片」面板（只寫地名，為什麼是這一款收在「?」）。
      翻卡（data-at=2）：卡背升起 → 蓄力 → 點一下翻開 → 依款式給特效（金框最重）。
      結果（data-at=3）：卡面（節日那一週多一層會動的插畫、首訪與里程各蓋一枚戳）＋畫風名＋跟這個地方、這個時節有關的一句話
@@ -169,19 +169,30 @@ function renderUnlock(params) {
   if (!p) {
     return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有這個地方的明信片。先回探索看看。' });
   }
-  /* 搭車還是走路、幾公里、照規則是哪一款：跟收下時（APP.explore.collect）同一個答案 */
+  /* 只有行程認定抵達才顯示新卡；沒有行程時可閱讀原有收藏。 */
   const arr = arrivalAt(p);
   const isRide = !!arr.trip;
-  /* got＝今天已經收過這個地方（一天一張）：直接看今天收下的那一張（cardOrigin 的最後一次）；
-     沒收過、或以前收過今天還沒：照今天的規則收這一次（arr.v 是第幾次） */
-  const got = collected(p) && !canCollect(p.card);
+  if (!isRide && (APP.ride.trip.active() || !collected(p))) {
+    const active = !!APP.ride.trip.active();
+    return backFabBar(exploreHome(p.id)) +
+      '<div class="app-empty ex-empty"><div class="app-empty__card">' +
+        '<p class="app-empty__eyebrow">' + esc(cardName(p)) + '</p>' +
+        '<h1 class="app-empty__t">' + (active ? '行程進行中' : '搭 yoxi 前往') + '</h1>' +
+        '<p class="app-empty__p">' + (active ? '請先查看目前行程。' : '搭 yoxi 抵達後，就能收下這裡的明信片。') + '</p>' +
+        '<button class="btn-primary" type="button" data-act="' + (active ? 'go-trip' : 'use-yoxi') + '">' + (active ? '回到行程' : '搭 yoxi 前往') + '</button>' +
+      '</div></div>';
+  }
+  /* got＝今天已經收過，或沒有新抵達的歷史收藏：看最後一次的 cardOrigin。
+     今天可收而且行程已抵達才照今天的規則收新卡（arr.v 是第幾次）。 */
+  const got = collected(p) && (!isRide || !canCollect(p.card));
   const origin = got && p.card ? cardOrigin(p.card, visitsOf(p.card).length) : null;
   const style = origin ? origin.style : arr.style;
   const marks = origin ? origin.marks : marksHTML(arr.rule);
   const v = origin ? origin.v : arr.v;
-  /* 金框看款式（搭 yoxi 抵達就是金框）；限定版與 +50 點只給第一次搭 yoxi 去走不到的地方（ride.js 的 limitedPlace） */
-  const gold = !got && !!style && !!style.gold;
+  /* 金框看款式；限定版與 +50 點只給達到搭車加碼門檻的首訪（ride.js 的 limitedPlace）。 */
+  const gold = !!style && (!!style.gold || !!(origin && origin.gold));
   const bonus = isRide && limitedPlace(p) && arr.v === 1;
+  const limited = origin ? !!origin.limited : bonus;
   const name = cardName(p);
   const day = today();
   const tier = tierOf(style);
@@ -193,8 +204,7 @@ function renderUnlock(params) {
   const scene1 = got ? '' :
     '<div class="unlock__scene ex-arrive is-on" data-scene="1">' +
       '<div class="ex-arrive__head">' +
-        '<span class="ex-arrive__chip"><span data-icon="' + (isRide ? 'hail' : 'steps') + '" class="ex-ic16"></span>' +
-          (isRide ? '搭 yoxi 抵達' : '走路抵達') + '</span>' +
+        '<span class="ex-arrive__chip"><span data-icon="hail" class="ex-ic16"></span>搭 yoxi 抵達</span>' +
           (v > 1 ? '<span class="ex-arrive__chip ex-arrive__chip--again" data-visit-n>第 ' + num(v) + ' 次來</span>' : '') +
         '<h1 class="unlock__title">你到了<br>' + esc(name) + '</h1>' +
       '</div>' +
@@ -251,7 +261,7 @@ function renderUnlock(params) {
     : '';
 
   const act3Acts = got
-    ? '<p class="ex-unlock__have" data-today-got>今天已經收下這一張，明天再來會再收一張</p>' +
+    ? '<p class="ex-unlock__have" data-today-got>' + (!canCollect(p.card) ? '今天已經收下這一張，同一個地方一天一張' : '已收藏的到訪紀錄，搭 yoxi 再來時可收下新的一張') + '</p>' +
       '<div class="ex-unlock__acts">' +
         (p.card ? '<a class="btn-primary ex-unlock__btn" href="#/postcard/' + esc(p.card) + (v > 1 ? '?v=' + v : '') + '" data-act="open-postcard">看這張明信片</a>' : '') +
         '<a class="btn-link ex-center ex-unlock__link" href="#' + esc(exploreHome(p.id)) + '" data-act="go-explore">回探索</a>' +
@@ -289,7 +299,7 @@ function renderUnlock(params) {
                 '</div>') +
               '<div class="postcard ex-flip__front' + (gold ? ' postcard--gold' : '') + '" data-final-card' +
                   (style ? ' data-style="' + esc(style.key) + '"' : '') + '>' +
-                (gold ? '<span class="postcard__ribbon" data-ribbon-new>' + (v > 1 ? 'yoxi 金框' : 'yoxi 限定版') + '</span>' : '') +
+                (gold ? '<span class="postcard__ribbon" data-ribbon-new>' + (limited ? 'yoxi 限定版' : 'yoxi 金框') + '</span>' : '') +
                 faceHTML(p, style) +
                 (gold ? foilHTML() : '') +
                 '<span class="ai-mark">AI 生成示意</span>' +
@@ -365,9 +375,13 @@ function leafColors(F) {
 function mountUnlock(root, params) {
   const p = APP.place(params.id);
   if (!p) { APP.ui.setStatus('dark'); return; }
+  const taxi = root.querySelector('[data-act="use-yoxi"]');
+  if (taxi) { taxi.onclick = function () { APP.ride.setDropoff(p.id, 'e'); }; return; }
+  const tripBtn = root.querySelector('[data-act="go-trip"]');
+  if (tripBtn) { tripBtn.onclick = function () { APP.nav.go('/trip'); }; return; }
   const F = APP.fx;
   const isRide = !!APP.ride.trip.arrivedAt(p.id);
-  const got = collected(p) && !canCollect(p.card);      /* 跟 render 同一個判斷：今天已經收過 */
+  const got = collected(p) && (!isRide || !canCollect(p.card));
   const box = root.querySelector('[data-unlock]');
   const style = styleOf(box.getAttribute('data-style'));
   const tier = Number(box.getAttribute('data-tier')) || 1;
@@ -764,7 +778,7 @@ function mountUnlock(root, params) {
       },
       /* 燙金（全部裡面最精緻的一款，搭 yoxi 才有）：轉一圈半、兩側甩出光絲 → 停格 120ms、重震 →
          夜色鍍成金、背後一圈一圈描出紋章、金箔翻著飄下來 → 兩道金線沿著卡片的邊描下去（燙金），
-         在底部合起來的那一下再爆一次金光、蓋上「yoxi 限定版」、一個大和弦。
+         在底部合起來的那一下再爆一次金光、蓋上款式緞帶、一個大和弦。
          鍍金、紋章、金線都交給 .is-gilt 的 CSS：跳過、減少動態效果都停在同一個樣子 */
       gold: function (at) {
         const spin = A(flip, [{ transform: PRE + ' rotateY(0deg)' },
@@ -772,7 +786,7 @@ function mountUnlock(root, params) {
                               { transform: 'translateY(0) scale(1.14) rotateY(540deg)' }], { duration: 980, easing: F.ease.out });
         const gc = [gold, goldLite, white];
         const lc = leafColors(F);
-        /* 限定版的緞帶：轉過來的時候先藏著，等兩道金線合起來才蓋上去（停格時一起停，時間還是對得上） */
+        /* 金框的緞帶：轉過來的時候先藏著，等兩道金線合起來才蓋上去（停格時一起停，時間還是對得上） */
         A(q('[data-ribbon-new]'), [{ transform: 'scale(2.4) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.9) rotate(0deg)', opacity: 1, offset: .7 },
                                    { transform: 'none', opacity: 1 }], { duration: 480, delay: 560 + FOIL_DELAY + FOIL_MS, easing: F.ease.back, fill: 'both' });
         /* 轉的時候卡片左右兩邊甩出光絲（像轉起來的金幣） */
@@ -938,9 +952,13 @@ function mountUnlock(root, params) {
       collecting = true;
       btn.disabled = true;
       const note = noteInput ? String(noteInput.value || '').trim().slice(0, NOTE_MAX) : '';
-      /* 搭車還是走路、哪一款、幾公里由 collect 在收的當下照規則判斷（畫面開著的時候行程可能被取消或換掉了）；
+      /* 抵達行程、哪一款、幾公里由 collect 在收的當下照規則判斷（畫面開著的時候行程可能被取消或換掉了）；
          搭車收下會請行程 module 用掉這一趟，並記下這趟車是從哪個入口叫的（rideVia） */
-      collect(p.id, { note: note });
+      if (!collect(p.id, { note: note })) {
+        APP.ui.toast('請搭 yoxi 抵達後再收下');
+        APP.nav.go(APP.ride.trip.active() ? '/trip' : exploreHome(p.id), { replace: true });
+        return;
+      }
       APP.ui.toast('收進收藏了');
       /* 來回的行程：司機還在附近等（APP.ride.trip.waiting），收好就回行程頁叫回程；不然回收藏 */
       const wait = APP.ride.trip.waiting ? APP.ride.trip.waiting() : null;

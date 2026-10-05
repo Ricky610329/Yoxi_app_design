@@ -31,7 +31,7 @@ node --test "app/tests/unit/*.test.mjs"   # 直接跑單元測試（node 24 不�
 | `specs/app.spec.js` | core：§8 每條 route、tab bar、返回與 `nav.prev／nav.up`、持久化、store／STATE 分離、首屏 3 秒、CSS 無 hex、無 placeholder、地圖 |
 | `specs/{system,ride,explore,album}.spec.js` | 各區塊自己寫；最後一段是「回歸測試（從 flows.spec 搬來）」：只牽涉這個區塊的審查／QA／評估，名稱保留原編號 |
 | `specs/flows.spec.js` | 跨區塊：三條 demo 流程端到端、縫合、全站兩種狀態掃描、非 still 模式、跨區塊的審查／QA／評估、無障礙 |
-| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、款式規則（cardRule、ruleLines）、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors、`APP.state`、`cardFace`）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id；來回的 waiting／back／returning、候車時收下、不搭回程、`canCollect`、`roundFare` 與回程的搭車回饋；叫車首頁已經沒有來回的入口，行程 module 仍支援）、`collect` 怎麼判斷搭車或走路、`cardOrigin`、拉面板的 `snapTarget`；`store.test.mjs` 含 `store.clear('footprint')`；`place.test.mjs` 含 22 張明信片的 `APP.place`／`footprintPlace` 對照表 |
+| `unit/*.test.mjs` | node：router 比對、`fmt` 公式、store、place（`helpers.mjs` 用 `vm` 載 app.js，`document` 為 undefined）；`views.test.mjs` 載真的 views 測各區塊匯出的純邏輯（點數、限定版、款式規則（cardRule、ruleLines）、cardStyleOf、去過的地方、recentCards、weekStats 四種日期、cityColors、`APP.state`、`cardFace`）；`trip.test.mjs` 測行程 module `APP.ride.trip`（phase 推導、start／arrive／cancel／rate／consume、距離不明的 km、壞掉的 id；來回的 waiting／back／returning、候車時收下、不搭回程、`canCollect`、`roundFare` 與回程的搭車回饋；叫車首頁已經沒有來回的入口，行程 module 仍支援）、`collect` 只接受同一目的地的 yoxi 抵達、拒收時 STATE／store 不變、歷史季節收藏相容性、`cardOrigin`、拉面板的 `snapTarget`；`store.test.mjs` 含 `store.clear('footprint')`；`place.test.mjs` 含 22 張明信片的 `APP.place`／`footprintPlace` 對照表 |
 | `fixtures/mini-app.html`、`fixtures/selftest.html` | 驗 harness 本身 |
 
 ## 寫新 spec
@@ -64,7 +64,7 @@ T.spec('ride', function (t) {
 - 流程頁（`/trip`、`/unlock/:id`…）若沒有前提狀態會被導走：先用 `app.reset({ store: { trip: T.fixtures.trip({ phase: 'done' }) } })` 布置好，
   或 `app.go(path, { redirectOk: true })` 接受任何落點（回傳落地 path）。
 - 行程、下車點的初值一律用 `T.fixtures.trip(overrides)`／`T.fixtures.dropoff(overrides)`，不要自己寫物件字面量（形狀只在 harness 一處）；
-  要多收幾張卡就 `app.reset({ cards: [{ id, date, by, km }] })`，不要 `STATE.collect` 再手動 `emit`。
+  要注入已儲存的收藏 fixture 就用 `app.reset({ cards: [{ id, date, by, km }] })`；新到訪用 `T.helpers.collect` 建立 yoxi 抵達再收卡，完整叫車流程則用 UI 操作。
 - 掃 route 用 `T.routes({ area, extra, skip, root })`（共用路由表 `T.ROUTES`，app.spec 會跟 `APP.routes()` 對帳），可按數上限用 `T.tapMax(path)`。
 - 純計算（不碰 DOM 的公式、排序、款式規則）寫在 `unit/*.test.mjs`：`loadApp({ views: [...], now })` 載真的 views，時間可注入。
 - 按鈕一律 `element.onclick` 綁、加 `data-act`，測試用 `[data-act="…"]` 點。返回鍵要是 `<a href="#" data-back="/x">`。
@@ -86,7 +86,7 @@ T.spec('ride', function (t) {
 | `click(sel \| el, ms \| {ms, hit})` | 等元素出現（預設 2 s）後 `el.click()`，再等 30 ms；`hit:true` 先用 `elementFromPoint` 做命中測試，點不到（被蓋住、display:none）就丟例外 |
 | `waitFor(fn, ms, label)` | 每 20 ms 輪詢到 truthy，逾時丟 `等待逾時 …：label` |
 | `tick(ms)` | 等一下（預設 50 ms，virtual time） |
-| `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁；`opt.still:false` 不帶 `?still=1`（動畫與 setTimeout 照真的跑，之後的 reload 也沿用，直到下一次 reset）；`opt.cards:[{id, date, by, note, km}]` 在 demo 的 8 張之外照順序多收幾張（`date` 預設今天、`by` 預設 walk；收不下來就丟例外），收完再重載一次 |
+| `reset(opt)` | iframe 先到 about:blank → 清 `yoxi-chengshi-v1-2` 與 `yoxi-chengshi-app-v1` → 寫 `{onboarded:true, ...opt.store}` → 載 `../index.html?still=1` → 等 `data-app-ready`（6 s）。`opt.onboarded:false` 測 welcome；`opt.hash` 直接開某頁；`opt.still:false` 不帶 `?still=1`（動畫與 setTimeout 照真的跑，之後的 reload 也沿用，直到下一次 reset）；`opt.cards:[{id, date, by, note, km}]` 在 demo 的 8 張之外直接注入已儲存的歷史收藏 fixture（`date` 預設今天、`by` 預設 walk；注入失敗就丟例外），再重載一次；不代表新抵達，新收卡用 yoxi 行程與正式 collect |
 | `reload(hash, opt)` | 不清狀態重載（測持久化）；`opt.still` 可切換 still 模式 |
 | `storage('state' \| 'store')` | 直接讀 localStorage 的 JSON |
 | `errors` | iframe 的 `window.onerror`／`unhandledrejection`／資源載入失敗＋app 自己的 `#app-errors`；每次 `go`／`reset` 清空 |
@@ -118,8 +118,9 @@ T.spec('ride', function (t) {
 | `T.helpers.histI(app)` | router 蓋在 `history.state` 上的序號 |
 | `T.helpers.drag(app, grip, dy, { id, init, hold })` | 在拉把上拖 `dy`（正＝往下）：down 在拉把、move／up 在 window；`hold` 回傳放手函式 |
 | `T.helpers.revealThrough(app)` | 非 still 的 `/unlock`：點發光的地方 → 收集 → 一路點到 `data-at="3"` |
-| `T.helpers.seasonDate(app, key)` | 四季畫風的 key → 那個季節中間那個月 15 號（`'YYYY-MM-DD'`）；`app.reset({ store: { demoDate } })` 用它指定 `/unlock` 的款式 |
-| `T.helpers.collect(app, placeId, { by, style, note })` | 收下一張，走跟 `/unlock` 一樣的路：`by:'ride'` 先 `APP.ride.trip.arriveAt`（會取代原本的行程）；走路要指定畫風就給 `style`（四季的一款，暫時撥 `store.demoDate`，收完撥回來）。回傳是否新收。要「收過了、但不動行程」就用 `app.reset({ cards })` |
+| `T.helpers.seasonDate(app, key)` | 四季畫風的 key → 那個季節中間那個月 15 號（`'YYYY-MM-DD'`）；用於歷史季節款 fixture，新 yoxi 到訪不分季節都留下金框 |
+| `T.helpers.collect(app, placeId, { note })` | 先 `APP.ride.trip.arriveAt` 建立這個目的地的 yoxi 抵達（會取代原本行程），再走正式 `APP.explore.collect`。回傳是否新收；`by:'walk'` 或非金框 `style` 會丟例外。完整叫車到收藏流程應從 UI 操作 |
+| `T.helpers.seedHistoricalCard(app, placeId, { style, date, note, km })` | 直接注入舊步行收藏的 STATE、cardStyle、cardMarks，保留季節／節慶視覺相容性；不呼叫抵達或新收卡 API、不動行程。`date` 是 `YYYY-MM-DD`，省略時用指定季節、demoDate 或今天 |
 
 ### node：`unit/helpers.mjs`
 

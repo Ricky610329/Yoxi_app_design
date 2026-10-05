@@ -24,17 +24,14 @@
      刻意沒有：超過 10 顆的景點、隨縮放長出來的東西、「X 分鐘後消失」。
    /place/:id      地方詳情（K1：內容頁設為下車點）
      原型：variant-k1-place.html、place.html（?id=neiwan 的主次對調）
-     門檻統一 3 km（APP.fmt.WALK_MAX_M）：走得到主「走路前往」、次「設為下車點」；走不到對調。
+     所有目的地統一「搭 yoxi 前往」，回既有叫車確認流程。
      刻意沒有：進度環（X4 不用環，寫「收集 n/m」）、折扣／限時等行銷字。
-   /going/:id      前往中（走路）
-     原型：going.html —— 這一頁刻意什麼都不做。
-     刻意沒有：倒數、步數、沿途收集物、任何進度。只說「到了會響」與抵達怎麼驗。
-     已經搭 yoxi 抵達這裡、明信片還沒收：不帶路，直接給「收下這張明信片」（→ /unlock/:id?ride=1）。
+   /going/:id      舊連結相容轉址：行程中回 /trip，已抵達回收卡頁，其他目的地帶回叫車首頁。
    /routes         這個月的路線
      原型：routes.html
    /route/:id      路線詳情（站點軌道；斷點處可設為下車點，K4 精神）
      原型：route.html、variant-k4-route.html
-     刻意沒有：進度環、「還差幾站」、期限。斷點不是關卡，只是腳到不了的地方。
+     刻意沒有：進度環、「還差幾站」、期限。路線提供下一個未收藏目的地的叫車入口。
 
    新 UI 的探索在叫車首頁（/ride?mode=explore）：找不到、返回的保底、「回探索」都回那裡（exploreHome），
    不回舊的 /explore（它只留給舊連結）。
@@ -59,7 +56,6 @@ const ridePoints = K.ridePoints;
 /* 抵達驗證的兩個數字：契約 §5 的文案規定（走進這個地方 100 公尺內、停 1 分鐘），全頁只寫在這裡。
    100 公尺是「到了以後在附近走走」的範圍（使用者給的流程：抵達後於 100 m 範圍內步行探索），不是要站在一個點上 */
 const ARRIVE_RADIUS_M = 100;
-const ARRIVE_STAY_MIN = 1;
 
 /* 探索首頁的可按數上限（L1 一屏一事；§6.3 第 4 條） */
 const EXPLORE_TAP_MAX = 12;
@@ -108,10 +104,14 @@ function trackMini(done, total) {
   return s;
 }
 
-/* 地方頁「到了會得到」的一句：現在去會是哪一款（規則在 explore-cards.js 的 cardRule；季節跟著今天） */
+/* 地方頁「到了會得到」的一句：新的搭車收藏一律金框，歷史季節款另保留。 */
+function routeText(text) {
+  return String(text || '').replace(/腳到不了的一段/g, '下一個目的地')
+    .replace(/唯一(?:一站)?走路到不了的地方/g, '適合搭 yoxi 前往的目的地');
+}
+
 function rulePreview() {
-  const walk = APP.explore.cardRule({ by: 'walk' });
-  return '畫風跟著季節：現在走路去是' + walk.style.name + '，搭 yoxi 去是金框';
+  return '搭 yoxi 抵達，收下這個地方的金框明信片';
 }
 
 /* 地方所屬的獎章（獎章清單放明信片 id，要先換過去） */
@@ -142,8 +142,8 @@ function rideOf(p) {
 
 /* 設為下車點：一律交給 ride 提供的 APP.ride.setDropoff（契約 §7；ride.js 在前面載入）。
    不另寫一份：行程中不准改目的地、連點只寫一次，這些規則都在 ride 那邊。 */
-function setDropoff(id, via) {
-  return !!(APP.ride && APP.ride.setDropoff && APP.ride.setDropoff(id, via));
+function setDropoff(id, via, opt) {
+  return !!(APP.ride && APP.ride.setDropoff && APP.ride.setDropoff(id, via, opt));
 }
 
 /* ---------------------------------------------------------------- APP.explore */
@@ -203,23 +203,19 @@ function renderExplore() {
   const T = M().TODAY;
   const tp = APP.place(T.id);
   const got = collected(tp);
-  const walk = fmt.canWalk(tp.dist);
 
   /* ---- 今天的地方 ---- */
   const meta = '<span>離你 ' + distHTML(tp.dist) + '</span><span class="ex-dot">·</span>' +
-    (walk ? '<span>走路 ' + num(fmt.walkMin(tp.dist)) + ' 分鐘</span>'
-          : '<span>搭車 ' + num(rideOf(tp).min) + ' 分鐘</span>') +
+    (tp.dist == null ? '<span>車程待確認</span>' : '<span>搭 yoxi ' + num(rideOf(tp).min) + ' 分鐘</span>') +
     '<span class="ex-dot">·</span><span>' + esc(tp.type) + '</span>';
 
   let cta;
   if (got) {
     cta = (tp.card ? '<a class="btn-primary" href="#/postcard/' + esc(tp.card) + '" data-act="open-postcard">已在收藏 · 看明信片</a>' : '') +
           '<a class="btn-ghost" href="#/place/' + esc(tp.id) + '" data-act="open-place">再看看這個地方</a>';
-  } else if (walk) {
-    cta = '<a class="btn-primary" href="#/going/' + esc(tp.id) + '" data-act="go-walk">走路前往</a>' +
-          '<a class="btn-ghost" href="#/place/' + esc(tp.id) + '" data-act="open-place">先看看這是什麼地方</a>';
   } else {
-    cta = '<button class="btn-primary" type="button" data-act="set-dropoff">用 yoxi 前往 · 約 $' + num(rideOf(tp).fare) + '</button>' +
+    cta = '<button class="btn-primary" type="button" data-act="set-dropoff">搭 yoxi 前往' +
+          (tp.dist == null ? '' : ' · 約 $' + num(rideOf(tp).fare)) + '</button>' +
           '<a class="btn-ghost" href="#/place/' + esc(tp.id) + '" data-act="open-place">先看看這是什麼地方</a>';
   }
 
@@ -292,7 +288,7 @@ function renderExplore() {
             '<span class="ex-rcard__art" data-art="' + esc(r.art) + '" data-seed="' + (i + 3) + '" data-wide></span>' +
             '<span class="ex-rcard__body">' +
               '<span class="ex-rcard__t">' + esc(r.name.split('：')[0]) + '</span>' +
-              '<span class="ex-rcard__s">' + esc(r.sub) + '</span>' +
+              '<span class="ex-rcard__s">' + esc(routeText(r.sub)) + '</span>' +
               '<span class="track-mini ex-track">' + trackMini(done, r.total) +
                 '<span class="ex-track__n">' + num(done) + '/' + esc(r.total) + '</span></span>' +
             '</span></a>';
@@ -393,12 +389,9 @@ function mountMap(root) {
     peek.querySelector('[data-peek-meta]').innerHTML = esc(p.type) + ' · ' + distHTML(p.dist);
     peek.querySelector('[data-peek-hook]').textContent = p.hook || s.hook || '';
     const acts = peek.querySelector('[data-peek-acts]');
-    const walk = fmt.canWalk(p.dist);
     acts.innerHTML =
       '<a class="btn-ghost" href="#/place/' + esc(p.id) + '" data-act="open-place">看看這個地方</a>' +
-      (walk
-        ? '<a class="btn-primary" href="#/going/' + esc(p.id) + '" data-act="go-walk">走路前往</a>'
-        : '<button class="btn-primary" type="button" data-act="set-dropoff">設為下車點</button>');
+      '<button class="btn-primary" type="button" data-act="set-dropoff">搭 yoxi 前往</button>';
     const dd = acts.querySelector('[data-act="set-dropoff"]');
     if (dd) dd.onclick = function () { setDropoff(p.id, 'e'); };
     peek.setAttribute('data-peek-id', p.id);
@@ -463,13 +456,10 @@ function renderPlace(params) {
   const again = got && !!p.card && APP.explore.canCollect(p.card);
   const nVisit = got && p.card ? APP.explore.visits(p.card).length : 0;
   const hasDist = p.dist != null;
-  const walk = hasDist && fmt.canWalk(p.dist);
   const r = hasDist ? rideOf(p) : null;
 
   const meta = !hasDist ? '<span>距離待確認</span>'
-    : walk
-      ? '<span>離你 ' + distHTML(p.dist) + '</span><span>·</span><span>走路 ' + num(fmt.walkMin(p.dist)) + ' 分鐘</span>'
-      : '<span>離你 ' + distHTML(p.dist) + '</span><span>·</span><span>搭車 ' + num(r.min) + ' 分鐘</span>' +
+    : '<span>離你 ' + distHTML(p.dist) + '</span><span>·</span><span>搭 yoxi ' + num(r.min) + ' 分鐘</span>' +
         '<span>·</span><span>車資約 $' + num(r.fare) + '</span>';
 
   const b = badgeOf(p);
@@ -496,28 +486,18 @@ function renderPlace(params) {
       ? '<a class="btn-primary" href="#/postcard/' + esc(p.card) + '" data-act="open-postcard">已在收藏 · 看明信片</a>' +
         '<p class="ex-foot__note" data-today-got>今天已經收過這一張，明天再來會再收一張</p>'
       : '';
-  } else if (!hasDist || walk) {
-    foot =
-      '<div class="ex-foot__row">' +
-        '<a class="btn-primary" href="#/going/' + esc(p.id) + '" data-act="go-walk">' + (got ? '再走過去一次' : '走路前往') + '</a>' +
-        '<button class="btn-ghost" type="button" data-act="set-dropoff">設為下車點</button>' +
-      '</div>' +
-      '<p class="ex-foot__note">' + (hasDist
-        ? distHTML(p.dist) + '，走過去大概 ' + num(fmt.walkMin(p.dist)) + ' 分鐘'
-        : '距離待確認；設為下車點只是填好目的地，還沒叫車') + '</p>' +
-      (got ? seeCard : '');
   } else {
     const R = routeOf(p);
     foot =
       '<button class="btn-primary ex-ride" type="button" data-act="set-dropoff">' +
-        '<span class="ex-ride__t">用 yoxi 前往 · 約 $' + num(r.fare) + ' · ' + num(r.min) + ' 分</span>' +
-        /* 限定版（+點數）只給第一次去走不到的地方：判斷在 ride.js 的 limitedPlace，不在這裡用距離另算一次 */
+        '<span class="ex-ride__t">搭 yoxi 前往' + (r ? ' · 約 $' + num(r.fare) + ' · ' + num(r.min) + ' 分' : '') + '</span>' +
+        /* 搭車回饋：判斷在 ride.js 的 limitedPlace，不在這裡另算一次 */
         (APP.ride.limitedPlace(p) && !got ? '<span class="ex-ride__tag">限定版 · +' + ridePoints() + ' 點</span>' : '') +
       '</button>' +
       (got ? seeCard
         : R ? '<a class="btn-ghost" href="#/route/' + esc(R.id) + '" data-act="open-route">先看看路線</a>'
         : '<a class="btn-ghost" href="#/routes" data-act="open-route">看這個月的路線</a>') +
-      '<p class="ex-foot__note">' + num(r.km) + ' 公里，這一段搭車比較合理。按下去只是填好下車點，還沒叫車。</p>';
+      '<p class="ex-foot__note">' + (r ? num(r.km) + ' 公里。' : '距離待確認。') + '選定目的地後，確認車資與車輛再叫車。</p>';
   }
 
   return '<div class="scroll ex-place">' +
@@ -560,12 +540,12 @@ function renderPlace(params) {
     (foot ? '<div class="ex-foot" data-place-foot>' + foot + '</div>' : '');
 }
 
-/* 已收藏那一行：日期 · 走路／搭車 */
+/* 已收藏那一行：保留來源，以到訪紀錄描述歷史非搭車收藏。 */
 function gotLine(p) {
   const c = p.card ? APP.explore.cardOrigin(p.card) : null;
   const bits = ['已收藏'];
   if (c && c.date) bits.push(esc(c.date));
-  if (c) bits.push(c.by === 'ride' ? '搭車抵達' : '走路抵達');
+  if (c) bits.push(c.by === 'ride' ? '搭車抵達' : '到訪紀錄');
   if (c && c.visits > 1) bits.push('收過 ' + num(c.visits) + ' 張');
   return '<span class="ex-gotline" data-got-line>' + bits.join(' · ') + '</span>';
 }
@@ -585,103 +565,27 @@ function mountPlace(root, params) {
 
 /* ---------------------------------------------------------------- /going/:id */
 
-/* 車已經叫了（配對中／行程中）：同時「走路前往」別的地方沒有意義。
-   已抵達（phase done）的那一趟不算「進行中」：人已經下車了，可以走去別的地方；
-   但如果它就是這個地方、這一次的明信片還沒收（rodeHere；收過的地方回訪也算），就不必再走一趟，直接去收那一張。 */
-function rodeHere(p) { return !!APP.ride.trip.arrivedAt(p.id) && !!p.card && APP.explore.canCollect(p.card); }
-
+/* 舊前往網址只接回既有叫車或抵達流程，不建立行程、不提供模擬抵達。
+   轉址取代這一筆歷史，返回時不會再次進入相同舊網址。 */
 function renderGoing(params) {
-  const p = APP.place(params.id);
-  if (!p) {
-    return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方', text: '沒有目的地就沒辦法帶路。先回探索挑一個。' });
+  if (!APP.place(params.id)) {
+    return backFabBar(exploreHome()) + notFound({ title: '找不到這個地方',
+      text: '這個地方不在目前的清單裡，先回探索看看附近的地方。' });
   }
-  if (rodeHere(p)) {
-    return backFabBar(exploreHome(p.id)) +
-      '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-rode>' +
-        '<p class="app-empty__eyebrow">搭 yoxi 抵達</p>' +
-        '<h1 class="app-empty__t">你已經搭 yoxi 到了' + esc(p.name) + '</h1>' +
-        '<p class="app-empty__p">這一趟的明信片還沒收下，不用再走一趟。</p>' +
-        '<a class="btn-primary" href="#/unlock/' + encodeURIComponent(p.id) + '?ride=1" data-act="unlock-ride">收下這張明信片</a>' +
-      '</div></div>';
-  }
-  const trip = APP.ride.trip.active();
-  if (trip) {
-    const dest = APP.place(trip.placeId);
-    return backFabBar(exploreHome(p.id)) +
-      '<div class="app-empty ex-empty"><div class="app-empty__card" data-going-trip>' +
-        '<p class="app-empty__eyebrow">行程進行中</p>' +
-        /* 來回：到了之後司機在附近等（waiting）、回程中（returning）說的不一樣 */
-        (trip.phase === 'waiting'
-          ? '<h1 class="app-empty__t">司機在' + esc(dest ? dest.name : '目的地') + '附近等你</h1>' +
-            '<p class="app-empty__p">先回到行程搭回程、或取消回程，再走路去' + esc(p.name) + '。</p>'
-          : trip.phase === 'returning'
-            ? '<h1 class="app-empty__t">你正在搭車回家</h1>' +
-              '<p class="app-empty__p">到家之後，再走路去' + esc(p.name) + '。</p>'
-            : '<h1 class="app-empty__t">你正在搭車前往 ' + esc(dest ? dest.name : '目的地') + '</h1>' +
-              '<p class="app-empty__p">先抵達或取消這一趟，再走路去' + esc(p.name) + '。</p>') +
-        '<a class="btn-primary" href="#/trip" data-act="go-trip">回到行程</a>' +
-      '</div></div>';
-  }
-  const hasDist = p.dist != null;
-  return '<div class="ex-going__map" data-going-map>' +
-      '<div class="ex-going__top">' +
-        '<span class="tile-icon ex-going__ic"><span data-icon="steps" class="ex-ic22"></span></span>' +
-        '<span class="u-fill">' +
-          '<span class="ex-going__d" data-going-dist>' + (hasDist ? '離目的地 ' + distHTML(p.dist) : '距離待確認') + '</span>' +
-          '<span class="ex-going__s">往' + esc(p.name) + (hasDist ? ' · 走路約 ' + num(fmt.walkMin(p.dist)) + ' 分鐘' : '') + '</span>' +
-        '</span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="sheet sheet--drag is-collapsed ex-going__sheet" data-drag>' +
-      '<div class="sheet__handle"></div>' +
-      '<div class="card card--pad u-row u-gap3 ex-going__card">' +
-        '<span data-icon="bell" class="ex-ic22 ex-noshrink"></span>' +
-        '<span class="ex-going__p"><b>到了會自動響，你不用一直看手機。</b>這段路本來就不是拿來滑的。</span>' +
-      '</div>' +
-      '<div class="card card--pad u-row u-gap3 ex-going__card ex-going__card--mist">' +
-        '<span data-icon="place" class="ex-ic22 ex-noshrink"></span>' +
-        '<span class="ex-going__p ex-muted" data-arrive-rule>到了以後在附近 ' + num(ARRIVE_RADIUS_M) + ' 公尺內走走，定位確認你在這一圈裡停留 ' +
-          num(ARRIVE_STAY_MIN) + ' 分鐘，就收得到這一次的明信片。明信片是走到現場才拿得到的東西，所以這一關不能只靠按鈕。</span>' +
-      '</div>' +
-      '<div class="ex-going__acts">' +
-        '<button class="demo-btn ex-demo" type="button" data-act="arrive">模擬抵達</button>' +
-        '<button class="btn-link ex-center" type="button" data-act="cancel-going">先不去了</button>' +
-      '</div>' +
-    '</div>';
+  return '';
 }
 
 function mountGoing(root, params) {
   const p = APP.place(params.id);
-  if (!p || rodeHere(p) || APP.ride.trip.active()) { APP.ui.setStatus('dark'); return; }
-  const host = root.querySelector('[data-going-map]');
-  let m = null;
-  const geo = window.HSINCHU_PLACES && HSINCHU_PLACES[p.id];
-  /* 地圖只有你與目的地兩個點。你放在離目的地 dist 公尺的西南方（示意），框住兩點的中間 */
-  const d = p.dist || 900;
-  const me = geo ? [geo.x - 0.6 * d, geo.y + 0.8 * d] : null;
-  try {
-    m = APP.map.mount(host, {
-      style: 'paper',
-      center: me ? HSMAP.toLL((geo.x + me[0]) / 2, (geo.y + me[1]) / 2) : 'station',
-      spanM: me ? Math.max(900, Math.min(8000, d * 1.8)) : 1800,
-      spots: geo ? [{ id: p.id, name: p.name, art: p.art, state: 'today', type: p.type, dist: p.dist, hook: p.hook }] : false,
-      max: 1,
-      overlay: '<div class="pin ex-me" data-ex-me><span class="pin__drop ex-me__drop"><span data-icon="hail" class="ex-ic20"></span></span></div>',
-    });
-    placeMe(m, root.querySelector('[data-ex-me]'), me);
-    SHELL.injectIcons(host);
-  } catch (e) {
-    console.error('going map', e);
+  if (!p) return;
+  const opt = { replace: true, dir: 'none' };
+  if (APP.ride.trip.active()) {
+    APP.nav.go('/trip', opt);
+  } else if (APP.ride.trip.arrivedAt(p.id) && p.card && APP.explore.canCollect(p.card)) {
+    APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1', opt);
+  } else {
+    setDropoff(p.id, 'e', opt);
   }
-  const sheet = root.querySelector('.sheet[data-drag]');
-  if (sheet && window.INTERACT) INTERACT.initSheet(sheet);
-  root.querySelector('[data-act="arrive"]').onclick = function () {
-    APP.nav.go('/unlock/' + encodeURIComponent(p.id));
-  };
-  root.querySelector('[data-act="cancel-going"]').onclick = function () {
-    APP.nav.back(exploreHome(p.id));
-  };
-  return function () { if (m) m.destroy(); };
 }
 
 
@@ -702,7 +606,7 @@ function renderRoutes() {
             '<span class="ex-rbig__art" data-art="' + esc(r.art) + '" data-seed="' + (i + 3) + '" data-wide></span>' +
             '<span class="ex-rbig__body">' +
               '<span class="ex-rbig__t">' + esc(r.name) + '</span>' +
-              '<span class="ex-rcard__s">' + esc(r.sub) + '</span>' +
+              '<span class="ex-rcard__s">' + esc(routeText(r.sub)) + '</span>' +
               '<span class="track-mini ex-track">' + trackMini(done, r.total) +
                 '<span class="ex-track__n">' + num(done) + '/' + esc(r.total) + '</span></span>' +
             '</span></a>';
@@ -724,13 +628,12 @@ function routeModel(R) {
     const pid = p ? p.id : null;
     const dist = p && p.dist != null ? p.dist : st.dist;
     return { st: st, pid: pid, place: p, dist: dist,
-             done: S().has(st.card), next: st === nx, walk: fmt.canWalk(dist) };
+             done: S().has(st.card), next: st === nx };
   });
-  /* 斷點：腳到不了、還沒收的那一站。下一站本身走不到就是它（同一張畫面不出現兩個「下一步」），
-     否則第一個還沒收、走不到的站。 */
+  /* 下一個未收藏且距離已知的目的地：優先路線指定的下一站，其餘照站點順序。 */
   const nxM = stops.filter(function (s) { return s.next; })[0];
-  const brk = (nxM && !nxM.walk && nxM.pid) ? nxM
-    : stops.filter(function (s) { return !s.done && !s.walk && s.pid; })[0] || null;
+  const canRide = function (s) { return s && !s.done && s.pid && s.dist != null; };
+  const brk = canRide(nxM) ? nxM : stops.filter(canRide)[0] || null;
   return { stops: stops, next: nxM || null, brk: brk,
            done: stops.filter(function (s) { return s.done; }).length };
 }
@@ -752,16 +655,16 @@ function renderRoute(params) {
       '<span class="route-track__thumb ex-stop__thumb' + (s.done ? '' : ' is-gray') + '" data-art="' + esc(st.art) + '" data-seed="' + (i + 2) + '"></span>' +
       '<span class="ex-stop__txt">' +
         '<span class="ex-strong">' + esc(st.name) + '</span>' +
-        '<span class="ex-muted">' + (s.done ? '已收集' : distHTML(s.dist)) + (st.note ? ' · ' + esc(st.note) : '') + '</span>' +
+        '<span class="ex-muted">' + (s.done ? '已收集' : distHTML(s.dist)) + (st.note ? ' · ' + esc(routeText(st.note)) : '') + '</span>' +
       '</span><span class="arrow"></span>';
     const link = s.pid
       ? '<a class="route-track__body" href="#/place/' + esc(s.pid) + '" data-act="open-place" data-stop="' + esc(st.id) + '">' + body + '</a>'
       : '<a class="route-track__body" href="#" data-toast="這一站的內容還在整理" data-stop="' + esc(st.id) + '">' + body + '</a>';
     const brk = isBrk
       ? '<div class="ex-brk" data-breakpoint="' + esc(s.pid) + '">' +
-          '<span class="ex-brk__k">腳到不了的一段</span>' +
-          '<span class="ex-brk__t">' + num(fmt.km(s.dist)) + ' 公里，這一站搭車比較合理。</span>' +
-          '<button class="btn-ghost ex-brk__btn" type="button" data-act="set-dropoff">設為下車點 · 約 $' +
+          '<span class="ex-brk__k">下一個目的地</span>' +
+          '<span class="ex-brk__t">' + num(fmt.km(s.dist)) + ' 公里，搭 yoxi 前往。</span>' +
+          '<button class="btn-ghost ex-brk__btn" type="button" data-act="set-dropoff">搭 yoxi 前往 · 約 $' +
             num(fmt.fare(fmt.km(s.dist))) + ' · ' + num(fmt.rideMin(fmt.km(s.dist))) + ' 分</button>' +
         '</div>'
       : '';
@@ -780,7 +683,7 @@ function renderRoute(params) {
         '<div class="ex-cover__body">' +
           '<div class="ex-cover__k">這個月的路線</div>' +
           '<h1 class="ex-cover__t">' + esc(R.name) + '</h1>' +
-          '<div class="ex-cover__s">' + esc(R.sub) + '</div>' +
+          '<div class="ex-cover__s">' + esc(routeText(R.sub)) + '</div>' +
         '</div>' +
       '</div>' +
       '<section class="ex-pad ex-prog">' +

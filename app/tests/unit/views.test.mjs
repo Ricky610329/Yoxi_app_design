@@ -30,7 +30,7 @@ test('點數：總數＝明細相加；城事列＝RIDE_BONUS＝MOCK.FAR_PLACE.r
   assert.equal(R.pointsTotal(), R.pointsRows().reduce((a, r) => a + r.amt, 0), '收卡後總數仍＝明細相加');
 });
 
-test('限定版只給走不到的地方；距離不明不算', () => {
+test('限定版只給超過回饋距離門檻的地方；距離不明不算', () => {
   const { APP, STATE } = loadApp({ views: ['ride', 'explore-fx', 'explore-cards'] });
   const R = APP.ride;
   assert.equal(R.limitedPlace(APP.place('neiwan')), true, '內灣 28 km');
@@ -38,9 +38,9 @@ test('限定版只給走不到的地方；距離不明不算', () => {
   assert.equal(R.limitedPlace(APP.place('p6')), false, '距離不明（十八尖山）');
   assert.equal(R.limitedPlace(null), false);
   STATE.collect('glass-kiln', { by: 'ride', date: '09.26', km: 1 });
-  assert.equal(R.limitedCard('p11'), false, '搭車去走得到的地方：金框但不是限定版');
+  assert.equal(R.limitedCard('p11'), false, '搭車去未超過門檻的地方：金框但不是限定版');
   STATE.collect('neiwan', { by: 'walk', date: '09.26', km: 28 });
-  assert.equal(R.limitedCard('p9'), false, '走路收的內灣不是限定版');
+  assert.equal(R.limitedCard('p9'), false, '歷史步行收藏的內灣不是限定版');
   const { APP: A2, STATE: S2 } = loadApp({ views: ['ride'] });
   S2.collect('neiwan', { by: 'ride', date: '09.26', km: 28 });
   assert.equal(A2.ride.limitedCard('p9'), true, '搭車收的內灣是限定版');
@@ -204,7 +204,8 @@ for (const c of SLOTS) {
     before.now.days.forEach((d) => {
       assert.equal(d.km, round1(d.steps / spk), d.day + ' 日的 km 由步數換算後取一位小數');
     });
-    APP.explore.collect('glass-kiln');
+    APP.ride.trip.arriveAt('glass-kiln');
+    assert.equal(APP.explore.collect('glass-kiln'), true);
     const after = W();
     assert.equal(after.now.places, before.now.places + (c.slot === 'now' ? 1 : 0), '本週地方數');
     assert.equal(after.prev.places, before.prev.places + (c.slot === 'prev' ? 1 : 0), '上週地方數');
@@ -309,8 +310,9 @@ test('APP.state：寫 STATE 一定跟著 state:change；batch 裡的寫入寫完
   let order = null;
   const off2 = APP.on('state:change', () => { order = APP.store.get('cardStyle')[APP.place('glass-kiln').card]; });
   APP.store.set('demoDate', '2027-07-20');
-  APP.explore.collect('glass-kiln');
-  assert.equal(order, 'oil', 'collect：listener 看到的是寫完 app store 的樣子');
+  APP.ride.trip.arriveAt('glass-kiln');
+  assert.equal(APP.explore.collect('glass-kiln'), true);
+  assert.equal(order, 'gold', 'collect：listener 看到的是寫完 app store 的 yoxi 金框');
   off2();
   const km0 = STATE.all.km;
   assert.ok(STATE.count() > 0 && km0 > 0);

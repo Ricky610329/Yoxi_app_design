@@ -70,12 +70,6 @@ function lastWorkPath() {
 /* 模擬抵達：回傳 null 表示現在沒有可以抵達的東西 */
 function arriveTarget(cur) {
   cur = cur || lastWorkPath();
-  const riding = !!APP.ride.trip.active();
-  /* 行程進行中的 /going 顯示的是「你正在搭車」卡，模擬抵達要抵達的是那一趟 */
-  if (cur && cur.pattern === '/going/:id' && cur.params && cur.params.id && !riding) {
-    const id = cur.params.id;
-    return function () { APP.nav.go('/unlock/' + encodeURIComponent(id)); };
-  }
   const onTrip = cur && cur.pattern === '/trip';
   if (onTrip || APP.ride.trip.current()) {
     return function () {
@@ -291,10 +285,10 @@ APP.ui.share = share;
    -------------------------------------------------------------------------- */
 const SLIDES = [
   { art: 'market', seed: 2, t: '不搭車的日子也會打開',
-    p: '一天一個離你家不遠的地方，走路就到。不出遠門的日子，遊喜樂也有東西給你看。' },
+    p: '一天一個離你家不遠的地方。不出遠門的日子，遊喜樂也有東西給你看。' },
   { art: 'glass', seed: 1, t: '發現一個地方，叫車去那裡只有一步',
-    p: '看到想去的地方，按「設為下車點」，叫車首頁就幫你填好。走得到的，就走路去。' },
-  { art: 'moat', seed: 3, t: '一天走過的路，變成明信片',
+    p: '看到想去的地方，按「搭 yoxi 前往」，叫車首頁就幫你填好。' },
+  { art: 'moat', seed: 3, t: '搭 yoxi 去的地方，變成明信片',
     p: '抵達時收下一張明信片；晚上回頭看今天。日誌只有你看得到。' },
 ];
 
@@ -387,7 +381,6 @@ APP.view('welcome', {
 const DATA = [
   ['place',  '常用地點', '用來判斷哪些地方你常經過卻沒進去過；關掉就只推薦車站附近', 'place'],
   ['sun',    '常用時段', '用來決定什麼時候推薦比較不打擾；關掉就固定在早上', 'time'],
-  ['steps',  '步數',     '用來畫今天的回顧的路徑，資料留在手機上；關掉回顧就沒有路線', 'steps'],
   ['camera', '相簿',     '只在今天的回顧才讀取當天照片，不會上傳；關掉回顧就只有明信片', 'photos'],
   ['route',  '行程紀錄', '用來知道你搭車去過哪裡；關掉搭車抵達就不會自動收進足跡', 'trips'],
   ['place',  '探索模式的景點', '探索時在地圖顯示附近有卡片的地方；關掉後保留目前選定的地區', 'rideSpots'],
@@ -589,27 +582,19 @@ function contextPlace(cur) {
 }
 
 /* demo 面板的模擬抵達（任何一頁都能用，地點從下拉選單挑）：
-   走路     → 進 /unlock/:id；行程進行中不行（人在車上）。
    搭 yoxi → 這一趟直接在這裡結束（APP.ride.trip.arriveAt：phase done；原本是別的目的地就被這一趟取代，
              契約 §3.3 只有一筆 trip），進 /unlock/:id?ride=1。抵達頁會再驗一次行程，所以手打網址拿不到金框。 */
 function demoArrive(id, by) {
+  if (by != null && by !== 'ride') { APP.ui.toast('請搭 yoxi 前往'); return false; }
   const p = APP.place(id);
   if (!p) { APP.ui.toast('先選一個地方'); return false; }
-  if (by !== 'ride') {
-    /* 來回的司機正在這裡等：人就在這個地方附近走走，收的是這一趟（搭車）的那一張 */
-    const w = APP.ride.trip.waiting ? APP.ride.trip.waiting() : null;
-    if (w && w.placeId === p.id) { APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1'); return true; }
-    if (APP.ride.trip.active()) { APP.ui.toast('行程進行中，先抵達或取消行程'); return false; }
-    APP.nav.go('/unlock/' + encodeURIComponent(p.id));
-    return true;
-  }
   APP.ride.trip.arriveAt(p.id);
   APP.store.set('dropoff', null);
   APP.nav.go('/unlock/' + encodeURIComponent(p.id) + '?ride=1');
   return true;
 }
 
-/* demo 面板的模擬日期：假裝今天是別天（store.demoDate），現場才看得到四季的畫風與三節的郵戳。
+/* demo 面板的模擬日期：假裝今天是別天（store.demoDate），用來預覽節慶插畫與到訪日期。
    選項從 explore-cards.js 的規則表長出來（季節取中間那個月的 15 號、三節取節日當天、賞櫻取第一天），不另外手寫日期；
    三節今年不在表上就用表上最早的那一年。只影響明信片，收藏的回顧照舊用真的今天。 */
 function demoDates() {
@@ -618,7 +603,7 @@ function demoDates() {
   const p2 = function (n) { return (n < 10 ? '0' : '') + n; };
   const out = [{ v: '', t: '今天' }];
   (E.CARD_STYLES || []).forEach(function (d) {
-    if (d.months) out.push({ v: y + '-' + p2(d.months[1]) + '-15', t: d.season + '（' + d.name + '）' });
+    if (d.months) out.push({ v: y + '-' + p2(d.months[1]) + '-15', t: d.season });
   });
   (E.FESTIVALS || []).forEach(function (f) {
     /* 三節取節日當天；賞櫻（每年一樣的期間）取第一天 */
@@ -641,7 +626,6 @@ function fillPanel() {
       '<label class="demo-panel__label" id="demo-arrive-t" for="demo-arrive-place">模擬抵達</label>' +
       '<select class="demo-panel__select" id="demo-arrive-place" data-demo-place></select>' +
       '<div class="demo-panel__row">' +
-        '<button class="demo-panel__btn" type="button" data-act="arrive-walk">走路抵達</button>' +
         '<button class="demo-panel__btn demo-panel__btn--gold" type="button" data-act="arrive-ride">搭 yoxi 抵達</button>' +
       '</div>' +
     '</div>' +
@@ -659,7 +643,6 @@ function fillPanel() {
   panel.querySelector('[data-act="push-am"]').onclick = function () { APP.ui.push({ when: 'am' }); };
   panel.querySelector('[data-act="push-pm"]').onclick = function () { APP.ui.push({ when: 'pm' }); };
   panel.querySelector('[data-act="reset-demo"]').onclick = function () { resetDemo(); };
-  panel.querySelector('[data-act="arrive-walk"]').onclick = function () { demoArrive(sel.value, 'walk'); };
   panel.querySelector('[data-act="arrive-ride"]').onclick = function () { demoArrive(sel.value, 'ride'); };
   const date = panel.querySelector('[data-demo-date]');
   date.onchange = function () {
