@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>遊喜樂｜服務架構與系統介接</title>
+  <!-- 第七頁提案：以系統邊界、服務職責與介接關係呈現架構。
+       單一 HTML、內嵌向量圖、無外部資源。?present=1 顯示純投影片。 -->
+  <style>
+    :root {
+      --paper: #eef0e7; --white: #fffefa; --ink: #302e2a; --muted: #706f65;
+      --brown: #8e5b3d; --brown-soft: #f2e8de; --green: #45654b;
+      --green-soft: #e4ebdf; --line: #d8d9cd; --wire: #9d8976;
+      --navy: #062040; --red: #e60020; --outside: #f5f5ef; --screen: #dfE2d9;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: var(--screen); color: var(--ink); font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif; padding: 22px 28px; }
+    .toolbar { max-width: 1600px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .toolbar p { margin: 0; font-size: 13px; color: var(--muted); }
+    .toolbar strong { color: var(--ink); font-weight: 700; margin-right: 12px; }
+    .controls { display: flex; gap: 8px; }
+    button { border: 1px solid var(--navy); border-radius: 4px; background: transparent; color: var(--navy); padding: 8px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+    button:first-child { background: var(--navy); color: white; }
+    button:hover { opacity: .82; }
+    button:focus-visible { outline: 3px solid var(--brown); outline-offset: 3px; }
+    .stage { width: min(100%, calc((100vh - 102px) * 16 / 9)); max-width: 1600px; margin: 0 auto; aspect-ratio: 16 / 9; background: var(--paper); box-shadow: 0 12px 42px rgb(39 47 30 / 12%); }
+    #slide { width: 100%; height: 100%; display: block; }
+    svg text { font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif; fill: var(--ink); }
+    .nav-label { font-size: 15px; font-weight: 700; fill: var(--muted); }
+    .nav-current { fill: var(--white); }
+    .eyebrow { font-size: 19px; font-weight: 700; fill: var(--brown); }
+    .headline { font-size: 38px; font-weight: 700; letter-spacing: 1px; }
+    .subtitle { font-size: 20px; fill: var(--muted); }
+    .section-label { font-size: 17px; fill: var(--brown); font-weight: 700; letter-spacing: 1px; }
+    .node-title { font-size: 23px; font-weight: 700; }
+    .node-desc { font-size: 18px; fill: var(--muted); }
+    .small { font-size: 16px; fill: var(--muted); }
+    .edge-label { font-size: 16px; font-weight: 700; fill: var(--brown); }
+    .module-no { font: 700 15px Arial, sans-serif; fill: var(--brown); }
+    .wire { fill: none; stroke: var(--wire); stroke-width: 2; marker-end: url(#arrow); }
+    .both { marker-start: url(#arrow-start); }
+    .content-wire { stroke: var(--green); marker-end: url(#arrow-green); }
+    .icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .content-title { font-size: 21px; font-weight: 700; fill: var(--green); }
+    .footer { font-size: 14px; fill: var(--muted); }
+    :fullscreen body, html.present body { padding: 0; height: 100vh; display: grid; place-items: center; background: var(--paper); }
+    :fullscreen .toolbar, html.present .toolbar { display: none; }
+    :fullscreen .stage, html.present .stage { width: min(100vw, calc(100vh * 16 / 9)); max-width: none; box-shadow: none; }
+    @media (max-width: 650px) {
+      body { padding: 12px; }
+      .toolbar { align-items: flex-start; }
+      .toolbar strong { display: block; margin-bottom: 4px; }
+      .controls { flex-shrink: 0; }
+      button { padding: 8px 10px; }
+      .stage { width: 100%; }
+    }
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      body { padding: 0; background: white; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .toolbar { display: none; }
+      .stage { width: 16in; height: 9in; max-width: none; box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="toolbar">
+    <p><strong>第 07 頁 · 架構圖提案</strong>16:9 投影片預覽</p>
+    <div class="controls"><button type="button" id="fullscreen">全螢幕</button><button type="button" id="print">列印</button></div>
+  </header>
+  <main class="stage">
+    <svg id="slide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="slide-title slide-desc">
+      <title id="slide-title">遊喜樂：服務架構與系統介接</title>
+      <desc id="slide-desc">長輩在 yoxi App 探索、叫車、收卡與收藏。遊喜樂服務 API 串接景點推薦、到訪核對與收卡、收藏與回憶卡三個模組。AI 草稿和卡面經人工審核後進入內容庫；到訪與收藏資料另行保存。叫車、行程、會員與點數規劃介接既有企業服務。圖片由使用者透過手機分享面板傳到 LINE，家人的交流留在 LINE。家人共同規劃與安心摘要列為後續擴充。</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1L7 4L1 7" fill="none" stroke="var(--wire)" stroke-width="1.8"/></marker>
+        <marker id="arrow-start" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M7 1L1 4L7 7" fill="none" stroke="var(--wire)" stroke-width="1.8"/></marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1L7 4L1 7" fill="none" stroke="var(--green)" stroke-width="1.8"/></marker>
+        <symbol id="i-phone" viewBox="0 0 28 28"><rect class="icon" x="7" y="2" width="14" height="24" rx="3"/><path class="icon" d="M12 5h4M12 23h4"/></symbol>
+        <symbol id="i-compass" viewBox="0 0 28 28"><circle class="icon" cx="14" cy="14" r="11"/><path class="icon" d="m19 9-3 7-7 3 3-7z"/></symbol>
+        <symbol id="i-check" viewBox="0 0 28 28"><path class="icon" d="M22 11c0 7-8 14-8 14S6 18 6 11a8 8 0 0 1 16 0z"/><path class="icon" d="m10 11 3 3 5-6"/></symbol>
+        <symbol id="i-card" viewBox="0 0 28 28"><rect class="icon" x="3" y="6" width="22" height="17" rx="2"/><path class="icon" d="M8 3h14M15 10v9M6 17l3-3 3 4M18 11h4M18 15h4"/></symbol>
+        <symbol id="i-data" viewBox="0 0 28 28"><ellipse class="icon" cx="14" cy="6" rx="10" ry="4"/><path class="icon" d="M4 6v16c0 5 20 5 20 0V6M4 14c0 5 20 5 20 0"/></symbol>
+        <symbol id="i-car" viewBox="0 0 28 28"><path class="icon" d="m5 12 3-7h12l3 7M4 12h20v10H4zM8 22v3M20 22v3M7 16h3M18 16h3"/></symbol>
+      </defs>
+
+      <rect width="1600" height="900" fill="var(--paper)"/>
+      <!-- 保留原簡報的章節導覽，降低視覺重量。 -->
+      <g id="chapter-nav">
+        <rect width="1600" height="38" fill="var(--line)" opacity=".62"/>
+        <rect x="647" width="248" height="38" fill="var(--brown)"/>
+        <g text-anchor="middle" class="nav-label">
+          <text x="85" y="25" class="nav-label">摘要</text><text x="265" y="25" class="nav-label">提案概述</text>
+          <text x="508" y="25" class="nav-label">目標對象與痛點分析</text><text x="771" y="25" class="nav-label nav-current">解決方案設計</text>
+          <text x="1003" y="25" class="nav-label">AI 應用方法</text><text x="1223" y="25" class="nav-label">獨特優勢與差異化</text>
+          <text x="1463" y="25" class="nav-label">預期效益與落地評估</text>
+        </g>
+      </g>
+
+      <g id="heading">
+        <text x="70" y="86" class="eyebrow">03　解決方案設計 <tspan fill="var(--wire)">／</tspan> 服務架構與系統介接</text>
+        <text x="70" y="139" class="headline">把探索、搭車與收藏，接成同一套服務</text>
+        <text x="70" y="177" class="subtitle">遊喜樂串起地方內容與到訪收藏，出行銜接 yoxi 既有服務。</text>
+        <text x="1525" y="133" text-anchor="end" style="font:italic 900 64px Arial,sans-serif;fill:var(--red);letter-spacing:-4px">yoxi</text>
+      </g>
+
+      <!-- 新增服務的明確責任邊界 -->
+      <rect x="70" y="222" width="1094" height="544" rx="12" fill="var(--white)" stroke="var(--line)" stroke-width="1.5"/>
+      <rect x="91" y="209" width="277" height="27" fill="var(--paper)"/>
+      <text x="106" y="229" class="section-label">遊喜樂 · 新增服務範圍</text>
+      <text x="1230" y="229" class="section-label" style="fill:var(--muted)">既有服務與外部平台</text>
+
+      <!-- 應用層 -->
+      <g id="app-node">
+        <rect x="106" y="254" width="1022" height="88" rx="8" fill="var(--brown-soft)"/>
+        <rect x="126" y="274" width="48" height="48" rx="8" fill="var(--white)"/>
+        <use href="#i-phone" x="138" y="282" width="24" height="32" style="color:var(--brown)"/>
+        <text x="193" y="290" class="node-title">yoxi App · 長輩使用介面</text>
+        <text x="193" y="320" class="node-desc">探索景點　→　搭 yoxi　→　抵達收卡　→　收藏回憶</text>
+        <text x="1108" y="288" text-anchor="end" class="small" style="fill:var(--brown)">應用層</text>
+      </g>
+
+      <!-- 只有 App 的分享面板接到 LINE，服務端不取得私人交流。 -->
+      <path class="wire" d="M1128 298H1230"/>
+      <text x="1179" y="282" text-anchor="middle" class="edge-label">自選分享</text>
+      <g id="line-node">
+        <rect x="1230" y="254" width="296" height="88" rx="8" fill="var(--outside)" stroke="var(--line)"/>
+        <text x="1250" y="287" class="node-title" style="font-size:21px">分享面板 → LINE</text>
+        <text x="1250" y="316" class="node-desc" style="font-size:17px">家人接收，交流留在 LINE</text>
+      </g>
+
+      <!-- 服務介面與三個模組。方框表示職責，不限定拆成獨立部署。 -->
+      <path class="wire" d="M617 342V367"/>
+      <rect x="106" y="367" width="1022" height="42" rx="4" fill="var(--brown)"/>
+      <text x="126" y="394" style="font-size:18px;font-weight:700;fill:var(--white)">遊喜樂服務 API</text>
+      <text x="1108" y="394" text-anchor="end" style="font-size:16px;fill:var(--brown-soft)">查詢・到訪・收藏</text>
+      <path class="wire" d="M257 409V435"/>
+      <path class="wire" d="M611 409V435"/>
+      <path class="wire" d="M973 409V435"/>
+
+      <g id="recommendation-node">
+        <rect x="106" y="435" width="302" height="128" rx="8" fill="var(--white)" stroke="var(--line)" stroke-width="1.5"/>
+        <use href="#i-compass" x="128" y="457" width="29" height="29" style="color:var(--brown)"/>
+        <text x="171" y="480" class="node-title">景點推薦</text>
+        <text x="128" y="516" class="node-desc">條件篩選與排序</text>
+        <text x="128" y="543" class="node-desc">地方內容與推薦理由</text>
+        <text x="386" y="460" text-anchor="end" class="module-no">01</text>
+      </g>
+      <g id="arrival-node">
+        <rect x="460" y="435" width="302" height="128" rx="8" fill="var(--white)" stroke="var(--line)" stroke-width="1.5"/>
+        <use href="#i-check" x="482" y="457" width="29" height="29" style="color:var(--brown)"/>
+        <text x="525" y="480" class="node-title">到訪核對與收卡</text>
+        <text x="482" y="516" class="node-desc">行程與定位核對</text>
+        <text x="482" y="543" class="node-desc">依規則發放紀念卡</text>
+        <text x="740" y="460" text-anchor="end" class="module-no">02</text>
+      </g>
+      <path class="wire" d="M762 510H814"/>
+      <text x="788" y="497" text-anchor="middle" class="edge-label" style="font-size:15px">紀念卡</text>
+      <g id="collection-node">
+        <rect x="814" y="435" width="314" height="128" rx="8" fill="var(--white)" stroke="var(--line)" stroke-width="1.5"/>
+        <use href="#i-card" x="836" y="457" width="29" height="29" style="color:var(--brown)"/>
+        <text x="879" y="480" class="node-title">收藏與回憶卡</text>
+        <text x="836" y="516" class="node-desc">明信片・獎章・城市足跡</text>
+        <text x="836" y="543" class="node-desc">回憶製卡與圖片輸出</text>
+        <text x="1106" y="460" text-anchor="end" class="module-no">03</text>
+      </g>
+
+      <!-- 既有企業服務：與遊喜樂的資料存放分開。 -->
+      <path class="wire both" d="M1128 388H1230"/>
+      <text x="1179" y="372" text-anchor="middle" class="edge-label">服務介接</text>
+      <g id="enterprise-node">
+        <rect x="1230" y="367" width="296" height="196" rx="8" fill="var(--outside)" stroke="var(--line)"/>
+        <text x="1250" y="395" class="small" style="font-weight:700">yoxi / 和泰既有服務</text>
+        <rect x="1417" y="377" width="91" height="25" rx="4" fill="var(--line)"/>
+        <text x="1462" y="395" text-anchor="middle" style="font-size:14px;fill:var(--muted)">規劃介接</text>
+        <use href="#i-car" x="1250" y="419" width="26" height="26" style="color:var(--muted)"/>
+        <text x="1288" y="440" class="node-title" style="font-size:21px">叫車・派車・行程</text>
+        <text x="1250" y="470" class="node-desc" style="font-size:17px">叫車請求 ↔ 行程狀態與抵達事件</text>
+        <path d="M1250 488H1506" stroke="var(--line)"/>
+        <text x="1250" y="517" class="node-title" style="font-size:20px">One ID / Points</text>
+        <text x="1250" y="544" class="node-desc" style="font-size:17px">會員身分・點數回饋</text>
+      </g>
+
+      <!-- 經核准的內容向上供應；收藏資料由服務存取。 -->
+      <path class="wire content-wire" d="M257 632V563"/>
+      <path class="wire content-wire" d="M611 632V563"/>
+      <text x="269" y="603" class="small" style="fill:var(--green)">已審素材</text>
+      <text x="623" y="603" class="small" style="fill:var(--green)">核准卡面</text>
+      <path class="wire both" d="M973 563V632"/>
+      <text x="987" y="603" class="small">保存／讀取</text>
+      <g id="content-node">
+        <rect x="106" y="632" width="656" height="94" rx="8" fill="var(--green-soft)"/>
+        <text x="128" y="664" class="content-title">內容與 AI 支援</text>
+        <text x="740" y="663" text-anchor="end" class="small" style="fill:var(--green)">流程詳見第 10 頁</text>
+        <text x="128" y="700" class="node-desc" style="fill:var(--green)">草稿與卡面 <tspan fill="var(--wire)">→</tspan> 人工審核 <tspan fill="var(--wire)">→</tspan> 已審內容庫</text>
+      </g>
+      <g id="records-node">
+        <rect x="814" y="632" width="314" height="94" rx="8" fill="var(--outside)" stroke="var(--line)"/>
+        <use href="#i-data" x="836" y="650" width="26" height="26" style="color:var(--muted)"/>
+        <text x="876" y="672" class="node-title" style="font-size:21px">到訪與收藏資料</text>
+        <text x="836" y="703" class="node-desc" style="font-size:17px">到訪紀錄・收藏・內容版本</text>
+      </g>
+      <g id="future-node">
+        <rect x="1230" y="632" width="296" height="94" rx="8" fill="none" stroke="var(--wire)" stroke-dasharray="4 5"/>
+        <text x="1250" y="664" class="small" style="font-weight:700">後續擴充</text>
+        <text x="1250" y="700" class="node-desc" style="font-size:18px">家人共同規劃・安心摘要</text>
+      </g>
+
+      <g id="principle">
+        <path d="M70 806H1526" stroke="var(--line)"/>
+        <text x="70" y="837" style="font-size:18px;font-weight:700;fill:var(--brown)">清楚分工</text>
+        <text x="167" y="837" style="font-size:18px;fill:var(--muted)">AI 提供內容與建議；車資、到訪與回饋依服務規則核定。</text>
+        <text x="70" y="875" class="footer">遊喜樂小隊　｜　2026 和泰 AI 黑客松</text>
+        <text x="1526" y="875" text-anchor="end" class="footer" style="font-size:24px;font-weight:700">7</text>
+      </g>
+    </svg>
+  </main>
+  <script>
+    if (new URLSearchParams(location.search).get('present') === '1') document.documentElement.classList.add('present');
+    document.getElementById('fullscreen').onclick = function () {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(function () {});
+    };
+    document.getElementById('print').onclick = function () { window.print(); };
+  </script>
+</body>
+</html>
