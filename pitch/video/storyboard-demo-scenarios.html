@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>遊喜樂｜從一張早安圖開始・三分鐘動畫腳本</title>
+<style>
+/* ==========================================================================
+   yoxi 城事 — Design Tokens
+   唯一的變數來源。任何畫面都不得寫死顏色、字級、圓角、動畫時間。
+
+   色值來源：yoxi 官方 logo SVG 原始碼、App Store icon 與官方截圖像素分析、
+   官網 CSS bundle，以及 14 張實機截圖取樣。
+   ========================================================================== */
+
+:root {
+  /* --- 品牌主色 ------------------------------------------------------- */
+  --yoxi-red:        #FF2E1A;  /* App 介面主紅：頁首滿版、抽屜、地點 pin */
+  --yoxi-red-logo:   #F14A42;  /* 官網 logo 標準字紅（yoxiLogoRed.svg fill） */
+  --yoxi-red-dark:   #D92510;  /* 紅底上的按下狀態 */
+  --yoxi-red-soft:   #FFE9E6;  /* 極淡紅，用於標籤底 */
+
+  --yoxi-navy:       #062040;  /* 墨藍。主要動作色：實心按鈕、選中 pill、圖示、主文字 */
+  --yoxi-navy-soft:  #0B1F38;
+  --yoxi-navy-60:    rgba(6, 32, 64, .6);
+
+  /* --- 中性 ------------------------------------------------------------ */
+  --yoxi-cream:      #FBEBDF;  /* 圖示底磚、優惠券卡片底、霧地圖已探索區 */
+  --yoxi-cream-deep: #F3DAC7;  /* 奶油色的深一階，用於分層 */
+  --yoxi-mist:       #EAF1F5;  /* 頁面底色、輸入框 */
+  --yoxi-paper:      #FCFDFF;  /* 主畫面近白底（佔主畫面約 57% 面積） */
+  --yoxi-slate:      #778AA4;  /* 次要文字、placeholder */
+  --yoxi-slate-lite: #C3CBDC;  /* 分隔線、停用狀態 */
+  --yoxi-line:       #E3E8EE;  /* 細分隔線 */
+  --yoxi-white:      #FFFFFF;
+
+  /* --- 功能色 ---------------------------------------------------------- */
+  --gold:            #C9A227;  /* yoxi 限定版明信片金框 */
+  --gold-lite:       #F5E6B8;
+
+  /* --- 地圖 ------------------------------------------------------------ */
+  --map-land:        #EBEBEB;
+  --map-road:        #FFFFFF;
+  --map-road-minor:  #F5F5F5;
+  --map-water:       #C9D8EC;
+  --map-explored:    var(--yoxi-cream);  /* 霧地圖已探索。不另創第四個品牌色 */
+  --map-fog:         #F7F9FB;
+
+  /* --- 字體 ------------------------------------------------------------
+     實測自 yoxi 官網 CSS：Noto Sans TC 出現 630 次、Montserrat 38 次。
+     AJA CIS 規範：英文用斜體傳達未來感，中文用日式漢字黑體粗體。
+     → 數字與英文標題套 .italic，這是 yoxi 重要的品牌特徵。          */
+  --font-sans: "Montserrat", "Noto Sans TC", "PingFang TC",
+               "Microsoft JhengHei", sans-serif;
+
+  --fs-display: 34px;  /* 紅色頁首大標題 */
+  --fs-h1:      28px;
+  --fs-title:   22px;
+  --fs-lead:    18px;
+  --fs-body:    16px;
+  --fs-sm:      14px;
+  --fs-cap:     13px;
+  --fs-xs:      11px;
+
+  --fw-reg:   400;
+  --fw-med:   500;
+  --fw-bold:  700;
+  --fw-heavy: 800;
+
+  --lh-tight: 1.2;
+  --lh-body:  1.55;
+  --lh-story: 1.9;   /* AI 敘事區塊，刻意比功能文字鬆 */
+
+  /* --- 形狀 ------------------------------------------------------------
+     yoxi 偏工整方正，不是圓潤風格。卡片小圓角、按鈕幾乎直角、
+     只有 pill 與圖示磚是圓的。                                      */
+  --r-card:  8px;
+  --r-tile:  22px;   /* 奶油色圖示底磚 */
+  --r-btn:   4px;    /* 主要按鈕圓角極小 */
+  --r-pill:  999px;
+  --r-sheet: 16px;   /* 底部拉把面板的上緣 */
+  --r-img:   6px;    /* 內嵌小圖 */
+  /* 圓角就這六種，沒有第七種。要一個新的就先問「現有的哪一個不夠用」。 */
+
+  /* --- 陰影 ------------------------------------------------------------ */
+  --sh-card:  0 1px 3px rgba(6, 32, 64, .08);
+  --sh-fab:   0 2px 10px rgba(6, 32, 64, .18);
+  --sh-sheet: 0 -2px 16px rgba(6, 32, 64, .10);
+  --sh-lift:  0 8px 28px rgba(6, 32, 64, .22);
+
+  /* --- 間距 ------------------------------------------------------------ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --gutter: 16px;
+
+  /* --- 版面 ------------------------------------------------------------ */
+  --device-w:  390px;
+  --device-h:  844px;
+  --statusbar-h: 54px;
+  --tabbar-h:    56px;
+  --safe-bottom: 20px;
+
+  /* --- 動畫 ------------------------------------------------------------
+     借 Pikmin Bloom 的「慢」。每日回顧的每一幕不得加速。          */
+  --t-fast:  160ms;
+  --t-base:  240ms;
+  --t-slow:  480ms;
+  --t-scene: 1200ms;
+  --ease:      cubic-bezier(.22, .61, .36, 1);
+  --ease-out:  cubic-bezier(.16, 1, .3, 1);
+  --ease-bump: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* ==========================================================================
+   顏色紀律（不可破壞）
+
+   紅色 = 品牌情緒。只用於：頁首滿版、側邊抽屜、地圖 pin、強調數字、logo。
+   海軍藍 = 你要按的東西。只用於：實心按鈕、選中的 pill、圖示、主要文字。
+
+   這是 yoxi 現有設計的核心分工，新增的探索／收藏畫面不得破壞。
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--yoxi-white); color: var(--yoxi-navy); font-family: var(--font-sans); font-size: 16px; line-height: 1.85; }
+main { width: min(100% - 64px, 960px); margin: 0 auto; }
+header { padding: 52px 0 30px; border-bottom: 1px solid var(--yoxi-line); }
+.eyebrow { margin: 0; color: var(--yoxi-navy-60); font-size: 13px; letter-spacing: .06em; }
+h1 { margin: 12px 0; font-size: 34px; line-height: 1.4; letter-spacing: -.02em; }
+h2 { font-size: 24px; margin: 0 0 14px; line-height: 1.5; }
+h3 { font-size: 15px; margin: 0 0 8px; }
+p { margin: 0 0 14px; }
+.lead { font-size: 18px; margin-bottom: 18px; }
+.meta, .small { color: var(--yoxi-navy-60); font-size: 13px; }
+section { padding: 30px 0; scroll-margin-top: 22px; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 16px 0; border-bottom: 1px solid var(--yoxi-line); }
+a { color: var(--yoxi-navy); text-underline-offset: 5px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--yoxi-navy); outline-offset: 5px; }
+nav a { font-size: 14px; }
+.overview { padding-bottom: 12px; }
+.schedule { width: 100%; border-collapse: collapse; margin: 18px 0 0; font-size: 14px; }
+.schedule th, .schedule td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--yoxi-line); vertical-align: top; }
+.schedule th { background: var(--yoxi-mist); font-weight: 700; }
+.schedule th:first-child, .schedule td:first-child { width: 135px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.schedule th:nth-child(2) { width: 130px; }
+.shot { padding: 32px 0 34px; border-top: 1px solid var(--yoxi-line); scroll-margin-top: 22px; }
+.shot-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 8px; font-size: 13px; color: var(--yoxi-navy-60); font-variant-numeric: tabular-nums; }
+.shot h2 { font-size: 23px; margin-bottom: 18px; }
+.description { font-size: 17px; }
+.beats { list-style: none; padding: 0; margin: 20px 0 24px; }
+.beats li { display: grid; grid-template-columns: 66px 1fr; gap: 12px; padding: 7px 0; font-size: 14px; }
+.beats time { color: var(--yoxi-navy-60); font-variant-numeric: tabular-nums; }
+.copy { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; margin-top: 22px; }
+.copy h3 { color: var(--yoxi-navy-60); font-weight: 400; font-size: 13px; }
+blockquote { margin: 0; padding-left: 16px; border-left: 2px solid var(--yoxi-slate-lite); font-size: 16px; }
+.words p { margin-bottom: 5px; }
+.words .secondary { font-size: 14px; }
+.sound { margin: 20px 0 0; font-size: 13px; color: var(--yoxi-navy-60); }
+.transition { margin: 22px 0 0; font-size: 14px; }
+code { overflow-wrap: anywhere; }
+details { margin-top: 16px; font-size: 13px; color: var(--yoxi-navy-60); }
+summary { cursor: pointer; width: fit-content; }
+details p { margin: 10px 0 0; }
+.closing { border-top: 1px solid var(--yoxi-line); }
+.closing li { margin-bottom: 10px; }
+footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size: 12px; color: var(--yoxi-navy-60); }
+@media (max-width: 640px) {
+  main { width: calc(100% - 36px); }
+  header { padding-top: 30px; }
+  h1 { font-size: 28px; }
+  .lead, .description { font-size: 16px; }
+  .copy { grid-template-columns: 1fr; gap: 22px; }
+  .schedule { font-size: 12px; }
+  .schedule th, .schedule td { padding: 9px 6px; }
+  .schedule th:first-child, .schedule td:first-child { width: 93px; }
+  .schedule th:nth-child(2) { width: 83px; }
+  .shot h2 { font-size: 21px; }
+  .beats li { grid-template-columns: 48px 1fr; gap: 8px; }
+}
+@media print {
+  main { width: 100%; }
+  header { padding-top: 0; }
+  nav, details { display: none; }
+  .shot { break-inside: avoid; padding: 22px 0; }
+  .copy { gap: 24px; }
+  body { font-size: 12px; }
+  h1 { font-size: 25px; }
+  .description, blockquote { font-size: 13px; }
+  .beats li { font-size: 12px; }
+  a { text-decoration: none; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow">遊喜樂小隊 · 程式動畫影片腳本</p>
+  <h1>從一張早安圖開始</h1>
+  <p class="lead">讓一張打招呼的圖，多一段自己走過的故事。</p>
+  <p class="meta">全片 02:58 · 14 鏡 · SVG 動態＋現有卡面＋App 狀態畫面序列 · 2026-10-01</p>
+</header>
+<nav aria-label="分鏡段落"><a href="#overview">概要</a><a href="#shot-01">開場</a><a href="#shot-03">產品 Demo</a><a href="#shot-09">生活情境</a><a href="#shot-12">AI 與價值</a><a href="#shot-14">結尾</a></nav>
+<section class="overview" id="overview">
+  <h2>影片概要</h2>
+  <p>一句「早安」先出現，遊喜樂現有的漂亮卡面隨即彈出，組成一張早安圖。從媽媽用圖片向家人打招呼的日常，帶出「如果這張圖，來自今天親自走過的地方呢？」接著以實際 App 畫面展示探索、選下車點、模擬到訪收卡、收藏及本機回憶卡。後段延伸附近散步、熟悉地方再次到訪、明信片分享與家人回應；都以目前 App 已有的操作或示意流程為依據。最後說明現有卡面如何預先用 AI 製作，回到最初的早安圖，留下「不搭車，也有打開 yoxi 的理由」。</p>
+  <p><strong>呈現方式：</strong>沿用 repo 的 SVG／JavaScript 場景與逐格輸出流程。卡片與 App 畫面作為圖片素材，文字、地圖、路線與訊息框由程式控制進出。整支影片可用素材與動畫敘事，無需真人拍攝；本頁只提供文字腳本。</p>
+  <p><strong>視覺設計分工：</strong>本稿只規劃構圖、資訊層級、動作與轉場；影片的背景、文字、圖形與特效配色由 Claude 決定。既有 App 畫面與卡面保留素材原貌，金框、晴光、暮色等產品款式或選項名稱沿用 App。</p>
+  <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody><tr><td>00:00–00:22</td><td>開場</td><td>早安字樣與漂亮卡面先出場，再帶入長輩傳圖的日常。</td></tr><tr><td>00:22–01:46</td><td>產品 Demo</td><td>以實際 App 畫面序列，展示探索、前往、收卡、收藏與回憶卡。</td></tr><tr><td>01:46–02:30</td><td>生活情境</td><td>附近散步、再次到訪，與 App 既有的家人分享示意。</td></tr><tr><td>02:30–02:52</td><td>AI 與價值</td><td>現有 AI 卡面製作方式，與探索收藏的使用循環。</td></tr><tr><td>02:52–02:58</td><td>結尾</td><td>回到同一張早安圖，讓問候多一段自己的故事。</td></tr></tbody></table>
+</section>
+<section id="storyboard">
+  <h2>分鏡腳本</h2>
+  <p class="small">以下時間碼為剪輯配置，已含轉場與片尾。每鏡列畫面、動態節拍、旁白、片上字詞與接續方式；字詞分段出現，勿同時堆滿。首鏡「早安」之後刻意停一下，再帶入長輩敘事。</p>
+  <article class="shot" id="shot-01">
+      <div class="shot-meta"><span>第 01 鏡 · 開場</span><span>00:00–00:12 / 12 秒</span></div>
+      <h2>早安，一張漂亮的卡先出現</h2>
+      <h3>畫面與動態</h3><p class="description">畫面先只有「早安」兩字。接著用現有青草湖油畫卡面，從畫面下方滑入並輕輕彈定；早安字樣縮小、移到卡面留白位置，短祝福淡入，組成一張值得停下來看的早安圖。卡片佔畫面主要面積，不套手機框。先讓卡面被看見，再由旁白帶到長輩；旁白後段，卡片縮到中央訊息框內，框上只標「媽媽」，旁邊出現「早安，今天也要開心」。</p>
+      <ul class="beats"><li><time>00:00</time><span>0–0.8 秒：「早安」淡入；旁白輕聲念「早安」。</span></li><li><time>00:01</time><span>1–1.7 秒：卡面由下滑入，縮放 0.92 → 1.02 → 1；早安文字移到卡上。</span></li><li><time>00:03</time><span>卡面於第 1.7 秒彈定；保持到第 4 秒，第二句旁白才開始，祝福文字淡入。</span></li><li><time>00:07</time><span>卡片縮進「媽媽」訊息框，帶出傳圖打招呼的日常；右下標「情境示意」。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>早安。<br>對媽媽來說，<br>一張早安圖，是和家人打招呼的方式。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>早安</strong></p><p class="secondary">願你今天，也有好風景</p><p class="secondary">分段出現：媽媽／早安，今天也要開心／情境示意／卡面為 AI 生成示意</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>保留同一張卡，訊息框淡出；卡片移向左側，右側留給下一鏡的提問。</p>
+      <p class="sound">聲音：第一秒一個明亮、柔和的音符；卡片彈定時輕提示。輕柔配樂在卡片出現後淡入。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>app/assets/postcards/p22-oil.jpg（青草湖卡面）</li><li>SVG 文字：早安、祝福、媽媽；訊息框與圓角卡框</li></ul><p>預定場景名：<code>greeting_card</code>（新腳本命名，尚未註冊）</p><p>用真實卡面資產，不用舊 PRIM.postcard 的簡化山丘。素材不拆成多層景深，以整張圖片動畫即可。標示「卡面為 AI 生成示意」及來源署名；訊息框為情境，不代表 App 內聊天。首鏡需提供含指定靜音的配音檔，或先把「早安」與後文分段合成再補靜音；舊 TTS 直接串句無法產生這個節奏。開場是片頭編排，不表示 App 自動製作並傳送這張早安卡。</p><p>來源：PDF 1、3、5、7 頁；app/assets/postcards/README.md。</p></details>
+    </article>
+<article class="shot" id="shot-02">
+      <div class="shot-meta"><span>第 02 鏡 · 開場</span><span>00:12–00:22 / 10 秒</span></div>
+      <h2>把早安圖，接到自己的出遊故事</h2>
+      <h3>畫面與動態</h3><p class="description">上一鏡卡片停在左側，右側浮現提問。卡片下方先出現一顆地點標記，再向外延伸一小段路線，讓圖片和「真的去過」產生連結。提問淡出後顯示遊喜樂名稱。卡片向後縮小，新的產品畫面在中央展開，開始 demo。</p>
+      <ul class="beats"><li><time>00:12</time><span>提問淡入；保留早安卡，避免新畫面一次全部進場。</span></li><li><time>00:15</time><span>地點標記出現，短路線由左向右畫出。</span></li><li><time>00:18</time><span>提問收起，遊喜樂字標與副標依序淡入。</span></li><li><time>00:20</time><span>卡片退到背景，實際 App 探索入口放大到前景。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>如果這張圖，來自今天親自走過的地方呢？<br>遊喜樂，讓出門走走，多一份期待。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>如果這張圖，來自你走過的地方？</strong></p><p class="secondary">遊喜樂 · 探索地方，收藏回憶</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>以產品畫面放大銜接第 03 鏡；卡片與提問於交叉淡接結束前退場。</p>
+      <p class="sound">聲音：配樂進入穩定節拍，路線出現時一次短提示。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>延用第一鏡青草湖卡面</li><li>既有 A.PRIM.pin、A.drawPath、A.PRIM.wordmark</li><li>新擷取的 App 起始畫面</li></ul><p>預定場景名：<code>greeting_to_explore</code>（新腳本命名，尚未註冊）</p><p>開場卡是分享情境的示例，不冒充下一段 demo 新取得的卡；demo 另固定一個地點與一致狀態。</p><p>來源：PDF 2、3、9–10 頁；既有 name、walk 場景的字標與路線動態。</p></details>
+    </article>
+<article class="shot" id="shot-03">
+      <div class="shot-meta"><span>第 03 鏡 · 產品 Demo</span><span>00:22–00:36 / 14 秒</span></div>
+      <h2>探索：選一個想去的地方</h2>
+      <h3>畫面與動態</h3><p class="description">以現行 App 的畫面取樣作為產品層，SVG 只疊觸點與重點標示。先看到搭車模式，觸點落在「探索」後，App 自動選定最近的水利路地區，資訊同步出現。用局部放大帶觀眾看地名、短句與可收集卡片入口，保留原本介面的位置關係。</p>
+      <ul class="beats"><li><time>00:22</time><span>App 初始畫面進場，主標停在一側。</span></li><li><time>00:24</time><span>觸點亮起 → 切探索；切換狀態取自實際 App。</span></li><li><time>00:27</time><span>最近的水利路地點已被預選；高亮現有資訊，不再加一次沒有狀態變化的點擊。</span></li><li><time>00:31</time><span>資訊區縮放至約 1.15 倍，停住讀地方簡介。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>打開探索，先看看附近有哪些地方。<br>先看看最近的地方，還有可以收的卡。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>先選一個想去的地方</strong></p><p class="secondary">看地方介紹，也看可以收的卡</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>保持同一個產品框與地點，資訊區回到原比例，直接接面板上拉。</p>
+      <p class="sound">聲音：觸點音輕且短；不配真人操作環境聲。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride、ride-peek；資訊狀態須新拍 glass-kiln，固定同一次 demo 資料。</li><li>需新增：同一操作的探索地點已選 PNG；以 app/tools/shoot-app.py 的狀態注入方式擴充擷取。</li><li>由 SVG 插值：觸點、裁切、放大、前後狀態淡接；不模擬原始 App 的逐格操作動畫。</li></ul><p>預定場景名：<code>demo_explore</code>（新腳本命名，尚未註冊）</p><p>須先操作實際 App 核對前後狀態，再擷取必要畫格；純靜態切圖不偽稱原始錄屏。片上常駐「原型操作示範」。原型用新竹示例，正式推薦仍屬方案。</p><p>操作路徑：#/ride → 探索 → 自動預選 #/ride?mode=explore&amp;area=glass-kiln</p><p>來源：app/ARCHITECTURE.md「雙主頁的叫車面板」；app/js/views/ride.js。</p></details>
+    </article>
+<article class="shot" id="shot-04">
+      <div class="shot-meta"><span>第 04 鏡 · 產品 Demo</span><span>00:36–00:48 / 12 秒</span></div>
+      <h2>預覽：出發前，先有一份期待</h2>
+      <h3>畫面與動態</h3><p class="description">延續同一個 App 畫面，以觸點上移帶出面板上拉。卡片堆出現後，選中的一張前移、放大；背面內容依實際 App 取樣，翻面過程用水平縮放收窄、換面、再展開。讓觀眾看到卡面、地名與「抵達後可以收下」狀態，之後收回地點資訊。</p>
+      <ul class="beats"><li><time>00:36</time><span>觸點由面板下方向上移，以實際 App 展開前後截圖配合 SVG 遮罩呈現上拉結果。</span></li><li><time>00:40</time><span>點一張待收集卡，懸浮預覽放大。</span></li><li><time>00:42</time><span>水平縮窄 → 換背面 → 展開；背面停留兩秒。</span></li><li><time>00:46</time><span>卡片收回，地點資訊保持原位。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>往上拉，就能看這個地方的明信片。<br>還沒出發，就有了一份小小的期待。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>出門前，先看看這裡的卡</strong></p><p class="secondary">上拉看卡片 · 點開看細節</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>卡片收回後，觸點移到同一地點的「用 yoxi」。</p>
+      <p class="sound">聲音：一聲短翻頁音，避免反覆加特效聲。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride-cards、ride-float、ride-float-back；後兩者目前選 moat，須改以同場 glass-kiln 新拍。</li><li>需新增：同一地點面板展開、卡面正背與關閉狀態的 PNG；既有 still=1 截圖只能當終態參考。</li><li>由 SVG 插值：面板遮罩展開、卡片位移放大與 scaleX 翻面；是影片重建轉場。</li></ul><p>預定場景名：<code>demo_card_preview</code>（新腳本命名，尚未註冊）</p><p>待收集與已收藏狀態必須分清；不可把預覽誤標成已收下。翻面是影片重建的過渡，畫面內容必須來自原型。預覽款式沿現有懸浮小卡呈現；未收的預覽與搭車後收到的金框可以不同，不強制預覽先顯示金框。懸浮小卡背面只有地名與收藏狀態；地方故事在明信片詳情等其他頁面，本鏡不添加。</p><p>操作路徑：探索面板 → 上拉 → 點卡片 → 翻面 → 關閉</p><p>來源：app/js/views/ride.js：openCard 懸浮小卡正反面。</p></details>
+    </article>
+<article class="shot" id="shot-05">
+      <div class="shot-meta"><span>第 05 鏡 · 產品 Demo</span><span>00:48–01:02 / 14 秒</span></div>
+      <h2>前往：想去的地方，成為下車點</h2>
+      <h3>畫面與動態</h3><p class="description">觸點落在「用 yoxi」，產品層切回搭車模式。只讓下車點欄位亮一下，其他介面保持安定；放大顯示剛才選的地點已填入。接著切到原型行程狀態，產品框縮到左側，右側用既有小車沿一小段路線移動，帶過交通時間。</p>
+      <ul class="beats"><li><time>00:48</time><span>點「用 yoxi」，切到實際 App 的下車點已填狀態。</span></li><li><time>00:52</time><span>下車點欄位淡亮，停住看清地點名稱。</span></li><li><time>00:56</time><span>依 App 確認流程切到行程中；標「派車模擬」。</span></li><li><time>00:58</time><span>小車沿路線移動，作為時間經過的轉場。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>選好地方，想搭車就點「用 yoxi」。<br>下車點已經帶入，再確認上車資訊。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>想去的地方，直接帶入下車點</strong></p><p class="secondary">需要搭車時，用 yoxi 前往</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>小車接近目的地，路線終點標記放大，接到到訪畫面。</p>
+      <p class="sound">聲音：確認提示一次；小車移動用配樂節拍帶過。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：ride-dropoff（glass-kiln）；ride-confirm 為 lake，trip 系列為 neiwan，不能直接混剪。</li><li>需新增：全部固定 glass-kiln 的確認、派車與行程 PNG；數字取自同一份 App 狀態。</li><li>由 SVG 插值：欄位提示、畫面縮放、PRIM.car 與路線描繪。</li></ul><p>預定場景名：<code>demo_set_dropoff</code>（新腳本命名，尚未註冊）</p><p>不沿用舊 PRIM.phone 的簡化首頁。車資與時間取自同一次 App 狀態，不另編數值；不是正式報價或實際派車。</p><p>操作路徑：探索「用 yoxi」→ #/ride（下車點已填）→ 叫車前往 → #/ride/confirm → 確認叫車 → #/trip</p><p>來源：PDF 9–10 頁；既有 ride 場景的路徑與小車動態。</p></details>
+    </article>
+<article class="shot" id="shot-06">
+      <div class="shot-meta"><span>第 06 鏡 · 產品 Demo</span><span>01:02–01:18 / 16 秒</span></div>
+      <h2>抵達：這次到訪，留成一張卡</h2>
+      <h3>畫面與動態</h3><p class="description">路線終點的標記接到原型到訪狀態，持續顯示「到訪模擬」。點亮地點與收卡入口依實際流程呈現；取 App 翻卡前後畫面，以 SVG 水平收窄、換面、展開重建轉場。卡面穩定後，把同款成品圖移到產品框外放大，留出欣賞時間；這一刻是全片的主要視覺亮點。</p>
+      <ul class="beats"><li><time>01:02</time><span>顯示桌機 demo 工具的「搭 yoxi 抵達」操作，再切到到訪模擬狀態。</span></li><li><time>01:05</time><span>觸點選地點與收卡入口。</span></li><li><time>01:08</time><span>由原型翻卡前後截圖重建翻面轉場；不是原始 App 動畫錄影。</span></li><li><time>01:13</time><span>同款成品卡向前放大，停留約三秒。</span></li><li><time>01:16</time><span>卡片縮回產品畫面，準備收進收藏。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>到訪後，這個地方亮起來。<br>收下一張明信片，記住今天來過這裡。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>到訪之後，收下一張明信片</strong></p><p class="secondary">點亮地方 · 翻開紀念</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>同一張卡縮到收藏首頁主卡的位置，接第 07 鏡。</p>
+      <p class="sound">聲音：翻卡前配樂稍降，卡片展開時一個柔和亮起音；成品停留不加旁白。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：unlock（glass-kiln）；unlock-ride 是 neiwan，必須另拍。</li><li>需新增：glass-kiln 搭 yoxi 到訪的解鎖前後 PNG，保留合法行程與模擬狀態。</li><li>由 SVG 插值：點亮提示、scaleX 翻面、成品卡放大；卡面使用 p11-gold.jpg，保留原型框線、文字與署名。</li></ul><p>預定場景名：<code>demo_arrival_card</code>（新腳本命名，尚未註冊）</p><p>卡款依現行規則，不從早安圖的油畫款直接跳成這次搭車的收卡結果。擷取動畫時保留日期與交通狀態；不唸到訪門檻公尺數。本鏡走 demo 工具的捷徑，明示是模擬；若改走行程頁抵達，須保留行程結束、評分、金色入口再到收卡的步驟。</p><p>操作路徑：在 #/trip 以 demo 工具選 glass-kiln → 搭 yoxi 抵達 → #/unlock/glass-kiln?ride=1 → 點地點 → 收集明信片</p><p>來源：PDF 9–10 頁；app 收卡流程與卡款規則。</p></details>
+    </article>
+<article class="shot" id="shot-07">
+      <div class="shot-meta"><span>第 07 鏡 · 產品 Demo</span><span>01:18–01:30 / 12 秒</span></div>
+      <h2>收藏：每次出門，都有地方留下</h2>
+      <h3>畫面與動態</h3><p class="description">按「收進收藏」後回到實際收藏首頁：最新卡位於「我的明信片」主卡最上方，旁邊保留回憶卡、週里程與城市足跡摘要。用局部放大讓新卡被看見，再點城市足跡看已到訪區域，最後返回收藏。首頁維持實際的疊卡與數據版面。</p>
+      <ul class="beats"><li><time>01:18</time><span>觸點按收進收藏，切到對應的新卡入冊狀態。</span></li><li><time>01:21</time><span>新卡位置輕亮，整體收藏保持可見。</span></li><li><time>01:25</time><span>切城市足跡，去過的地區以柔和圈線提示。</span></li><li><time>01:28</time><span>回到收藏入口，準備進回憶卡。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>收進收藏，走過的地方就有了紀念。<br>明信片和足跡，都能慢慢回看。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>走過的地方，都留在收藏裡</strong></p><p class="secondary">明信片 · 獎章 · 城市足跡</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>保持 App 比例與位置，觸點移到回憶卡入口。</p>
+      <p class="sound">聲音：音樂維持穩定，收藏時一聲輕提示。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：album、album-new、footprint；album-new 目前新卡是 p9，不能直接接本段。</li><li>需新增：同次 demo 的 p11 新卡收藏與城市足跡 PNG；卡片數字沿用真實狀態。</li><li>由 SVG 插值：淡接、觸點、位置提示與局部放大。</li></ul><p>預定場景名：<code>demo_collection</code>（新腳本命名，尚未註冊）</p><p>張數與足跡沿用實際狀態，不自行重寫數字，也不把收藏數當產品成效。</p><p>操作路徑：收進收藏 → #/album → #/footprint → 返回</p><p>來源：app/js/views/album.js：收藏首頁疊卡、三個摘要入口與 /footprint；app/js/views/explore-unlock.js 收進收藏。</p></details>
+    </article>
+<article class="shot" id="shot-08">
+      <div class="shot-meta"><span>第 08 鏡 · 產品 Demo</span><span>01:30–01:46 / 16 秒</span></div>
+      <h2>回憶卡：留下自己的版本</h2>
+      <h3>畫面與動態</h3><p class="description">以簡單的月亮圖示與「回家後」短字帶過時間，再進實際回憶卡頁面。模板左右滑動，選定後加入預先備妥的自有照片，切換兩種光線；對照效果直接取自原型。觸點按「做成我的卡」，成品與保存縮圖出現，停一拍。用產品操作本身展現個人化，不加生成中粒子或 AI 生圖特效。</p>
+      <ul class="beats"><li><time>01:30</time><span>月亮與「回家後」出現後退場；進回憶卡模板。</span></li><li><time>01:33</time><span>模板滑動並選定，帶入自有照片。</span></li><li><time>01:37</time><span>晴光與暮色兩個實際狀態交替，保留差異。</span></li><li><time>01:42</time><span>觸點按製作，顯示保存結果。</span></li><li><time>01:43</time><span>成品停住；產品畫面縮小，讓下一鏡的地圖接手。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>回家後，再挑一個今天去過的地方。<br>加上自己的照片，選一種喜歡的光線。<br>把這次出門，留成自己的回憶卡。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>挑一刻，留成自己的卡</strong></p><p class="secondary">選模板 · 加照片 · 挑光線 · 保存</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>私人回憶卡淡出，地圖由背景展開；下一段另回到到訪明信片。</p>
+      <p class="sound">聲音：製作後留兩秒以音樂為主，不加等待生圖音效。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>可參考既有 shot stem：lookback（入口）；其餘編輯步驟需新拍。</li><li>需新增：固定模板、使用自有或授權照片、兩種光線與儲存結果的 App PNG。</li><li>由 SVG 插值：月亮圖示、選中提示、前後畫面淡接；不呈現 AI 生成等待效果。</li></ul><p>預定場景名：<code>demo_memory_card</code>（新腳本命名，尚未註冊）</p><p>這是本機模板與光線效果，沒有線上 AI 生成。私人回憶卡不接到後面的 LINE 分享情境。</p><p>操作路徑：#/album → #/lookback → 做成我的卡</p><p>來源：PDF 10 頁；app/README.md 流程 C。</p></details>
+    </article>
+<article class="shot" id="shot-09">
+      <div class="shot-meta"><span>第 09 鏡 · 生活情境</span><span>01:46–02:00 / 14 秒</span></div>
+      <h2>附近走走：不搭車也有理由打開</h2>
+      <h3>畫面與動態</h3><p class="description">真實新竹地圖緩慢放大到附近範圍，起點旁放「今天，想走近一點」文字。既有步行小點沿示意路線移動；抵達後目的地亮起，對應地點卡從標記上方升起。旁邊出現小型長椅圖示，暗示慢慢走、坐一會兒的生活節奏。情境由地圖與物件說明，不需要人物表演。</p>
+      <ul class="beats"><li><time>01:46</time><span>地圖與起點進場，短句淡入。</span></li><li><time>01:49</time><span>步行小點沿短路線移動，地圖緩慢跟隨。</span></li><li><time>01:54</time><span>目的地亮起，長椅圖示短暫出現。</span></li><li><time>01:56</time><span>同地點明信片升起，主標定住。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>有時，媽媽只想在附近走走。<br>看看河邊，坐一會兒，<br>也能留下一張屬於今天的紀念。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>今天，只想在附近走走</strong></p><p class="secondary">不搭車，也能探索與收藏</p><p class="secondary">分段出現：生活情境示意／到訪模擬</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>目的地卡保留；背景切成同地點的明信片詳情，接到另一次到訪的紀錄。</p>
+      <p class="sound">聲音：音樂放輕，步行點到站時一個提示即可。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>HSMAP 與既有 walk 場景的地圖／步行點</li><li>護城河地點對應卡面；SVG 長椅圖示</li></ul><p>預定場景名：<code>scenario_nearby</code>（新腳本命名，尚未註冊）</p><p>地圖保留 OpenStreetMap 署名。卡片地點須與標記一致；使用附近適合的地方作情境，不承諾已驗證的無障礙條件。路線為敘事動畫，不表示持續 GPS 追蹤或沿路塗色；足跡只呼應已到訪地點。步行收卡以 demo 工具的「走路抵達」模擬，片上標「到訪模擬」；新首頁不新增「走路前往」按鈕，也不把舊 /going 路由當新首頁入口。</p><p>來源：app/js/views/system.js demo 抵達工具；app/js/views/explore-cards.js 步行收卡規則。</p></details>
+    </article>
+<article class="shot" id="shot-10">
+      <div class="shot-meta"><span>第 10 鏡 · 生活情境</span><span>02:00–02:15 / 15 秒</span></div>
+      <h2>熟悉的地方：再來一次，也留一張</h2>
+      <h3>畫面與動態</h3><p class="description">承接前一鏡的護城河明信片，進入實際明信片詳情頁。先看第一次到訪的卡與日期，再將「每一次來」選擇列局部放大，點另一個日期，換成那次留下的卡。兩次紀錄都取自 App 狀態，畫面只用卡片、日期與選中提示表達時間經過；不加入朋友、邀約或同行位置。</p>
+      <ul class="beats"><li><time>02:00</time><span>明信片詳情進場，先看第一次到訪。</span></li><li><time>02:04</time><span>鏡頭移到「每一次來」；兩次日期必須不同。</span></li><li><time>02:07</time><span>點另一個到訪紀錄，切換到那次明信片。</span></li><li><time>02:11</time><span>卡面與日期停住，讓觀眾看懂這是熟悉地方的另一次回憶。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>不一定每次都要去新的地方。<br>改天再來，也能留下一張明信片。<br>熟悉的風景，慢慢成為自己的回憶。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>同一個地方，也有不同的回憶</strong></p><p class="secondary">回看每一次來過的紀錄</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>停在選中的到訪明信片；下一鏡從這頁的分享按鈕開始。</p>
+      <p class="sound">聲音：切換日期時一聲輕提示，讓卡面停留時只剩配樂。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>需新拍：護城河 p3 的兩次合法到訪紀錄、詳情頁與「每一次來」選擇狀態。</li><li>卡面款式、日期與首訪戳取自 APP.explore.cardOrigin；同季節可同款，不捏造每次自動產生新畫風。</li><li>SVG 只作局部放大、淡接與觸點提示。</li></ul><p>預定場景名：<code>scenario_return_visit</code>（新腳本命名，尚未註冊）</p><p>現行 App 支援同一地點不同日的再次收卡；同一地點同一天只收一張。影片展示已備妥的兩次紀錄，不演成同日重複抵達便可無限收卡；不增加揪團、好友、共同路線或同行邀約。拍攝前以不同模擬日期建立兩次到訪，第二次紀錄須先存在；只改網址 v=2 不會自動新增紀錄。</p><p>操作路徑：#/album → #/postcards → #/postcard/p3 → 點「每一次來」→ #/postcard/p3?v=2</p><p>來源：app/js/views/explore-cards.js：visits、canCollect、cardOrigin；app/js/views/album.js：visitsStripHTML 與 /postcard/:id。</p></details>
+    </article>
+<article class="shot" id="shot-11">
+      <div class="shot-meta"><span>第 11 鏡 · 生活情境</span><span>02:15–02:30 / 15 秒</span></div>
+      <h2>自選分享：收到家人的一句回應</h2>
+      <h3>畫面與動態</h3><p class="description">延續同一張明信片詳情，觸點開啟現有分享面板並選「傳到 LINE 給家人」。用 App 既有 /line 畫面呈現「家人」群組，再按「看看子女收到的樣子（示意）」，切到女兒端。點現有快速回覆「好漂亮」，再回媽媽端，讓回覆出現。全程保留 App 的示意標示；使用真正的頁面取樣，不另外設計聊天介面。</p>
+      <ul class="beats"><li><time>02:15</time><span>明信片詳情 → 分享面板。</span></li><li><time>02:18</time><span>點「傳到 LINE 給家人」，進 /line 示意頁。</span></li><li><time>02:21</time><span>點「看看子女收到的樣子（示意）」，進女兒端。</span></li><li><time>02:24</time><span>點快速回覆「好漂亮」，再按「回到媽媽的手機」。</span></li><li><time>02:27</time><span>媽媽端顯示同次分享的回覆，留三秒讀取。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>想分享時，就挑一張明信片給家人。<br>一句「好漂亮」，讓問候多一點溫度。<br>不想分享，自己收藏也很好。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>一張明信片，一句家人的回應</strong></p><p class="secondary">自選分享 · 自己收藏也很好</p><p class="secondary">分段出現：LINE 分享與回應示意</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>家人頁淡出，保留那張卡的圖像，接到下一鏡的卡面製作說明。</p>
+      <p class="sound">聲音：回覆出現時一次輕提示；不假裝連線或手機收到真實通知。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>需新拍：同一 p3 到訪卡與 v 值的分享面板、/line、/family/p3 及回覆後的媽媽端。</li><li>依實際操作產生 share id；每個狀態沿用同一分享紀錄。SVG 只控制頁面切換、放大與觸點。</li></ul><p>預定場景名：<code>scenario_postcard_share</code>（新腳本命名，尚未註冊）</p><p>此流程已在 app/js/views/album-family.js 實作，但只寫本機 APP.store，沒有真的傳到 LINE。不是好友聊天或揪團，也不會分享私人回憶卡。此鏡走明信片分享的 share-line，不走 /elder：後者傳送鈕目前只有 demo toast，無法接家人回應。</p><p>操作路徑：#/postcard/p3?v=2 → 分享 → 傳到 LINE 給家人 → #/line?share=&lt;id&gt; → #/family/p3?share=&lt;id&gt; → 好漂亮 → 回媽媽端</p><p>來源：app/js/views/system.js 分享面板；album-family.js 的 /line、/family/:id、QUICK 與 react。</p></details>
+    </article>
+<article class="shot" id="shot-12">
+      <div class="shot-meta"><span>第 12 鏡 · AI 與價值</span><span>02:30–02:44 / 14 秒</span></div>
+      <h2>AI：把地方風景，做成可收藏的卡面</h2>
+      <h3>畫面與動態</h3><p class="description">畫面左側放一張具授權的地方底圖，中間出現同地點現有的幾款卡面，右側放實際 App 的收卡結果。三組素材依序淡入，箭頭只說明製作與取用的關係。旁邊以小字標示「卡面預先製作」；最後將 App 實際使用的那款卡放大。</p>
+      <ul class="beats"><li><time>02:30</time><span>地方照片與來源署名出現。</span></li><li><time>02:33</time><span>同地點的幾款既有 AI 卡面依序展開。</span></li><li><time>02:37</time><span>顯示「卡面預先製作」，連到 App 的規則選款。</span></li><li><time>02:41</time><span>對應款式放大，停留到下一鏡。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>這些卡面，以地方照片為基礎，<br>透過 AI 預先製作不同畫風。<br>App 再依到訪方式與季節，顯示對應款式。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>熟悉的風景，換一種方式收藏</strong></p><p class="secondary">照片素材 → AI 製作卡面 → App 取用</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>製作流程淡出，成品卡保留，接回探索與收藏的使用循環。</p>
+      <p class="sound">聲音：照片與卡面出現時各一聲輕提示，不加現場生圖的等待音效。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>同地點具授權底圖與 app/assets/postcards/ 既有成品；建議沿 p3，款式以實際示範紀錄為準。</li><li>SVG 箭頭、文字與卡片位移；以 index.json 核對素材與生成紀錄。</li></ul><p>預定場景名：<code>ai_content_supply</code>（新腳本命名，尚未註冊）</p><p>已實作的是本機離線卡面生成工具與 App 取用成品；不是在 App 裡即時生成。款式由 explore-cards.js 規則決定，並非 AI 判定到訪。推薦理由、RAG 地方故事與線上 AI 服務不列入本片目前功能展示。</p><p>來源：app/tools/gen-postcards.py；app/assets/postcards/index.json；app/js/views/explore-face.js 與 explore-cards.js。</p></details>
+    </article>
+<article class="shot" id="shot-13">
+      <div class="shot-meta"><span>第 13 鏡 · AI 與價值</span><span>02:44–02:52 / 8 秒</span></div>
+      <h2>回看之後，期待下一次出門</h2>
+      <h3>畫面與動態</h3><p class="description">地方卡、收藏卡與地圖標記依序排成一個簡單循環，細線慢慢接起。地圖到目的地之間，只有需要交通的支線出現 yoxi 小車；收藏連回探索，分享則在旁邊作選用分支。最後所有元素縮回一張卡，準備收尾。</p>
+      <ul class="beats"><li><time>02:44</time><span>探索 → 到訪收藏 → 回看，三個元素依序出現。</span></li><li><time>02:47</time><span>回看連回探索，出現循環；需要交通的支線帶出小車。</span></li><li><time>02:50</time><span>元素縮回一張卡，畫面留白。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>從想去的地方，到願意回看的收藏。<br>讓下一次出門，也有新的期待。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>從願意打開，到願意再次出門</strong></p><p class="secondary">回看收藏 · 再次探索 · 按需叫車</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>卡片縮放與第一鏡一致，交叉淡接回開場的早安圖。</p>
+      <p class="sound">聲音：音樂稍抬升，準備結尾和弦。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>既有地點、卡片、小車 SVG 元件；連線 path</li></ul><p>預定場景名：<code>explore_return_value</code>（新腳本命名，尚未註冊）</p><p>這是價值主張，不是已驗證的成效。收藏回看、再次探索與探索來源叫車列為試辦觀察；不在八秒內塞入營收或 KPI 數字。</p><p>來源：PDF 14–15 頁：使用循環與商業路徑。</p></details>
+    </article>
+<article class="shot" id="shot-14">
+      <div class="shot-meta"><span>第 14 鏡 · 結尾</span><span>02:52–02:58 / 6 秒</span></div>
+      <h2>回到早安，多了一段自己的故事</h2>
+      <h3>畫面與動態</h3><p class="description">第一鏡的早安圖回到畫面中央，這次卡旁多一句「今天的問候，有自己的故事」。卡片微微縮向左側，右側出現遊喜樂名稱與主標語，下方留「不搭車，也有打開 yoxi 的理由」及遊喜樂小隊。最後一秒全部定住，形成首尾呼應。</p>
+      <ul class="beats"><li><time>02:52</time><span>同一張青草湖卡面與「早安」回場，新短句淡入。</span></li><li><time>02:54</time><span>卡片移左，右側字標與主標語進場；底部句子與團隊名淡入。</span></li><li><time>02:57</time><span>定格一秒，音樂自然收尾；不再加額外片尾。</span></li></ul>
+      <div class="copy"><div><h3>旁白</h3><blockquote>遊喜樂，遊得開心，樂得安心。</blockquote></div>
+      <div class="words"><h3>畫面字詞</h3><p><strong>遊喜樂</strong></p><p class="secondary">遊得開心，樂得安心</p><p class="secondary">分段出現：今天的問候，有自己的故事／不搭車，也有打開 yoxi 的理由／遊喜樂小隊</p></div></div>
+      <p class="transition"><strong>接下一鏡：</strong>片尾淡出包含在本鏡時長內；保留卡面署名。</p>
+      <p class="sound">聲音：最後一個和弦；旁白讀主標語，底部句子讓觀眾自己看。</p>
+      <details><summary>素材、實作提醒與來源</summary><ul><li>第一鏡 p22-oil 卡面及同套卡框、文字</li><li>PRIM.wordmark；團隊名與片尾標語</li></ul><p>預定場景名：<code>greeting_return</code>（新腳本命名，尚未註冊）</p><p>「安心」是品牌情緒，不表示已建置照護或自動報平安。開場與結尾的青草湖卡屬敘事情境，不改寫 demo 的收卡記錄。</p><p>來源：PDF 1、3 頁；使用者指定的早安圖開場。</p></details>
+    </article>
+</section>
+<section class="closing" id="notes">
+  <h2>交給動畫製作的共通設定</h2>
+  <ul>
+    <li><strong>現有元件直接沿用。</strong>1920×1080 SVG 舞台、字幕、交叉淡接、HSMAP 地圖、地點標記、小車、步行點與字標都已有實作。進場以約 0.5–0.7 秒為主，每鏡最多一句大字；保留字幕區與署名位置。</li>
+    <li><strong>卡面與 App 序列需要新增載入層。</strong>現有 <code>PRIM.postcard</code> 只畫向量風景，<code>PRIM.phone</code> 只畫簡化首頁。新版需要本機 SVG <code>&lt;image&gt;</code>、圖片預載與 ready 檢查，以及由時間選擇畫格的 App 序列層。這些是本稿的實作需求，尚未加入現有 renderer。</li>
+    <li><strong>Demo 以實際狀態為證據。</strong>先操作 App 核對流程，再固定地點、日期與交通方式擷取關鍵狀態 PNG。各鏡列出既有 shot stem、新拍狀態與 SVG 插值分工；拖曳、翻卡以真實前後狀態重建轉場，不聲稱是 App 原始動畫錄影。現成截圖可作參考，不把不同地點、張數或日期拼成同一趟行程。</li>
+    <li><strong>每格由時間決定。</strong>沿 <code>ANIM.seek(t)</code> 控制位置、透明度與畫格索引；不靠 CSS 自行播放或非同步影片解碼。所有圖片在 ready 前載入，跳到同一秒應產生同一張圖。翻面可用水平縮放收窄後換圖再展開。</li>
+    <li><strong>先守住節奏，再對齊音檔。</strong>本稿為 178 秒配置，預留 2 秒輸出餘裕；舊管線依配音長度加前後停留產生 timeline，不能直接把本稿時長貼成 hold。以實測配音調整停留，首鏡需提供含靜音的配音檔，或分段合成後插入靜音；舊 TTS 串句與鏡尾 hold 都不能取代句間停頓。額外停留時間要算在原鏡內。</li>
+    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享與回應沿現有 App 的本機示意流程；沒有好友、揪團或共同路線。AI 只說明已製作的卡面資產與規則取用，不展示尚未接上的推薦服務。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
+  </ul>
+  <p class="small">新增鏡頭依本稿 scene_key 註冊；正式製片前再把敘事同步到 <code>shots.json</code>、場景與配音時間。本稿不會直接被舊 <code>build-video.py</code> 編成新片。配音超時時先縮第八鏡尾段停留；成片需重新量測，總長不得超過三分鐘。</p>
+  <p class="small"><strong>素材標示：</strong>開場／片尾的青草湖油畫卡是情境用既有卡，非當次搭車收卡結果。卡面標「AI 生成示意」；p22 底圖 © Taiwankengo / Wikimedia Commons，CC BY-SA 4.0；p11 底圖 © Råy kuø / Wikimedia Commons，CC BY-SA 4.0。其他卡依 <code>prototype/assets/photos/credits.js</code> 逐張保留作者與授權；地圖標 © OpenStreetMap 貢獻者（ODbL）。</p>
+</section>
+<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/ARCHITECTURE.md 與 app/js/views/ 現行實作。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
+</main>
+</body>
+</html>

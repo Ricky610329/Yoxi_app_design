@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>遊喜樂｜從一張早安圖開始・三分鐘動畫腳本</title>
+<style>
+/*TOKENS*/
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--yoxi-white); color: var(--yoxi-navy); font-family: var(--font-sans); font-size: 16px; line-height: 1.85; }
+main { width: min(100% - 64px, 960px); margin: 0 auto; }
+header { padding: 52px 0 30px; border-bottom: 1px solid var(--yoxi-line); }
+.eyebrow { margin: 0; color: var(--yoxi-navy-60); font-size: 13px; letter-spacing: .06em; }
+h1 { margin: 12px 0; font-size: 34px; line-height: 1.4; letter-spacing: -.02em; }
+h2 { font-size: 24px; margin: 0 0 14px; line-height: 1.5; }
+h3 { font-size: 15px; margin: 0 0 8px; }
+p { margin: 0 0 14px; }
+.lead { font-size: 18px; margin-bottom: 18px; }
+.meta, .small { color: var(--yoxi-navy-60); font-size: 13px; }
+section { padding: 30px 0; scroll-margin-top: 22px; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 16px 0; border-bottom: 1px solid var(--yoxi-line); }
+a { color: var(--yoxi-navy); text-underline-offset: 5px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--yoxi-navy); outline-offset: 5px; }
+nav a { font-size: 14px; }
+.overview { padding-bottom: 12px; }
+.schedule { width: 100%; border-collapse: collapse; margin: 18px 0 0; font-size: 14px; }
+.schedule th, .schedule td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--yoxi-line); vertical-align: top; }
+.schedule th { background: var(--yoxi-mist); font-weight: 700; }
+.schedule th:first-child, .schedule td:first-child { width: 135px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.schedule th:nth-child(2) { width: 130px; }
+.shot { padding: 32px 0 34px; border-top: 1px solid var(--yoxi-line); scroll-margin-top: 22px; }
+.shot-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 8px; font-size: 13px; color: var(--yoxi-navy-60); font-variant-numeric: tabular-nums; }
+.shot h2 { font-size: 23px; margin-bottom: 18px; }
+.description { font-size: 17px; }
+.beats { list-style: none; padding: 0; margin: 20px 0 24px; }
+.beats li { display: grid; grid-template-columns: 66px 1fr; gap: 12px; padding: 7px 0; font-size: 14px; }
+.beats time { color: var(--yoxi-navy-60); font-variant-numeric: tabular-nums; }
+.copy { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; margin-top: 22px; }
+.copy h3 { color: var(--yoxi-navy-60); font-weight: 400; font-size: 13px; }
+blockquote { margin: 0; padding-left: 16px; border-left: 2px solid var(--yoxi-slate-lite); font-size: 16px; }
+.words p { margin-bottom: 5px; }
+.words .secondary { font-size: 14px; }
+.sound { margin: 20px 0 0; font-size: 13px; color: var(--yoxi-navy-60); }
+.transition { margin: 22px 0 0; font-size: 14px; }
+code { overflow-wrap: anywhere; }
+details { margin-top: 16px; font-size: 13px; color: var(--yoxi-navy-60); }
+summary { cursor: pointer; width: fit-content; }
+details p { margin: 10px 0 0; }
+.closing { border-top: 1px solid var(--yoxi-line); }
+.closing li { margin-bottom: 10px; }
+footer { padding: 26px 0 44px; border-top: 1px solid var(--yoxi-line); font-size: 12px; color: var(--yoxi-navy-60); }
+@media (max-width: 640px) {
+  main { width: calc(100% - 36px); }
+  header { padding-top: 30px; }
+  h1 { font-size: 28px; }
+  .lead, .description { font-size: 16px; }
+  .copy { grid-template-columns: 1fr; gap: 22px; }
+  .schedule { font-size: 12px; }
+  .schedule th, .schedule td { padding: 9px 6px; }
+  .schedule th:first-child, .schedule td:first-child { width: 93px; }
+  .schedule th:nth-child(2) { width: 83px; }
+  .shot h2 { font-size: 21px; }
+  .beats li { grid-template-columns: 48px 1fr; gap: 8px; }
+}
+@media print {
+  main { width: 100%; }
+  header { padding-top: 0; }
+  nav, details { display: none; }
+  .shot { break-inside: avoid; padding: 22px 0; }
+  .copy { gap: 24px; }
+  body { font-size: 12px; }
+  h1 { font-size: 25px; }
+  .description, blockquote { font-size: 13px; }
+  .beats li { font-size: 12px; }
+  a { text-decoration: none; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow">遊喜樂小隊 · 程式動畫影片腳本</p>
+  <h1>從一張早安圖開始</h1>
+  <p class="lead">讓一張打招呼的圖，多一段自己走過的故事。</p>
+  <p class="meta">全片 /*TOTAL*/ · /*COUNT*/ 鏡 · SVG 動態＋現有卡面＋App 狀態畫面序列 · 2026-10-01</p>
+</header>
+<nav aria-label="分鏡段落">/*NAV*/</nav>
+<section class="overview" id="overview">
+  <h2>影片概要</h2>
+  <p>/*SUMMARY*/</p>
+  <p><strong>呈現方式：</strong>沿用 repo 的 SVG／JavaScript 場景與逐格輸出流程。卡片與 App 畫面作為圖片素材，文字、地圖、路線與訊息框由程式控制進出。整支影片可用素材與動畫敘事，無需真人拍攝；本頁只提供文字腳本。</p>
+  <p><strong>視覺設計分工：</strong>/*VISUAL_DIRECTION*/</p>
+  <table class="schedule"><thead><tr><th>時間</th><th>段落</th><th>這段要說清楚什麼</th></tr></thead><tbody>/*SCHEDULE*/</tbody></table>
+</section>
+<section id="storyboard">
+  <h2>分鏡腳本</h2>
+  <p class="small">以下時間碼為剪輯配置，已含轉場與片尾。每鏡列畫面、動態節拍、旁白、片上字詞與接續方式；字詞分段出現，勿同時堆滿。首鏡「早安」之後刻意停一下，再帶入長輩敘事。</p>
+  /*SHOTS*/
+</section>
+<section class="closing" id="notes">
+  <h2>交給動畫製作的共通設定</h2>
+  <ul>
+    <li><strong>現有元件直接沿用。</strong>1920×1080 SVG 舞台、字幕、交叉淡接、HSMAP 地圖、地點標記、小車、步行點與字標都已有實作。進場以約 0.5–0.7 秒為主，每鏡最多一句大字；保留字幕區與署名位置。</li>
+    <li><strong>卡面與 App 序列需要新增載入層。</strong>現有 <code>PRIM.postcard</code> 只畫向量風景，<code>PRIM.phone</code> 只畫簡化首頁。新版需要本機 SVG <code>&lt;image&gt;</code>、圖片預載與 ready 檢查，以及由時間選擇畫格的 App 序列層。這些是本稿的實作需求，尚未加入現有 renderer。</li>
+    <li><strong>Demo 以實際狀態為證據。</strong>先操作 App 核對流程，再固定地點、日期與交通方式擷取關鍵狀態 PNG。各鏡列出既有 shot stem、新拍狀態與 SVG 插值分工；拖曳、翻卡以真實前後狀態重建轉場，不聲稱是 App 原始動畫錄影。現成截圖可作參考，不把不同地點、張數或日期拼成同一趟行程。</li>
+    <li><strong>每格由時間決定。</strong>沿 <code>ANIM.seek(t)</code> 控制位置、透明度與畫格索引；不靠 CSS 自行播放或非同步影片解碼。所有圖片在 ready 前載入，跳到同一秒應產生同一張圖。翻面可用水平縮放收窄後換圖再展開。</li>
+    <li><strong>先守住節奏，再對齊音檔。</strong>本稿為 178 秒配置，預留 2 秒輸出餘裕；舊管線依配音長度加前後停留產生 timeline，不能直接把本稿時長貼成 hold。以實測配音調整停留，首鏡需提供含靜音的配音檔，或分段合成後插入靜音；舊 TTS 串句與鏡尾 hold 都不能取代句間停頓。額外停留時間要算在原鏡內。</li>
+    <li><strong>保持產品邊界。</strong>派車與到訪是模擬；回憶卡為私人本機模板；分享與回應沿現有 App 的本機示意流程；沒有好友、揪團或共同路線。AI 只說明已製作的卡面資產與規則取用，不展示尚未接上的推薦服務。原型採新竹示例，雙北客群與試辦方向另行說明。</li>
+  </ul>
+  <p class="small">新增鏡頭依本稿 scene_key 註冊；正式製片前再把敘事同步到 <code>shots.json</code>、場景與配音時間。本稿不會直接被舊 <code>build-video.py</code> 編成新片。配音超時時先縮第八鏡尾段停留；成片需重新量測，總長不得超過三分鐘。</p>
+  <p class="small"><strong>素材標示：</strong>開場／片尾的青草湖油畫卡是情境用既有卡，非當次搭車收卡結果。卡面標「AI 生成示意」；p22 底圖 © Taiwankengo / Wikimedia Commons，CC BY-SA 4.0；p11 底圖 © Råy kuø / Wikimedia Commons，CC BY-SA 4.0。其他卡依 <code>prototype/assets/photos/credits.js</code> 逐張保留作者與授權；地圖標 © OpenStreetMap 貢獻者（ODbL）。</p>
+</section>
+<footer>參考：2026和泰AI黑客松_draft.pdf（依 PDF 實際頁序）、pitch/video/anim/CONTRACT.md、既有影片 shots.json、pitch/BRIEF.md、app/ARCHITECTURE.md 與 app/js/views/ 現行實作。<br>每鏡可展開素材、實作提醒與來源。本頁為文字腳本，可單檔離線閱讀與列印；本次交付不包含新影片或動畫場景程式。</footer>
+</main>
+</body>
+</html>
